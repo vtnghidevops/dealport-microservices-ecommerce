@@ -1,0 +1,12 @@
+version: '3'
+
+services:
+  broken-service:
+    container_name: broken-service
+    image: broken-service
+    build:
+      context: ./broker-service
+      dockerfile: Dockerfile
+    restart: always
+    ports:
+      - "8080:8080"
