@@ -25,5 +25,8 @@ func (app *Config) routers() http.Handler {
 	// [POST] /broker
 	mux.Post("/broker", app.Broker) 
 
+	// [POST] /handle => authentication-service
+	mux.Post("/handle", app.HandleSubmission)
+
 	return mux
 }

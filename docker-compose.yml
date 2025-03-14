@@ -1,12 +1,32 @@
-version: '3'
-
 services:
-  broken-service:
-    container_name: broken-service
-    image: broken-service
+  broker-service:
+    container_name: broker-service
+    image: broker-service:v1
     build:
       context: ./broker-service
-      dockerfile: Dockerfile
     restart: always
     ports:
       - "8080:8080"
+  authentication-service:
+    container_name: authentication-service
+    image: authenticate-service:v1
+    build:
+      context: ./authentication-service
+    restart: always
+    ports:
+     - "9000:9000"
+    environment:
+      DSN: "host=postgres port=5432 user=postgres password=password dbname=users sslmode=disable timezone=UTC connect_timeout=5"
+  postgres:
+    container_name: postgres
+    image: 'postgres:14.0'
+    ports:
+      - "5432:5432"
+    restart: always
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: users 
+    volumes:
+      - ./db-data/postgres:/var/lib/postgresql/data/
+
