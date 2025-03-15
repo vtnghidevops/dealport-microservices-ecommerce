@@ -7,6 +7,8 @@ services:
     restart: always
     ports:
       - "8080:8080"
+    networks:
+      - net
   authentication-service:
     container_name: authentication-service
     image: authenticate-service:v1
@@ -17,6 +19,17 @@ services:
      - "9000:9000"
     environment:
       DSN: "host=postgres port=5432 user=postgres password=password dbname=users sslmode=disable timezone=UTC connect_timeout=5"
+    networks:
+      - net
+  logger-service:
+    container_name: logger-service
+    image: logger-service:v1
+    build:
+      context: ./logger-service
+    restart: always
+    networks:
+      - net
+
   postgres:
     container_name: postgres
     image: 'postgres:14.0'
@@ -29,4 +42,21 @@ services:
       POSTGRES_DB: users 
     volumes:
       - ./db-data/postgres:/var/lib/postgresql/data/
+    networks:
+      - net
 
+  mongodb:
+    image: 'mongo:4.2.16-bionic'
+    container_name: mongodb
+    ports:
+      - "27018:27017"
+    environment:
+      MONGO_INITDB_DATABASE: logs
+      MONGO_INITDB_ROOT_USERNAME: admin
+      MONGO_INITDB_ROOT_PASSWORD: password
+    volumes:
+      - ./db-data/mongo/:/data/db
+    networks:
+      - net
+networks:
+  net:
