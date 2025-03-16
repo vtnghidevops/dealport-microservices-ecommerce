@@ -16,7 +16,7 @@ services:
       context: ./authentication-service
     restart: always
     ports:
-     - "9000:9000"
+      - "9000:9000"
     environment:
       DSN: "host=postgres port=5432 user=postgres password=password dbname=users sslmode=disable timezone=UTC connect_timeout=5"
     networks:
@@ -30,23 +30,40 @@ services:
     networks:
       - net
 
+  mail-service:
+    container_name: mail-service
+    image: mail-service:v1
+    build:
+      context: ./mail-service
+    restart: always
+    environment:
+      MAIL_DOMAIN: localhost
+      MAIL_HOST: mailhog
+      MAIL_PORT: 1025
+      MAIL_ENCRYPTION: none
+      MAIL_USERNAME: ""
+      MAIL_PASSWORD: ""
+      FROM_NAME: "Livius Vuong"
+      FROM_ADDR: livius.vuong@example.com
+    networks:
+      - net
   postgres:
     container_name: postgres
-    image: 'postgres:14.0'
+    image: "postgres:14.0"
     ports:
       - "5432:5432"
     restart: always
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: password
-      POSTGRES_DB: users 
+      POSTGRES_DB: users
     volumes:
       - ./db-data/postgres:/var/lib/postgresql/data/
     networks:
       - net
 
   mongodb:
-    image: 'mongo:4.2.16-bionic'
+    image: "mongo:4.2.16-bionic"
     container_name: mongodb
     ports:
       - "27018:27017"
@@ -58,5 +75,16 @@ services:
       - ./db-data/mongo/:/data/db
     networks:
       - net
+
+  # Testing SMTP Server
+  mailhog:
+    container_name: mailhog
+    image: mailhog/mailhog:latest
+    ports:
+      - "1025:1025"
+      - "8025:8025"
+    networks:
+      - net
+
 networks:
   net:
