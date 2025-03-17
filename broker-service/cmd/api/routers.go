@@ -28,5 +28,8 @@ func (app *Config) routers() http.Handler {
 	// [POST] /handle => authentication-service
 	mux.Post("/handle", app.HandleSubmission)
 
+	// [POST] /logs/gRPC
+	mux.Post("/log-grpc", app.LogViaGRPC)
+
 	return mux
 }
