@@ -21,6 +21,7 @@ services:
       DSN: "host=postgres port=5432 user=postgres password=password dbname=users sslmode=disable timezone=UTC connect_timeout=5"
     networks:
       - net
+
   logger-service:
     container_name: logger-service
     image: logger-service:v1
@@ -47,6 +48,16 @@ services:
       FROM_ADDR: livius.vuong@example.com
     networks:
       - net
+
+  listener-service:
+    container_name: listener-service
+    image: listener-service:v1
+    build:
+      context: ./listener-service
+    restart: always
+    networks:
+      - net
+
   postgres:
     container_name: postgres
     image: "postgres:14.0"
@@ -83,6 +94,16 @@ services:
     ports:
       - "1025:1025"
       - "8025:8025"
+    networks:
+      - net
+
+  rabbitmq:
+    container_name: rabbitmq
+    image: "rabbitmq:3.9-alpine"
+    ports:
+      - "5672:5672"
+    volumes:
+      - ./db-data/rabbitmq/:/var/lib/rabbitmq/
     networks:
       - net
 

@@ -60,8 +60,7 @@ func (app *Config) logRequest(name, data string) error {
 	entry.Data = data
 
 	jsonData, _ := json.MarshalIndent(entry, "", "\t")
-	logServiceURL := "http://logger-service:9001/log" // url:port/database
-
+	logServiceURL := "http://logger-service:9001/logs" // url:port/database
 	request, err := http.NewRequest("POST", logServiceURL, bytes.NewBuffer(jsonData))
 
 	if err != nil {
