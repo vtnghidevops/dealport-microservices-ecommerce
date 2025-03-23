@@ -1,7 +1,7 @@
 import React from 'react';
-import { TestimonialCardProps } from './testimonial.types';
+import { TestimonialItemProps } from './models/testimonial.model';
 
-interface ExtendedTestimonialCardProps extends TestimonialCardProps {
+interface ExtendedTestimonialCardProps extends TestimonialItemProps {
   isGreen?: boolean;
 }
 

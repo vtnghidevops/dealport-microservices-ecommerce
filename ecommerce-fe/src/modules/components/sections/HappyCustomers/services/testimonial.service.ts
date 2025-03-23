@@ -1,7 +1,7 @@
-import { TestimonialModel } from "../models/testimonial.model";
+import { TestimonialItem } from "../models/testimonial.model";
 
 // Mock data - trong thực tế sẽ fetch từ API
-const testimonialData: TestimonialModel[] = [
+const testimonialData: TestimonialItem[] = [
   {
     id: 1,
     name: 'Emily R.',
@@ -54,7 +54,7 @@ const testimonialData: TestimonialModel[] = [
 ];
 
 export const TestimonialService = {
-  getTestimonials: (): Promise<TestimonialModel[]> => {
+  getTestimonials: (): Promise<TestimonialItem[]> => {
     return Promise.resolve(testimonialData);
   }
 };

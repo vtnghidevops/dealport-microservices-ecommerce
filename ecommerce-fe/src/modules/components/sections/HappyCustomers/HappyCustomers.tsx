@@ -1,12 +1,12 @@
 import React, { useEffect, useState } from "react";
 import TestimonialCard from "./TestimonialCard";
-import { TestimonialService } from "../../../services/testimonial.service";
-import { TestimonialModel } from "../../../models/testimonial.model";
+import { TestimonialService } from "./services/testimonial.service";
+import { TestimonialItem } from "./models/testimonial.model";
 import { Button } from "../../common/Button";
 import "../../../../app.css";
 
 const HappyCustomers: React.FC = () => {
-  const [testimonials, setTestimonials] = useState<TestimonialModel[]>([]);
+  const [testimonials, setTestimonials] = useState<TestimonialItem[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
 
   useEffect(() => {

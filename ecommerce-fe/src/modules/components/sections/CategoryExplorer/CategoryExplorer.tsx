@@ -1,17 +1,47 @@
 import React, { useRef, useState, useEffect } from 'react';
 import { MdChevronRight, MdChevronLeft } from 'react-icons/md';
-import { CategoryExplorerProps } from '../../models/Category';
+import { CategoryExplorerProps } from './models/category.model';
+import CategoryCard from './CategoryCard';
+import { CategoryItem } from './models/category.model';
+import { CategoryExplorerService } from './services/categoryExplorer.service';
+import { handleViewAll } from '../../../utils/helpers';
+import { handleCategoryClick } from '../../../utils/helpers';
 
-const CategoryExplorer: React.FC<CategoryExplorerProps> = ({
-  title = "Start exploring now",
-  categories = [],
-  viewAllLabel = "View All",
-  onViewAllClick = () => {},
-  itemWidth = "w-[180px]",
-  itemHeight = "h-[220px]",
-  showNavigationArrow = true,
-  onItemClick = () => {},
-}) => {
+const CategoryExplorer: React.FC = () => {
+  var categoryExplore: CategoryExplorerProps = {
+    title: "Start exploring now",
+    categories: [],
+    viewAllLabel: "View All",
+    onViewAllClick: handleViewAll,
+    itemWidth: "w-[180px]",
+    itemHeight: "h-[220px]",
+    showNavigationArrow: true,
+    onItemClick: handleCategoryClick,
+  }
+  
+  // fetch data
+  const [categories, setCategories ] = useState<CategoryItem[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
+  useEffect(() => {
+        const fetchTestimonials = async () => {
+          try {
+            const data = await CategoryExplorerService.getCategoryData();
+            setCategories(data);
+            setLoading(false);
+            categoryExplore.categories = categories;
+          } catch (error) {
+            console.error("Error fetching testimonials:", error);
+            setLoading(false);
+          }
+        };
+    
+        fetchTestimonials();
+      }, []);
+
+
+
+
+  // scroll event
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const [showLeftArrow, setShowLeftArrow] = useState(false);
   const [showRightArrow, setShowRightArrow] = useState(true);
@@ -70,20 +100,20 @@ const CategoryExplorer: React.FC<CategoryExplorerProps> = ({
     <div className="w-full py-6 md:px-6">
       {/* Header with title and view all button */}
       <div className="flex items-center justify-between mb-4 p-2 !pl-0 relative">
-        <h2 className="header-2 font-bold text-gray-800">{title}</h2>
+        <h2 className="header-2 font-bold text-gray-800">{categoryExplore.title}</h2>
         <div className="absolute right-0 top-0">
           <button
-            onClick={onViewAllClick}
+            onClick={categoryExplore.onViewAllClick}
             className="buttonText w-[8rem] h-[3rem] rounded-3xl border border-black"
           >
             View All
           </button>
         </div>
         <button
-          onClick={onViewAllClick}
+          onClick={categoryExplore.onViewAllClick}
           className="hidden px-4 py-2 border border-gray-300 rounded-full text-sm font-medium text-gray-700 hover:bg-gray-50"
         >
-          {viewAllLabel}
+          {categoryExplore.viewAllLabel}
         </button>
       </div>
 
@@ -93,34 +123,13 @@ const CategoryExplorer: React.FC<CategoryExplorerProps> = ({
           ref={scrollContainerRef}
           className="flex overflow-x-auto gap-4 pb-4 -mx-4 px-4 scrollbar-hide"
         >
-          {categories.map((category, index) => (
-            <div
-              key={`category-${index}-${category.id || category.name}`}
-              className={`flex-shrink-0 ${itemWidth} cursor-pointer h-[220px] w-[180px mr-[3rem] rounded-xl`}
-              onClick={() => onItemClick(category, index)}
-            >
-              <div className="relative rounded-lg overflow-hidden shadow-sm border border-gray-300 h-full ">
-                <div
-                  className={`${itemHeight} w-full flex items-center justify-center`}
-                >
-                  <img
-                    src={category.image}
-                    alt={category.name}
-                    className="w-[148px] h-[140px] object-cover"
-                  />
-                </div>
-                <div className="p-2 text-center absolute bottom-0 flex justify-center w-full">
-                  <h3 className="text-sm font-medium text-gray-800">
-                    {category.name}
-                  </h3>
-                </div>
-              </div>
-            </div>
+          {categories.map((category) => (
+            <CategoryCard category={category} itemWidth={categoryExplore.itemWidth} itemHeight={categoryExplore.itemHeight} onItemClick={categoryExplore.onItemClick}></CategoryCard>
           ))}
         </div>
 
         {/* Left navigation arrow */}
-        {showNavigationArrow && showLeftArrow && (
+        {categoryExplore.showNavigationArrow && showLeftArrow && (
           <button
             className="absolute left-0 top-1/2 -translate-y-1/2 bg-white rounded-full shadow-md h-10 w-10 flex items-center justify-center z-10"
             onClick={scrollLeft}
@@ -130,7 +139,7 @@ const CategoryExplorer: React.FC<CategoryExplorerProps> = ({
         )}
 
         {/* Right navigation arrow */}
-        {showNavigationArrow && showRightArrow && (
+        {categoryExplore.showNavigationArrow && showRightArrow && (
           <button
             className="absolute right-0 top-1/2 -translate-y-1/2 bg-white rounded-full shadow-md h-10 w-10 flex items-center justify-center z-10"
             onClick={scrollRight}

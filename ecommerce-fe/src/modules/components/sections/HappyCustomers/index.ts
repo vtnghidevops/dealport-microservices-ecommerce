@@ -1,1 +1,1 @@
-export { default } from './HappyCustomers';
+export { default as HappyCustomers } from  './HappyCustomers'

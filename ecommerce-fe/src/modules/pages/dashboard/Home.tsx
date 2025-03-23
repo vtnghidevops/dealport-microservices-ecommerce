@@ -4,98 +4,22 @@ import NewFashion from "../../components/sections/NewFashion";
 import GamingBanner from "../../components/sections/GamingBanner";
 import DisplayGrid from "../../components/sections/DisplayGrid";
 import BannerShowCase from "../../components/sections/BannerShowcase";
-import { TrendingProducts } from "../../components/sections/TrendingProducts";
-import CategoryExplorer from "../../components/sections/CategoryExplorer";
 import { Category } from "../../models/category.models";
 import TopProducts from "../../components/sections/TopProducts";
 import { LimitedDeal } from "../../components/sections/LimitedDeal";
-import HappyCustomers from "../../components/sections/HappyCustomers";
+import { HappyCustomers } from "../../components/sections/HappyCustomers";
+import { TrendingProducts } from "../../components/sections/TrendingProducts";
+import { CategoryExplorer } from "../../components/sections/CategoryExplorer";
 const urlImgProduct = "images/products/";
 const urlImgGaming = "images/gaming/";
 const urlImgDisplay = "images/display/";
 const urlImgBanner = "images/banner/";
-const urlImgTrending = "images/trending/";
-const urlImgExploring = "images/exploring/";
+
 const urlImgTop = "images/bestselling/";
 const urlLimited = "images/limited/" ;
 
-const products_trending = [
-  {
-    id: 1,
-    title: "Radiant Glow Hydrating Serum",
-    description:
-      "Gentle yet effective, our Radiant Boosting Foaming our Radiant Boosting Foaming our Radiant Boosting Foaming",
-    price: 29.99,
-    originalPrice: 39.99,
-    discount: 20,
-    review: {
-      rating: 4.8,
-      count: 345,
-    },
-    imageUrl: `${urlImgTrending}serum.png`,
-  },
-  {
-    id: 2,
-    title: "Modern Minimalist Vase",
-    description:
-      "Track your workouts, heart rate, sleep quality and receive notifications. Water resistant up to 50m with 7-day battery life.",
-    price: 40.99,
-    originalPrice: 0,
-    discount: 0,
-    review: {
-      rating: 4.6,
-      count: 842,
-    },
-    imageUrl: `${urlImgTrending}vase.png`,
-  },
-  {
-    id: 3,
-    title: "FitPro 3000 Smart Watch",
-    description:
-      "Fast-charging power bank with dual USB ports and USB-C compatibility. Charge multiple devices simultaneously on the go.",
-    price: 119.99,
-    originalPrice: 0,
-    discount: 0,
-    review: {
-      rating: 4.0,
-      count: 2105,
-    },
-    imageUrl: `${urlImgTrending}smartwatch.png`,
-  },
-];
-// Exploring category
-const categories: Category[] = [
-  {
-    id: 1,
-    name: "Grocery",
-    image: `${urlImgExploring}grocery.png`,
-  },
-  {
-    id: 2,
-    name: "Home",
-    image: `${urlImgExploring}/home.png`,
-  },
-  {
-    id: 3,
-    name: "Fashion",
-    image: `${urlImgExploring}/fashion.png`,
-  },
-  {
-    id: 4,
-    name: "Electronic",
-    image: `${urlImgExploring}electronic.png`,
-  },
-  {
-    id: 5,
-    name: "Toys",
-    image: `${urlImgExploring}toys.png`,
-  },
-  {
-    id: 6,
-    name: "Grocery",
-    image: `${urlImgExploring}grocery.png`,
-  },
-];
+
+
 const handleCategoryClick = (category: Category) => {
   console.log("Category clicked:", category);
   // Navigate or perform actions
@@ -381,16 +305,13 @@ export default function Home() {
         </div>
 
         {/* Trending Products */}
-        <div className="relative w-full h-max pl-[6rem]">
-          <TrendingProducts products_trending={products_trending} />
+        <div className="relative w-full h-max pl-[6rem]"> 
+          <TrendingProducts></TrendingProducts>
         </div>
 
         {/* Category */}
         <div className="relative w-full pl-[6rem] pr-[4.3rem] mt-[3rem]">
           <CategoryExplorer
-            categories={categories}
-            onViewAllClick={handleViewAll}
-            onItemClick={handleCategoryClick}
           />
         </div>
 

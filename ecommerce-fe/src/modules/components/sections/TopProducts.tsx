@@ -27,7 +27,7 @@ const TopProducts: React.FC<TopProductsProps> = ({
     <div className="w-full py-6 md:px-6">
       {/* Header */}
       <div className="flex items-center justify-between mb-[2rem]">
-        <h2 className="text-2xl font-bold">{title}</h2>
+        <h2 className="header-2 font-bold">{title}</h2>
         <button
           onClick={onViewAllClick}
           className="w-[8rem] h-[3rem] rounded-3xl border border-black text-sm"
