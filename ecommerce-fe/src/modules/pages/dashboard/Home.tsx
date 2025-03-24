@@ -4,115 +4,18 @@ import NewFashion from "../../components/sections/NewFashion";
 import GamingBanner from "../../components/sections/GamingBanner";
 import DisplayGrid from "../../components/sections/DisplayGrid";
 import BannerShowCase from "../../components/sections/BannerShowcase";
-import { Category } from "../../models/category.models";
-import TopProducts from "../../components/sections/TopProducts";
 import { LimitedDeal } from "../../components/sections/LimitedDeal";
 import { HappyCustomers } from "../../components/sections/HappyCustomers";
 import { TrendingProducts } from "../../components/sections/TrendingProducts";
 import { CategoryExplorer } from "../../components/sections/CategoryExplorer";
+import { TopProducts } from "../../components/sections/TopProducts";
 const urlImgProduct = "images/products/";
 const urlImgGaming = "images/gaming/";
 const urlImgDisplay = "images/display/";
 const urlImgBanner = "images/banner/";
-
 const urlImgTop = "images/bestselling/";
 const urlLimited = "images/limited/" ;
 
-
-
-const handleCategoryClick = (category: Category) => {
-  console.log("Category clicked:", category);
-  // Navigate or perform actions
-};
-
-const handleViewAll = () => {
-  console.log("View all categories clicked");
-  // Navigate to all categories page
-};
-
-// Top Products selling
-const featuredProducts = [
-  {
-    id: 1,
-    name: "Computer Accessories",
-    image: `${urlImgTop}computer_accessories.png`,
-    setUpDesign: "row",
-    isCommingSoon: true,
-    gridSpan: {
-      col: 1,
-      row: 1
-    }
-  },
-  {
-    id: 2,
-    name: "Men's Casual Outfit",
-    price: "200",
-    image: `${urlImgTop}football.png`,
-    actionLabel: "Visit store",
-    setUpDesign: "row",
-    gridSpan: {
-      col: 1,
-      row: 1
-    }
-  },
-  {
-    id: 3,
-    name: "Pome Granate Juice",
-    price: "49",
-    image: `${urlImgTop}juice.png`,
-    actionLabel: "Buy now",
-    setUpDesign: "row",
-    gridSpan: {
-      col: 1,
-      row: 1
-    }
-    
-  },
-  {
-    id: 4,
-    name: "Dog Food Made With Love",
-    image: `${urlImgTop}dog_food.png`,
-    badge: "15% OFF",
-    actionLabel: "Shop Now",
-    setUpDesign: "col",
-    gridSpan: {
-      col: 1,
-      row: 2
-    },
-  },
-  {
-    id: 5,
-    name: "Security Camera System",
-    price: "420",
-    image: `${urlImgTop}security_camera_left.png`,
-    actionLabel: "Visit store",
-    setUpDesign: "double",
-    gridSpan: {
-      col: 2,
-      row: 1
-    },
-    isImageDouble: true,
-    image_double: `${urlImgTop}security_camera_right.png`,
-  },
-  {
-    id: 6,
-    name: "Premium Cosmetic Set",
-    price: "149",
-    image: `${urlImgTop}skincare.png`,
-    actionLabel: "Buy Now",
-    setUpDesign: "row",
-    gridSpan: {
-      col: 1,
-      row: 1
-    }
-
-  }
-];
-
-const handleProductClick = (product, index) => {
-  console.log("Product clicked:", product);
-  // Điều hướng đến trang chi tiết sản phẩm
-};
 
 // Limited Time Deal
 const limitedProducts= [
@@ -317,11 +220,7 @@ export default function Home() {
 
         {/* Best selling */}
         <div className="relative w-full pl-[6rem] pr-[4.3rem] mt-[3rem]">
-          <TopProducts
-            products={featuredProducts}
-            onViewAllClick={handleViewAll}
-            onItemClick={handleProductClick}
-          />
+          <TopProducts></TopProducts>
         </div>
 
         {/* Limited time deal */}

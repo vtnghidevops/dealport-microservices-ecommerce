@@ -1,4 +1,3 @@
-import { Category } from './../../../../models/category.models';
 import { CategoryItem } from "../models/category.model";
 
 const urlImgExploring = "images/exploring/";

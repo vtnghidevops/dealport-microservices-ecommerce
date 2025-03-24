@@ -7,9 +7,9 @@ export interface TopProductItem {
   actionLabel?: string;     // "Buy Now", "Visit Store", etc.
   actionLink?: string;
   isCommingSoon?: boolean;
-  gridSpan?: {
-    col?: number;  // Số cột mà sản phẩm chiếm
-    row?: number;  // Số hàng mà sản phẩm chiếm
+  gridSpan: {
+    col: number;  // Số cột mà sản phẩm chiếm
+    row: number;  // Số hàng mà sản phẩm chiếm
   };
   isImageDouble?: boolean
   image_double?: string

@@ -8,36 +8,35 @@ import { handleViewAll } from '../../../utils/helpers';
 import { handleCategoryClick } from '../../../utils/helpers';
 
 const CategoryExplorer: React.FC = () => {
-  var categoryExplore: CategoryExplorerProps = {
-    title: "Start exploring now",
-    categories: [],
-    viewAllLabel: "View All",
-    onViewAllClick: handleViewAll,
-    itemWidth: "w-[180px]",
-    itemHeight: "h-[220px]",
-    showNavigationArrow: true,
-    onItemClick: handleCategoryClick,
-  }
-  
+
   // fetch data
   const [categories, setCategories ] = useState<CategoryItem[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   useEffect(() => {
-        const fetchTestimonials = async () => {
+        const fetchCategoryExplorer = async () => {
           try {
             const data = await CategoryExplorerService.getCategoryData();
             setCategories(data);
             setLoading(false);
-            categoryExplore.categories = categories;
           } catch (error) {
             console.error("Error fetching testimonials:", error);
             setLoading(false);
           }
         };
     
-        fetchTestimonials();
+        fetchCategoryExplorer();
       }, []);
-
+    
+      var categoryExplore: CategoryExplorerProps = {
+        title: "Start exploring now",
+        categories: categories,
+        viewAllLabel: "View All",
+        onViewAllClick: handleViewAll,
+        itemWidth: "w-[180px]",
+        itemHeight: "h-[220px]",
+        showNavigationArrow: true,
+        onItemClick: handleCategoryClick,
+      }
 
 
 
