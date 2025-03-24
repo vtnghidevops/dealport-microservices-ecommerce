@@ -96,7 +96,7 @@ const Footer: React.FC = () => {
           </div>
 
           {/* Logo section in the middle */}
-          <div className="mt-[5rem] transition-transform duration-300 hover:scale-105">
+          <div className="mt-[5rem] ">
             <a href="/">
               <img
                 src="/images/common/logo.png"
@@ -208,8 +208,8 @@ const Footer: React.FC = () => {
               className="transparent-autofill text-black placeholder-black/70 w-[70%] bg-transparent focus:outline-none ml-[1rem]"
               type="text"
             ></input>
-            <button className="flex items-center rounded-[20px] text-black w-[7rem] mr-[0.5rem] bg-white justify-center h-[2rem]">
-              Subcribe
+            <button className="flex items-center rounded-[20px] text-black w-[7rem] mr-[0.5rem] bg-white justify-center h-[2rem]  hover:shadow-md hover:scale-105 transition-transform transition-shadow duration-300">
+              Subscribe
             </button>
           </div>
           {/* Contact us */}

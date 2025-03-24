@@ -1,44 +1,41 @@
-import React, { useRef, useState, useEffect } from 'react';
-import { MdChevronRight, MdChevronLeft } from 'react-icons/md';
-import { CategoryExplorerProps } from './models/category.model';
-import CategoryCard from './CategoryCard';
-import { CategoryItem } from './models/category.model';
-import { CategoryExplorerService } from './services/categoryExplorer.service';
-import { handleViewAll } from '../../../utils/helpers';
-import { handleCategoryClick } from '../../../utils/helpers';
+import React, { useRef, useState, useEffect } from "react";
+import { MdChevronRight, MdChevronLeft } from "react-icons/md";
+import { CategoryExplorerProps } from "./models/category.model";
+import CategoryCard from "./CategoryCard";
+import { CategoryItem } from "./models/category.model";
+import { CategoryExplorerService } from "./services/categoryExplorer.service";
+import { handleViewAll } from "../../../utils/helpers";
+import { handleCategoryClick } from "../../../utils/helpers";
 
 const CategoryExplorer: React.FC = () => {
-
   // fetch data
-  const [categories, setCategories ] = useState<CategoryItem[]>([]);
+  const [categories, setCategories] = useState<CategoryItem[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   useEffect(() => {
-        const fetchCategoryExplorer = async () => {
-          try {
-            const data = await CategoryExplorerService.getCategoryData();
-            setCategories(data);
-            setLoading(false);
-          } catch (error) {
-            console.error("Error fetching testimonials:", error);
-            setLoading(false);
-          }
-        };
-    
-        fetchCategoryExplorer();
-      }, []);
-    
-      var categoryExplore: CategoryExplorerProps = {
-        title: "Start exploring now",
-        categories: categories,
-        viewAllLabel: "View All",
-        onViewAllClick: handleViewAll,
-        itemWidth: "w-[180px]",
-        itemHeight: "h-[220px]",
-        showNavigationArrow: true,
-        onItemClick: handleCategoryClick,
+    const fetchCategoryExplorer = async () => {
+      try {
+        const data = await CategoryExplorerService.getCategoryData();
+        setCategories(data);
+        setLoading(false);
+      } catch (error) {
+        console.error("Error fetching testimonials:", error);
+        setLoading(false);
       }
+    };
 
+    fetchCategoryExplorer();
+  }, []);
 
+  var categoryExplore: CategoryExplorerProps = {
+    title: "Start exploring now",
+    categories: categories,
+    viewAllLabel: "View All",
+    onViewAllClick: handleViewAll,
+    itemWidth: "w-[180px]",
+    itemHeight: "h-[220px]",
+    showNavigationArrow: true,
+    onItemClick: handleCategoryClick,
+  };
 
   // scroll event
   const scrollContainerRef = useRef<HTMLDivElement>(null);
@@ -52,9 +49,10 @@ const CategoryExplorer: React.FC = () => {
 
     // Show left arrow if scrolled to the right
     setShowLeftArrow(container.scrollLeft > 20);
-    
+
     // Show right arrow if there's more content to scroll
-    const hasMoreToScroll = container.scrollWidth > container.clientWidth + container.scrollLeft + 20;
+    const hasMoreToScroll =
+      container.scrollWidth > container.clientWidth + container.scrollLeft + 20;
     setShowRightArrow(hasMoreToScroll);
   };
 
@@ -62,18 +60,18 @@ const CategoryExplorer: React.FC = () => {
   useEffect(() => {
     checkForArrows();
     const container = scrollContainerRef.current;
-    
+
     if (container) {
-      container.addEventListener('scroll', checkForArrows);
+      container.addEventListener("scroll", checkForArrows);
       // Check on window resize as well
-      window.addEventListener('resize', checkForArrows);
+      window.addEventListener("resize", checkForArrows);
     }
-    
+
     return () => {
       if (container) {
-        container.removeEventListener('scroll', checkForArrows);
+        container.removeEventListener("scroll", checkForArrows);
       }
-      window.removeEventListener('resize', checkForArrows);
+      window.removeEventListener("resize", checkForArrows);
     };
   }, [categories]);
 
@@ -81,7 +79,7 @@ const CategoryExplorer: React.FC = () => {
     if (scrollContainerRef.current) {
       scrollContainerRef.current.scrollBy({
         left: 300,
-        behavior: 'smooth'
+        behavior: "smooth",
       });
     }
   };
@@ -90,7 +88,7 @@ const CategoryExplorer: React.FC = () => {
     if (scrollContainerRef.current) {
       scrollContainerRef.current.scrollBy({
         left: -300,
-        behavior: 'smooth'
+        behavior: "smooth",
       });
     }
   };
@@ -99,12 +97,11 @@ const CategoryExplorer: React.FC = () => {
     <div className="w-full py-6 md:px-6">
       {/* Header with title and view all button */}
       <div className="flex items-center justify-between mb-4 p-2 !pl-0 relative">
-        <h2 className="header-2 font-bold text-gray-800">{categoryExplore.title}</h2>
-        <div className="absolute right-0 top-0">
-          <button
-            onClick={categoryExplore.onViewAllClick}
-            className="buttonText w-[8rem] h-[3rem] rounded-3xl border border-black"
-          >
+        <h2 className="header-2 font-bold text-gray-800">
+          {categoryExplore.title}
+        </h2>
+        <div className="absolute right-0 top-[2%]">
+          <button className="w-[8rem] h-[3rem] rounded-3xl border border-black bg-white hover:bg-black hover:text-white transition-all duration-300 ease-in-out">
             View All
           </button>
         </div>
@@ -123,7 +120,12 @@ const CategoryExplorer: React.FC = () => {
           className="flex overflow-x-auto gap-4 pb-4 -mx-4 px-4 scrollbar-hide"
         >
           {categories.map((category) => (
-            <CategoryCard category={category} itemWidth={categoryExplore.itemWidth} itemHeight={categoryExplore.itemHeight} onItemClick={categoryExplore.onItemClick}></CategoryCard>
+            <CategoryCard
+              category={category}
+              itemWidth={categoryExplore.itemWidth}
+              itemHeight={categoryExplore.itemHeight}
+              onItemClick={categoryExplore.onItemClick}
+            ></CategoryCard>
           ))}
         </div>
 
@@ -146,17 +148,15 @@ const CategoryExplorer: React.FC = () => {
             <MdChevronRight className="h-5 w-5 text-gray-500" />
           </button>
         )}
-        
+
         {/* Left gradient effect */}
         {showLeftArrow && (
-          <div className="absolute top-0 -left-1 h-full w-[5rem] bg-gradient-to-r from-white to-transparent pointer-events-none">
-          </div>
+          <div className="absolute top-0 -left-1 h-full w-[5rem] bg-gradient-to-r from-white to-transparent pointer-events-none"></div>
         )}
-        
+
         {/* Right gradient effect */}
         {showRightArrow && (
-          <div className="absolute top-0 -right-1 h-full w-[5rem] bg-gradient-to-l from-white to-transparent pointer-events-none">
-          </div>
+          <div className="absolute top-0 -right-1 h-full w-[5rem] bg-gradient-to-l from-white to-transparent pointer-events-none"></div>
         )}
       </div>
     </div>

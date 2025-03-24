@@ -1,27 +1,30 @@
 import React, { useRef, useState, useEffect } from "react";
-import { getButtonClass } from "../common/Button";
-import ProductCard from "../common/Card";
-import { MdChevronRight, MdChevronLeft } from 'react-icons/md';
+import { getButtonClass } from "../../common/Button";
+import ProductCard from "../../common/Card";
+import { MdChevronRight, MdChevronLeft } from "react-icons/md";
+import { LimitedDealItem } from "./models/limitedDeal.model";
+import { LimitedDealService } from "./services/litmitedDeal.service";
+const LimitedDeal: React.FC = () => {
+  // fetch data
+  const [limitedData, setLimitedData] = useState<LimitedDealItem[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
 
-interface Product {
-  id: number;
-  title: string;
-  description: string;
-  price: number;
-  originalPrice: number;
-  discount: number;
-  review: {
-    rating: number;
-    count: number;
-  };
-  imageUrl: string;
-}
+  useEffect(() => {
+    const fetchLimitedData = async () => {
+      try {
+        const data = await LimitedDealService.getLitmitedData();
+        setLimitedData(data);
+        setLoading(false);
+      } catch (error) {
+        console.error("Error fetching testimonials:", error);
+        setLoading(false);
+      }
+    };
 
-interface LimitedDealProps {
-  products: Product[];
-}
+    fetchLimitedData();
+  }, []);
 
-const LimitedDeal: React.FC<LimitedDealProps> = ({ products }) => {
+  // event slider
   const sliderRef = useRef<HTMLDivElement | null>(null);
   const [showLeftArrow, setShowLeftArrow] = useState(false);
   const [showRightArrow, setShowRightArrow] = useState(true);
@@ -43,7 +46,7 @@ const LimitedDeal: React.FC<LimitedDealProps> = ({ products }) => {
   // Check arrow visibility on initial load and when products change
   useEffect(() => {
     checkArrowVisibility();
-  }, [products]);
+  }, [limitedData]);
 
   const scroll = (direction: "left" | "right") => {
     if (sliderRef.current) {
@@ -78,7 +81,7 @@ const LimitedDeal: React.FC<LimitedDealProps> = ({ products }) => {
               className="flex justify-center items-center h-10 w-10 absolute left-3 top-1/2 -translate-y-1/2 z-20 bg-white bg-opacity-75 rounded-full p-2 shadow-md transition-opacity hover:bg-opacity-100"
               aria-label="Scroll left"
             >
-             <MdChevronLeft className="h-5 w-5 text-gray-500" />
+              <MdChevronLeft className="h-5 w-5 text-gray-500" />
             </button>
           </>
         )}
@@ -93,7 +96,7 @@ const LimitedDeal: React.FC<LimitedDealProps> = ({ products }) => {
           }}
           onScroll={checkArrowVisibility}
         >
-          {products.map((product) => (
+          {limitedData.map((product) => (
             <div key={product.id} className="min-w-[280px]">
               <ProductCard
                 title={product.title}
@@ -123,12 +126,8 @@ const LimitedDeal: React.FC<LimitedDealProps> = ({ products }) => {
         )}
       </div>
 
-      <div className="absolute right-0 top-0">
-        <button
-          className={`${getButtonClass(
-            ""
-          )} w-[8rem] h-[3rem] rounded-3xl border border-black`}
-        >
+      <div className="absolute right-[1%] top-[2%]">
+        <button className="w-[8rem] h-[3rem] rounded-3xl border border-black bg-white hover:bg-black hover:text-white transition-all duration-300 ease-in-out">
           View All
         </button>
       </div>
@@ -136,4 +135,4 @@ const LimitedDeal: React.FC<LimitedDealProps> = ({ products }) => {
   );
 };
 
-export { LimitedDeal };
+export default LimitedDeal;

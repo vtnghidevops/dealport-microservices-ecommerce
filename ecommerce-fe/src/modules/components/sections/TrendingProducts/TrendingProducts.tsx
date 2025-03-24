@@ -68,12 +68,9 @@ const TrendingProducts: React.FC = () => {
           <MenCollection products={menCollection}></MenCollection>
         </div>
       </div>
-      <div className="absolute right-[5%] top-0">
-        <button
-          className={`${getButtonClass(
-            ""
-          )} w-[8rem] h-[3rem] rounded-3xl border border-black`}
-        >
+
+      <div className="absolute right-[5%] top-[2%]">
+        <button className="w-[8rem] h-[3rem] rounded-3xl border border-black bg-white hover:bg-black hover:text-white transition-all duration-300 ease-in-out">
           View All
         </button>
       </div>

@@ -85,7 +85,7 @@ const HappyCustomers: React.FC = () => {
           </div>
         </div>
 
-        <div className="text-center mt-[4rem] flex items-center justify-center">
+        <div className="text-center mt-[4rem] flex items-center justify-center ">
           <Button type="primary-cy" text="GET STARTED"></Button>
         </div>
       </div>

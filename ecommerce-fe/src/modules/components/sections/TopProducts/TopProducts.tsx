@@ -51,10 +51,11 @@ const TopProducts: React.FC  = () => {
         <h2 className="header-2 font-bold">{topProducts.title}</h2>
         <button
           onClick={topProducts.onViewAllClick}
-          className="w-[8rem] h-[3rem] rounded-3xl border border-black text-sm"
+          className="w-[8rem] h-[3rem] rounded-3xl border border-black bg-white hover:bg-black hover:text-white transition-all duration-300 ease-in-out"
         >
           {topProducts.viewAllLabel}
         </button>
+        
       </div>
 
       {/* Grid layout */}

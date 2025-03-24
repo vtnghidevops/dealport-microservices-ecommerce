@@ -4,8 +4,9 @@ import { RxArrowTopRight } from "react-icons/rx";
 
 
 const buttonClasses =
-  "absolute bottom-[5%] left-1/2 -translate-x-1/2 text-[12px] w-[7rem] h-[2rem] rounded-3xl bg-white flex items-center justify-center";
-// Product Card Component
+  "flex justify-center bg-white items-center absolute bottom-[5%] left-1/2 -translate-x-1/2 text-[12px] w-[7rem] h-[2rem] rounded-3xl hover:bg-aqua-spring hover:shadow-md transition-all duration-300 ease-out";
+
+  // Product Card Component
 const ProductCardItem: React.FC<ProductCard> = ({ product, onClick }) => {
   const {
     name,
@@ -35,8 +36,8 @@ const ProductCardItem: React.FC<ProductCard> = ({ product, onClick }) => {
             ${price}
           </span>
           {actionLabel === "Visit store" ? (
-            <button className="absolute bottom-[5%] left-1/2 -translate-x-1/2 text-[12px] w-[7rem] h-[2rem] rounded-3xl bg-white  flex items-center justify-center ">
-              <span className="flex justify-center items-center ml-[-0.5rem]">
+            <button className={buttonClasses}>
+              <span className="flex justify-center items-center ml-[-0.5rem] ">
                 {actionLabel}
               </span>
               <div className="bg-white border border-black w-[1.2rem] h-[1.2rem] rounded-[50%] absolute flex items-center justify-center right-2">
@@ -44,7 +45,7 @@ const ProductCardItem: React.FC<ProductCard> = ({ product, onClick }) => {
               </div>
             </button>
           ) : (
-            <button className="absolute bottom-[5%] left-1/2 -translate-x-1/2 text-[12px] w-[7rem] h-[2rem] rounded-3xl bg-white  flex items-center justify-center ">
+            <button className={`${buttonClasses} bg-ocean-blue`}>
               <span className="flex justify-center items-center">
                 {actionLabel}
               </span>
@@ -63,7 +64,7 @@ const ProductCardItem: React.FC<ProductCard> = ({ product, onClick }) => {
             className="rounded-xl w-[310px] h-[420px]"
           ></img>
         </a>
-        <button className="text-white absolute bottom-[5%] left-1/2 -translate-x-1/2 text-[12px] w-[7rem] h-[2rem] rounded-3xl bg-ocean-blue flex items-center justify-center ">
+        <button className={`${buttonClasses}`}>
           <span className="flex justify-center items-center ml-[-0.5rem]">
             {actionLabel}
           </span>
@@ -107,3 +108,4 @@ const ProductCardItem: React.FC<ProductCard> = ({ product, onClick }) => {
 };
 
 export default ProductCardItem;
+
