@@ -1,4 +1,4 @@
-import { TrendingProductItem } from "../../TrendingProducts/models/trendingProducts.model";
+
 
 export interface LimitedDealItem {
   id: number;

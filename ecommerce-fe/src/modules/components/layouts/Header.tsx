@@ -6,7 +6,7 @@ import { TbMinusVertical } from "react-icons/tb";
 import { FiSearch } from "react-icons/fi";
 import { IoMenu } from "react-icons/io5";
 
-const Logo = () => {
+const Logo: React.FC = () => {
   return (
     <a href="/">
       <img src="images/common/logo.png" alt="logo" className="h-7" />
@@ -14,7 +14,7 @@ const Logo = () => {
   );
 };
 
-const SearchBar = () => {
+const SearchBar: React.FC = () => {
   return (
     <div className="flex items-center justify-between bg-aqua-spring rounded-full px-4 py-2 w-[25rem]">
       <input
@@ -30,7 +30,7 @@ const SearchBar = () => {
   );
 };
 
-export default function Header() {
+const Header: React.FC = () => {
   return (
     <>
       <header className="flex justify-between items-center p-4 border-b-2 border-gray-200 h-[5rem] w-full">
@@ -115,3 +115,4 @@ export default function Header() {
     </>
   );
 }
+export default Header;

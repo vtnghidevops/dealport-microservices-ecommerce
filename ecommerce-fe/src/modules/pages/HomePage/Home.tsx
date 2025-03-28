@@ -1,4 +1,6 @@
 import React from "react";
+import Header from "../../components/layouts/Header";
+import Footer from "../../components/layouts/Footer";
 import { HappyCustomers } from "../../components/sections/HappyCustomers";
 import { TrendingProducts } from "../../components/sections/TrendingProducts";
 import { CategoryExplorer } from "../../components/sections/CategoryExplorer";
@@ -10,8 +12,11 @@ import { DisplayGrid } from "../../components/sections/Ads";
 import { NewFashion } from "../../components/sections/Ads";
 import { GamingBanner } from "../../components/sections/Ads";
 
+
 export default function Home() {
   return (
+    <>
+    <Header></Header>
     <div>
       <HeroBanner></HeroBanner>
       <div>
@@ -60,5 +65,7 @@ export default function Home() {
         </div>
       </div>
     </div>
+    <Footer></Footer>
+    </>
   );
 }
