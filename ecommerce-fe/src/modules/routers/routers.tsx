@@ -6,6 +6,7 @@ import Home from '../pages/HomePage/Home';
 import DashboardAdmin from '../pages/admin/dashboard/Dashboard';
 import OrderPage from '../pages/admin/order'; // Import Order Management page
 import AdminLayout from '../components/admin/layout/AdminLayout';
+import CustomerManagement from '../components/admin/customer/CustomerManagement';
 const AppRouters: React.FC = () => {
   return (
     <Router>
@@ -16,6 +17,7 @@ const AppRouters: React.FC = () => {
           <Route index element={<DashboardAdmin />} />
           <Route path="dashboard" element={<DashboardAdmin />} />
           <Route path="orders" element={<OrderPage />} />
+          <Route path="customers" element={<CustomerManagement />} />
         </Route>
 
         {/* Redirect if route not found */}
