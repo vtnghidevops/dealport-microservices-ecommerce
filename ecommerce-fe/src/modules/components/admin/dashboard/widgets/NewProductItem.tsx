@@ -1,5 +1,5 @@
 import React from 'react';
-import { NewProduct } from '../../../sections/AdminDashboard/models/product.model';
+import { NewProduct } from '../models/product.model';
 import { FiPlusCircle } from "react-icons/fi";
 interface NewProductItemProps {
   product: NewProduct;

@@ -1,40 +1,44 @@
 import React, { useEffect, useState } from "react";
+
+// Layout Components
 import Sidebar from "../../../components/admin/layout/Sidebar";
 import AdminHeader from "../../../components/admin/layout/AdminHeader";
+
+// Dashboard Components
 import { DashboardCard } from "../../../components/admin/dashboard/cards";
 import WeeklyReportChart from "../../../components/admin/dashboard/charts/WeeklyReportChart";
-import { DashboardService } from "../../../components/sections/AdminDashboard/services/dashboard.service";
-import { TransactionService } from "../../../components/sections/AdminDashboard/services/transaction.service";
-import { ProductService } from "../../../components/sections/AdminDashboard/services/product.service";
-import { DashboardSummary } from "../../../components/sections/AdminDashboard/models/dashboard.model";
-import { Transaction } from "../../../components/sections/AdminDashboard/models/transaction.model";
-import {
-  BestSellingProduct,
-  NewProduct,
-  ProductCategory,
-} from "../../../components/sections/AdminDashboard/models/product.model";
-import { HiOutlineDotsVertical } from "react-icons/hi";
 import UserActivityChart from "../../../components/admin/dashboard/charts/UserActivityChart";
 import TransactionTable from "../../../components/admin/dashboard/tables/TransactionTable";
-import { Product } from "../../../components/sections/AdminDashboard/models/product.model";
-import { IoFilterSharp } from "react-icons/io5";
-import { CiCirclePlus } from "react-icons/ci";
 import TopProductsTable from "../../../components/admin/dashboard/cards/TopProducts";
 import BestSellingTable from "../../../components/admin/dashboard/tables/BestSellingTable";
 import ProductCategoryList from "../../../components/admin/dashboard/widgets/ProductCategoryList";
 import NewProductList from "../../../components/admin/dashboard/widgets/NewProductList";
+
+// Services
+import { DashboardService } from "../../../components/admin/dashboard/services/dashboard.service";
+import { TransactionService } from "../../../components/admin/dashboard/services/transaction.service";
+import { ProductService } from "../../../components/admin/dashboard/services/product.service";
+
+// Models
+import { DashboardSummary } from "../../../components/admin/dashboard/models/dashboard.model";
+import { Transaction } from "../../../components/admin/dashboard/models/transaction.model";
+import {
+  BestSellingProduct,
+  NewProduct,
+  ProductCategory,
+  Product,
+} from "../../../components/admin/dashboard/models/product.model";
+
+// Icons
+import { HiOutlineDotsVertical } from "react-icons/hi";
+import { IoFilterSharp } from "react-icons/io5";
+import { CiCirclePlus } from "react-icons/ci";
 const DashboardAdmin: React.FC = () => {
   const [loading, setLoading] = useState<boolean>(true);
-  const [dashboardData, setDashboardData] = useState<DashboardSummary | null>(
-    null
-  );
+  const [dashboardData, setDashboardData] = useState<DashboardSummary | null>(null);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
-  const [bestSellingProducts, setBestSellingProducts] = useState<
-    BestSellingProduct[]
-  >([]);
-  const [productCategories, setProductCategories] = useState<ProductCategory[]>(
-    []
-  );
+  const [bestSellingProducts, setBestSellingProducts] = useState<BestSellingProduct[]>([]);
+  const [productCategories, setProductCategories] = useState<ProductCategory[]>([]);
   const [newProducts, setNewProducts] = useState<NewProduct[]>([]);
   const [topProducts, setTopProducts] = useState<Product[]>([])
 
@@ -77,30 +81,24 @@ const DashboardAdmin: React.FC = () => {
 
   if (loading || !dashboardData) {
     return (
-      <div className="flex border-t-2">
-        <Sidebar isOpen={true} />
-        <div className="flex-1 flex flex-col ">
-          <AdminHeader/>
-          <div className="flex-1 flex items-center justify-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
-          </div>
-        </div>
+      <div className="flex justify-center items-center h-screen">
+        <div className="animate-spin rounded-full h-24 w-24 border-t-2 border-b-2 border-blue-500"></div>
       </div>
     );
   }
 
   return (
-    <div className="flex bg-gray-50 border-t-2">
-      <Sidebar isOpen={true} />
+      <div className="flex bg-neutral-50 ">
+      {/* <Sidebar isOpen={true} /> */}
       <div className="flex-1 overflow-auto">
-        <AdminHeader />
+        <AdminHeader title="Dashboard"/>
         <main className="p-[1rem]">
           {/* Metric Cards */}
           <div className="flex flex-col md:flex-row gap-[18px] mb-6">
             <DashboardCard
               type="sales"
               title="Total Sales"
-              amount={dashboardData.totalSales.amount}
+              amount={dashboardData?.totalSales?.amount || 0}
               currency={dashboardData.totalSales.currency}
               percentChange={dashboardData.totalSales.percentChange}
               previousAmount={dashboardData.totalSales.previousAmount}
@@ -268,7 +266,7 @@ const DashboardAdmin: React.FC = () => {
          
         </main>
       </div>
-    </div>
+    </div>    
   );
 };
 

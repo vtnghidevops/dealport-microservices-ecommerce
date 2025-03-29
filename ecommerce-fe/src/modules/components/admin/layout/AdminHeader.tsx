@@ -4,20 +4,22 @@ import { FiSearch, FiBell, FiMenu } from "react-icons/fi";
 interface AdminHeaderProps {
   userName?: string;
   userAvatar?: string;
+  title: string;
 }
 
 const AdminHeader: React.FC<AdminHeaderProps> = ({
   userName = "Admin",
   userAvatar = "/images/common/avatars/admin.png",
+  title = "Dashboard",
 }) => {
   const [searchQuery, setSearchQuery] = useState("");
 
   return (
-    <header className="bg-white h-[96px] px-[1rem] shadow-sm border-b border-gray-200 py-3 flex items-center justify-between">
+    <header className="bg-white h-[96px] px-[1rem] shadow-sm border-b border-gray-200 py-3 flex items-center justify-between border-t">
       {/* Left section */}
       <div className="flex items-center gap-4">
         <h1 className="font-bold text-[22px] text-gray-800 hidden md:block px-[1rem]">
-          Dashboard
+            {title}
         </h1>
       </div>
 

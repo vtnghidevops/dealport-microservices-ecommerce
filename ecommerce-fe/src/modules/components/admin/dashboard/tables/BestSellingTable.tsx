@@ -1,5 +1,5 @@
 import React from 'react';
-import { BestSellingProduct } from '../../../sections/AdminDashboard/models/product.model';
+import { BestSellingProduct } from '../models/product.model';
 
 interface BestSellingTableProps {
   bestProducts: BestSellingProduct[];

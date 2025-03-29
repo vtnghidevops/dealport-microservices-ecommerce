@@ -1,5 +1,5 @@
 import React from 'react';
-import { ProductCategory } from '../../../sections/AdminDashboard/models/product.model';
+import { ProductCategory } from '../models/product.model';
 import { IoChevronForward } from 'react-icons/io5';
 
 interface ProductCategoryListProps {

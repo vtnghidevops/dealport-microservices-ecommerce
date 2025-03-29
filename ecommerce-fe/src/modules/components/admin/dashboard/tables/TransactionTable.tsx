@@ -1,5 +1,5 @@
 import React from 'react';
-import { Transaction } from '../../../sections/AdminDashboard/models/transaction.model';
+import { Transaction } from '../models/transaction.model';
 
 interface TransactionTableProps {
   transactions: Transaction[];

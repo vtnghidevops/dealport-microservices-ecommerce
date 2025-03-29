@@ -1,4 +1,4 @@
-import { CategoryItem } from "../components/sections/CategoryExplorer/models/category.model";
+import { CategoryItem } from './../components/homepage/CategoryExplorer/models/category.model';
 export const handleViewAll = () => {
   console.log("View all categories clicked");
   // Navigate to all categories page

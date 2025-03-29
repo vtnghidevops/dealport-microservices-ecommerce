@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Product } from '../../../sections/AdminDashboard/models/product.model';
+import { Product } from '../models/product.model';
 
 // interface Product {
 //   id: number;

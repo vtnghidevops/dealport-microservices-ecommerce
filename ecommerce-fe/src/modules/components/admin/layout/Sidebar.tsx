@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { NavLink } from "react-router-dom";
 import { TiHome } from "react-icons/ti";
 import { IoCartOutline } from "react-icons/io5";
 import { LuUsersRound } from "react-icons/lu";
@@ -111,7 +112,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen = true, onToggle }) => {
 
   return (
     <aside
-      className={`bg-white w-[260px] border-r border-gray-300 shadow-lg transition-all duration-300 ease-in-out flex flex-col ${
+      className={`bg-white w-[260px] border-r border-t border-gray-300 shadow-lg transition-all duration-300 ease-in-out flex flex-col ${
         sidebarOpen ? "translate-x-0" : "-translate-x-[200px] w-[60px]"
       } md:translate-x-0 fixed md:relative z-10`}
     >
@@ -120,7 +121,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen = true, onToggle }) => {
         ${sidebarOpen ? "relative" : ""}`}
       >
         <img
-          src="images/common/logo.png"
+          src="/images/common/logo.png"
           alt="Logo"
           className={`text-2xl font-bold text-gray-800 max-w-[8rem] cursor-pointer transition-opacity duration-300 ${
             !sidebarOpen && "opacity-0"
@@ -160,7 +161,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen = true, onToggle }) => {
                       key={childIndex}
                       className={`py-1 my-3 mb-0 w-full justify-center items-center flex ${
                         sidebarOpen
-                          ? "h-[2.5rem] rounded-xl"
+                          ? "h-[2.5rem] rounded-[8px]"
                           : "h-[1.8rem] rounded-[10px]"
                       } ${
                         activeLink === child.link
@@ -169,8 +170,8 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen = true, onToggle }) => {
                       }`}
                       title={!sidebarOpen ? child.name : ""}
                     >
-                      <a
-                        href={child.link}
+                      <NavLink
+                        to={child.link}
                         className={`w-full flex items-center px-[0.5rem] ${
                           !sidebarOpen ? "justify-center" : "justify-start"
                         } ${
@@ -188,7 +189,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen = true, onToggle }) => {
                             {child.name}
                           </span>
                         )}
-                      </a>
+                      </NavLink>
                     </li>
                   ))}
                 </ul>

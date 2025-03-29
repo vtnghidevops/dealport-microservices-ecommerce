@@ -1,6 +1,6 @@
 import React from 'react';
 import NewProductItem from './NewProductItem';
-import { NewProduct } from '../../../sections/AdminDashboard/models/product.model';
+import { NewProduct } from '../models/product.model';
 
 
 interface NewProductListProps {

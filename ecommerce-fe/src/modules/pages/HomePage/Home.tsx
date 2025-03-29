@@ -1,16 +1,16 @@
 import React from "react";
 import Header from "../../components/layouts/Header";
 import Footer from "../../components/layouts/Footer";
-import { HappyCustomers } from "../../components/sections/HappyCustomers";
-import { TrendingProducts } from "../../components/sections/TrendingProducts";
-import { CategoryExplorer } from "../../components/sections/CategoryExplorer";
-import { TopProducts } from "../../components/sections/TopProducts";
-import { LimitedDeal } from "../../components/sections/LimitedDeal";
-import { HeroBanner } from "../../components/sections/SliderBanner";
-import { BannerShowCase } from "../../components/sections/Ads";
-import { DisplayGrid } from "../../components/sections/Ads";
-import { NewFashion } from "../../components/sections/Ads";
-import { GamingBanner } from "../../components/sections/Ads";
+import { HappyCustomers } from "../../components/homepage/HappyCustomers";
+import { TrendingProducts } from "../../components/homepage/TrendingProducts";
+import { CategoryExplorer } from "../../components/homepage/CategoryExplorer";
+import { TopProducts } from "../../components/homepage/TopProducts";
+import { LimitedDeal } from "../../components/homepage/LimitedDeal";
+import { HeroBanner } from "../../components/homepage/SliderBanner";
+import { BannerShowCase } from "../../components/homepage/Ads";
+import { DisplayGrid } from "../../components/homepage/Ads";
+import { NewFashion } from "../../components/homepage/Ads";
+import { GamingBanner } from "../../components/homepage/Ads";
 
 
 export default function Home() {

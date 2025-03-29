@@ -4,18 +4,21 @@ import { BrowserRouter as Router, Route, Routes, Navigate } from 'react-router-d
 // Import các components trang
 import Home from '../pages/HomePage/Home';
 import DashboardAdmin from '../pages/admin/dashboard/Dashboard';
-import Sidebar from '../components/admin/layout/Sidebar';
-
+import OrderPage from '../pages/admin/order'; // Import Order Management page
+import AdminLayout from '../components/admin/layout/AdminLayout';
 const AppRouters: React.FC = () => {
   return (
     <Router>
       <Routes>
         <Route path="/" element={<Home />} />
 
-        {/* Route cho trang admin dashboard */}
-        <Route path="/admin" element={<DashboardAdmin/>} />
+        <Route path="/admin" element={<AdminLayout />}>
+          <Route index element={<DashboardAdmin />} />
+          <Route path="dashboard" element={<DashboardAdmin />} />
+          <Route path="orders" element={<OrderPage />} />
+        </Route>
 
-        {/* Redirect nếu không tìm thấy route */}
+        {/* Redirect if route not found */}
         <Route path="*" element={<Navigate to="/" />} />
       </Routes>
     </Router>
