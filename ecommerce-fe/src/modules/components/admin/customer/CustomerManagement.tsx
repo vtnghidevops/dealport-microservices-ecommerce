@@ -4,8 +4,7 @@ import { CustomerSummaryCard } from "./cards/CustomerSummaryCard";
 import CustomerTable from "./tables/CustomerTable";
 import CustomerActivityChart from "./charts/CustomerActivityChart";
 import CustomerSidebar from "./detail/CustomerSidebar";
-import CustomerFilter from "./filter/CustomerFilter";
-import { FiPlusCircle } from "react-icons/fi";
+import Pagination from '../../common/Pagination';
 import { IoMdArrowRoundBack, IoMdArrowRoundForward } from "react-icons/io";
 import {
   Customer,
@@ -15,7 +14,7 @@ import {
   CustomerChartData,
 } from "./models/customer.model";
 import { CustomerService } from "./services/customer.service";
-import { showSuccess, showError } from "../../../utils/notifications";
+
 
 const CustomerManagement: React.FC = () => {
   // State variables
@@ -175,80 +174,6 @@ const CustomerManagement: React.FC = () => {
     }
   }, [filterParams.page, filterParams.limit, allCustomersCache]);
 
-  // Pagination rendering
-  const renderPagination = () => {
-    const totalPages = Math.ceil(totalCustomers / filterParams.limit);
-    const pages: JSX.Element[] = [];
-    const currentPage = filterParams.page;
-
-    pages.push(
-      <button
-        onClick={() => handlePageChange(currentPage - 1)}
-        disabled={currentPage === 1}
-        className={`absolute left-0 px-4 py-2 w-[120px] h-[45px] justify-center flex items-center border rounded-xl ${
-          currentPage === 1
-            ? "bg-gray-100 text-gray-400"
-            : "bg-white text-[16px] font-medium shadow-md"
-        }`}
-      >
-        <IoMdArrowRoundBack className="mr-2 h-[20px] w-[20px]" />
-        Previous
-      </button>
-    );
-
-    for (let i = 1; i <= Math.min(5, totalPages); i++) {
-      pages.push(
-        <button
-          key={i}
-          className={`px-3 py-1 rounded-md w-[36px] h-[36px] ${
-            currentPage === i ? "bg-[#C1E6BA] text-black" : "border"
-          }`}
-          onClick={() => handlePageChange(i)}
-        >
-          {i}
-        </button>
-      );
-    }
-
-    if (totalPages > 5) {
-      pages.push(<span key="ellipsis">...</span>);
-      pages.push(
-        <button
-          key={totalPages}
-          className={`px-3 py-1 rounded-md ${
-            currentPage === totalPages
-              ? "bg-aqua-spring text-white"
-              : "border border-neutral-50"
-          }`}
-          onClick={() => handlePageChange(totalPages)}
-        >
-          {totalPages}
-        </button>
-      );
-    }
-
-    pages.push(
-      <button
-        onClick={() => handlePageChange(currentPage + 1)}
-        disabled={currentPage === totalPages}
-        className={`absolute right-0 px-4 py-2 w-[120px] h-[45px] justify-center flex items-center border rounded-xl ${
-          currentPage === totalPages
-            ? "bg-gray-100 text-gray-400"
-            : "bg-white text-[16px] font-medium shadow-md"
-        }`}
-      >
-        Next
-        <IoMdArrowRoundForward className="ml-2 h-[24px] w-[24px]" />
-      </button>
-    );
-
-    return (
-      <div className="relative flex justify-center items-center space-x-2 mt-5">
-        {pages}
-      </div>
-    );
-  };
-
   // Component rendering
   return (
     <div className="flex bg-neutral-50">
@@ -322,15 +247,23 @@ const CustomerManagement: React.FC = () => {
                       <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-blue-500"></div>
                     </div>
                   ) : (
-                      <CustomerTable
-                        customers={displayedCustomers}
-                        onViewCustomer={handleViewCustomer}
-                        selectedCustomerId={selectedCustomer?.id}
+                    <CustomerTable
+                      customers={displayedCustomers}
+                      onViewCustomer={handleViewCustomer}
+                      selectedCustomerId={selectedCustomer?.id}
+                    />
+                  )}
+                  {!loading && (
+                    <div className="mt-[3rem]">
+                      {/* {renderPagination()} */}
+                      <Pagination
+                        currentPage={filterParams.page}
+                        totalItems={totalCustomers}
+                        pageSize={filterParams.limit}
+                        onPageChange={handlePageChange}
                       />
-                    )}
-                    {!loading && (
-                        <div className="mt-[3rem]">{renderPagination()}</div>
-                    )}
+                    </div>
+                  )}
                 </div>
 
                 {showSidebar && selectedCustomer && (
@@ -339,8 +272,6 @@ const CustomerManagement: React.FC = () => {
                   </div>
                 )}
               </div>
-
-              
             </div>
           </div>
         </main>
