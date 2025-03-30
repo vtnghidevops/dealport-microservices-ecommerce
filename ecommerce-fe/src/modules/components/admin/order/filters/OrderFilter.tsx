@@ -144,3 +144,55 @@ export const OrderFilter: React.FC<OrderFilterProps> = ({
     </div>
   );
 };
+// Updated OrderFilter component to use the reusable components
+// import React from 'react';
+// import TabFilter from '../../../common/TabFilter';
+// import SearchFilter from '../../../common/SearchFilter';
+
+// interface OrderFilterProps {
+//   onSearch: (searchTerm: string) => void;
+//   onFilterChange: (filter: string) => void;
+//   counts?: {
+//     all: number;
+//     completed: number;
+//     pending: number;
+//     shipped: number;
+//     cancelled: number;
+//   };
+//   activeFilter: string;
+//   loading?: boolean;
+// }
+
+// export const OrderFilter: React.FC<OrderFilterProps> = ({ 
+//   onSearch, 
+//   onFilterChange, 
+//   counts = { all: 0, completed: 0, pending: 0, shipped: 0, cancelled: 0 },
+//   activeFilter = "All order",
+//   loading = false
+// }) => {
+//   // Filter tabs configuration
+//   const filterTabs = [
+//     { id: "All order", label: "All order", count: counts.all },
+//     { id: "Completed", label: "Completed", count: counts.completed },
+//     { id: "Pending", label: "Pending", count: counts.pending },
+//     { id: "Cancelled", label: "Cancelled", count: counts.cancelled },
+//   ];
+  
+//   return (
+//     <div className="flex flex-col md:flex-row justify-between mb-5">
+//       <TabFilter
+//         tabs={filterTabs}
+//         activeTab={activeFilter}
+//         onTabChange={onFilterChange}
+//         loading={loading}
+//         containerClassName="bg-aqua-spring w-[540px] h-[40px]"
+//       />
+
+//       <SearchFilter
+//         onSearch={onSearch}
+//         placeholder="Search order report"
+//         showFilterButtons={true}
+//       />
+//     </div>
+//   );
+// };

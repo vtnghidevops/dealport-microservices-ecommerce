@@ -14,6 +14,7 @@ import {
 import { orderService } from "./services/order.service";
 import { AddOrderModal, NewOrderData } from "./modals/AddOrderModal";
 import { showSuccess, showError } from "../../../utils/notifications";
+import Pagination from "../../common/Pagination";
 
 export const OrderManagement: React.FC = () => {
   // State variables
@@ -226,79 +227,6 @@ export const OrderManagement: React.FC = () => {
     }
   }, [filterParams.page, filterParams.limit, allOrdersCache]);
 
-  // Pagination rendering
-  const renderPagination = () => {
-    const totalPages = Math.ceil(totalOrders / filterParams.limit);
-    const pages: JSX.Element[] = [];
-    const currentPage = filterParams.page;
-
-    pages.push(
-      <button
-        onClick={() => handlePageChange(currentPage - 1)}
-        disabled={currentPage === 1}
-        className={`absolute left-0 px-4 py-2 w-[120px] h-[45px] justify-center flex items-center border rounded-xl ${
-          currentPage === 1
-            ? "bg-gray-100 text-gray-400"
-            : "bg-white text-[16px] font-medium shadow-md"
-        }`}
-      >
-        <IoMdArrowRoundBack className="mr-2 h-[20px] w-[20px]" />
-        Previous
-      </button>
-    );
-
-    for (let i = 1; i <= Math.min(5, totalPages); i++) {
-      pages.push(
-        <button
-          key={i}
-          className={`px-3 py-1 rounded-md w-[36px] h-[36px] ${
-            currentPage === i ? "bg-[#C1E6BA] text-black" : "border"
-          }`}
-          onClick={() => handlePageChange(i)}
-        >
-          {i}
-        </button>
-      );
-    }
-
-    if (totalPages > 5) {
-      pages.push(<span key="ellipsis">...</span>);
-      pages.push(
-        <button
-          key={totalPages}
-          className={`px-3 py-1 rounded-md ${
-            currentPage === totalPages
-              ? "bg-aqua-spring text-white"
-              : "border border-neutral-50"
-          }`}
-          onClick={() => handlePageChange(totalPages)}
-        >
-          {totalPages}
-        </button>
-      );
-    }
-
-    pages.push(
-      <button
-        onClick={() => handlePageChange(currentPage + 1)}
-        disabled={currentPage === totalPages}
-        className={`absolute right-0 px-4 py-2 w-[120px] h-[45px] justify-center flex items-center border rounded-xl ${
-          currentPage === totalPages
-            ? "bg-gray-100 text-gray-400"
-            : "bg-white text-[16px] font-medium shadow-md"
-        }`}
-      >
-        Next
-        <IoMdArrowRoundForward className="ml-2 h-[24px] w-[24px]" />
-      </button>
-    );
-
-    return (
-      <div className="relative flex justify-center items-center space-x-2 mt-5">
-        {pages}
-      </div>
-    );
-  };
 
   // Component rendering
   return (
@@ -368,6 +296,13 @@ export const OrderManagement: React.FC = () => {
                 counts={filterCounts}
                 loading={loading}
               />
+              {/* <OrderFilter
+                onSearch={handleSearch}
+                onFilterChange={handleFilterChange}
+                counts={filterCounts}
+                activeFilter={activeStatus}
+                loading={loading}
+              /> */}
 
               {loading ? (
                 <div className="flex justify-center py-10">
@@ -380,7 +315,25 @@ export const OrderManagement: React.FC = () => {
                     onStatusChange={handleStatusChange}
                     onViewDetails={handleViewDetails}
                   />
-                  <div className="mt-[3rem]">{renderPagination()}</div>
+                  {/* <OrderTable
+                    orders={orders}
+                    onStatusChange={handleStatusChange}
+                    onViewDetails={handleViewDetails}
+                    totalItems={totalOrders}
+                    currentPage={filterParams.page}
+                    pageSize={filterParams.limit}
+                    onPageChange={handlePageChange}
+                    loading={loading}
+                  /> */}
+                  <div className="mt-[3rem]">
+                    {/* {renderPagination()} */}
+                    <Pagination
+                        currentPage={filterParams.page}
+                        totalItems={totalOrders}
+                        pageSize={filterParams.limit}
+                        onPageChange={handlePageChange}
+                      />
+                  </div>
                 </>
               )}
             </div>

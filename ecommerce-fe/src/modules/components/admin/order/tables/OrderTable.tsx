@@ -134,3 +134,159 @@ export const OrderTable: React.FC<OrderTableProps> = ({
     </div>
   );
 };
+// Updated OrderTable component to use the reusable TableComponent
+// import React from "react";
+// import { Order, OrderStatus } from "../models/order.model";
+// import { CiDeliveryTruck } from "react-icons/ci";
+// import TableComponent from "../../../common/TableComponent";
+
+// interface OrderTableProps {
+//   orders: Order[];
+//   onStatusChange?: (orderId: string, status: OrderStatus) => void;
+//   onViewDetails?: (orderId: string) => void;
+//   totalItems: number;
+//   currentPage: number;
+//   pageSize: number;
+//   onPageChange: (page: number) => void;
+//   loading?: boolean;
+// }
+
+// export const OrderTable: React.FC<OrderTableProps> = ({
+//   orders,
+//   onStatusChange,
+//   onViewDetails,
+//   totalItems,
+//   currentPage,
+//   pageSize,
+//   onPageChange,
+//   loading = false,
+// }) => {
+//   const getStatusIcon = (status: OrderStatus) => {
+//     switch (status) {
+//       case "Delivered":
+//         return (
+//           <div className="flex items-center text-green-500">
+//             <CiDeliveryTruck className="h-[20px] w-[20px] mr-1"></CiDeliveryTruck>
+//             <span>Delivered</span>
+//           </div>
+//         );
+//       case "Pending":
+//         return (
+//           <div className="flex items-center text-amber-500">
+//             <CiDeliveryTruck className="h-[20px] w-[20px] mr-1"></CiDeliveryTruck>
+//             <span>Pending</span>
+//           </div>
+//         );
+//       case "Shipped":
+//         return (
+//           <div className="flex items-center">
+//             <CiDeliveryTruck className="h-[20px] w-[20px] mr-1"></CiDeliveryTruck>
+//             <span>Shipped</span>
+//           </div>
+//         );
+//       case "Cancelled":
+//         return (
+//           <div className="flex items-center text-red-500">
+//             <CiDeliveryTruck className="h-[20px] w-[20px] mr-1"></CiDeliveryTruck>
+//             <span>Cancelled</span>
+//           </div>
+//         );
+//       default:
+//         return <span>{status}</span>;
+//     }
+//   };
+
+//   const getPaymentStatusIcon = (paymentStatus: "Paid" | "Unpaid") => {
+//     switch (paymentStatus) {
+//       case "Paid":
+//         return (
+//           <div className="flex items-center">
+//             <span className="w-2 h-2 bg-green-500 rounded-full mr-2"></span>
+//             <span>Paid</span>
+//           </div>
+//         );
+//       case "Unpaid":
+//         return (
+//           <div className="flex items-center">
+//             <span className="w-2 h-2 bg-red-500 rounded-full mr-2"></span>
+//             <span>Unpaid</span>
+//           </div>
+//         );
+//       default:
+//         return null;
+//     }
+//   };
+
+//   // Prepare normalized data for the table
+//   const normalizedOrders = orders.flatMap((order) =>
+//     order.products.map((product, idx) => ({
+//       ...order,
+//       product,
+//       productIndex: idx,
+//       uniqueId: `${order.id}-${idx}`
+//     }))
+//   );
+
+//   // Define columns for the table
+//   const columns = [
+//     {
+//       header: "Order Id",
+//       key: "orderId",
+//       render: (row: any) => (
+//         <span className="font-medium text-[15px]">#{row.orderId}</span>
+//       ),
+//     },
+//     {
+//       header: "Product",
+//       key: "product",
+//       render: (row: any) => (
+//         <div className="flex items-center">
+//           <div className="border border-neutral-200 w-[40px] h-[40px] mr-3 rounded flex items-center justify-center overflow-hidden">
+//             <img
+//               src={row.product.productImage}
+//               alt={row.product.productName}
+//               className="object-contain"
+//             />
+//           </div>
+//           <span className="text-[15px] max-w-[140px]">{row.product.productName}</span>
+//         </div>
+//       ),
+//     },
+//     {
+//       header: "Date",
+//       key: "date",
+//       render: (row: any) => <span className="text-[15px]">{row.date}</span>,
+//     },
+//     {
+//       header: "Price",
+//       key: "price",
+//       render: (row: any) => <span className="text-[15px]">{row.product.price.toFixed(2)}</span>,
+//     },
+//     {
+//       header: "Payment",
+//       key: "paymentStatus",
+//       render: (row: any) => getPaymentStatusIcon(row.paymentStatus),
+//     },
+//     {
+//       header: "Status",
+//       key: "status",
+//       render: (row: any) => getStatusIcon(row.status),
+//     },
+//   ];
+
+//   return (
+//     <TableComponent
+//       columns={columns}
+//       data={normalizedOrders}
+//       keyExtractor={(item) => item.uniqueId}
+//       totalItems={totalItems}
+//       currentPage={currentPage}
+//       pageSize={pageSize}
+//       onPageChange={onPageChange}
+//       loading={loading}
+//       isSelectable={true}
+//       headerClassName="bg-aqua-spring"
+//       rowClassName={() => "h-[68px]"}
+//     />
+//   );
+// };
