@@ -9,6 +9,7 @@ import AdminLayout from '../components/admin/layout/AdminLayout';
 import CustomerPage from '../pages/admin/customer';
 import CategoryPage from '../pages/admin/category';
 import ProductPage from '../pages/admin/product';
+import AdminRolePage from '../pages/admin/role';
 const AppRouters: React.FC = () => {
   return (
     <Router>
@@ -22,6 +23,7 @@ const AppRouters: React.FC = () => {
           <Route path="customers" element={<CustomerPage />} />
           <Route path="categories" element={<CategoryPage />} />
           <Route path="products" element={<ProductPage />} />
+          <Route path="role" element={<AdminRolePage />} />
         </Route>
 
         {/* Redirect if route not found */}
