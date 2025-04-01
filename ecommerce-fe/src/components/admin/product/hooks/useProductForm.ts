@@ -1,7 +1,7 @@
 // components/admin/product/add/hooks/useProductForm.ts
 import { useState, ChangeEvent } from "react";
-import { Product } from "../../models/product.model";
-import { productService } from "../../services/product.service";
+import { Product } from "../models/product.model";
+import { productService } from "../services/product.service";
 
 export function useProductForm() {
   const [product, setProduct] = useState<Product>({

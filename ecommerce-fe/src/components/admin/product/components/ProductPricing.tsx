@@ -1,6 +1,6 @@
 // components/admin/product/add/components/ProductPricing.tsx
 import React, { ChangeEvent } from "react";
-import { Product } from "../../models/product.model";
+import { Product } from "../models/product.model";
 
 interface ProductPricingProps {
   product: Product;

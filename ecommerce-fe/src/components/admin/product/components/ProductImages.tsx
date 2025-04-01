@@ -19,7 +19,7 @@ export const ProductImages: React.FC<ProductImagesProps> = ({
   onSetMainImage,
 }) => {
   return (
-    <div className="bg-white rounded-lg p-[1.25rem] shadow-sm mb-6 h-[445px]">
+    <div className="bg-white rounded-lg p-[1.25rem] shadow-sm mb-6 h-[500px]">
       <h2 className="font-bold text-[22px] text-cyprus">
         Upload Product Image
       </h2>

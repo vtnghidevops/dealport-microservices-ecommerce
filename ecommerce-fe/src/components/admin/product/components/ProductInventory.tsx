@@ -1,6 +1,6 @@
 // components/admin/product/add/components/ProductInventory.tsx
 import React, { ChangeEvent } from "react";
-import { Product } from "../../models/product.model";
+import { Product } from "../models/product.model";
 
 interface ProductInventoryProps {
   product: Product;

@@ -1,5 +1,5 @@
 import React from 'react'
-import AppRouters from './modules/routers/routers'
+import AppRouters from './routers/routers';
 import { SnackbarProvider } from "notistack";
 import { BrowserRouter } from 'react-router-dom';
 import './index.css'

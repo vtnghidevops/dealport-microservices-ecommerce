@@ -3,7 +3,7 @@ import TestimonialCard from "./TestimonialCard";
 import { TestimonialService } from "./services/testimonial.service";
 import { TestimonialItem } from "./models/testimonial.model";
 import { Button } from "../../common/Button";
-import "../../../../app.css";
+import "../../../app.css";
 
 const HappyCustomers: React.FC = () => {
   const [testimonials, setTestimonials] = useState<TestimonialItem[]>([]);

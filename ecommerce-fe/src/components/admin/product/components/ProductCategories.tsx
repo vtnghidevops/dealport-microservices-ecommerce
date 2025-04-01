@@ -1,6 +1,6 @@
 // components/admin/product/add/components/ProductCategories.tsx
 import React from "react";
-import { Product } from "../../models/product.model";
+import { Product } from "../models/product.model";
 
 interface ProductCategoriesProps {
   product: Product;
