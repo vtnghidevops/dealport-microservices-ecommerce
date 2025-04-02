@@ -66,7 +66,7 @@ const DashboardCard: React.FC<DashboardCard> = (props) => {
   // Render card content based on type
   const renderCardContent = () => {
     switch(props.type) {
-      case 'sales':
+      case 'sales': {
         const isPositiveSales = getChangeDirection(props.percentChange);
         return (
           <>
@@ -85,8 +85,9 @@ const DashboardCard: React.FC<DashboardCard> = (props) => {
             </p>
           </>
         );
+      }
       
-      case 'orders':
+      case 'orders': {
         const isPositiveOrders = getChangeDirection(props.percentChange);
         return (
           <>
@@ -113,8 +114,8 @@ const DashboardCard: React.FC<DashboardCard> = (props) => {
             </p>
           </>
         );
-      
-      case 'pendingCanceled':
+      }
+      case 'pendingCanceled': {
         const isPositiveCanceled = getChangeDirection(props.canceled.percentChange);
         return (
           <>
@@ -142,6 +143,7 @@ const DashboardCard: React.FC<DashboardCard> = (props) => {
             </div>
           </>
         );
+      }
     }
   };
   

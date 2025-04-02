@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { FiSearch, FiBell, FiMenu } from "react-icons/fi";
+import { FiSearch, FiBell } from "react-icons/fi";
 
 interface AdminHeaderProps {
   userName?: string;

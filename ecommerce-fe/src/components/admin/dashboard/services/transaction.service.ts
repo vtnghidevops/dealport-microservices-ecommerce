@@ -43,9 +43,13 @@ export const TransactionService = {
       }
     ];
     
+    const startIndex = (page - 1) * limit;
+    const endIndex = startIndex + limit;
+    const paginatedTransactions = transactions.slice(startIndex, endIndex);
+
     return {
-      transactions,
-      total: 100 // Tổng số để phân trang
+      transactions: paginatedTransactions,
+      total: transactions.length
     };
   }
 };

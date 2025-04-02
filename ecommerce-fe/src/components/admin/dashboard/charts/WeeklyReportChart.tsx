@@ -74,7 +74,7 @@ const WeeklyReportChart: React.FC<WeeklyReportChartProps> = ({ data }) => {
         },
         titleFont: {
           size: 12,
-          weight: 'bold' as 'bold'
+          weight: 'bold' as const
         }
       }
     },
@@ -93,8 +93,8 @@ const WeeklyReportChart: React.FC<WeeklyReportChartProps> = ({ data }) => {
           },
           color: '#94a3b8',
           padding: 8,
-          callback: function(value) {
-            return value + 'k';
+          callback: function(tickValue: number | string) {
+            return tickValue + 'k';
           }
         }
       },

@@ -1,10 +1,10 @@
-import React, { useState, useEffect, JSX } from "react";
+import React, { useState, useEffect } from "react";
 import AdminHeader from "../layout/AdminHeader";
 import { OrderSummaryCard } from "./cards/OrderSummaryCard";
 import { OrderTable } from "./tables/OrderTable";
 import { OrderFilter } from "./filters/OrderFilter";
 import { FiPlusCircle } from "react-icons/fi";
-import { IoMdArrowRoundBack, IoMdArrowRoundForward } from "react-icons/io";
+
 import {
   Order,
   OrderStatus,

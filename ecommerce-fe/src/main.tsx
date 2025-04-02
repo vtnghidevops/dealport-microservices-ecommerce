@@ -4,7 +4,7 @@ import App from "./App.tsx";
 import "./index.css";
 import React from "react";
 
-const Root = () => {
+const Root: React.FC = () => {
     return (
       <StrictMode>
         <App />

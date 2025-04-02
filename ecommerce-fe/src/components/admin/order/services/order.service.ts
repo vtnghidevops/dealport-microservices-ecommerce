@@ -305,7 +305,7 @@ class OrderService {
     return false;
   }
 
-  async createOrder (orderData: any): Promise<Order> {
+  async createOrder (orderData: Omit<Order, 'id' | 'orderId' | 'status' | 'date'>): Promise<Order> {
     try {
       // Here you would call your API endpoint to create an order
       // For now, we'll simulate an API call with a timeout

@@ -9,7 +9,7 @@ export const handleCategoryClick = (category: CategoryItem) => {
   // Navigate or perform actions
 };
 
-export const handleProductClick = (product, index) => {
-  console.log("Product clicked:", product);
+export const handleProductClick = (product: string, index: number) => {
+  console.log("Product clicked:", product, index);
   // Điều hướng đến trang chi tiết sản phẩm
 };
