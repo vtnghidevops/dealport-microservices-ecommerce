@@ -4,34 +4,40 @@ const urlImgExploring = "images/exploring/";
 // Mock data - trong thực tế sẽ fetch từ API
 const categoryData: CategoryItem[] = [
     {
-      id: 1,
+      id: '1',
       name: "Grocery",
-      image: `${urlImgExploring}grocery.png`,
+      image_url: `${urlImgExploring}grocery.png`,
+      slug: "grocery"
     },
     {
-      id: 2,
+      id: '2',
       name: "Home",
-      image: `${urlImgExploring}/home.png`,
+      image_url: `${urlImgExploring}home.png`,
+      slug: "home"
     },
     {
-      id: 3,
+      id: '3',
       name: "Fashion",
-      image: `${urlImgExploring}/fashion.png`,
+      image_url: `${urlImgExploring}fashion.png`,
+      slug: "fashion"
     },
     {
-      id: 4,
+      id: '4',
       name: "Electronic",
-      image: `${urlImgExploring}electronic.png`,
+      image_url: `${urlImgExploring}electronic.png`,
+      slug: "electronic"
     },
     {
-      id: 5,
+      id: '5',
       name: "Toys",
-      image: `${urlImgExploring}toys.png`,
+      image_url: `${urlImgExploring}toys.png`,
+      slug: "toys"
     },
     {
-      id: 6,
+      id: '6',
       name: "Grocery",
-      image: `${urlImgExploring}grocery.png`,
+      image_url: `${urlImgExploring}grocery.png`,
+      slug: "grocery-2"
     },
 ];
 

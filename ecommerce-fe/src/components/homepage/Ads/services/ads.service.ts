@@ -1,4 +1,3 @@
-import React from "react";
 import { BannerShowCaseItem } from "../models/ads.model";
 import { DisplayItem } from "../models/ads.model";
 import { GamingItem } from "../models/ads.model";
@@ -11,29 +10,25 @@ const urlImgBanner = "images/ads/banner/";
 
 const bannerData: BannerShowCaseItem[] = [
   {
-    id: 1,
-    image: `${urlImgBanner}trousers_fashion.png`,
-    buttonType: "",
-    buttonText: "",
+    id: '1',
+    image_url: `${urlImgBanner}trousers_fashion.png`,
     hasMore: false,
   },
   {
-    id: 2,
-    image: `${urlImgBanner}watchmen_fashion.png`,
+    id: '2',
+    image_url: `${urlImgBanner}watchmen_fashion.png`,
     buttonType: "gray",
     buttonText: "Shop Now",
     hasMore: false,
   },
   {
-    id: 3,
-    image: `${urlImgBanner}denim_fashion.png`,
-    buttonType: "",
-    buttonText: "",
+    id: '3',
+    image_url: `${urlImgBanner}denim_fashion.png`,
     hasMore: true,
   },
   {
-    id: 4,
-    image: `${urlImgBanner}dometic.png`,
+    id: '4',
+    image_url: `${urlImgBanner}dometic.png`,
     buttonType: "black",
     buttonText: "Shop Now",
     hasMore: false,
@@ -42,17 +37,17 @@ const bannerData: BannerShowCaseItem[] = [
 
 const displayData: DisplayItem[] = [
   {
-    id: 1,
-    image: `${urlImgDisplay}be-winner.png`,
+    id: '1',
+    image_url: `${urlImgDisplay}be-winner.png`,
   },
   {
-    id: 2,
-    image: `${urlImgDisplay}redmi-y3.png`,
+    id: '2',
+    image_url: `${urlImgDisplay}redmi-y3.png`,
     buttonType: "gradient",
   },
   {
-    id: 3,
-    image: `${urlImgDisplay}ambilighttv.png`,
+    id: '3',
+    image_url: `${urlImgDisplay}ambilighttv.png`,
     buttonType: "secondary",
     price: "750.99",
     title: "Philips 4K Ambilight TV",
@@ -62,35 +57,35 @@ const displayData: DisplayItem[] = [
 
 const gamingData: GamingItem[] = [
   {
-    id: 1,
+    id: '1',
     subtitle: "Headsets",
-    image: `${urlImgGaming}headsets.png`,
+    image_url: `${urlImgGaming}headsets.png`,
     href: "#",
   },
   {
-    id: 2,
+    id: '2',
     subtitle: "Mouse",
-    image: `${urlImgGaming}mouse.png`,
+    image_url: `${urlImgGaming}mouse.png`,
     href: "#",
   },
   {
-    id: 3,
+    id: '3',
     subtitle: "Controller",
-    image: `${urlImgGaming}controller.png`,
+    image_url: `${urlImgGaming}controller.png`,
     href: "#",
   },
   {
-    id: 4,
+    id: '4',
     subtitle: "Chair",
-    image: `${urlImgGaming}chair.png`,
+    image_url: `${urlImgGaming}chair.png`,
     href: "#",
   },
 ]
 
 const newFashionData: NewFashionItem = {
-  id: 1,
+  id: '1',
   title: "New Year! New Fashion",
-  image: `${urlImgProduct}new-fashion.png`,
+  image_url: `${urlImgProduct}new-fashion.png`,
   buttonType: "secondary"
 }
 

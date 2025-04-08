@@ -1,157 +1,157 @@
-import { 
-  BestSellingProduct, 
-  Product, 
+import {
+  BestSellingProduct,
+  Product,
   ProductCategory,
-  NewProduct
-} from '../models/product.model';
+  NewProduct,
+} from "../models/product.model";
 
 export const ProductService = {
   getBestSellingProducts: async (): Promise<BestSellingProduct[]> => {
     // Giả lập API call
-    await new Promise(resolve => setTimeout(resolve, 400));
-    
+    await new Promise((resolve) => setTimeout(resolve, 400));
+
     return [
       {
         product: {
-          id: 1,  
-          name: 'Apple iPhone 13',
-          category: 'Electronic',
-          image: '/images/limited/iphone_13.png',
-          itemCode: '#PX2-4567',
-          price: 999.00
+          id: 1,
+          name: "Apple iPhone 13",
+          category: "Electronic",
+          image_url: "/images/limited/iphone_13.png",
+          itemCode: "#PX2-4567",
+          price: 999.0,
         },
         totalOrder: 104,
-        status: 'Stock',
-        price: 999.00
+        status: "Stock",
+        price: 999.0,
       },
       {
         product: {
           id: 2,
-          name: 'Nike Air Jordan',
-          category: 'Fashion',
-          image: '/images/limited/iphone_13.png',
-          itemCode: '#PX2-4567',
-          price: 999.00
+          name: "Nike Air Jordan",
+          category: "Fashion",
+          image_url: "/images/limited/iphone_13.png",
+          itemCode: "#PX2-4567",
+          price: 999.0,
         },
         totalOrder: 56,
-        status: 'Stock out',
-        price: 999.00
+        status: "Stock out",
+        price: 999.0,
       },
       {
         product: {
           id: 3,
-          name: 'T-shirt',
-          category: 'Fashion',
-          image: '/images/limited/iphone_13.png',
-          itemCode: '#PX2-4567',
-          price: 999.00
+          name: "T-shirt",
+          category: "Fashion",
+          image_url: "/images/limited/iphone_13.png",
+          itemCode: "#PX2-4567",
+          price: 999.0,
         },
         totalOrder: 266,
-        status: 'Stock',
-        price: 999.00
+        status: "Stock",
+        price: 999.0,
       },
       {
         product: {
           id: 4,
-          name: 'Cross Bag',
-          category: 'Fashion',
-          image: '/images/limited/iphone_13.png',
-          itemCode: '#PX2-4567',
-          price: 999.00
+          name: "Cross Bag",
+          category: "Fashion",
+          image_url: "/images/limited/iphone_13.png",
+          itemCode: "#PX2-4567",
+          price: 999.0,
         },
         totalOrder: 506,
-        status: 'Stock',
-        price: 999.00
-      }
+        status: "Stock",
+        price: 999.0,
+      },
     ];
   },
-  
+
   getTopProducts: async (): Promise<Product[]> => {
     // Giả lập API call
-    await new Promise(resolve => setTimeout(resolve, 300));
-    
+    await new Promise((resolve) => setTimeout(resolve, 300));
+
     return [
       {
         id: 1,
-        name: 'Apple iPhone 13',
-        category: 'Electronic',
-        price: 999.00,
-        image: '/images/limited/iphone_13.png',
-        itemCode: '#PX2-4567'
+        name: "Apple iPhone 13",
+        category: "Electronic",
+        price: 999.0,
+        image_url: "/images/limited/iphone_13.png",
+        itemCode: "#PX2-4567",
       },
       {
         id: 2,
-        name: 'Nike Air Jordan',
-        category: 'Fashion',
-        price: 72.40,
-        image: '/images/limited/iphone_13.png',
-        itemCode: '#PX2-4567'
+        name: "Nike Air Jordan",
+        category: "Fashion",
+        price: 72.4,
+        image_url: "/images/limited/iphone_13.png",
+        itemCode: "#PX2-4567",
       },
       {
         id: 3,
-        name: 'T-shirt',
-        category: 'Fashion',
-        price: 35.40,
-        image: '/images/limited/iphone_13.png',
-        itemCode: '#PX2-4567'
+        name: "T-shirt",
+        category: "Fashion",
+        price: 35.4,
+        image_url: "/images/limited/iphone_13.png",
+        itemCode: "#PX2-4567",
       },
       {
         id: 4,
-        name: 'Assorted Cross Bag',
-        category: 'Fashion',
-        price: 80.00,
-        image: '/images/limited/iphone_13.png',
-        itemCode: '#PX2-4567'
-      }
+        name: "Assorted Cross Bag",
+        category: "Fashion",
+        price: 80.0,
+        image_url: "/images/limited/iphone_13.png",
+        itemCode: "#PX2-4567",
+      },
     ];
   },
-  
+
   getProductCategories: async (): Promise<ProductCategory[]> => {
     // Giả lập API call
-    await new Promise(resolve => setTimeout(resolve, 200));
-    
+    await new Promise((resolve) => setTimeout(resolve, 200));
+
     return [
       {
         id: 1,
-        name: 'Electronic',
-        image: '/images/limited/iphone_13.png'
+        name: "Electronic",
+        image_url: "/images/limited/iphone_13.png",
       },
       {
         id: 2,
-        name: 'Fashion',
-        image: '/images/limited/iphone_13.png'
+        name: "Fashion",
+        image_url: "/images/limited/iphone_13.png",
       },
       {
         id: 3,
-        name: 'Home',
-        image: '/images/limited/iphone_13.png'
-      }
+        name: "Home",
+        image_url: "/images/limited/iphone_13.png",
+      },
     ];
   },
-  
+
   getNewProducts: async (): Promise<NewProduct[]> => {
     // Giả lập API call
-    await new Promise(resolve => setTimeout(resolve, 250));
-    
+    await new Promise((resolve) => setTimeout(resolve, 250));
+
     return [
       {
         id: 1,
-        name: 'Smart Fitness Tracker',
+        name: "Smart Fitness Tracker",
         price: 39.99,
-        image: '/images/limited/smart_watch.png'
+        image_url: "/images/limited/smart_watch.png",
       },
       {
         id: 2,
-        name: 'Leather Wallet',
+        name: "Leather Wallet",
         price: 19.99,
-        image: '/images/limited/smart_watch.png'
+        image_url: "/images/limited/smart_watch.png",
       },
       {
         id: 3,
-        name: 'Electric Hair Trimmer',
+        name: "Electric Hair Trimmer",
         price: 24.99,
-        image: '/images/limited/smart_watch.png'
-      }
+        image_url: "/images/limited/smart_watch.png",
+      },
     ];
-  }
+  },
 };

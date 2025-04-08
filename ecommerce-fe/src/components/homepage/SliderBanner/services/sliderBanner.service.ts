@@ -7,9 +7,10 @@ const urlImgSlider = "images/slidebar/";
 // image: string;
 const sliderBannerData: SliderBannerItem[] = [
   {
+    id: "1",
     title: "Discover the Latest Deals –",
     discount: "Up to 50% Off!",
-    image: `${urlImgSlider}slidebar-1.png`,
+    image_url: `${urlImgSlider}slidebar-1.png`,
   },
 ];
 

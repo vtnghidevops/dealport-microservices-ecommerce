@@ -1,5 +1,5 @@
 // components/admin/product/ProductManagement.tsx
-import React, { useState } from 'react';
+import React from 'react';
 import { ProductHeader } from "./components/ProductHeader";
 import { BasicDetails } from "./components/BasicDetails";
 import { ProductPricing } from "./components/ProductPricing";

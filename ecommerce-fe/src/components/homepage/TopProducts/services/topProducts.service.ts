@@ -4,9 +4,9 @@ import { TopProductItem } from "../models/topProducts.model";
 const urlImgTop = "images/bestselling/";
 const topProductsData: TopProductItem[] = [
     {
-      id: 1,
+      id: '1',
       name: "Computer Accessories",
-      image: `${urlImgTop}computer_accessories.png`,
+      image_url: `${urlImgTop}computer_accessories.png`,
       setUpDesign: "row",
       isCommingSoon: true,
       gridSpan: {
@@ -15,10 +15,10 @@ const topProductsData: TopProductItem[] = [
       }
     },
     {
-      id: 2,
+      id: '2',
       name: "Men's Casual Outfit",
       price: "200",
-      image: `${urlImgTop}football.png`,
+      image_url: `${urlImgTop}football.png`,
       actionLabel: "Visit store",
       setUpDesign: "row",
       gridSpan: {
@@ -27,10 +27,10 @@ const topProductsData: TopProductItem[] = [
       }
     },
     {
-      id: 3,
+      id: '3',
       name: "Pome Granate Juice",
       price: "49",
-      image: `${urlImgTop}juice.png`,
+      image_url: `${urlImgTop}juice.png`,
       actionLabel: "Buy now",
       setUpDesign: "row",
       gridSpan: {
@@ -40,9 +40,9 @@ const topProductsData: TopProductItem[] = [
       
     },
     {
-      id: 4,
+      id: '4',
       name: "Dog Food Made With Love",
-      image: `${urlImgTop}dog_food.png`,
+      image_url: `${urlImgTop}dog_food.png`,
       actionLabel: "Shop Now",
       setUpDesign: "col",
       gridSpan: {
@@ -51,10 +51,10 @@ const topProductsData: TopProductItem[] = [
       },
     },
     {
-      id: 5,
+      id: '5',
       name: "Security Camera System",
       price: "420",
-      image: `${urlImgTop}security_camera_left.png`,
+      image_url: `${urlImgTop}security_camera_left.png`,
       actionLabel: "Visit store",
       setUpDesign: "double",
       gridSpan: {
@@ -62,13 +62,13 @@ const topProductsData: TopProductItem[] = [
         row: 1
       },
       isImageDouble: true,
-      image_double: `${urlImgTop}security_camera_right.png`,
+      image_double_url: `${urlImgTop}security_camera_right.png`,
     },
     {
-      id: 6,
+      id: '6',
       name: "Premium Cosmetic Set",
       price: "149",
-      image: `${urlImgTop}skincare.png`,
+      image_url: `${urlImgTop}skincare.png`,
       actionLabel: "Buy Now",
       setUpDesign: "row",
       gridSpan: {

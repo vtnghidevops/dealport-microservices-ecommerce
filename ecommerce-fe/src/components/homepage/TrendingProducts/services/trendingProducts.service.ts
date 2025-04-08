@@ -4,7 +4,7 @@ const urlImgTrending = "images/trending/";
 // Mock data - trong thực tế sẽ fetch từ API
 const trendingProductData: TrendingProductItem[] = [
   {
-    id: 1,
+    id: '1',
     title: "Radiant Glow Hydrating Serum",
     description:
       "Gentle yet effective, our Radiant Boosting Foaming our Radiant Boosting Foaming our Radiant Boosting Foaming",
@@ -15,10 +15,10 @@ const trendingProductData: TrendingProductItem[] = [
       rating: 4.8,
       count: 345,
     },
-    imageUrl: `${urlImgTrending}serum.png`,
+    image_url: `${urlImgTrending}serum.png`,
   },
   {
-    id: 2,
+    id: '2',
     title: "Modern Minimalist Vase",
     description:
       "Track your workouts, heart rate, sleep quality and receive notifications. Water resistant up to 50m with 7-day battery life.",
@@ -29,10 +29,10 @@ const trendingProductData: TrendingProductItem[] = [
       rating: 4.6,
       count: 842,
     },
-    imageUrl: `${urlImgTrending}vase.png`,
+    image_url: `${urlImgTrending}vase.png`,
   },
   {
-    id: 3,
+    id: '3',
     title: "FitPro 3000 Smart Watch",
     description:
       "Fast-charging power bank with dual USB ports and USB-C compatibility. Charge multiple devices simultaneously on the go.",
@@ -43,7 +43,7 @@ const trendingProductData: TrendingProductItem[] = [
       rating: 4.0,
       count: 2105,
     },
-    imageUrl: `${urlImgTrending}smartwatch.png`,
+    image_url: `${urlImgTrending}smartwatch.png`,
   },
 ];
 

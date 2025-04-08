@@ -7,103 +7,103 @@ import { CategorySummaryData } from '../cards/models/card.model';
  */
 const mockCategories: Category[] = [
   {
-    id: 1,
+    id: '1',
     name: 'Wireless Bluetooth Headphones',
     slug: 'wireless-bluetooth-headphones',
-    icon: 'headphones',
+    image_url: 'headphones',
     productCount: 25,
-    createdAt: '01-01-2025',
-    updatedAt: '01-01-2025',
+    createdAt: new Date('2025-01-01'),
+    updatedAt: new Date('2025-01-01'),
     isActive: true,
   },
   {
-    id: 2,
+    id: '2',
     name: 'Men\'s T-Shirt',
     slug: 'mens-t-shirt',
-    icon: 'tshirt',
+    image_url: 'tshirt',
     productCount: 20,
-    createdAt: '01-01-2025',
-    updatedAt: '01-01-2025',
+    createdAt: new Date('2025-01-01'),
+    updatedAt: new Date('2025-01-01'),
     isActive: true,
   },
   {
-    id: 3,
+    id: '3',
     name: 'Men\'s Leather Wallet',
     slug: 'mens-leather-wallet',
-    icon: 'wallet',
+    image_url: 'wallet',
     productCount: 35,
-    createdAt: '01-01-2025',
-    updatedAt: '01-01-2025',
+    createdAt: new Date('2025-01-01'),
+    updatedAt: new Date('2025-01-01'),
     isActive: true,
   },
   {
-    id: 4,
+    id: '4',
     name: 'Memory Foam Pillow',
     slug: 'memory-foam-pillow',
-    icon: 'pillow',
+    image_url: 'pillow',
     productCount: 40,
-    createdAt: '01-01-2025',
-    updatedAt: '01-01-2025',
+    createdAt: new Date('2025-01-01'),
+    updatedAt: new Date('2025-01-01'),
     isActive: true,
   },
   {
-    id: 5,
+    id: '5',
     name: 'Coffee Maker',
     slug: 'coffee-maker',
-    icon: 'coffee',
+    image_url: 'coffee',
     productCount: 45,
-    createdAt: '01-01-2025',
-    updatedAt: '01-01-2025',
+    createdAt: new Date('2025-01-01'),
+    updatedAt: new Date('2025-01-01'),
     isActive: true,
   },
   {
-    id: 6, 
+    id: '6',
     name: 'Casual Baseball Cap',
     slug: 'casual-baseball-cap',
-    icon: 'cap',
+    image_url: 'cap',
     productCount: 55,
-    createdAt: '01-01-2025',
-    updatedAt: '01-01-2025',
+    createdAt: new Date('2025-01-01'),
+    updatedAt: new Date('2025-01-01'),
     isActive: true,
   },
   {
-    id: 7,
+    id: '7',
     name: 'Full HD Webcam',
     slug: 'full-hd-webcam',
-    icon: 'webcam',
+    image_url: 'webcam',
     productCount: 20,
-    createdAt: '01-01-2025',
-    updatedAt: '01-01-2025',
+    createdAt: new Date('2025-01-01'),
+    updatedAt: new Date('2025-01-01'),
     isActive: true,
   },
   {
-    id: 8,
+    id: '8',
     name: 'Smart LED Color Bulb',
     slug: 'smart-led-color-bulb',
-    icon: 'bulb',
+    image_url: 'bulb',
     productCount: 16,
-    createdAt: '01-01-2025',
-    updatedAt: '01-01-2025',
+    createdAt: new Date('2025-01-01'),
+    updatedAt: new Date('2025-01-01'),
     isActive: true,
   },
   {
-    id: 9,
+    id: '9',
     name: 'Men\'s T-Shirt',
     slug: 'mens-t-shirt-2',
-    icon: 'tshirt',
+    image_url: 'tshirt',
     productCount: 10,
-    createdAt: '01-01-2025',
-    updatedAt: '01-01-2025',
+    createdAt: new Date('2025-01-01'),
+    updatedAt: new Date('2025-01-01'),
     isActive: true,
   },
   {
-    id: 10,
+    id: '10',
     name: 'Men\'s Leather Wallet',
     slug: 'mens-leather-wallet-2',
-    icon: 'wallet',
+    image_url: 'wallet',
     productCount: 35,
-    createdAt: '01-01-2025',
-    updatedAt: '01-01-2025',
+    createdAt: new Date('2025-01-01'),
+    updatedAt: new Date('2025-01-01'),
     isActive: true,
   },
 ];
@@ -112,14 +112,14 @@ const mockCategories: Category[] = [
  * Mock discover categories for the UI
  */
 export const discoverCategories = [
-  { name: 'Electronics', image: '/images/exploring/electronic.png' },
-  { name: 'Fashion', image: '/images/exploring/fashion.png' },
-  { name: 'Accessories', image: '/images/exploring/fashion.png' },
-  { name: 'Home & Kitchen', image: '/images/exploring/home.png' },
-  { name: 'Sports & Outdoors', image: '/images/exploring/grocery.png' },
-  { name: 'Toys & Games', image: '/images/exploring/toys.png' },
-  { name: 'Health & Fitness', image: '/images/exploring/toys.png' },
-  { name: 'Books', image: '/images/exploring/toys.png' },
+  { name: 'Electronics', image_url: '/images/exploring/electronic.png' },
+  { name: 'Fashion', image_url: '/images/exploring/fashion.png' },
+  { name: 'Accessories', image_url: '/images/exploring/fashion.png' },
+  { name: 'Home & Kitchen', image_url: '/images/exploring/home.png' },
+  { name: 'Sports & Outdoors', image_url: '/images/exploring/grocery.png' },
+  { name: 'Toys & Games', image_url: '/images/exploring/toys.png' },
+  { name: 'Health & Fitness', image_url: '/images/exploring/toys.png' },
+  { name: 'Books', image_url: '/images/exploring/toys.png' },
 ];
 
 /**
@@ -219,7 +219,7 @@ export class CategoryService {
    * Get category by ID
    */
   static getCategoryById = async (
-    id: number
+    id: string
   ): Promise<Category | undefined> => {
     const category = mockCategories.find((cat) => cat.id === id);
     return Promise.resolve(category);
@@ -233,7 +233,7 @@ export class CategoryService {
   ): Promise<Category> => {
     const newCategory = {
       ...category,
-      id: Math.max(...mockCategories.map((c) => c.id)) + 1,
+      id: String(Math.max(...mockCategories.map((c) => parseInt(c.id))) + 1),
     };
     mockCategories.push(newCategory as Category);
     return Promise.resolve(newCategory as Category);
@@ -253,7 +253,7 @@ export class CategoryService {
   /**
    * Delete a category
    */
-  static deleteCategory = async (id: number): Promise<boolean> => {
+  static deleteCategory = async (id: string ): Promise<boolean> => {
     const index = mockCategories.findIndex((c) => c.id === id);
     if (index !== -1) {
       mockCategories.splice(index, 1);

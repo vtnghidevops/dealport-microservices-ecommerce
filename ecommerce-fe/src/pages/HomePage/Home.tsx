@@ -1,6 +1,3 @@
-import React from "react";
-import Header from "../../components/layouts/Header";
-import Footer from "../../components/layouts/Footer";
 import { HappyCustomers } from "../../components/homepage/HappyCustomers";
 import { TrendingProducts } from "../../components/homepage/TrendingProducts";
 import { CategoryExplorer } from "../../components/homepage/CategoryExplorer";
@@ -16,7 +13,6 @@ import { GamingBanner } from "../../components/homepage/Ads";
 export default function Home() {
   return (
     <>
-    <Header></Header>
     <div>
       <HeroBanner></HeroBanner>
       <div>
@@ -65,7 +61,6 @@ export default function Home() {
         </div>
       </div>
     </div>
-    <Footer></Footer>
     </>
   );
 }
