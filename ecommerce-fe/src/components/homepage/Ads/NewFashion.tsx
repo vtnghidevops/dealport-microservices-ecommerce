@@ -1,5 +1,5 @@
 import React, {useState, useEffect} from "react";
-import { Button } from "../../common/Button";
+import { getButtonClass, ButtonType } from "../../../utils/buttonUtils";
 import { NewFashionItem } from "./models/ads.model";
 import { NewFashionService } from "./services/ads.service";
 
@@ -27,7 +27,7 @@ const NewFashion: React.FC = () => {
   if (loading || !newFashionData) {
     return <div>Loading...</div>;
   }
-  const { title, image, buttonType } = newFashionData;
+  const { title, image_url, buttonType } = newFashionData;
   
   return (
     <div className="bg-white text-black h-[328px] w-[464px] rounded-2xl relative border border-gray-300 mt-[-5%] shadow-[0_4px_6px_-1px_rgba(0,0,0,0.1),0px_2px_4px_-2px_rgba(0,0,0,0.05)]">
@@ -36,12 +36,16 @@ const NewFashion: React.FC = () => {
       </span>
       <div className="rounded-xl relative w-full h-[80%] p-3">
         <img
-          src={image}
+          src={image_url}
           className="max-w-[27rem] absolute top-[20%] rounded-xl"
         ></img>
       </div>
       <div className="absolute top-[83%] left-[30%]">
-        <Button type={buttonType} text="Shop now"></Button>
+        <div className="w-[12rem] h-[4rem] rounded-3xl ">
+          <button className={getButtonClass(buttonType as ButtonType)}>
+            Shop Now
+          </button>
+        </div>
       </div>
     </div>
   );

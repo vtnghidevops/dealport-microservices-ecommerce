@@ -57,13 +57,13 @@ const CategoryTable: React.FC<CategoryTableProps> = ({
               <td className="py-4 px-6">
                 <div className="flex items-center">
                   <div className="border border-neutral-200 w-[40px] h-[40px] mr-3 rounded flex items-center justify-center overflow-hidden">
-                    {getCategoryIcon(category.icon)}
+                    {getCategoryIcon(category.image_url)}
                   </div>
                   <span className="text-[15px] max-w-[140px]">{category.name}</span>
                 </div>
               </td>
               <td className="py-4 px-6 text-[15px]">
-                {category.createdAt}
+                {category.createdAt.toLocaleString()}
               </td>
               <td className="py-4 px-6 text-[15px]">
                 {category.productCount || 0}
@@ -79,7 +79,7 @@ const CategoryTable: React.FC<CategoryTableProps> = ({
                     </svg>
                   </button>
                   <button 
-                    onClick={() => onDelete(category.id)}
+                    onClick={() => onDelete(Number(category.id))}
                     className="text-gray-500 hover:text-red-600"
                   >
                     <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">

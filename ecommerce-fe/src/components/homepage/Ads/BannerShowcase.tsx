@@ -1,5 +1,5 @@
 import React, {useState, useEffect} from "react";
-import { getButtonClass } from "../../common/Button";
+import { ButtonType, getButtonClass } from "@/utils/buttonUtils";
 import { BannerShowCaseItem } from "./models/ads.model";
 import { BannerService } from "./services/ads.service";
 
@@ -31,7 +31,7 @@ const BannerShowCase: React.FC = () => {
           <ItemBannerShowCase
             key={index}
             id={category.id}
-            image={category.image}
+            image_url={category.image_url}
             buttonType={category.buttonType}
             buttonText={category.buttonText}
             hasMore={category.hasMore}
@@ -42,7 +42,7 @@ const BannerShowCase: React.FC = () => {
   );
 }
 
-const ItemBannerShowCase: React.FC<BannerShowCaseItem> = ({ image, buttonType, buttonText, hasMore }) => {
+const ItemBannerShowCase: React.FC<BannerShowCaseItem> = ({ image_url, buttonType, buttonText, hasMore }) => {
   // Check if button text is "Shop Now" to disable image hover scale
   const isShopNow = buttonText === "Shop Now";
   
@@ -51,7 +51,7 @@ const ItemBannerShowCase: React.FC<BannerShowCaseItem> = ({ image, buttonType, b
       return (
         <div className="h-[190px] w-[327px] rounded-[12px] bg-white relative overflow-hidden cursor-pointer">
           <img
-            src={image}
+            src={image_url}
             className={`w-full h-full rounded-[12px] object-cover ${!isShopNow ? "transition-transform duration-300 ease-out hover:scale-110" : ""}`}
             alt="Banner image"
           ></img>
@@ -72,7 +72,7 @@ const ItemBannerShowCase: React.FC<BannerShowCaseItem> = ({ image, buttonType, b
       return (
         <div className="h-[190px] w-[327px] rounded-[12px] bg-white relative overflow-hidden cursor-pointer">
           <img
-            src={image}
+            src={image_url}
             className={`w-full h-full rounded-[12px] object-cover ${!isShopNow ? "transition-transform duration-300 ease-out hover:scale-110" : ""}`}
             alt="Banner image"
           ></img>
@@ -80,7 +80,7 @@ const ItemBannerShowCase: React.FC<BannerShowCaseItem> = ({ image, buttonType, b
             <div className="w-[8rem] h-[2rem] rounded-3xl ">
               <button
                 className={`${getButtonClass(
-                  buttonType
+                  buttonType as ButtonType
                 )} w-full h-full text-[12px]`}
               >
                 {buttonText}
@@ -94,7 +94,7 @@ const ItemBannerShowCase: React.FC<BannerShowCaseItem> = ({ image, buttonType, b
     return (
       <div className="h-[190px] w-[327px] rounded-[12px] bg-white relative overflow-hidden cursor-pointer">
         <img
-          src={image}
+          src={image_url}
           className="w-full h-full rounded-[12px] object-cover transition-transform duration-300 ease-out hover:scale-110"
           alt="Banner image"
         ></img>
@@ -111,7 +111,7 @@ const ItemBannerShowCase: React.FC<BannerShowCaseItem> = ({ image, buttonType, b
       <div className="h-[190px] w-[327px] rounded-[12px] bg-white overflow-hidden cursor-pointer">
         <a href="#" className="block h-full w-full">
           <img
-            src={image}
+            src={image_url}
             className="w-full h-full rounded-[12px] object-cover transition-transform duration-300 ease-out hover:scale-110"
             alt="Banner image"
           />

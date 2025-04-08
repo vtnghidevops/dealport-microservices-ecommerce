@@ -1,5 +1,4 @@
 import React, {useEffect, useState} from "react";
-import { getButtonClass } from "../../common/Button";
 import ProductCard from "../../common/Card";
 import MenCollection from "./MenCollection";
 import { TrendingProductItem } from "./models/trendingProducts.model.ts";
@@ -56,11 +55,11 @@ const TrendingProducts: React.FC = () => {
             key={product.id}
             title={product.title}
             description={product.description}
-            price={product.price}
-            originalPrice={product.originalPrice}
-            discount={product.discount}
+            price={Number(product.price)}
+            originalPrice={Number(product.originalPrice) || 0}
+            discount={Number(product.discount) || 0}
             reviews={product.review}
-            imageUrl={product.imageUrl}
+            image_url={product.image_url}
           />
         ))}
         {/* Collection for Men */}

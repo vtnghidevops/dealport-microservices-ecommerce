@@ -1,5 +1,5 @@
 import React from 'react';
-import { Customer, CustomerStatus } from '../models/customer.model';
+import { Customer} from '../models/customer.model';
 
 interface CustomerDetailProps {
   customer: Customer;

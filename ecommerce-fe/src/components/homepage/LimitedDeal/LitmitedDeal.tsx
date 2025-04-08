@@ -1,5 +1,4 @@
 import React, { useRef, useState, useEffect } from "react";
-import { getButtonClass } from "../../common/Button";
 import ProductCard from "../../common/Card";
 import { MdChevronRight, MdChevronLeft } from "react-icons/md";
 import { LimitedDealItem } from "./models/limitedDeal.model";
@@ -101,11 +100,11 @@ const LimitedDeal: React.FC = () => {
               <ProductCard
                 title={product.title}
                 description={product.description}
-                price={product.price}
-                originalPrice={product.originalPrice}
-                discount={product.discount}
+                price={Number(product.price) || 0}
+                originalPrice={Number(product.originalPrice) || 0}
+                discount={Number(product.discount) || 0}
                 reviews={product.review}
-                imageUrl={product.imageUrl}
+                image_url={product.image_url}
               />
             </div>
           ))}

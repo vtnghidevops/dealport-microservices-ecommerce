@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { IoFilterOutline } from "react-icons/io5";
 import { PiArrowsDownUp } from "react-icons/pi";
 import { HiDotsVertical } from "react-icons/hi";
@@ -30,12 +30,12 @@ export const CategoryFilter: React.FC<CategoryFilterProps> = ({
   };
   
   // Map tab names to filter values
-  const filterLabels = {
-    'all': 'All Product',
-    'featured': 'Featured Products',
-    'onSale': 'On Sale',
-    'outOfStock': 'Out of Stock'
-  };
+  // const filterLabels = {
+  //   'all': 'All Product',
+  //   'featured': 'Featured Products',
+  //   'onSale': 'On Sale',
+  //   'outOfStock': 'Out of Stock'
+  // };
   
   return (
     <div className="flex flex-col md:flex-row justify-between mb-5 ">

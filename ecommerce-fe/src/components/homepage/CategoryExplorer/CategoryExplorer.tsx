@@ -26,7 +26,7 @@ const CategoryExplorer: React.FC = () => {
     fetchCategoryExplorer();
   }, []);
 
-  var categoryExplore: CategoryExplorerProps = {
+  const categoryExplore: CategoryExplorerProps = {
     title: "Start exploring now",
     categories: categories,
     viewAllLabel: "View All",

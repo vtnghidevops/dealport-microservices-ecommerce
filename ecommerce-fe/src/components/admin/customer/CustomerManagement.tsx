@@ -1,11 +1,10 @@
-import React, { useState, useEffect, JSX } from "react";
+import React, { useState, useEffect } from "react";
 import AdminHeader from "../layout/AdminHeader";
 import { CustomerSummaryCard } from "./cards/CustomerSummaryCard";
 import CustomerTable from "./tables/CustomerTable";
 import CustomerActivityChart from "./charts/CustomerActivityChart";
 import CustomerSidebar from "./detail/CustomerSidebar";
 import Pagination from '../../common/Pagination';
-import { IoMdArrowRoundBack, IoMdArrowRoundForward } from "react-icons/io";
 import {
   Customer,
   CustomerStatus,

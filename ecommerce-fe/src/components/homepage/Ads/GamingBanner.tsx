@@ -32,7 +32,7 @@ const GamingBanner: React.FC = () => {
       <div className="grid grid-cols-2 gap-12 mt-4 absolute top-[15%] left-[5%]">
         {gamingData.map((item) => (
           <a key={item.id} href={item.href}>
-            <SubGamingBanner subtitle={item.subtitle} image={item.image} />
+            <SubGamingBanner subtitle={item.subtitle} image={item.image_url} />
           </a>
         ))}
       </div>

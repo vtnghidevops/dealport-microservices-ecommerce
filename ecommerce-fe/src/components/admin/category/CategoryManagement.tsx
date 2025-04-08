@@ -6,7 +6,7 @@ import Pagination from "../../common/Pagination";
 import {
   Category,
   CategoryFilter as FilterType,
-  CategoryFilterCounts
+  CategoryFilterCounts,
 } from "./models/category.model";
 import {
   CategoryService,
@@ -31,12 +31,14 @@ export const CategoryManagement: React.FC = () => {
     limit: 10,
   });
   const [totalItems, setTotalItems] = useState(0);
-  const [activeFilterTab, setActiveFilterTab] = useState<'all' | 'featured' | 'onSale' | 'outOfStock'>('all');
+  const [activeFilterTab, setActiveFilterTab] = useState<
+    "all" | "featured" | "onSale" | "outOfStock"
+  >("all");
   const [filterCounts, setFilterCounts] = useState<CategoryFilterCounts>({
     all: 0,
     featured: 0,
     onSale: 0,
-    outOfStock: 0
+    outOfStock: 0,
   });
 
   // Fetch filter counts on component mount
@@ -60,7 +62,8 @@ export const CategoryManagement: React.FC = () => {
       try {
         const response = await CategoryService.getCategories({
           ...filter,
-          productFilter: activeFilterTab !== "all" ? activeFilterTab : undefined
+          productFilter:
+            activeFilterTab !== "all" ? activeFilterTab : undefined,
         });
         setCategories(response.categories);
         setTotalItems(response.total);
@@ -93,9 +96,9 @@ export const CategoryManagement: React.FC = () => {
   };
 
   // Handle filter changes
-  const handleFilterChange = (newFilter: FilterType) => {
-    setFilter(newFilter);
-  };
+  // const handleFilterChange = (newFilter: FilterType) => {
+  //   setFilter(newFilter);
+  // };
 
   // Handle page change
   const handlePageChange = (page: number) => {
@@ -108,11 +111,13 @@ export const CategoryManagement: React.FC = () => {
     });
   };
   // Handle tab filter change
-  const handleTabFilterChange = (tab: 'all' | 'featured' | 'onSale' | 'outOfStock') => {
+  const handleTabFilterChange = (
+    tab: "all" | "featured" | "onSale" | "outOfStock"
+  ) => {
     setActiveFilterTab(tab);
     setFilter({
       ...filter,
-      page: 1
+      page: 1,
     });
   };
 
@@ -147,7 +152,7 @@ export const CategoryManagement: React.FC = () => {
                   <CategoryCard
                     key={index}
                     name={category.name}
-                    image={category.image}
+                    image_url={category.image_url}
                   />
                 ))}
                 <div className="absolute right-[2%] top-1/2 -translate-y-1/2 ">
@@ -216,4 +221,3 @@ export const CategoryManagement: React.FC = () => {
     </div>
   );
 };
-

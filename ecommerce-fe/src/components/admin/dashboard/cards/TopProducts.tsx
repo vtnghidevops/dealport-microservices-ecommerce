@@ -1,12 +1,12 @@
-import React, { useState } from 'react';
-import { Product } from '../models/product.model';
+import React, { useState } from "react";
+import { Product } from "../models/product.model";
 
 // interface Product {
 //   id: number;
 //   name: string;
 //   category: string;
 //   price: number;
-//   image: string;
+//   image_url: string;
 //   itemCode: string;
 // }
 
@@ -15,12 +15,12 @@ interface TopProductsTableProps {
 }
 
 const TopProductsTable: React.FC<TopProductsTableProps> = ({ products }) => {
-  const [searchTerm, setSearchTerm] = useState('');
-  
-  const filteredProducts = products.filter(product =>
+  const [searchTerm, setSearchTerm] = useState("");
+
+  const filteredProducts = products.filter((product) =>
     product.name.toLowerCase().includes(searchTerm.toLowerCase())
   );
-  
+
   return (
     <div className="bg-white rounded-lg filter drop-shadow-lg h-[420px] w-[306px] px-[16px] py-[20px]">
       <div className="flex justify-between items-center mb-3">
@@ -60,15 +60,15 @@ const TopProductsTable: React.FC<TopProductsTableProps> = ({ products }) => {
         {filteredProducts.map((product) => (
           <div key={product.id} className="border-b border-gray-100 pb-4">
             <div className="flex items-center justify-between h-[64px] w-[280px]">
-              <div className="flex items-center gap-[16px] w-full " >
+              <div className="flex items-center gap-[16px] w-full ">
                 <div className="relative bg-gray-100 rounded-md overflow-hidden w-[56px] h-[56px]">
                   <img
-                    src={product.image}
+                    src={product.image_url}
                     alt={product.name}
                     className="object-cover w-[56px] h-[56px]"
                   />
                 </div>
-                <div className='w-[108px] h-[46px] flex flex-col justify-center gap-[4px]'>
+                <div className="w-[108px] h-[46px] flex flex-col justify-center gap-[4px]">
                   <h3 className="text-[15px] font-medium text-cyprus">
                     {product.name}
                   </h3>

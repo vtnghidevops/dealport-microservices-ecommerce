@@ -1,8 +1,8 @@
 import React from "react";
-import { getButtonClass } from "../../common/Button";
+import { getButtonClass } from "../../../utils/buttonUtils";
 import { MenCardItem } from "./models/trendingProducts.model";
 
-const MenCard: React.FC<MenCardItem> = ({ image, price, discount }) => {
+const MenCard: React.FC<MenCardItem> = ({ image_url, price, discount }) => {
   // id: 1,
   // image:  `${urlImgMenCollection}pants.png`, // Replace with your image path
   // price: '25.95',
@@ -21,7 +21,7 @@ const MenCard: React.FC<MenCardItem> = ({ image, price, discount }) => {
       )}
       <a href="#" className="flex justify-center items-center w-full h-full">
         <img
-          src={image}
+          src={image_url}
           alt="Black pants"
           className="w-full h-full object-contain "
         />

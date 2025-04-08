@@ -1,5 +1,5 @@
-import React, {useState, useEffect} from "react";
-import { Button } from "../../common/Button";
+import {useState, useEffect} from "react";
+import { getButtonClass } from "@/utils/buttonUtils";
 import { FaArrowLeft } from "react-icons/fa6";
 import { FaArrowRight } from "react-icons/fa6";
 import { SliderBannerItem } from "./models/sliderBanner.model";
@@ -64,7 +64,7 @@ export default function HeroBanner() {
         return (
           <div key={index} className="w-full bg-cyprus h-full relative">
             <img
-              src={item.image}
+              src={item.image_url}
               alt="Clothing rack"
               className="absolute right-0 h-full w-[70%]"
             />
@@ -77,7 +77,11 @@ export default function HeroBanner() {
               </div>
 
               <div className="ml-[10rem] mt-[1.5rem]">
-                <Button type={"secondary"} text="Show now"></Button>
+                <div className="w-[12rem] h-[4rem] rounded-3xl ">
+                  <button className={`${getButtonClass("secondary")}`}>
+                    Show now
+                  </button>
+                </div>
               </div>
             </div>
           </div>

@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import TestimonialCard from "./TestimonialCard";
 import { TestimonialService } from "./services/testimonial.service";
 import { TestimonialItem } from "./models/testimonial.model";
-import { Button } from "../../common/Button";
+import { getButtonClass } from "@/utils/buttonUtils";
 import "../../../app.css";
 
 const HappyCustomers: React.FC = () => {
@@ -86,7 +86,12 @@ const HappyCustomers: React.FC = () => {
         </div>
 
         <div className="text-center mt-[4rem] flex items-center justify-center ">
-          <Button type="primary-cy" text="GET STARTED"></Button>
+          {/* <Button type="primary-cy" text="GET STARTED"></Button> */}
+          <div className="w-[12rem] h-[4rem] rounded-3xl ">
+            <button className={`${getButtonClass("primary-cy")}`}>
+              GET STARTED
+            </button>
+          </div>
         </div>
       </div>
     </section>

@@ -1,7 +1,27 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import { FaRegHeart, FaHeart } from "react-icons/fa";
 
-const StarRating = ({ rating, maxRating = 5 }) => {
+interface StarRatingProps {
+  rating: number;
+  maxRating?: number;
+}
+
+interface ReviewData {
+  rating: number;
+  count: number;
+}
+
+interface ProductCardProps {
+  title: string;
+  description: string;
+  price: number;
+  originalPrice: number;
+  discount: number;
+  reviews: ReviewData;
+  image_url: string;
+}
+
+const StarRating: React.FC<StarRatingProps> = ({ rating, maxRating = 5 }) => {
   return (
     <div className="flex">
       {[...Array(maxRating)].map((_, index) => {
@@ -24,17 +44,17 @@ const StarRating = ({ rating, maxRating = 5 }) => {
     </div>
   );
 };
-export default function ProductCard({
+
+const ProductCard: React.FC<ProductCardProps> = ({
   title,
   description,
   price,
   originalPrice,
   discount,
   reviews,
-  imageUrl,
-}) {
+  image_url,
+}) => {
   const [isFavorite, setIsFavorite] = useState(false);
-  // Assuming reviews contains a rating property
   const rating = reviews?.rating || 0;
   const reviewCount = reviews?.count || 0;
   
@@ -47,7 +67,7 @@ export default function ProductCard({
       <div className="relative overflow-hidden rounded-xl">
         <a href="#" className="block overflow-hidden">
           <img
-            src={imageUrl}
+            src={image_url}
             alt={title}
             className="w-[248px] h-[180px] object-cover rounded-xl transition-transform duration-700"
           />
@@ -75,13 +95,12 @@ export default function ProductCard({
 
         <div className="flex items-center mt-2">
           <span className="text-lg font-bold text-ocean-green">${price}</span>
-          { 
-            (originalPrice !== 0) && (originalPrice !== "") && (
-              <span className="text-sm line-through text-grey ml-2">
-                (${originalPrice})
-              </span>
-            )}
-          {(discount !== 0) && (discount !== "")  && (
+          {originalPrice !== 0 && (
+            <span className="text-sm line-through text-grey ml-2">
+              (${originalPrice})
+            </span>
+          )}
+          {discount !== 0 && (
             <span className="text-sm ml-2 text-ocean-green">
               {discount}% Off
             </span>
@@ -100,3 +119,5 @@ export default function ProductCard({
     </div>
   );
 }
+
+export default ProductCard;
