@@ -1,8 +1,8 @@
 export interface TopProductItem {
-  id?: string | number;
+  id: string;
   name: string;
   price?: number | string;
-  image: string;
+  image_url: string;
   setUpDesign?: string;   // set up container with row or col or double - row, double, col
   actionLabel?: string;     // "Buy Now", "Visit Store", etc.
   actionLink?: string;
@@ -12,7 +12,7 @@ export interface TopProductItem {
     row: number;  // Số hàng mà sản phẩm chiếm
   };
   isImageDouble?: boolean
-  image_double?: string
+  image_double_url?: string
 }
 
 export interface ProductCard {

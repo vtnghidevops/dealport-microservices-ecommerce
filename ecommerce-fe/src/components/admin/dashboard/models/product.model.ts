@@ -4,26 +4,26 @@ export interface Product {
   category: string;
   price: number;
   itemCode?: string;
-  image?: string;
+  image_url?: string;
 }
 
 export interface BestSellingProduct {
   product: Product;
   totalOrder: number;
-  status: 'Stock' | 'Stock out';
+  status: "Stock" | "Stock out";
   price: number;
 }
 
 export interface ProductCategory {
   id: number;
   name: string;
-  image: string;
+  image_url: string;
 }
 
 export interface NewProduct {
   id: number;
   name: string;
   price: number;
-  image?: string;
+  image_url?: string;
   itemCode?: string;
 }

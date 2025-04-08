@@ -4,10 +4,10 @@
 // buttonText: "",
 // hasMore: false,
 export interface BannerShowCaseItem {
-  id: number,
-  image: string,
-  buttonType: string,
-  buttonText: string,
+  id: string,
+  image_url: string,
+  buttonType?: string,
+  buttonText?: string,
   hasMore: boolean
 };
 
@@ -17,8 +17,8 @@ export interface BannerShowCaseItem {
 // title: "Philips 4K Ambilight TV",
 // discount_img: `${urlImgDisplay}discount_img.png`,
 export interface DisplayItem {
-  id: number,
-  image: string,
+  id: string,
+  image_url: string,
   buttonType?: string,
   price?: string | number,
   title?: string,
@@ -29,9 +29,9 @@ export interface DisplayItem {
 // imgURL: `${urlImgGaming}headsets.png`,
 // href: "#",
 export interface GamingItem {
-  id: number,
+  id: string,
   subtitle: string,
-  image: string,
+  image_url: string,
   href: string
 }
 
@@ -39,8 +39,8 @@ export interface GamingItem {
 // imgURL={`${urlImgProduct}new-fashion.png`}
 // ButtonType={"secondary"}
 export interface NewFashionItem {
-  id: number,
+  id: string,
   title: string,
-  image: string,
+  image_url: string,
   buttonType: string
 }

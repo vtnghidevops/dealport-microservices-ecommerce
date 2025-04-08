@@ -5,7 +5,7 @@
 //     review: '"Fast delivery and fantastic quality! The customer support team was quick to resolve my query. Dealport has earned a loyal customer."',
 //     rating: 5,
 export interface TestimonialItem {
-  id: number;
+  id: string;
   name: string;
   avatarUrl?: string;
   review: string;

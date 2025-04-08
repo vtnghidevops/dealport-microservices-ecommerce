@@ -12,17 +12,17 @@
 //     imageUrl: `${urlImgTrending}serum.png`,
 
 export interface TrendingProductItem {
-  id: number;
+  id: string;
   title: string;
   description: string;
   price: number | string;
-  originalPrice: number | string;
-  discount: number | string;
+  originalPrice?: number | string;
+  discount?: number | string;
   review: {
     rating: number;
     count: number;
-  };
-  imageUrl: string;
+  };  
+  image_url: string;
 }
 
 //       id: 1,
@@ -30,10 +30,10 @@ export interface TrendingProductItem {
 //       price: "25.95",
 //       discount: "20% off",
 export interface MenCollectionItem {
-  id: number;
-  image: string;
-  price: number;
-  discount: number;
+  id: string;
+  image_url: string;
+  price?: number | string;
+  discount?: number | string;
 }
 
 
@@ -42,10 +42,10 @@ export interface MenCollectionItem {
 // price: '25.95',
 // discount: '20% off',
 export interface MenCardItem {
-  id: number;
-  image: string;
-  price: number;
-  discount: number;
+  id: string;
+  image_url: string;
+  price?: number | string;
+  discount?: number | string;
 }
 
 

@@ -1,9 +1,10 @@
 
 export interface CategoryItem {
-  id?: string | number;
+  id: string;
   name: string;
-  image: string;
+  image_url: string;
   link?: string;
+  slug: string;
 }
 
 export interface CategoryExplorerProps {
@@ -22,10 +23,10 @@ export interface CategoryExplorerCard {
   title?: string;
   category: CategoryItem;
   viewAllLabel?: string;
-  onViewAllClick?: () => void;
   itemWidth?: string;
   itemHeight?: string;
   className?: string;
   showNavigationArrow?: boolean;
+  onViewAllClick?: () => void;
   onItemClick?: (category: CategoryItem, index: number) => void;
 }

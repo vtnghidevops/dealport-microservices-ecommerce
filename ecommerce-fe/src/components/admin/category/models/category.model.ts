@@ -1,12 +1,12 @@
 // Category model definition for the application
 export interface Category {
-  id: number;
+  id: string;
   name: string;
   slug: string;
-  icon: string; // Path or name of icon
-  productCount?: number; // Optional count of products in this category
-  createdAt: string;
-  updatedAt: string;
+  image_url: string; // Path or name of icon
+  productCount: number; // Optional count of products in this category
+  createdAt: Date;
+  updatedAt: Date;
   isActive: boolean;
 }
 
