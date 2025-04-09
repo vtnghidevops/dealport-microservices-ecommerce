@@ -1,12 +1,14 @@
 import { CategoryItem } from './../components/homepage/CategoryExplorer/models/category.model';
-export const handleViewAll = () => {
+import { NavigateFunction } from 'react-router-dom';
+export const handleViewAll = (navigate: NavigateFunction) => {
   console.log("View all categories clicked");
+  navigate('/categories');
   // Navigate to all categories page
 };
 
-export const handleCategoryClick = (category: CategoryItem) => {
+export const handleCategoryClick = (navigate: NavigateFunction, category: CategoryItem) => {
   console.log("Category clicked:", category);
-  // Navigate or perform actions
+  navigate(`/${category.slug}`);
 };
 
 export const handleProductClick = (product: string, index: number) => {

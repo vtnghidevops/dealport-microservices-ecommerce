@@ -14,10 +14,12 @@ import MainLayout from '@/components/layouts/MainLayout';
 import ProductList from '../pages/products/ProductList' 
 import ProductDetail from '../pages/products/ProductDetails'; 
 import NotFound from '../pages/system/NotFound';
+import ScrollToTop from '@/components/common/ScrollToTop';
 
 const AppRouters: React.FC = () => {
   return (
     <Router>
+      <ScrollToTop />
       <Routes >
         {/* Public routes with MainLayout */}
         <Route path="/" element={<MainLayout />}>
