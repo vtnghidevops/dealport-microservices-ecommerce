@@ -35,6 +35,7 @@ export default {
       },
       fontFamily: {
         lato: ["Lato", "sans-serif"],
+        
       },
       fontSize: {
         body: "16px",
