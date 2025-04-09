@@ -6,8 +6,9 @@ import { CategoryItem } from "./models/category.model";
 import { CategoryExplorerService } from "./services/categoryExplorer.service";
 import { handleViewAll } from "../../../utils/helpers";
 import { handleCategoryClick } from "../../../utils/helpers";
-
+import { useNavigate } from 'react-router-dom';
 const CategoryExplorer: React.FC = () => {
+  const navigate = useNavigate();
   // fetch data
   const [categories, setCategories] = useState<CategoryItem[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
@@ -30,11 +31,11 @@ const CategoryExplorer: React.FC = () => {
     title: "Start exploring now",
     categories: categories,
     viewAllLabel: "View All",
-    onViewAllClick: handleViewAll,
+    onViewAllClick: () => handleViewAll(navigate),
+    onItemClick: (category: CategoryItem) => handleCategoryClick(navigate, category),
     itemWidth: "w-[180px]",
     itemHeight: "h-[220px]",
     showNavigationArrow: true,
-    onItemClick: handleCategoryClick,
   };
 
   // scroll event
@@ -101,7 +102,7 @@ const CategoryExplorer: React.FC = () => {
           {categoryExplore.title}
         </h2>
         <div className="absolute right-0 top-[2%]">
-          <button className="w-[8rem] h-[3rem] rounded-3xl border border-black bg-white hover:bg-black hover:text-white transition-all duration-300 ease-in-out">
+          <button onClick={() => handleViewAll(navigate)} className="w-[8rem] h-[3rem] rounded-3xl border border-black bg-white hover:bg-black hover:text-white transition-all duration-300 ease-in-out">
             View All
           </button>
         </div>

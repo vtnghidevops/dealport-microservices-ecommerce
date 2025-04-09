@@ -1,6 +1,6 @@
 import { CategoryItem } from "../models/category.model";
 
-const urlImgExploring = "images/exploring/";
+const urlImgExploring = "images/categories/";
 // Mock data - trong thực tế sẽ fetch từ API
 const categoryData: CategoryItem[] = [
     {

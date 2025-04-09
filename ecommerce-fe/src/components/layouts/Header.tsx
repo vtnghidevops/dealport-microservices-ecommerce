@@ -9,7 +9,7 @@ import { IoMenu } from "react-icons/io5";
 const Logo: React.FC = () => {
   return (
     <a href="/">
-      <img src="images/common/logo.png" alt="logo" className="h-7" />
+      <img src="/images/common/logo.png" alt="logo" className="h-7" />
     </a>
   );
 };
