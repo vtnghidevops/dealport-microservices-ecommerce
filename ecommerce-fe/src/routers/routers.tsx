@@ -1,35 +1,46 @@
-import React from 'react';
-import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
-import Home from '../pages/homepage/Home';
-import DashboardAdmin from '../pages/admin/dashboard/Dashboard';
-import OrderPage from '../pages/admin/order'; // Import Order Management page
-import AdminLayout from '../components/admin/layout/AdminLayout';
-import CustomerPage from '../pages/admin/customer';
-import CategoryPage from '../pages/admin/category';
-import ProductPage from '../pages/admin/product';
-import AdminRolePage from '../pages/admin/role';
+import React from "react";
+import { BrowserRouter as Router, Route, Routes } from "react-router-dom";
+import Home from "../pages/homepage/Home";
+import DashboardAdmin from "../pages/admin/dashboard/Dashboard";
+import OrderPage from "../pages/admin/order"; // Import Order Management page
+import AdminLayout from "../components/admin/layout/AdminLayout";
+import CustomerPage from "../pages/admin/customer";
+import CategoryPage from "../pages/admin/category";
+import ProductPage from "../pages/admin/product";
+import AdminRolePage from "../pages/admin/role";
 
-
-import MainLayout from '@/components/layouts/MainLayout';
-import ProductList from '../pages/products/ProductList' 
-import ProductDetail from '../pages/products/ProductDetails'; 
-import NotFound from '../pages/system/NotFound';
-import ScrollToTop from '@/components/common/ScrollToTop';
-
+import MainLayout from "@/components/layouts/MainLayout";
+import ProductList from "../pages/products/ProductList";
+import ProductDetail from "../pages/products/ProductDetails";
+import NotFound from "../pages/system/NotFound";
+import ScrollToTop from "@/components/common/ScrollToTop";
+import Login from "@/pages/system/Login";
+import ForgotPassword from "@/pages/system/ForgotPassword";
+import VerifyEmail from "@/pages/system/VerifyEmail";
+import Register from "@/pages/system/Register";
+import ResetPassword from "@/pages/system/ResetPassword";
 const AppRouters: React.FC = () => {
   return (
     <Router>
       <ScrollToTop />
-      <Routes >
+      <Routes>
         {/* Public routes with MainLayout */}
         <Route path="/" element={<MainLayout />}>
-        <Route path="/" element={<Home />} />
+          <Route path="/" element={<Home />} />
           <Route path="/categories" element={<ProductList />} />
-          
+          <Route path="/login" element={<Login />} />
+          <Route path="/register" element={<Register />} />
+          <Route path="/verify-email" element={<VerifyEmail />} />
+          <Route path="/forgot-password" element={<ForgotPassword />} />
+          <Route path="/reset-pasword" element={<ResetPassword />} />
+
           {/* Route cho các URL theo slug */}
           <Route path="/:categorySlug" element={<ProductList />} />
-          <Route path="/:categorySlug/:productSlug" element={<ProductDetail />} />
-          
+          <Route
+            path="/:categorySlug/:productSlug"
+            element={<ProductDetail />}
+          />
+
           {/* Routes cho giỏ hàng và thanh toán */}
           <Route path="/cart" element={<ProductList />} />
           <Route path="/checkout" element={<ProductList />} />

@@ -1,0 +1,352 @@
+Folder PATH listing for volume Project
+Volume serial number is 6493-F390
+D:.
+│   App.css
+│   App.tsx
+│   index.css
+│   main.tsx
+│   tree.txt
+│   vite-env.d.ts
+│   
+├───assets
+│       react.svg
+│       
+├───components
+│   ├───admin
+│   │   ├───addProduct
+│   │   │   │   AddProduct.tsx
+│   │   │   │   index.ts
+│   │   │   │   ProductManagement.tsx
+│   │   │   │   
+│   │   │   ├───components
+│   │   │   │       BasicDetails.tsx
+│   │   │   │       ProductCategories.tsx
+│   │   │   │       ProductHeader.tsx
+│   │   │   │       ProductImages.tsx
+│   │   │   │       ProductInventory.tsx
+│   │   │   │       ProductPricing.tsx
+│   │   │   │       
+│   │   │   ├───hooks
+│   │   │   │       useImageUpload.ts
+│   │   │   │       useProductForm.ts
+│   │   │   │       
+│   │   │   ├───models
+│   │   │   │       product.model.ts
+│   │   │   │       
+│   │   │   └───services
+│   │   │           product.service.ts
+│   │   │           
+│   │   ├───category
+│   │   │   │   CategoryManagement.tsx
+│   │   │   │   index.ts
+│   │   │   │   
+│   │   │   ├───cards
+│   │   │   │   │   CategorySummaryCard.tsx
+│   │   │   │   │   index.ts
+│   │   │   │   │   
+│   │   │   │   └───models
+│   │   │   │           card.model.ts
+│   │   │   │           
+│   │   │   ├───discover
+│   │   │   │       CategoryCard.tsx
+│   │   │   │       
+│   │   │   ├───filter
+│   │   │   │       CategoryFilter.tsx
+│   │   │   │       
+│   │   │   ├───models
+│   │   │   │       category.model.ts
+│   │   │   │       
+│   │   │   ├───services
+│   │   │   │       category.service.ts
+│   │   │   │       
+│   │   │   └───tables
+│   │   │           CategoryTable.tsx
+│   │   │           
+│   │   ├───customer
+│   │   │   │   CustomerManagement.tsx
+│   │   │   │   index.ts
+│   │   │   │   
+│   │   │   ├───cards
+│   │   │   │   │   CustomerSummaryCard.tsx
+│   │   │   │   │   index.ts
+│   │   │   │   │   
+│   │   │   │   └───models
+│   │   │   │           card.model.ts
+│   │   │   │           
+│   │   │   ├───charts
+│   │   │   │       CustomerActivityChart.tsx
+│   │   │   │       
+│   │   │   ├───detail
+│   │   │   │       CustomerDetail.tsx
+│   │   │   │       CustomerSidebar.tsx
+│   │   │   │       
+│   │   │   ├───filter
+│   │   │   │       CustomerFilter.tsx
+│   │   │   │       StatusFilter.tsx
+│   │   │   │       
+│   │   │   ├───models
+│   │   │   │       customer.model.ts
+│   │   │   │       
+│   │   │   ├───services
+│   │   │   │       customer.service.ts
+│   │   │   │       
+│   │   │   └───tables
+│   │   │           CustomerTable.tsx
+│   │   │           
+│   │   ├───dashboard
+│   │   │   │   index.ts
+│   │   │   │   
+│   │   │   ├───cards
+│   │   │   │   │   CardTemplate.tsx
+│   │   │   │   │   index.ts
+│   │   │   │   │   TopProducts.tsx
+│   │   │   │   │   
+│   │   │   │   └───models
+│   │   │   │           card.model.ts
+│   │   │   │           
+│   │   │   ├───charts
+│   │   │   │       UserActivityChart.tsx
+│   │   │   │       WeeklyReportChart.tsx
+│   │   │   │       
+│   │   │   ├───models
+│   │   │   │       dashboard.model.ts
+│   │   │   │       product.model.ts
+│   │   │   │       transaction.model.ts
+│   │   │   │       
+│   │   │   ├───services
+│   │   │   │       dashboard.service.ts
+│   │   │   │       product.service.ts
+│   │   │   │       transaction.service.ts
+│   │   │   │       
+│   │   │   ├───tables
+│   │   │   │       BestSellingTable.tsx
+│   │   │   │       TransactionTable.tsx
+│   │   │   │       
+│   │   │   └───widgets
+│   │   │           NewProductItem.tsx
+│   │   │           NewProductList.tsx
+│   │   │           ProductCategoryList.tsx
+│   │   │           
+│   │   ├───layout
+│   │   │       AdminHeader.tsx
+│   │   │       AdminLayout.tsx
+│   │   │       Sidebar.tsx
+│   │   │       
+│   │   ├───order
+│   │   │   │   index.ts
+│   │   │   │   OrderManagement.tsx
+│   │   │   │   
+│   │   │   ├───cards
+│   │   │   │   │   index.ts
+│   │   │   │   │   OrderSummaryCard.tsx
+│   │   │   │   │   
+│   │   │   │   └───models
+│   │   │   │           card.model.ts
+│   │   │   │           
+│   │   │   ├───filters
+│   │   │   │       OrderFilter.tsx
+│   │   │   │       StatusFilter.tsx
+│   │   │   │       
+│   │   │   ├───modals
+│   │   │   │       AddOrderModal.tsx
+│   │   │   │       
+│   │   │   ├───models
+│   │   │   │       customer.model.ts
+│   │   │   │       order.model.ts
+│   │   │   │       product.model.ts
+│   │   │   │       
+│   │   │   ├───services
+│   │   │   │       customer.service.ts
+│   │   │   │       order.service.ts
+│   │   │   │       
+│   │   │   └───tables
+│   │   │           OrderDetailsTable.tsx
+│   │   │           OrderTable.tsx
+│   │   │           
+│   │   └───role
+│   │       │   AdminRoleManagement.tsx
+│   │       │   index.ts
+│   │       │   
+│   │       ├───components
+│   │       │       index.ts
+│   │       │       PasswordChangeForm.tsx
+│   │       │       PasswordInput.tsx
+│   │       │       ProfileCard.tsx
+│   │       │       ProfileUpdateForm.tsx
+│   │       │       SocialMediaLinks.tsx
+│   │       │       
+│   │       ├───hooks
+│   │       │       useAdminRole.ts
+│   │       │       usePasswordChange.ts
+│   │       │       
+│   │       ├───models
+│   │       │       adminRole.model.ts
+│   │       │       
+│   │       └───services
+│   │               roleAdmin.service.ts
+│   │               
+│   ├───common
+│   │       Badge.tsx
+│   │       Card.tsx
+│   │       Pagination.tsx
+│   │       ReviewCard.tsx
+│   │       ScrollToTop.tsx
+│   │       SearchFilter.tsx
+│   │       TabFilter.tsx
+│   │       TableComponent.tsx
+│   │       
+│   ├───homepage
+│   │   ├───Ads
+│   │   │   │   BannerShowcase.tsx
+│   │   │   │   DisplayGrid.tsx
+│   │   │   │   GamingBanner.tsx
+│   │   │   │   index.ts
+│   │   │   │   NewFashion.tsx
+│   │   │   │   
+│   │   │   ├───models
+│   │   │   │       ads.model.ts
+│   │   │   │       
+│   │   │   └───services
+│   │   │           ads.service.ts
+│   │   │           
+│   │   ├───CategoryExplorer
+│   │   │   │   CategoryCard.tsx
+│   │   │   │   CategoryExplorer.tsx
+│   │   │   │   index.ts
+│   │   │   │   
+│   │   │   ├───models
+│   │   │   │       category.model.ts
+│   │   │   │       
+│   │   │   └───services
+│   │   │           categoryExplorer.service.ts
+│   │   │           
+│   │   ├───HappyCustomers
+│   │   │   │   HappyCustomers.tsx
+│   │   │   │   index.ts
+│   │   │   │   TestimonialCard.tsx
+│   │   │   │   
+│   │   │   ├───models
+│   │   │   │       testimonial.model.ts
+│   │   │   │       
+│   │   │   └───services
+│   │   │           testimonial.service.ts
+│   │   │           
+│   │   ├───LimitedDeal
+│   │   │   │   index.ts
+│   │   │   │   LitmitedDeal.tsx
+│   │   │   │   
+│   │   │   ├───models
+│   │   │   │       limitedDeal.model.ts
+│   │   │   │       
+│   │   │   └───services
+│   │   │           litmitedDeal.service.ts
+│   │   │           
+│   │   ├───SliderBanner
+│   │   │   │   index.ts
+│   │   │   │   SliderBanner.tsx
+│   │   │   │   
+│   │   │   ├───models
+│   │   │   │       sliderBanner.model.ts
+│   │   │   │       
+│   │   │   └───services
+│   │   │           sliderBanner.service.ts
+│   │   │           
+│   │   ├───TopProducts
+│   │   │   │   index.ts
+│   │   │   │   ProductsCard.tsx
+│   │   │   │   TopProducts.tsx
+│   │   │   │   
+│   │   │   ├───models
+│   │   │   │       topProducts.model.ts
+│   │   │   │       
+│   │   │   └───services
+│   │   │           topProducts.service.ts
+│   │   │           
+│   │   └───TrendingProducts
+│   │       │   index.ts
+│   │       │   MenCard.tsx
+│   │       │   MenCollection.tsx
+│   │       │   TrendingProducts.tsx
+│   │       │   
+│   │       ├───models
+│   │       │       trendingProducts.model.ts
+│   │       │       
+│   │       └───services
+│   │               menCollection.service.ts
+│   │               trendingProducts.service.ts
+│   │               
+│   ├───layouts
+│   │       Footer.tsx
+│   │       Header.tsx
+│   │       MainLayout.tsx
+│   │       
+│   ├───product
+│   │   ├───components
+│   │   │       ProductCard.tsx
+│   │   │       ProductFilter.tsx
+│   │   │       ProductGrid.tsx
+│   │   │       ProductInfomation.tsx
+│   │   │       RelatedProduct.tsx
+│   │   │       
+│   │   ├───models
+│   │   │       category.model.ts
+│   │   │       product.model.ts
+│   │   │       
+│   │   └───services
+│   │           category.service.ts
+│   │           product.service.ts
+│   │           
+│   └───ui
+│           button.tsx
+│           card.tsx
+│           input.tsx
+│           label.tsx
+│           
+├───context
+├───hooks
+├───lib
+│       utils.ts
+│       
+├───pages
+│   ├───admin
+│   │   ├───category
+│   │   │       index.tsx
+│   │   │       
+│   │   ├───customer
+│   │   │       index.tsx
+│   │   │       
+│   │   ├───dashboard
+│   │   │       Dashboard.tsx
+│   │   │       
+│   │   ├───order
+│   │   │       index.tsx
+│   │   │       
+│   │   ├───product
+│   │   │       index.tsx
+│   │   │       
+│   │   └───role
+│   │           index.tsx
+│   │           
+│   ├───homepage
+│   │       Home.tsx
+│   │       
+│   ├───products
+│   │       ProductDetails.tsx
+│   │       ProductList.tsx
+│   │       
+│   └───system
+│           ForgotPassword.tsx
+│           Login.tsx
+│           NotFound.tsx
+│           Register.tsx
+│           ResetPassword.tsx
+│           VerifyEmail.tsx
+│           
+├───routers
+│       routers.tsx
+│       
+└───utils
+        buttonUtils.ts
+        helpers.ts
+        notifications.ts
+        
