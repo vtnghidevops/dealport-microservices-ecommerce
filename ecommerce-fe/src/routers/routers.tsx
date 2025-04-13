@@ -19,6 +19,7 @@ import ForgotPassword from "@/pages/system/ForgotPassword";
 import VerifyEmail from "@/pages/system/VerifyEmail";
 import Register from "@/pages/system/Register";
 import ResetPassword from "@/pages/system/ResetPassword";
+import Wishlist from "@/pages/wishlist/Wishlist";
 const AppRouters: React.FC = () => {
   return (
     <Router>
@@ -32,7 +33,9 @@ const AppRouters: React.FC = () => {
           <Route path="/register" element={<Register />} />
           <Route path="/verify-email" element={<VerifyEmail />} />
           <Route path="/forgot-password" element={<ForgotPassword />} />
-          <Route path="/reset-pasword" element={<ResetPassword />} />
+          <Route path="/reset-password" element={<ResetPassword />} />
+          <Route path="/wishlist" element={<Wishlist />} />
+
 
           {/* Route cho các URL theo slug */}
           <Route path="/:categorySlug" element={<ProductList />} />
