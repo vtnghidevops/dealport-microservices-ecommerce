@@ -26,3 +26,10 @@ export function generateSlug(text: string): string {
     .replace(/\s+/g, '-') // thay khoảng trắng bằng dấu gạch ngang
     .replace(/^-+|-+$/g, ''); // loại bỏ dấu gạch ngang ở đầu và cuối
 }
+
+export const normalizeText = (text: string): string => {
+  return text
+    .toLowerCase()
+    .trim()
+    .replace(/\s+/g, ' ');
+};
