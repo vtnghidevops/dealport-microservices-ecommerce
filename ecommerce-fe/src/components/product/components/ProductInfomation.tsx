@@ -18,9 +18,10 @@ interface ProductInformationProps {
       global: string;
     };
   };
+  onWriteReview?: () => void; // Thêm prop này để scroll đến phần comments
 }
 
-const ProductInformation: React.FC<ProductInformationProps> = ({ product }) => {
+const ProductInformation: React.FC<ProductInformationProps> = ({ product, onWriteReview }) => {
   const [activeTab, setActiveTab] = useState<string>("description");
 
   return (
@@ -71,24 +72,24 @@ const ProductInformation: React.FC<ProductInformationProps> = ({ product }) => {
 
       {/* Content based on active tab */}
       {activeTab === "description" && (
-        <div className="flex gap-16 p-[1.5rem] ">
+        <div className="flex gap-16 py-[1.5rem] ">
           <div className="col-span-2 max-w-[37rem]">
             <h3 className="text-lg font-semibold mb-3">Description</h3>
-            <p className="text-gray-600">{product.description}</p>
-            <p className="text-gray-600 mt-4">
+            <p className="text-gray-600 text-[15px]">{product.description}</p>
+            <p className="text-gray-600 mt-4 text-[15px]">
               Even the most ambitious projects are easily handled with up to 10
               CPU cores, up to 16 GPU cores, a 16-core Neural Engine, and
               dedicated encode and decode media engines that support H.264,
               HEVC, and ProRes codecs.
             </p>
           </div>
-          <div className="flex gap-[3rem]">
+          <div className="flex gap-5">
             <div>
               <h3 className="text-lg font-semibold mb-3">Feature</h3>
               <ul className="space-y-2">
                 {product.features.map((feature, index) => (
-                  <li key={index} className="flex items-center text-gray-600">
-                    <span className="flex-shrink-0 w-6 h-6 flex items-center justify-center rounded-full bg-orange-100 text-orange-500 mr-2">
+                  <li key={index} className="text-[15px] flex items-center text-gray-600">
+                    <span className="text-[15px] flex-shrink-0 w-6 h-6 flex items-center justify-center rounded-full bg-orange-100 text-orange-500 mr-2">
                       ✓
                     </span>
                     {feature.value}
@@ -100,7 +101,7 @@ const ProductInformation: React.FC<ProductInformationProps> = ({ product }) => {
               <h3 className="text-lg font-semibold mt-6 mb-3">
                 Shipping Information
               </h3>
-              <ul className="space-y-2 text-gray-600">
+              <ul className="space-y-2 text-gray-600 text-[15px]">
                 <li className="flex items-center gap-1">
                   <span className="text-gray-900 font-medium">Courier:</span>{" "}
                   {product.shippingInfo.courier}
@@ -222,7 +223,7 @@ const ProductInformation: React.FC<ProductInformationProps> = ({ product }) => {
                 <span>★</span>
               </div>
               <div className="text-sm text-gray-500 mt-1">21,671 Ratings</div>
-              <button className="w-[160px] mt-5 bg-[#0496FF] text-white px-6 py-2 rounded-lg hover:bg-blue-500">
+              <button onClick={onWriteReview} className="w-[160px] mt-5 bg-[#0496FF] text-white px-6 py-2 rounded-lg hover:bg-blue-500">
                 Write a Review
               </button>
             </div>

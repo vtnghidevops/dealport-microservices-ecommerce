@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useRef, useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { Product } from '../../components/product/models/product.model';
 import { productService } from '../../components/product/services/product.service';
@@ -9,6 +9,7 @@ import { CiHeart } from "react-icons/ci";
 import { IoShareSocialOutline } from "react-icons/io5";
 import { IoIosArrowForward, IoIosArrowBack  } from "react-icons/io";
 import { TbScale } from "react-icons/tb";
+import ProductComments from '@/components/product/components/ProductComments';
 
 const ProductDetail: React.FC = () => {
   const { categorySlug, productSlug } = useParams<{
@@ -22,7 +23,7 @@ const ProductDetail: React.FC = () => {
   const [currentImageIndex, setCurrentImageIndex] = useState<number>(0);
   const [thumbnailStartIndex, setThumbnailStartIndex] = useState<number>(0);
   const maxVisibleThumbnails = 5; // Maximum number of visible thumbnails
-  
+  const commentsRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
     const fetchProduct = async () => {
       try {
@@ -139,6 +140,10 @@ const ProductDetail: React.FC = () => {
     shippingInfo: product.shippingInfo
   };
   
+  // Hàm scroll đến phần comments
+  const scrollToComments = () => {
+    commentsRef.current?.scrollIntoView({ behavior: 'smooth' });
+  };
   return (
     <div className="container mx-auto px-4 md:px-[5rem] py-[1rem]">
       {/* Breadcrumb */}
@@ -418,7 +423,7 @@ const ProductDetail: React.FC = () => {
       </div>
 
       {/* Product Information (Tabs) */}
-      <ProductInformation product={productInfo} />
+      <ProductInformation product={productInfo} onWriteReview={scrollToComments}/>
 
       {/* Related Products */}
       <div className="mt-12">
@@ -426,6 +431,11 @@ const ProductDetail: React.FC = () => {
           categorySlug={categorySlug || ""}
           currentProductId={product.id}
         />
+      </div>
+
+      {/* Product Comments */}
+      <div ref={commentsRef}>
+        <ProductComments productId={product.id} />
       </div>
     </div>
   );

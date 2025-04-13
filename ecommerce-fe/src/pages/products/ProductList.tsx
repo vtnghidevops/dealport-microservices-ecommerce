@@ -9,7 +9,7 @@ import ProductGrid from '../../components/product/components/ProductGrid';
 import NotFound from '../system/NotFound';
 import { CiSearch } from "react-icons/ci";
 import Pagination from '@/components/common/Pagination';
-
+import { normalizeText } from '@/utils/helpers';
 const ProductListPage: React.FC = () => {
   const { categorySlug } = useParams<{ categorySlug: string }>();
   const [products, setProducts] = useState<Product[]>([]);
@@ -24,6 +24,14 @@ const ProductListPage: React.FC = () => {
   const indexOfLastProduct = currentPage * pageSize;
   const indexOfFirstProduct = indexOfLastProduct - pageSize;
   const currentProducts = products.slice(indexOfFirstProduct, indexOfLastProduct);
+  
+  const [priceFilter, setPriceFilter] = useState<{min: number | null, max: number | null}>({
+    min: null, 
+    max: null
+  });
+  const [selectedBrands, setSelectedBrands] = useState<string[]>([]);
+  const [selectedTag, setSelectedTag] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState<string>("");
   useEffect(() => {
     const fetchData = async () => {
       setLoading(true);
@@ -50,6 +58,140 @@ const ProductListPage: React.FC = () => {
     fetchData();
   }, [categorySlug]);
   
+  const handleSearch = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const query = event.target.value;
+    setSearchQuery(query);
+    
+    if (!categorySlug) return;
+    
+    // Get original products and filter
+    productService.getProductsByCategorySlug(categorySlug).then(products => {
+      if (!products) return;
+      
+      const filtered = products.filter(product => {
+        const searchIn = [
+          product.name,
+          product.description,
+          product.brand,
+          ...(product.tags || [])
+        ].map(text => normalizeText(text || ""));
+        
+        return searchIn.some(text => 
+          text.includes(normalizeText(query))
+        );
+      });
+      
+      setProducts(filtered);
+      setCurrentPage(1); // Reset to first page when searching
+    });
+  };
+
+    // Handler functions for filters
+    const handlePriceRangeFilter = (min: number | null, max: number | null) => {
+      setPriceFilter({ min, max });
+      applyFilters();
+    };
+  
+    const handleBrandFilter = (brands: string[]) => {
+      setSelectedBrands(brands);
+      applyFilters();
+    };
+  
+    const handleTagFilter = (tag: string) => {
+      setSelectedTag(currentTag => currentTag === tag ? null : tag);
+      applyFilters();
+    };
+  
+    // Combined filter function
+    const applyFilters = async () => {
+      if (!categorySlug) return;
+      
+      try {
+        let filteredProducts = await productService.getProductsByCategorySlug(categorySlug);
+        
+        if (!filteredProducts) return;
+  
+        // Apply rating filter
+        if (filterRating !== null) {
+          filteredProducts = filteredProducts.filter(
+            product => product.rating && product.rating >= filterRating
+          );
+        }
+  
+        // Apply price filter
+        if (priceFilter.min !== null || priceFilter.max !== null) {
+          filteredProducts = filteredProducts.filter(product => {
+            const price = product.price;
+            if (priceFilter.min !== null && priceFilter.max !== null) {
+              return price >= priceFilter.min && price <= priceFilter.max;
+            }
+            if (priceFilter.min !== null) {
+              return price >= priceFilter.min;
+            }
+            if (priceFilter.max !== null) {
+              return price <= priceFilter.max;
+            }
+            return true;
+          });
+        }
+  
+        // Apply brand filter
+        if (selectedBrands.length > 0) {
+          filteredProducts = filteredProducts.filter(
+            product => product.brand && selectedBrands.includes(product.brand)
+          );
+        }
+  
+        // Apply tag filter
+        if (selectedTag) {
+          const normalizedSelectedTag = normalizeText(selectedTag);
+          filteredProducts = filteredProducts.filter(
+            product => product.tags?.some(tag => 
+              normalizeText(tag) === normalizedSelectedTag
+            )
+          );
+        }
+        // Apply search filter
+        if (searchQuery.trim()) {
+          filteredProducts = filteredProducts.filter(product => {
+            const searchIn = [
+              product.name,
+              product.description,
+              product.brand,
+              ...(product.tags || [])
+            ].map(text => normalizeText(text || ""));
+            
+            return searchIn.some(text => 
+              text.includes(normalizeText(searchQuery))
+            );
+          });
+        }
+        // Apply sorting
+        switch (sortOption) {
+          case 'price-low':
+            filteredProducts.sort((a, b) => a.price - b.price);
+            break;
+          case 'price-high':
+            filteredProducts.sort((a, b) => b.price - a.price);
+            break;
+          case 'rating':
+            filteredProducts.sort((a, b) => (b.rating || 0) - (a.rating || 0));
+            break;
+          default:
+            // Default sorting (popular)
+            break;
+        }
+  
+        setProducts(filteredProducts);
+        
+      } catch (error) {
+        console.error('Error applying filters:', error);
+      }
+    };
+  
+    useEffect(() => {
+      applyFilters();
+    }, [categorySlug, filterRating, priceFilter, selectedBrands, selectedTag, sortOption]);
 
   const handleSortChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     setSortOption(e.target.value);
@@ -130,8 +272,12 @@ const ProductListPage: React.FC = () => {
         <div className="w-full md:w-1/4">
           <ProductFilter
             currentCategory={category}
-            onRatingFilter={handleFilterByRating}
             selectedRating={filterRating}
+            onRatingFilter={handleFilterByRating}
+            onPriceRangeFilter={handlePriceRangeFilter}
+            onBrandFilter={handleBrandFilter}
+            onTagFilter={handleTagFilter}
+            selectedTag={selectedTag}
           />
         </div>
 
@@ -143,11 +289,14 @@ const ProductListPage: React.FC = () => {
               <div className="border border-neutral-100-100 gap-8 flex items-center w-[424px] px-[16px] py-[12px] h-[44px] bg-white rounded-lg">
                 <input
                   type="text"
+                  value={searchQuery}
+                  onChange={handleSearch}
                   className="text-left w-[364px] focus:outline-none bg-transparent text-cyprus placeholder:text-neutral-500"
                   placeholder="Search for anything..."
                 />
                 <CiSearch className="text-neutral-500 text-lg cursor-pointer" />
               </div>
+
               {/* Sort options */}
               <div className="flex items-center mt-4 md:mt-0">
                 <label htmlFor="sort" className="text-sm text-gray-600 mr-2">
@@ -167,20 +316,40 @@ const ProductListPage: React.FC = () => {
               </div>
             </div>
 
-            {/* Filter tags */}
+            {/* Active Filters Section */}
             <div className="mb-[1rem] relative mt-5 px-[24px] flex flex-wrap items-center h-[44px] bg-aqua-spring rounded-lg">
               <div className="mr-2 text-sm text-neutral-500">
                 Active Filters:
               </div>
-              <div className="flex items-center bg-white rounded-full px-3 py-1 text-sm mr-2">
-                <span>{category?.name}</span>
-                <button className="ml-2 text-gray-500 hover:text-gray-700">
-                  ×
-                </button>
-              </div>
+
+              {/* Category filter tag */}
+              {category && (
+                <div className="flex items-center bg-white rounded-full px-3 py-1 text-sm mr-2">
+                  <span>{category.name}</span>
+                </div>
+              )}
+                
+                
+                {/* Search filter tag */}
+              {searchQuery && (
+                <div className="flex items-center bg-white rounded-full px-3 py-1 text-sm mr-2">
+                  <span>Search: {searchQuery}</span>
+                  <button
+                    className="ml-2 text-gray-500 hover:text-gray-700"
+                    onClick={() => {
+                      setSearchQuery("");
+                      applyFilters(); // Reset to filtered products without search
+                    }}
+                  >
+                    ×
+                  </button>
+                </div>
+              )}
+
+              {/* Rating filter tag */}
               {filterRating && (
                 <div className="flex items-center bg-white rounded-full px-3 py-1 text-sm mr-2">
-                  <span>{filterRating} Star Rating</span>
+                  <span>{filterRating} Star & Up</span>
                   <button
                     className="ml-2 text-gray-500 hover:text-gray-700"
                     onClick={() => handleFilterByRating(null)}
@@ -189,25 +358,68 @@ const ProductListPage: React.FC = () => {
                   </button>
                 </div>
               )}
-              {/* Results count */}
-              <div className="absolute right-5 text-sm text-gray-600">
-                <span className="font-bold text-cyprus">{products.length}</span> Results
-                found.
-              </div>
-            </div>
 
+              {/* Price filter tag */}
+              {(priceFilter.min !== null || priceFilter.max !== null) && (
+                <div className="flex items-center bg-white rounded-full px-3 py-1 text-sm mr-2">
+                  <span>
+                    Price: ${priceFilter.min || 0} - ${priceFilter.max || "∞"}
+                  </span>
+                  <button
+                    className="ml-2 text-gray-500 hover:text-gray-700"
+                    onClick={() => handlePriceRangeFilter(null, null)}
+                  >
+                    ×
+                  </button>
+                </div>
+              )}
+
+              {/* Brand filter tags */}
+              {selectedBrands.map((brand) => (
+                <div
+                  key={brand}
+                  className="flex items-center bg-white rounded-full px-3 py-1 text-sm mr-2"
+                >
+                  <span>{brand}</span>
+                  <button
+                    className="ml-2 text-gray-500 hover:text-gray-700"
+                    onClick={() =>
+                      handleBrandFilter(
+                        selectedBrands.filter((b) => b !== brand)
+                      )
+                    }
+                  >
+                    ×
+                  </button>
+                </div>
+              ))}
+
+              {/* Tag filter */}
+              {selectedTag && (
+                <div className="flex items-center bg-white rounded-full px-3 py-1 text-sm mr-2">
+                  <span>{selectedTag}</span>
+                  <button
+                    className="ml-2 text-gray-500 hover:text-gray-700"
+                    onClick={() => handleTagFilter(selectedTag)}
+                  >
+                    ×
+                  </button>
+                </div>
+              )}
+            </div>
 
             {/* Products */}
             {products.length > 0 ? (
               <>
-              <ProductGrid products={currentProducts} />
-              <Pagination
-              currentPage={currentPage}
-              totalItems={products.length}
-              pageSize={pageSize}
-              onPageChange={(page) => setCurrentPage(page)}
-            />
-            </>
+                <ProductGrid products={currentProducts} />
+                <Pagination
+                  currentPage={currentPage}
+                  totalItems={products.length}
+                  pageSize={pageSize}
+                  onPageChange={(page) => setCurrentPage(page)}
+                  showNavigation={false}
+                />
+              </>
             ) : (
               <div className="flex justify-center items-center h-64 bg-gray-50 rounded-lg">
                 <p className="text-gray-500">
@@ -215,11 +427,10 @@ const ProductListPage: React.FC = () => {
                 </p>
               </div>
             )}
-         
+          </div>
         </div>
       </div>
     </div>
-  </div>
   );
 };
 

@@ -11,6 +11,8 @@ export interface Product {
   categorySlug: string; // add categorySlug link to category page
   stock: number;
   rating?: number;
+  brand?: string;
+  tags?: string[];
   reviews: number;
   orders: number;
   imgSlider: string[];

@@ -1,74 +1,86 @@
-
-import React, { useState, useEffect } from 'react';
-import { Category } from '../models/category.model';
-import { categoryService } from '../services/category.service';
-import { FaStar } from 'react-icons/fa';
+import React, { useState, useEffect } from "react";
+import { Range } from "react-range";
+import { Category } from "../models/category.model";
+import { categoryService } from "../services/category.service";
+import { FaStar } from "react-icons/fa";
 import { GoChevronDown, GoChevronUp } from "react-icons/go";
 interface ProductFilterProps {
   currentCategory: Category | null;
   selectedRating: number | null;
+  selectedTag: string | null;
   onRatingFilter: (rating: number | null) => void;
   onPriceRangeFilter?: (minPrice: number | null, maxPrice: number | null) => void;
   onBrandFilter?: (brands: string[]) => void;
-  onTagFilter?: (tag: string) => void;
+  onTagFilter: (tag: string) => void;
 }
 
 const ProductFilter: React.FC<ProductFilterProps> = ({
   currentCategory,
   selectedRating,
+  selectedTag,
   onRatingFilter,
   onPriceRangeFilter,
   onBrandFilter,
-  onTagFilter
+  onTagFilter,
 }) => {
   const [categories, setCategories] = useState<Category[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [selectedPriceRange, setSelectedPriceRange] = useState<string>('all');
+  const [selectedPriceRange, setSelectedPriceRange] = useState<string>("all");
   const [selectedBrands, setSelectedBrands] = useState<string[]>([]);
-  const [minPrice, setMinPrice] = useState<string>('');
-  const [maxPrice, setMaxPrice] = useState<string>('');
+  const [minPrice, setMinPrice] = useState<string>("");
+  const [maxPrice, setMaxPrice] = useState<string>("");
+  const [priceRange, setPriceRange] = useState([0, 10000]); // Min và max price
   const [expandedSections, setExpandedSections] = useState({
     categories: true,
     priceRange: true,
     brands: true,
     rating: true,
-    tags: true
+    tags: true,
   });
 
   // Popular brands data
   const brands = [
-    { name: 'Apple', checked: false },
-    { name: 'Google', checked: false },
-    { name: 'Microsoft', checked: false },
-    { name: 'Samsung', checked: false },
-    { name: 'Dell', checked: false },
-    { name: 'HP', checked: false },
-    { name: 'Symphony', checked: false },
-    { name: 'Xiaomi', checked: false },
-    { name: 'Sony', checked: false },
-    { name: 'Panasonic', checked: false },
-    { name: 'LG', checked: false },
-    { name: 'Intel', checked: false },
-    { name: 'One Plus', checked: false },
+    { name: "Apple", checked: false },
+    { name: "Google", checked: false },
+    { name: "Microsoft", checked: false },
+    { name: "Samsung", checked: false },
+    { name: "Dell", checked: false },
+    { name: "HP", checked: false },
+    { name: "Symphony", checked: false },
+    { name: "Xiaomi", checked: false },
+    { name: "Sony", checked: false },
+    { name: "Panasonic", checked: false },
+    { name: "LG", checked: false },
+    { name: "Intel", checked: false },
+    { name: "One Plus", checked: false },
   ];
 
   // Popular tags data
-  const popularTags = [
-    'Game', 'iPhone', 'TV', 'Asus Laptops', 
-    'Macbook', 'SSD', 'Graphics Card', 
-    'Power Bank', 'Smart TV', 'Speaker',
-    'Tablet', 'Microwave', 'Samsung'
+  const tags = [
+    "Game",
+    "iPhone",
+    "TV",
+    "Asus Laptops",
+    "Macbook",
+    "SSD",
+    "Graphics Card",
+    "Power Bank",
+    "Smart TV",
+    "Speaker",
+    "Tablet",
+    "Microwave",
+    "Samsung",
   ];
 
   // Price ranges
   const priceRanges = [
-    { id: 'all', label: 'All Price', min: null, max: null },
-    { id: 'under20', label: 'Under $20', min: 0, max: 20 },
-    { id: '25to100', label: '$25 to $100', min: 25, max: 100 },
-    { id: '100to300', label: '$100 to $300', min: 100, max: 300 },
-    { id: '300to500', label: '$300 to $500', min: 300, max: 500 },
-    { id: '500to1000', label: '$500 to $1,000', min: 500, max: 1000 },
-    { id: '1000to10000', label: '$1,000 to $10,000', min: 1000, max: 10000 },
+    { id: "all", label: "All Price", min: null, max: null },
+    { id: "under20", label: "Under $20", min: 0, max: 20 },
+    { id: "25to100", label: "$25 to $100", min: 25, max: 100 },
+    { id: "100to300", label: "$100 to $300", min: 100, max: 300 },
+    { id: "300to500", label: "$300 to $500", min: 300, max: 500 },
+    { id: "500to1000", label: "$500 to $1,000", min: 500, max: 1000 },
+    { id: "1000to10000", label: "$1,000 to $10,000", min: 1000, max: 10000 },
   ];
 
   useEffect(() => {
@@ -79,11 +91,11 @@ const ProductFilter: React.FC<ProductFilterProps> = ({
         if (Array.isArray(categoriesData)) {
           setCategories(categoriesData);
         } else {
-          console.error('Invalid categories data received:', categoriesData);
+          console.error("Invalid categories data received:", categoriesData);
           setCategories([]);
         }
       } catch (error) {
-        console.error('Error fetching categories:', error);
+        console.error("Error fetching categories:", error);
         setCategories([]);
       } finally {
         setIsLoading(false);
@@ -93,48 +105,54 @@ const ProductFilter: React.FC<ProductFilterProps> = ({
     fetchCategories();
   }, []);
 
-
   const toggleSection = (section: keyof typeof expandedSections) => {
     setExpandedSections({
       ...expandedSections,
-      [section]: !expandedSections[section]
+      [section]: !expandedSections[section],
     });
   };
 
   const handlePriceRangeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { id } = e.target;
     setSelectedPriceRange(id);
-    
-    const selectedRange = priceRanges.find(range => range.id === id);
+
+    const selectedRange = priceRanges.find((range) => range.id === id);
     if (selectedRange && onPriceRangeFilter) {
       onPriceRangeFilter(selectedRange.min, selectedRange.max);
       // Reset custom price inputs when selecting a predefined range
-      setMinPrice('');
-      setMaxPrice('');
+      setMinPrice("");
+      setMaxPrice("");
     }
+  };
+
+  const normalizeText = (text: string): string => {
+    return text
+      .toLowerCase() // chuyển về chữ thường
+      .trim() // loại bỏ khoảng trắng đầu cuối
+      .replace(/\s+/g, ' '); // thay thế nhiều khoảng trắng thành một khoảng trắng
   };
 
   const handleCustomPriceFilter = () => {
     const min = minPrice ? parseFloat(minPrice) : null;
     const max = maxPrice ? parseFloat(maxPrice) : null;
-    
+
     if (onPriceRangeFilter && (min !== null || max !== null)) {
       onPriceRangeFilter(min, max);
       // Reset predefined price range selection
-      setSelectedPriceRange('');
+      setSelectedPriceRange("");
     }
   };
 
   const handleBrandChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { value, checked } = e.target;
     let updatedBrands: string[];
-    
+
     if (checked) {
       updatedBrands = [...selectedBrands, value];
     } else {
-      updatedBrands = selectedBrands.filter(brand => brand !== value);
+      updatedBrands = selectedBrands.filter((brand) => brand !== value);
     }
-    
+
     setSelectedBrands(updatedBrands);
     if (onBrandFilter) {
       onBrandFilter(updatedBrands);
@@ -150,11 +168,11 @@ const ProductFilter: React.FC<ProductFilterProps> = ({
     }
   };
 
-  const handleTagClick = (tag: string) => {
-    if (onTagFilter) {
-      onTagFilter(tag);
-    }
-  };
+  // const handleTagClick = (tag: string) => {
+  //   if (onTagFilter) {
+  //     onTagFilter(tag);
+  //   }
+  // };
 
   return (
     <div className="bg-white p-6 rounded-lg shadow-sm">
@@ -224,22 +242,50 @@ const ProductFilter: React.FC<ProductFilterProps> = ({
         {expandedSections.priceRange && (
           <div className="mt-3">
             {/* Price slider */}
-            <div className="mb-[1rem]">
-              <div className="relative mb-[1rem]">
-                <div className="h-1 bg-gray-200 rounded-full">
+            <div className="mb-[1rem] px-2">
+              <Range
+                step={100}
+                min={0}
+                max={10000}
+                values={priceRange}
+                onChange={(values) => {
+                  setPriceRange(values);
+                  // Update min/max price inputs
+                  setMinPrice(values[0].toString());
+                  setMaxPrice(values[1].toString());
+                }}
+                onFinalChange={(values) => {
+                  if (onPriceRangeFilter) {
+                    onPriceRangeFilter(values[0], values[1]);
+                  }
+                }}
+                renderTrack={({ props, children }) => (
                   <div
-                    className="absolute h-1 bg-orange-500 rounded-full"
-                    style={{ left: "0%", width: "70%" }}
-                  ></div>
+                    {...props}
+                    className="h-1 w-full bg-gray-200 rounded-full relative"
+                  >
+                    <div
+                      className="h-1 bg-orange-500 rounded-full absolute"
+                      style={{
+                        left: `${(priceRange[0] / 10000) * 100}%`,
+                        width: `${
+                          ((priceRange[1] - priceRange[0]) / 10000) * 100
+                        }%`,
+                      }}
+                    />
+                    {children}
+                  </div>
+                )}
+                renderThumb={({ props }) => (
                   <div
-                    className="absolute w-[15px] h-[15px] bg-white border-2 border-orange-500 rounded-full -mt-1.5 -ml-2"
-                    style={{ left: "0%" }}
-                  ></div>
-                  <div
-                    className="absolute w-[15px] h-[15px] bg-white border-2 border-orange-500 rounded-full -mt-1.5 -ml-2"
-                    style={{ left: "70%" }}
-                  ></div>
-                </div>
+                    {...props}
+                    className="w-[15px] h-[15px] bg-white border-2 border-orange-500 rounded-full focus:outline-none"
+                  />
+                )}
+              />
+              <div className="flex justify-between mt-2 mb-2">
+                <span className="text-sm text-gray-600">${priceRange[0]}</span>
+                <span className="text-sm text-gray-600">${priceRange[1]}</span>
               </div>
 
               {/* Custom price range inputs */}
@@ -347,7 +393,6 @@ const ProductFilter: React.FC<ProductFilterProps> = ({
           className="flex justify-between items-center cursor-pointer"
           onClick={() => toggleSection("rating")}
         >
-          
           <h3 className="text-[17px] font-medium font-sans text-gray-800">
             RATINGS
           </h3>
@@ -404,11 +449,15 @@ const ProductFilter: React.FC<ProductFilterProps> = ({
 
         {expandedSections.tags && (
           <div className="mt-3 flex flex-wrap gap-2">
-            {popularTags.map((tag) => (
+            {tags.map((tag) => (
               <button
                 key={tag}
-                onClick={() => handleTagClick(tag)}
-                className="px-3 py-1 text-sm bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-md transition-colors"
+                onClick={() => onTagFilter(tag)}
+                className={`px-3 py-1 rounded-full text-sm transition-all duration-200 ${
+                  normalizeText(selectedTag || '') === normalizeText(tag)
+                    ? "bg-[#0496FF] text-white"
+                    : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                }`}
               >
                 {tag}
               </button>

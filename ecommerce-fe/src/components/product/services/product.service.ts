@@ -8,8 +8,8 @@ const products: Product[] = [
     id: "g1",
     name: "2020 Apple MacBook Pro with Apple M1 Chip (13-inch, 8GB RAM, 256GB SSD Storage) - Space Gray",
     slug: "organic-bananas",
-    price: 2.99,
-    originalPrice: 3.99,
+    price: 100.25,
+    originalPrice: 125.99,
     discount: 25,
     description: "The MacBook Air 13-inch is a slim and lightweight laptop from Apple with a sharp Retina display and impressive performance powered by the M1 chip. It's known for its portability, sleek design, and reliable performance.",
     image_url: "/images/products/grocery/bananas.png",
@@ -19,6 +19,7 @@ const products: Product[] = [
     rating: 4.5,
     reviews: 10.878,
     orders: 100,
+    brand: "Apple",
     imgSlider: [
       "/images/products/grocery/02.png",
       "/images/products/grocery/laptop.png",
@@ -29,6 +30,7 @@ const products: Product[] = [
       "/images/products/grocery/bananas.png",
 
     ],
+    tags: ["laptop", "apple", "macbook"],
     features: [
       {
         id: "f1",
@@ -66,7 +68,7 @@ const products: Product[] = [
     originalPrice: 3.99,
     discount: 25,
     description: "Fresh organic bananas from sustainable farms",
-    image_url: "/images/products/grocery/bananas.png",
+    image_url: "/images/products/grocery/laptop.png",
     categoryId: "1",
     categorySlug: "grocery",
     stock: 19,
@@ -117,7 +119,7 @@ const products: Product[] = [
     originalPrice: 3.99,
     discount: 25,
     description: "Fresh organic bananas from sustainable farms",
-    image_url: "/images/products/grocery/bananas.png",
+    image_url: "/images/products/grocery/laptop.png",
     categoryId: "1",
     categorySlug: "grocery",
     stock: 0,
