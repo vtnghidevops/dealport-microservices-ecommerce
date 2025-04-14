@@ -13,7 +13,7 @@ import {
 } from "./models/order.model";
 import { orderService } from "./services/order.service";
 import { AddOrderModal, NewOrderData } from "./modals/AddOrderModal";
-import { showSuccess, showError } from "../../../utils/notifications";
+import { showNotification } from "@/utils/notifications";
 import Pagination from "../../common/Pagination";
 
 export const OrderManagement: React.FC = () => {
@@ -79,10 +79,10 @@ export const OrderManagement: React.FC = () => {
       }
 
       setIsAddModalOpen(false);
-      showSuccess("Order created successfully!");
+      showNotification("Order created successfully!");
     } catch (error) {
       console.error("Error creating order:", error);
-      showError("Failed to create order");
+      showNotification("Failed to create order", "error");
     } finally {
       setLoading(false);
     }

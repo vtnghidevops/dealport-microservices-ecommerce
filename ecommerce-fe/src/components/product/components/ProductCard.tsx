@@ -1,7 +1,7 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Product } from '../models/product.model';
-import { useWishlist } from '@/context/WishlistContext';
+import { useWishlist } from '@/hooks/useWishList';
 
 
 interface ProductCardProps {

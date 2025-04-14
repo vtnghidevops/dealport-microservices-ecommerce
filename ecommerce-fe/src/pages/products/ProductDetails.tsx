@@ -10,7 +10,7 @@ import { IoShareSocialOutline } from "react-icons/io5";
 import { IoIosArrowForward, IoIosArrowBack  } from "react-icons/io";
 import { TbScale } from "react-icons/tb";
 import ProductComments from '@/components/product/components/ProductComments';
-
+import { useCart } from '@/hooks/useCart';
 const ProductDetail: React.FC = () => {
   const { categorySlug, productSlug } = useParams<{
     categorySlug: string;
@@ -24,6 +24,8 @@ const ProductDetail: React.FC = () => {
   const [thumbnailStartIndex, setThumbnailStartIndex] = useState<number>(0);
   const maxVisibleThumbnails = 5; // Maximum number of visible thumbnails
   const commentsRef = useRef<HTMLDivElement>(null);
+  const { addToCart } = useCart();
+
   useEffect(() => {
     const fetchProduct = async () => {
       try {
@@ -144,6 +146,14 @@ const ProductDetail: React.FC = () => {
   const scrollToComments = () => {
     commentsRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
+
+  const productForCart = {
+    id: product.id,
+    name: product.name,
+    price: product.price,
+    originalPrice: product.originalPrice || undefined,
+    image: product.image_url // Đổi tên từ image sang image_url để match với model
+};
   return (
     <div className="container mx-auto px-4 md:px-[5rem] py-[1rem]">
       {/* Breadcrumb */}
@@ -387,6 +397,7 @@ const ProductDetail: React.FC = () => {
               </button>
             </div>
             <button
+              onClick={() => addToCart(productForCart)}
               disabled={product.stock <= 0}
               className="h-[50px] w-[150px] text-[14px] flex justify-center items-center font-medium px-2 rounded-full bg-[#0496FF] text-white py-3  hover:bg-blue-500 disabled:bg-gray-400 mr-3 transition-all duration-300 transform"
             >
