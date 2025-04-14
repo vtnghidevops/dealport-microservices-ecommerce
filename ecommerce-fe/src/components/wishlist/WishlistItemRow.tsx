@@ -1,9 +1,9 @@
 import React from 'react';
 import { FiTrash2 } from 'react-icons/fi';
 import { Product } from '../product/models/product.model';
-import { useWishlist } from '@/context/WishlistContext';
+import { useWishlist } from '@/hooks/useWishList'
 import { useNavigate } from 'react-router-dom';
-// import { useCart } from '@/context/CartContext';
+import { useCart } from '@/hooks/useCart';
 interface WishlistItemRowProps {
   item: Product;
 }
@@ -22,6 +22,15 @@ const WishlistItemRow: React.FC<WishlistItemRowProps> = ({ item }) => {
   //     enqueueSnackbar('Failed to add to cart', { variant: 'error' });
   //   }
   // };
+  const productForCart = {
+    id: item.id,
+    name: item.name,
+    price: item.price,
+    originalPrice: item.originalPrice || undefined,
+    image: item.image_url // Đổi tên từ image sang image_url để match với model
+};
+  const { addToCart } = useCart();
+
 
   const formatPrice = (price: number) => {
     return `$${price.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
@@ -75,7 +84,7 @@ const WishlistItemRow: React.FC<WishlistItemRowProps> = ({ item }) => {
       <td className="px-6 py-4 whitespace-nowrap">
         <div className="flex items-center ">
           <button
-            // onClick={handleAddToCart}
+            onClick={() => addToCart(productForCart)}
             disabled={!item.stock}
             className={`h-[40px] w-[150px] text-[14px] flex justify-center items-center font-medium px-2 rounded-full  text-white py-3 mr-3 transition-all duration-300 transform text-sm ${
               item.stock
