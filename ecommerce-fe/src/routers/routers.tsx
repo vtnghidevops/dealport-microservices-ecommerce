@@ -21,6 +21,7 @@ import Register from "@/pages/system/Register";
 import ResetPassword from "@/pages/system/ResetPassword";
 import Wishlist from "@/pages/wishlist/Wishlist";
 import Cart from "@/pages/cart/Cart";
+import Checkout from "@/pages/checkout/Checkout";
 
 const AppRouters: React.FC = () => {
   return (
@@ -50,7 +51,7 @@ const AppRouters: React.FC = () => {
 
           {/* Routes cho giỏ hàng và thanh toán */}
           <Route path="/products" element={<ProductList />} />
-          <Route path="/checkout" element={<ProductList />} />
+          <Route path="/checkout" element={<Checkout />} />
         </Route>
 
         <Route path="/admin" element={<AdminLayout />}>
