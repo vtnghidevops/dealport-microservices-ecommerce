@@ -1,5 +1,5 @@
 import React from "react";
-import { BrowserRouter as Router, Route, Routes } from "react-router-dom";
+import { Route, Routes } from "react-router-dom";
 import Home from "../pages/homepage/Home";
 import DashboardAdmin from "../pages/admin/dashboard/Dashboard";
 import OrderPage from "../pages/admin/order"; // Import Order Management page
@@ -20,9 +20,11 @@ import VerifyEmail from "@/pages/system/VerifyEmail";
 import Register from "@/pages/system/Register";
 import ResetPassword from "@/pages/system/ResetPassword";
 import Wishlist from "@/pages/wishlist/Wishlist";
+import Cart from "@/pages/cart/Cart";
+
 const AppRouters: React.FC = () => {
   return (
-    <Router>
+    <>
       <ScrollToTop />
       <Routes>
         {/* Public routes with MainLayout */}
@@ -35,6 +37,8 @@ const AppRouters: React.FC = () => {
           <Route path="/forgot-password" element={<ForgotPassword />} />
           <Route path="/reset-password" element={<ResetPassword />} />
           <Route path="/wishlist" element={<Wishlist />} />
+          <Route path="/cart" element={<Cart />} />
+
 
 
           {/* Route cho các URL theo slug */}
@@ -45,7 +49,7 @@ const AppRouters: React.FC = () => {
           />
 
           {/* Routes cho giỏ hàng và thanh toán */}
-          <Route path="/cart" element={<ProductList />} />
+          <Route path="/products" element={<ProductList />} />
           <Route path="/checkout" element={<ProductList />} />
         </Route>
 
@@ -62,7 +66,7 @@ const AppRouters: React.FC = () => {
         {/* Redirect if route not found */}
         <Route path="*" element={<NotFound />} />
       </Routes>
-    </Router>
+    </>
   );
 };
 
