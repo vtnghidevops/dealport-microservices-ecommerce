@@ -95,9 +95,11 @@ const LimitedDeal: React.FC = () => {
           }}
           onScroll={checkArrowVisibility}
         >
-          {limitedData.map((product) => (
-            <div key={product.id} className="min-w-[280px]">
+          {limitedData.map((product, index) => (
+            <div className="min-w-[280px]">
               <ProductCard
+                key={index} 
+                id={product.id}
                 title={product.title}
                 description={product.description}
                 price={Number(product.price) || 0}

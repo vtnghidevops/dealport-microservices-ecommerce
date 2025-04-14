@@ -50,9 +50,10 @@ const TrendingProducts: React.FC = () => {
         Trending Products
       </span>
       <div className="h-full w-full flex justify-start items-start">
-        {trendingProducts.map((product) => (
+        {trendingProducts.map((product, index) => (
           <ProductCard
-            key={product.id}
+            key={index}
+            id={product.id}
             title={product.title}
             description={product.description}
             price={Number(product.price)}

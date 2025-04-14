@@ -15,7 +15,7 @@ import { LimitedDealItem } from "../models/limitedDeal.model";
 const urlLimited = "images/limited/" ;
 const limitedDealData: LimitedDealItem[] = [
   {
-    id: '1',
+    id: 'l1',
     title: "Samsung Galaxy S24",
     description: "Gentle yet effective, our hydrating serum infuses skin with essential moisture while brightening and plumping for a radiant complexion.",
     price: 29.99,
@@ -28,7 +28,7 @@ const limitedDealData: LimitedDealItem[] = [
     image_url: `${urlLimited}samsung_s24.png`,
   },
   {
-    id: '2',
+    id: 'l2',
     title: "Ui TWS 7002 Earbud",
     description: "Exceptional hydration with antioxidants, hyaluronic acid and collagen for visibly smooth and glowy skin. Fragrance-free for all skin types. [[1]] [[7]]",
     price: 34.99,
@@ -41,7 +41,7 @@ const limitedDealData: LimitedDealItem[] = [
     image_url: `${urlLimited}earbud.png`,
   },
   {
-    id: '3',
+    id: 'l3',
     title: "Winter fashion jacket",
     description: "Delivers extreme hydration and helps strengthen the skin barrier. Perfect for both daytime wear and overnight rejuvenation. [[2]]",
     price: 39.99,
@@ -54,7 +54,7 @@ const limitedDealData: LimitedDealItem[] = [
     image_url: `${urlLimited}winter_jacket.png`,
   },
   {
-    id: '4',
+    id: 'l4',
     title: "New Balance 574 Senekers",
     description: "Illuminating serum infused with glow-boosting intelligent botanicals that leave the skin visibly radiant while reducing redness. [[4]]",
     price: 44.99,
@@ -67,7 +67,7 @@ const limitedDealData: LimitedDealItem[] = [
     image_url: `${urlLimited}senekers.png`,
   },
   {
-    id: '5',
+    id: 'l5',
     title: "Ui TWS 7002 Earbud",
     description: "Exceptional hydration with antioxidants, hyaluronic acid and collagen for visibly smooth and glowy skin. Fragrance-free for all skin types. [[1]] [[7]]",
     price: 34.99,
@@ -80,7 +80,7 @@ const limitedDealData: LimitedDealItem[] = [
     image_url: `${urlLimited}earbud.png`,
   },
   {
-    id: '6',
+    id: 'l6',
     title: "Ui TWS 7002 Earbud",
     description: "Exceptional hydration with antioxidants, hyaluronic acid and collagen for visibly smooth and glowy skin. Fragrance-free for all skin types. [[1]] [[7]]",
     price: 34.99,
@@ -93,7 +93,7 @@ const limitedDealData: LimitedDealItem[] = [
     image_url: `${urlLimited}earbud.png`,
   },
   {
-    id: '7',
+    id: 'l7',
     title: "Ui TWS 7002 Earbud",
     description: "Exceptional hydration with antioxidants, hyaluronic acid and collagen for visibly smooth and glowy skin. Fragrance-free for all skin types. [[1]] [[7]]",
     price: 34.99,
