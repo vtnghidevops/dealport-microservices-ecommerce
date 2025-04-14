@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { FaRegHeart, FaHeart } from "react-icons/fa";
+import { useCart } from '@/hooks/useCart';
 
 interface StarRatingProps {
   rating: number;
@@ -12,6 +13,7 @@ interface ReviewData {
 }
 
 interface ProductCardProps {
+  id: string;
   title: string;
   description: string;
   price: number;
@@ -20,6 +22,8 @@ interface ProductCardProps {
   reviews: ReviewData;
   image_url: string;
 }
+
+
 
 const StarRating: React.FC<StarRatingProps> = ({ rating, maxRating = 5 }) => {
   return (
@@ -46,6 +50,7 @@ const StarRating: React.FC<StarRatingProps> = ({ rating, maxRating = 5 }) => {
 };
 
 const ProductCard: React.FC<ProductCardProps> = ({
+  id,
   title,
   description,
   price,
@@ -54,10 +59,23 @@ const ProductCard: React.FC<ProductCardProps> = ({
   reviews,
   image_url,
 }) => {
+  // type for cart item
+  const productForCart = {
+    id,
+    name: title,
+    price,
+    originalPrice: originalPrice || undefined,
+    image: image_url
+  };
+  const handle = () => {
+    console.log("Info of Card: ", productForCart)
+  }
+
+
   const [isFavorite, setIsFavorite] = useState(false);
   const rating = reviews?.rating || 0;
   const reviewCount = reviews?.count || 0;
-  
+  const { addToCart } = useCart();
   const toggleFavorite = () => {
     setIsFavorite(!isFavorite);
   };
@@ -111,7 +129,8 @@ const ProductCard: React.FC<ProductCardProps> = ({
           <a href="#" className="text-primary text-sm hover:text-ocean-green transition-all duration-300">
             View Details
           </a>
-          <button className="btn-primary text-sm py-1 h-[39px] w-[120px] border-2 border-transparent hover:bg-green-500 hover:shadow-md transition-all duration-300 ease-out">
+          {/* onClick={() => addToCart(productForCart)} */}
+          <button onClick={() => addToCart(productForCart)} className="btn-primary text-sm py-1 h-[39px] w-[120px] border-2 border-transparent hover:bg-green-500 hover:shadow-md transition-all duration-300 ease-out">
             Add to Cart
           </button>
         </div>
