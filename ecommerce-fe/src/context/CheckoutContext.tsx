@@ -23,7 +23,6 @@ interface CheckoutContextType {
   updateBillingInfo: (info: Partial<BillingInfo>) => void;
   paymentMethod: PaymentMethod;
   setPaymentMethod: (method: PaymentMethod) => void;
-  // Bỏ cardInfo và updateCardInfo
   orderNotes: string;
   setOrderNotes: (notes: string) => void;
   validateCheckout: () => boolean;

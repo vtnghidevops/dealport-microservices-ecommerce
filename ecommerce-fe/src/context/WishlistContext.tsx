@@ -1,5 +1,5 @@
 import React, { createContext, useState, useEffect } from 'react';
-import { Product } from '../components/product/models/product.model';
+import { Product } from '@/types/product.model';
 
 export interface WishlistContextType {
   wishlistItems: Product[];
