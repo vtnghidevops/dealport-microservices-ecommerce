@@ -5,11 +5,13 @@ import { defaultCartTotals } from "@/context/CartContext";
 interface OrderSummaryProps {
   cartItems: CartItem[];
   cartTotals: typeof defaultCartTotals;
+  onPlaceOrder: () => void;
 }
 
 const OrderSummary: React.FC<OrderSummaryProps> = ({
   cartItems,
-  cartTotals
+  cartTotals,
+  onPlaceOrder
 }) => {
   return (
     <div className="p-4 ml-5">
@@ -93,7 +95,7 @@ const OrderSummary: React.FC<OrderSummaryProps> = ({
         </span>
       </div>
 
-      <button className="mt-5 w-full bg-orange-500 hover:bg-orange-400 text-white py-3 rounded font-sans font-medium flex items-center justify-center transition-colors duration-200">
+      <button onClick={onPlaceOrder} className="mt-5 w-full bg-orange-500 hover:bg-orange-400 text-white py-3 rounded font-sans font-medium flex items-center justify-center transition-colors duration-200">
         PLACE ORDER <span className="ml-2">→</span>
       </button>
     </div>
