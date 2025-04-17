@@ -22,6 +22,13 @@ import ResetPassword from "@/pages/system/ResetPassword";
 import Wishlist from "@/pages/wishlist/Wishlist";
 import Cart from "@/pages/cart/Cart";
 import Checkout from "@/pages/checkout/Checkout";
+import SuccessfulPayment from "../pages/checkout/SuccessfulPayment";
+
+import Profile from "../pages/user/Profile";
+import OrdersHistory from "../pages/user/OrdersHistory";
+import Addresses from "../pages/user/Addresses";
+import SecuritySettings from "../pages/user/SecuritySettings";
+import UserDashboard from "../pages/user/Dashboard";
 
 const AppRouters: React.FC = () => {
   return (
@@ -37,9 +44,6 @@ const AppRouters: React.FC = () => {
           <Route path="/verify-email" element={<VerifyEmail />} />
           <Route path="/forgot-password" element={<ForgotPassword />} />
           <Route path="/reset-password" element={<ResetPassword />} />
-          <Route path="/wishlist" element={<Wishlist />} />
-          <Route path="/cart" element={<Cart />} />
-
 
 
           {/* Route cho các URL theo slug */}
@@ -52,6 +56,16 @@ const AppRouters: React.FC = () => {
           {/* Routes cho giỏ hàng và thanh toán */}
           <Route path="/products" element={<ProductList />} />
           <Route path="/checkout" element={<Checkout />} />
+          <Route path="/checkout/success" element={<SuccessfulPayment />} />
+
+          <Route path="/user/dashboard" element={<UserDashboard />} />
+          <Route path="/user/wishlist" element={<Wishlist />} />
+          <Route path="/user/orders" element={<Cart />} />
+          <Route path="/user/profile" element={<Profile />} />
+          <Route path="/user/order-history" element={<OrdersHistory />} />
+          <Route path="/user/addresses" element={<Addresses />} />
+          <Route path="/user/security-settings" element={<SecuritySettings />} />
+
         </Route>
 
         <Route path="/admin" element={<AdminLayout />}>

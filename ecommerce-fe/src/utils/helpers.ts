@@ -1,8 +1,9 @@
 import { CategoryItem } from './../components/homepage/CategoryExplorer/models/category.model';
 import { NavigateFunction } from 'react-router-dom';
+import { Product } from '@/types/product.model'
 export const handleViewAll = (navigate: NavigateFunction) => {
   console.log("View all categories clicked");
-  navigate('/categories');
+  navigate('/products');
   // Navigate to all categories page
 };
 
@@ -11,9 +12,9 @@ export const handleCategoryClick = (navigate: NavigateFunction, category: Catego
   navigate(`/${category.slug}`);
 };
 
-export const handleProductClick = (product: string, index: number) => {
+export const handleProductItemClick = (navigate: NavigateFunction, product: Product, index: number) => {
   console.log("Product clicked:", product, index);
-  // Điều hướng đến trang chi tiết sản phẩm
+  navigate(`/products/${product.slug}`);
 };
 
 export function generateSlug(text: string): string {
