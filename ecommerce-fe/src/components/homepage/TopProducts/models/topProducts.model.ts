@@ -1,15 +1,13 @@
-export interface TopProductItem {
-  id: string;
-  name: string;
-  price?: number | string;
-  image_url: string;
+import { Product } from "@/types/product.model";
+
+export interface TopProductItem extends Product {
   setUpDesign?: string;   // set up container with row or col or double - row, double, col
   actionLabel?: string;     // "Buy Now", "Visit Store", etc.
   actionLink?: string;
   isCommingSoon?: boolean;
   gridSpan: {
-    col: number;  // Số cột mà sản phẩm chiếm
-    row: number;  // Số hàng mà sản phẩm chiếm
+    col: number;  
+    row: number;  
   };
   isImageDouble?: boolean
   image_double_url?: string

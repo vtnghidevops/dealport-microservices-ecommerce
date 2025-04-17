@@ -1,10 +1,11 @@
 // src/components/product/services/product.service.ts
-import { Product } from "../models/product.model";
+import { Product } from "@/types/product.model";
 
 // Generated Products Data
 const products: Product[] = [
   // Grocery Products
   {
+    type: "normal",
     id: "g1",
     name: "2020 Apple MacBook Pro with Apple M1 Chip (13-inch, 8GB RAM, 256GB SSD Storage) - Space Gray",
     slug: "organic-bananas",
@@ -15,9 +16,11 @@ const products: Product[] = [
     image_url: "/images/products/grocery/bananas.png",
     categoryId: "1",
     categorySlug: "grocery",
-    stock: 5,
-    rating: 4.5,
-    reviews: 10.878,
+    stockQuantity: 5,
+    reviews: {
+      rating: 4.5,
+      count: 10.878,
+    },
     orders: 100,
     brand: "Apple",
     imgSlider: [
@@ -61,6 +64,7 @@ const products: Product[] = [
     },
   },
   {
+    type: "normal",
     id: "g2",
     name: "Organic Bananas from sustainable farms",
     slug: "organic-bananas",
@@ -71,9 +75,11 @@ const products: Product[] = [
     image_url: "/images/products/grocery/laptop.png",
     categoryId: "1",
     categorySlug: "grocery",
-    stock: 19,
-    rating: 4.5,
-    reviews: 10.878,
+    stockQuantity: 19,  
+    reviews: {
+      rating: 4.5,
+      count: 10.878,
+    },
     orders: 100,
     imgSlider: [
       "/images/products/grocery/bananas.png",
@@ -112,6 +118,7 @@ const products: Product[] = [
     },
   },
   {
+    type: "normal",
     id: "g3",
     name: "Organic Bananas from sustainable farms",
     slug: "organic-bananas",
@@ -122,9 +129,11 @@ const products: Product[] = [
     image_url: "/images/products/grocery/laptop.png",
     categoryId: "1",
     categorySlug: "grocery",
-    stock: 0,
-    rating: 4.5,
-    reviews: 10.878,
+    stockQuantity: 0,  
+    reviews: {
+      rating: 4.5,
+      count: 10.878,
+    },
     orders: 100,
     imgSlider: [
       "/images/products/grocery/bananas.png",
@@ -163,6 +172,7 @@ const products: Product[] = [
     },
   },
   {
+    type: "normal",
     id: "g4",
     name: "Organic Bananas from sustainable farms",
     slug: "organic-bananas",
@@ -173,10 +183,12 @@ const products: Product[] = [
     image_url: "/images/products/grocery/bananas.png",
     categoryId: "1",
     categorySlug: "grocery",
-    stock: 150,
-    rating: 4.5,
+    stockQuantity: 150,
+    reviews: {
+      rating: 4.5,
+      count: 10.878,
+    },
     orders: 100,
-    reviews: 10.878,
     imgSlider: [
       "/images/products/grocery/bananas.png",
       "/images/products/grocery/bananas.png",
@@ -214,6 +226,7 @@ const products: Product[] = [
     },
   },
   {
+    type: "normal",
     id: "g5",
     name: "Whole Grain Bread",
     slug: "whole-grain-bread",
@@ -224,9 +237,11 @@ const products: Product[] = [
     image_url: "/images/products/grocery/bananas.png",
     categoryId: "1",
     categorySlug: "grocery",
-    stock: 75,
-    rating: 4.3,
-    reviews: 10.878,
+    stockQuantity: 75,
+    reviews: {
+      rating: 4.3,
+      count: 10.878,
+    },
     orders: 100,
     imgSlider: [
       "/images/products/grocery/bananas.png",
@@ -265,6 +280,7 @@ const products: Product[] = [
     },
   },
   {
+    type: "normal",
     id: "g6",
     name: "Free Range Eggs (12pk)",
     slug: "free-range-eggs",
@@ -275,9 +291,11 @@ const products: Product[] = [
     image_url: "/images/products/grocery/bananas.png",
     categoryId: "1",
     categorySlug: "grocery",
-    stock: 120,
-    rating: 4.7,
-    reviews: 10.878,
+    stockQuantity: 120,
+    reviews: {
+      rating: 4.7,
+      count: 10.878,
+    },
     orders: 100,
     imgSlider: [
       "/images/products/grocery/bananas.png",
@@ -316,6 +334,7 @@ const products: Product[] = [
     },
   },
   {
+    type: "normal",
     id: "g7",
     name: "Organic Milk",
     slug: "organic-milk",
@@ -326,9 +345,11 @@ const products: Product[] = [
     image_url: "/images/products/grocery/bananas.png",
     categoryId: "1",
     categorySlug: "grocery",
-    stock: 95,
-    rating: 4.2,
-    reviews: 10.878,
+    stockQuantity: 95,
+    reviews: {
+      rating: 4.2,
+      count: 10.878,
+    },
     orders: 100,
     imgSlider: [
       "/images/products/grocery/bananas.png",
@@ -367,6 +388,7 @@ const products: Product[] = [
     },
   },
   {
+    type: "normal",
     id: "g8",
     name: "Avocados (3pk)",
     slug: "avocados",
@@ -377,10 +399,12 @@ const products: Product[] = [
     image_url: "/images/products/grocery/bananas.png",
     categoryId: "1",
     categorySlug: "grocery",
-    stock: 65,
-    rating: 4.6,
+    stockQuantity: 65,
+    reviews: {
+      rating: 4.6,
+      count: 10.878,
+    },
     orders: 100,
-    reviews: 10.878,
     imgSlider: [
       "/images/products/grocery/bananas.png",
       "/images/products/grocery/bananas.png",
@@ -418,6 +442,7 @@ const products: Product[] = [
     },
   },
   {
+    type: "normal",
     id: "g9",
     name: "Avocados (3pk)",
     slug: "avocados",
@@ -428,10 +453,12 @@ const products: Product[] = [
     image_url: "/images/products/grocery/bananas.png",
     categoryId: "1",
     categorySlug: "grocery",
-    stock: 65,
-    rating: 4.6,
+    stockQuantity: 65,
+    reviews: {
+      rating: 4.6,
+      count: 10.878,
+    },
     orders: 100,
-    reviews: 10.878,
 
     imgSlider: [
       "/images/products/grocery/bananas.png",
@@ -472,6 +499,7 @@ const products: Product[] = [
 
   // Home Products
   {
+    type: "normal",
     id: "h1",
     name: "Scented Candle Set",
     slug: "scented-candle-set",
@@ -482,10 +510,12 @@ const products: Product[] = [
     image_url: "/images/products/grocery/bananas.png",
     categoryId: "2",
     categorySlug: "home",
-    stock: 45,
-    rating: 4.8,
+    stockQuantity: 45,
     orders: 100,
-    reviews: 10.878,
+    reviews: {
+      rating: 4.4,
+      count: 10.878,
+    },
     imgSlider: [
       "/images/products/grocery/bananas.png",
       "/images/products/grocery/bananas.png",
@@ -523,6 +553,7 @@ const products: Product[] = [
     },
   },
   {
+    type: "normal",
     id: "h2",
     name: "Cotton Bed Sheets",
     slug: "cotton-bed-sheets",
@@ -533,9 +564,11 @@ const products: Product[] = [
     image_url: "/images/products/grocery/bananas.png",
     categoryId: "2",
     categorySlug: "home",
-    reviews: 10.878,
-    stock: 30,
-    rating: 4.7,
+    reviews: {
+      rating: 4.7,
+      count: 10.878,
+    },
+    stockQuantity: 30,
     orders: 100,
     imgSlider: [
       "/images/products/grocery/bananas.png",
@@ -574,6 +607,7 @@ const products: Product[] = [
     },
   },
   {
+    type: "normal",
     id: "h3",
     name: "Kitchen Utensil Set",
     slug: "kitchen-utensil-set",
@@ -584,9 +618,11 @@ const products: Product[] = [
     image_url: "/images/products/grocery/bananas.png",
     categoryId: "2",
     categorySlug: "home",
-    reviews: 10.878,
-    stock: 55,
-    rating: 4.5,
+    reviews: {
+      rating: 4.5,
+      count: 10.878,
+    },
+    stockQuantity: 55,
     orders: 100,
     imgSlider: [
       "/images/products/grocery/bananas.png",
@@ -625,6 +661,7 @@ const products: Product[] = [
     },
   },
   {
+    type: "normal",
     id: "h4",
     name: "Decorative Throw Pillows",
     slug: "decorative-throw-pillows",
@@ -635,9 +672,11 @@ const products: Product[] = [
     image_url: "/images/products/grocery/bananas.png",
     categoryId: "2",
     categorySlug: "home",
-    stock: 0,
-    rating: 4.3,
-    reviews: 10.878,
+    stockQuantity: 0,
+    reviews: {
+      rating: 4.3,
+      count: 10.878,
+    },
 
     orders: 100,
     imgSlider: [
@@ -677,6 +716,7 @@ const products: Product[] = [
     },
   },
   {
+    type: "normal",
     id: "h5",
     name: "LED Table Lamp",
     slug: "led-table-lamp",
@@ -687,10 +727,11 @@ const products: Product[] = [
     image_url: "/images/products/home/lamp.jpg",
     categoryId: "2",
     categorySlug: "home",
-    stock: 25,
-    reviews: 10.878,
-
-    rating: 4.6,
+    stockQuantity: 25,
+    reviews: {
+      rating: 4.3,
+      count: 10.878,
+    },
     orders: 100,
     imgSlider: [
       "/images/products/grocery/bananas.png",
@@ -731,6 +772,7 @@ const products: Product[] = [
 
   // Fashion Products
   {
+    type: "normal",
     id: "f1",
     name: "Women's Denim Jacket",
     slug: "womens-denim-jacket",
@@ -740,11 +782,12 @@ const products: Product[] = [
     description: "Classic denim jacket for women",
     image_url: "/images/products/fashion/denim-jacket.jpg",
     categoryId: "3",
-    reviews: 10.878,
-
+    reviews: {
+      rating: 4.6,
+      count: 10.878,
+    },
     categorySlug: "fashion",
-    stock: 40,
-    rating: 4.5,
+    stockQuantity: 40,
     orders: 100,
     imgSlider: [
       "/images/products/grocery/bananas.png",
@@ -783,6 +826,7 @@ const products: Product[] = [
     },
   },
   {
+    type: "normal",
     id: "f2",
     name: "Men's Casual T-Shirt",
     slug: "mens-casual-tshirt",
@@ -793,10 +837,12 @@ const products: Product[] = [
     image_url: "/images/products/fashion/tshirt.jpg",
     categoryId: "3",
     categorySlug: "fashion",
-    stock: 120,
-    rating: 4.3,
+    stockQuantity: 120,
     orders: 100,
-    reviews: 10.878,
+    reviews: {
+      rating: 4.3,
+      count: 10.878,
+    },
     imgSlider: [
       "/images/products/grocery/bananas.png",
       "/images/products/grocery/bananas.png",
@@ -834,6 +880,7 @@ const products: Product[] = [
     },
   },
   {
+    type: "normal",
     id: "f3",
     name: "Leather Sneakers",
     slug: "leather-sneakers",
@@ -844,10 +891,12 @@ const products: Product[] = [
     image_url: "/images/products/fashion/sneakers.jpg",
     categoryId: "3",
     categorySlug: "fashion",
-    stock: 35,
-    rating: 4.7,
+    stockQuantity: 35,
     orders: 100,
-    reviews: 10.878,
+    reviews: {
+      rating: 4.3,
+      count: 10.878,
+    },
     imgSlider: [
       "/images/products/grocery/bananas.png",
       "/images/products/grocery/bananas.png",
@@ -885,6 +934,7 @@ const products: Product[] = [
     },
   },
   {
+    type: "normal",
     id: "f4",
     name: "Summer Dress",
     slug: "summer-dress",
@@ -895,9 +945,11 @@ const products: Product[] = [
     image_url: "/images/products/fashion/summer-dress.jpg",
     categoryId: "3",
     categorySlug: "fashion",
-    stock: 0,
-    rating: 4.4,
-    reviews: 10.878,
+    stockQuantity: 0,
+    reviews: {
+      rating: 4.4,
+      count: 10.878,
+    },
     orders: 100,
     imgSlider: [
       "/images/products/grocery/bananas.png",
@@ -936,6 +988,7 @@ const products: Product[] = [
     },
   },
   {
+    type: "normal",
     id: "f5",
     name: "Unisex Beanie",
     slug: "unisex-beanie",
@@ -946,10 +999,12 @@ const products: Product[] = [
     image_url: "/images/products/fashion/beanie.jpg",
     categoryId: "3",
     categorySlug: "fashion",
-    stock: 60,
-    rating: 4.2,
+    stockQuantity: 60,
     orders: 100,
-    reviews: 10.878,
+    reviews: {
+      rating: 4.2,
+      count: 10.878,
+    },
     imgSlider: [
       "/images/products/grocery/bananas.png",
       "/images/products/grocery/bananas.png",
@@ -989,6 +1044,7 @@ const products: Product[] = [
 
   // Electronic Products
   {
+    type: "normal",
     id: "e1",
     name: "Wireless Earbuds",
     slug: "wireless-earbuds",
@@ -999,10 +1055,12 @@ const products: Product[] = [
     image_url: "/images/products/electronics/earbuds.jpg",
     categoryId: "4",
     categorySlug: "electronic",
-    stock: 45,
-    rating: 4.6,
+    stockQuantity: 45,
     orders: 100,
-    reviews: 10.878,
+    reviews: {
+      rating: 4.6,
+      count: 10.878,
+    },
     imgSlider: [
       "/images/products/grocery/bananas.png",
       "/images/products/grocery/bananas.png",
@@ -1040,6 +1098,7 @@ const products: Product[] = [
     },
   },
   {
+    type: "normal",
     id: "e2",
     name: "4K Smart TV",
     slug: "4k-smart-tv",
@@ -1050,10 +1109,12 @@ const products: Product[] = [
     image_url: "/images/products/electronics/smart-tv.jpg",
     categoryId: "4",
     categorySlug: "electronic",
-    stock: 15,
-    rating: 4.8,
+    stockQuantity: 15,
     orders: 100,
-    reviews: 10.878,
+    reviews: {
+      rating: 4.8,
+      count: 10.878,
+    },
     imgSlider: [
       "/images/products/grocery/bananas.png",
       "/images/products/grocery/bananas.png",
@@ -1091,6 +1152,7 @@ const products: Product[] = [
     },
   },
   {
+    type: "normal",
     id: "e3",
     name: "Portable Bluetooth Speaker",
     slug: "portable-bluetooth-speaker",
@@ -1102,9 +1164,11 @@ const products: Product[] = [
     image_url: "/images/products/electronics/bluetooth-speaker.jpg",
     categoryId: "4",
     categorySlug: "electronic",
-    stock: 30,
-    rating: 4.5,
-    reviews: 10.878,
+    stockQuantity: 30,
+    reviews: {
+      rating: 4.5,
+      count: 10.878,
+    },
     orders: 100,
     imgSlider: [
       "/images/products/grocery/bananas.png",
@@ -1143,6 +1207,7 @@ const products: Product[] = [
     },
   },
   {
+    type: "normal",
     id: "e4",
     name: "Digital Camera",
     slug: "digital-camera",
@@ -1153,10 +1218,12 @@ const products: Product[] = [
     image_url: "/images/products/electronics/digital-camera.jpg",
     categoryId: "4",
     categorySlug: "electronic",
-    stock: 0,
-    rating: 4.7,
+    stockQuantity: 0,
     orders: 100,
-    reviews: 10.878,
+    reviews: {
+      rating: 4.7,
+      count: 10.878,
+    },
     imgSlider: [
       "/images/products/grocery/bananas.png",
       "/images/products/grocery/bananas.png",
@@ -1194,6 +1261,7 @@ const products: Product[] = [
     },
   },
   {
+    type: "normal",
     id: "e5",
     name: "Smartwatch",
     slug: "smartwatch",
@@ -1204,9 +1272,11 @@ const products: Product[] = [
     image_url: "/images/products/electronics/smartwatch.jpg",
     categoryId: "4",
     categorySlug: "electronic",
-    stock: 25,
-    rating: 4.4,
-    reviews: 10.878,
+    stockQuantity: 25,
+    reviews: {
+      rating: 4.4,
+      count: 10.878,
+    },
     orders: 100,
     imgSlider: [
       "/images/products/grocery/bananas.png",
@@ -1247,6 +1317,7 @@ const products: Product[] = [
 
   // Toys Products
   {
+    type: "normal",
     id: "t1",
     name: "Building Blocks Set",
     slug: "building-blocks-set",
@@ -1257,9 +1328,11 @@ const products: Product[] = [
     image_url: "/images/products/toys/building-blocks.jpg",
     categoryId: "5",
     categorySlug: "toys",
-    stock: 50,
-    rating: 4.7,
-    reviews: 10.878,
+    stockQuantity: 50,
+    reviews: {
+      rating: 4.7,
+      count: 10.878,
+    },
     orders: 100,
     imgSlider: [
       "/images/products/grocery/bananas.png",
@@ -1298,6 +1371,7 @@ const products: Product[] = [
     },
   },
   {
+    type: "normal",
     id: "t2",
     name: "Remote Control Car",
     slug: "remote-control-car",
@@ -1308,9 +1382,11 @@ const products: Product[] = [
     image_url: "/images/products/toys/rc-car.jpg",
     categoryId: "5",
     categorySlug: "toys",
-    stock: 35,
-    rating: 4.5,
-    reviews: 10.878,
+    stockQuantity: 35,
+    reviews: {
+      rating: 4.5,
+      count: 10.878,
+    },
     orders: 10,
     imgSlider: [
       "/images/products/grocery/bananas.png",
@@ -1349,6 +1425,7 @@ const products: Product[] = [
     },
   },
   {
+    type: "normal",
     id: "t3",
     name: "Stuffed Teddy Bear",
     slug: "stuffed-teddy-bear",
@@ -1359,9 +1436,11 @@ const products: Product[] = [
     image_url: "/images/products/toys/teddy-bear.jpg",
     categoryId: "5",
     categorySlug: "toys",
-    stock: 80,
-    rating: 4.8,
-    reviews: 10.878,
+    stockQuantity: 80,
+    reviews: {
+      rating: 4.8,
+      count: 10.878,
+    },
     orders: 100,
     imgSlider: [
       "/images/products/grocery/bananas.png",
@@ -1400,6 +1479,7 @@ const products: Product[] = [
     },
   },
   {
+    type: "normal",
     id: "t4",
     name: "Educational Board Game",
     slug: "educational-board-game",
@@ -1410,10 +1490,12 @@ const products: Product[] = [
     image_url: "/images/products/toys/board-game.jpg",
     categoryId: "5",
     categorySlug: "toys",
-    stock: 0,
-    rating: 4.6,
+    stockQuantity: 0,
     orders: 100,
-    reviews: 10.878,
+    reviews: {
+      rating: 4.6,
+      count: 10.878,
+    },
     imgSlider: [
       "/images/products/grocery/bananas.png",
       "/images/products/grocery/bananas.png",
@@ -1451,6 +1533,7 @@ const products: Product[] = [
     },
   },
   {
+    type: "normal",
     id: "t5",
     name: "Art and Craft Kit",
     slug: "art-and-craft-kit",
@@ -1461,10 +1544,12 @@ const products: Product[] = [
     image_url: "/images/products/toys/art-kit.jpg",
     categoryId: "5",
     categorySlug: "toys",
-    stock: 40,
-    rating: 4.4,
+    stockQuantity: 40,
     orders: 100,
-    reviews: 10.878,
+      reviews: {
+        rating: 4.4,
+        count: 10.878,
+      },
     imgSlider: [
       "/images/products/grocery/bananas.png",
       "/images/products/grocery/bananas.png",
@@ -1504,6 +1589,7 @@ const products: Product[] = [
 
   // Additional Grocery Products (for grocery-2)
   {
+    type: "normal",
     id: "g6",
     name: "Instant Coffee",
     slug: "instant-coffee",
@@ -1514,10 +1600,12 @@ const products: Product[] = [
     image_url: "/images/products/grocery/coffee.jpg",
     categoryId: "6",
     categorySlug: "grocery-2",
-    stock: 70,
-    rating: 4.3,
+    stockQuantity: 70,
     orders: 100,
-    reviews: 10.878,
+    reviews: {
+      rating: 4.4,
+      count: 10.878,
+    },
     imgSlider: [
       "/images/products/grocery/bananas.png",
       "/images/products/grocery/bananas.png",
@@ -1555,6 +1643,7 @@ const products: Product[] = [
     },
   },
   {
+    type: "normal",
     id: "g7",
     name: "Chocolate Cookies",
     slug: "chocolate-cookies",
@@ -1565,10 +1654,12 @@ const products: Product[] = [
     image_url: "/images/products/grocery/cookies.jpg",
     categoryId: "6",
     categorySlug: "grocery-2",
-    stock: 90,
-    rating: 4.6,
+    stockQuantity: 90,
     orders: 100,
-    reviews: 10.878,
+    reviews: {
+      rating: 4.4,
+      count: 10.878,
+    },
     imgSlider: [
       "/images/products/grocery/bananas.png",
       "/images/products/grocery/bananas.png",
@@ -1606,6 +1697,7 @@ const products: Product[] = [
     },
   },
   {
+    type: "normal",
     id: "g8",
     name: "Fresh Orange Juice",
     slug: "fresh-orange-juice",
@@ -1616,9 +1708,11 @@ const products: Product[] = [
     image_url: "/images/products/grocery/orange-juice.jpg",
     categoryId: "6",
     categorySlug: "grocery-2",
-    stock: 55,
-    rating: 4.7,
-    reviews: 10.878,
+    stockQuantity: 55,
+    reviews: {
+      rating: 4.4,
+      count: 10.878,
+    },
     orders: 100,
     imgSlider: [
       "/images/products/grocery/bananas.png",

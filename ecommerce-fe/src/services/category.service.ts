@@ -1,5 +1,5 @@
 // src/components/product/services/category.service.ts
-import { Category } from '../models/category.model';
+import { Category } from '@/types/category.model';
 
 const categories: Category[] = [
   {

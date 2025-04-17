@@ -1,15 +1,14 @@
-// src/components/product/services/comment.service.ts
+// src/services/comment.service.ts
 
-import { Comment } from '../models/comment.model';
-import { Reply } from '../models/comment.model';
-import { PaginatedResponse } from '../models/comment.model';
+import { Comment, Reply, CommentPaginatedResponse } from '@/types/comment.model';
+
 const comments: Comment[] = [
   {
     id: '1',
     productId: '1',
     userId: '101',
     userName: 'Phan Khánh Linh',
-    userAvatar: '/images/avatars/p.png', 
+    userAvatar: '/images/avatars/p.png',
     content: 'Cho em hỏi sản phẩm này còn hàng ở gò đâu tây ninh không ạ ?',
     rating: 0, // Không đánh giá
     createdAt: '2024-03-11T00:00:00Z',
@@ -48,7 +47,7 @@ export const commentService = {
     page: number,
     limit: number,
     rating?: number,
-  ): Promise<PaginatedResponse> => {
+  ): Promise<CommentPaginatedResponse> => {
     let filteredComments = comments
       .filter((c) => c.productId === productId)
       .sort(
@@ -62,7 +61,7 @@ export const commentService = {
     const total = filteredComments.length;
     const startIndex = (page - 1) * limit;
     const endIndex = startIndex + limit;
-    
+
     return {
       data: filteredComments.slice(startIndex, endIndex),
       pagination: {
@@ -73,7 +72,7 @@ export const commentService = {
       },
     };
   },
-  
+
   addComment: (comment: Omit<Comment, 'id' | 'createdAt' | 'likes' | 'replies'>) => {
     const newComment: Comment = {
       ...comment,
@@ -86,11 +85,11 @@ export const commentService = {
     comments.unshift(newComment);
     return Promise.resolve(newComment);
   },
-  
+
   addReply: (commentId: string, reply: Omit<Reply, 'id' | 'commentId' | 'createdAt' | 'likes'>) => {
     const comment = comments.find(c => c.id === commentId);
     if (!comment) return Promise.reject('Comment not found');
-    
+
     const newReply: Reply = {
       ...reply,
       id: Date.now().toString(),
@@ -98,45 +97,44 @@ export const commentService = {
       createdAt: new Date().toISOString(),
       likes: 0
     };
-    
+
     if (!comment.replies) {
       comment.replies = [];
     }
     comment.replies.push(newReply);
-    console.log('New reply:', comment);
     return Promise.resolve(newReply);
   },
-  
+
   likeComment: (commentId: string) => {
     const comment = comments.find(c => c.id === commentId);
     if (!comment) return Promise.reject('Comment not found');
-    
+
     // Toggle like status instead of always incrementing
     if (comment.isLiked) {
-        comment.likes -= 1;
-        comment.isLiked = false;
+      comment.likes -= 1;
+      comment.isLiked = false;
     } else {
-        comment.likes += 1;
-        comment.isLiked = true;
+      comment.likes += 1;
+      comment.isLiked = true;
     }
-    
+
     return Promise.resolve({
-        likes: comment.likes,
-        isLiked: comment.isLiked
+      likes: comment.likes,
+      isLiked: comment.isLiked
     });
   },
-  
+
   likeReply: (commentId: string, replyId: string) => {
     const comment = comments.find(c => c.id === commentId);
     if (!comment) return Promise.reject('Comment not found');
-    
+
     if (!comment.replies) {
       comment.replies = [];
     }
     const reply = comment.replies.find(r => r.id === replyId);
     if (!reply) return Promise.reject('Reply not found');
-    
+
     reply.likes += 1;
     return Promise.resolve(reply);
   }
-};
+}; 

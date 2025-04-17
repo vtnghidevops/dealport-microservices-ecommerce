@@ -26,7 +26,7 @@ export interface Reply {
   isLiked?: boolean;
 }
 
-export interface PaginatedResponse {
+export interface CommentPaginatedResponse {
   data: Comment[];
   pagination: {
     total: number;
@@ -34,4 +34,4 @@ export interface PaginatedResponse {
     totalPages: number;
     limit: number;
   };
-}
+} 
