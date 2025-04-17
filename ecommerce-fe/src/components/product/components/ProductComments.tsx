@@ -1,7 +1,7 @@
-// src/components/product/components/ProductComments.tsx
+
 import React, { useEffect, useState, useRef } from "react";
-import { Comment } from "../models/comment.model";
-import { commentService } from "../services/comment.service";
+import { Comment } from "@/types/comment.model";
+import { commentService } from "@/services/comment.service";
 import ReplyComponent from "./ReplyComment";
 import Pagination from "@/components/common/Pagination";
 

@@ -1,8 +1,7 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Product } from '../models/product.model';
 import { useWishlist } from '@/hooks/useWishList';
-
+import { Product } from '@/types/product.model';
 
 interface ProductCardProps {
   product: Product;
@@ -54,13 +53,13 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onClick }) => {
     <div className="drop-shadow-sm filter p-3 min-h-[315px] min-w-[225px] group relative border rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-shadow">
       {/* Special tags */}
       {(() => {
-        if (product.stock === 0) {
+        if (product.stockQuantity === 0) {
           return (
             <div className="z-20 absolute top-2 left-2 bg-error text-white text-xs font-medium px-2 py-1 rounded">
               OUT OF STOCK
             </div>
           );
-        } else if (product.stock < 20) {
+        } else if (product.stockQuantity < 20) {
           return (
             <div className="z-20 absolute top-2 left-2 bg-orange-500 text-white text-xs font-medium px-2 py-1 rounded">
               HOT
@@ -129,7 +128,7 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onClick }) => {
             ${product.price.toFixed(2)}
           </span>
 
-          {product.originalPrice > 0 &&
+          {product.originalPrice && product.originalPrice > 0 &&
             product.originalPrice > product.price && (
               <>
                 <span className="ml-2 text-sm text-gray-500 line-through">
@@ -143,15 +142,15 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onClick }) => {
         </div>
 
         {/* Rating */}
-        {product.rating && (
+        {product.reviews && product.reviews.rating && (
           <div className="mt-2 flex items-center">
             <div className="flex">
               {[...Array(5)].map((_, i) => (
                 <span
                   key={i}
                   className={`text-[16px] ${
-                    i < Math.floor(product.rating || 0)
-                      ? "text-[#FF9017]"
+                    i < Math.floor(product.reviews && product.reviews.rating || 0)
+                      ? "text-[#FF9017]"  
                       : "text-gray-300"
                   }`}
                 >
@@ -160,7 +159,7 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onClick }) => {
               ))}
             </div>
             <span className="ml-1 mr-2 text-sm text-[#FF9017]">
-              ({product.rating})
+              ({product.reviews.rating})
             </span>
             <div className="mr-1 w-1 h-1 rounded-full border border-neutral-400 bg-neutral-400"></div>
             <span className="ml-1 text-sm text-neutral-500">

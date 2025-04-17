@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Range } from "react-range";
-import { Category } from "../models/category.model";
-import { categoryService } from "../services/category.service";
+import { Category } from "@/types/category.model";
+import { categoryService } from "@/services/category.service"
 import { FaStar } from "react-icons/fa";
 import { GoChevronDown, GoChevronUp } from "react-icons/go";
 interface ProductFilterProps {

@@ -23,3 +23,9 @@ dist-ssr
 *.sln
 *.sw?
 .qodo
+
+# config rules for cursor
+../.cursor/
+
+# config rules for vscode
+../.vscode/

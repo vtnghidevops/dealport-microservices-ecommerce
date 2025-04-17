@@ -13,10 +13,11 @@ import {
 } from "./models/order.model";
 import { orderService } from "./services/order.service";
 import { AddOrderModal, NewOrderData } from "./modals/AddOrderModal";
-import { showNotification } from "@/utils/notifications";
+import { toast, useToast } from "@/hooks/use-toast";
 import Pagination from "../../common/Pagination";
 
 export const OrderManagement: React.FC = () => {
+  const { toast } = useToast();
   // State variables
   const [orders, setOrders] = useState<Order[]>([]);
   const [orderSummary, setOrderSummary] = useState<OrderSummary | null>(null);
@@ -65,7 +66,7 @@ export const OrderManagement: React.FC = () => {
         customerName: orderData.customerName,
         products: orderData.products,
         totalAmount: orderData.totalAmount,
-        paymentStatus: orderData.paymentStatus,
+        paymentStatus: orderData.paymentStatus as "Paid" | "Unpaid",
       });
 
       const updatedOrders = [newOrder, ...allOrdersCache];
@@ -79,10 +80,16 @@ export const OrderManagement: React.FC = () => {
       }
 
       setIsAddModalOpen(false);
-      showNotification("Order created successfully!");
+      toast({
+        title: "Order created successfully!",
+        variant: "success",
+      });
     } catch (error) {
       console.error("Error creating order:", error);
-      showNotification("Failed to create order", "error");
+      toast({
+        title: "Failed to create order",
+        variant: "error",
+      });
     } finally {
       setLoading(false);
     }

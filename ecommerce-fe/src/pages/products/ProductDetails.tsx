@@ -1,7 +1,7 @@
 import React, { useRef, useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { Product } from '../../components/product/models/product.model';
-import { productService } from '../../components/product/services/product.service';
+import { Product } from '@/types/product.model';
+import { productService } from '@/components/product/services/product.service';
 import NotFound from '../system/NotFound';
 import ProductInformation from '@/components/product/components/ProductInfomation';
 import RelatedProduct from '@/components/product/components/RelatedProduct';
@@ -73,7 +73,7 @@ const ProductDetail: React.FC = () => {
   const showNextThumbnailsButton = thumbnailEndIndex < allImages.length;
 
   const handleQuantityChange = (newQty: number) => {
-    if (newQty >= 1 && newQty <= product.stock) {
+    if (newQty >= 1 && newQty <= product.stockQuantity) {
       setQuantity(newQty);
     }
   };
@@ -85,7 +85,7 @@ const ProductDetail: React.FC = () => {
   };
 
   const increaseQuantity = () => {
-    if (quantity < product.stock) {
+    if (quantity < product.stockQuantity) {
       setQuantity(quantity + 1);
     }
   };
@@ -152,7 +152,8 @@ const ProductDetail: React.FC = () => {
     name: product.name,
     price: product.price,
     originalPrice: product.originalPrice || undefined,
-    image: product.image_url // Đổi tên từ image sang image_url để match với model
+    image: product.image_url,
+    stockQuantity: product.stockQuantity
 };
   return (
     <div className="container mx-auto px-4 md:px-[5rem] py-[1rem]">
@@ -288,13 +289,13 @@ const ProductDetail: React.FC = () => {
         {/* Product Info */}
         <div className="space-y-4 px-2 w-[75%] ">
           {/* Rating */}
-          {product.rating && (
+          {product.reviews && product.reviews.rating && (
             <div className="mb-4 flex items-center">
               {[...Array(5)].map((_, i) => (
                 <span
                   key={i}
                   className={`text-lg ${
-                    i < Math.floor(product.rating || 0)
+                    i < Math.floor(product.reviews?.rating || 0)
                       ? "text-[#FF9017]"
                       : "text-gray-300"
                   }`}
@@ -304,10 +305,10 @@ const ProductDetail: React.FC = () => {
               ))}
               <div className="flex items-center">
                 <span className="flex items-center h-[28px] ml-2 text-cyprus text-sm font-bold">
-                  {product.rating} Star Rating
+                  {product.reviews.rating} Star Rating
                 </span>
                 <span className="text-gray-500 text-sm ml-2">
-                  ({product.reviews} Users feedback )
+                  ({product.reviews.count} Users feedback )
                 </span>
               </div>
             </div>
@@ -330,10 +331,10 @@ const ProductDetail: React.FC = () => {
                 Availability:{" "}
                 <span
                   className={`text-sm font-bold ${
-                    product.stock > 0 ? "text-success" : "text-error"
+                    product.stockQuantity > 0 ? "text-success" : "text-error"
                   }`}
                 >
-                  {product.stock > 0 ? "In Stock" : "Out of Stock"}
+                  {product.stockQuantity > 0 ? "In Stock" : "Out of Stock"}
                 </span>
               </p>
             </div>
@@ -345,7 +346,7 @@ const ProductDetail: React.FC = () => {
               <div className="text-2xl font-semibold text-[#2DA5F3]">
                 ${product.price.toLocaleString()}
               </div>
-              {product.originalPrice > product.price && (
+              {product.originalPrice && product.originalPrice > 0 && product.originalPrice > product.price && (
                 <div className="text-gray-500 line-through self-center">
                   ${product.originalPrice.toLocaleString()}
                 </div>
@@ -381,7 +382,7 @@ const ProductDetail: React.FC = () => {
                 value={quantity.toString().padStart(2, "0")}
                 onChange={(e) => {
                   const val = parseInt(e.target.value.replace(/^0+/, ""));
-                  if (!isNaN(val) && val >= 1 && val <= product.stock) {
+                  if (!isNaN(val) && val >= 1 && val <= product.stockQuantity) {
                     handleQuantityChange(val);
                   }
                 }}
@@ -391,20 +392,20 @@ const ProductDetail: React.FC = () => {
               <button
                 onClick={increaseQuantity}
                 className="px-3 py-1 text-lg text-gray-600 hover:bg-gray-100 hover:text-blue-600 transition-colors duration-200 rounded-md"
-                disabled={quantity >= product.stock}
+                disabled={quantity >= product.stockQuantity}
               >
                 +
               </button>
             </div>
             <button
               onClick={() => addToCart(productForCart)}
-              disabled={product.stock <= 0}
+              disabled={product.stockQuantity <= 0}
               className="h-[50px] w-[150px] text-[14px] flex justify-center items-center font-medium px-2 rounded-full bg-[#0496FF] text-white py-3  hover:bg-blue-500 disabled:bg-gray-400 mr-3 transition-all duration-300 transform"
             >
               ADD TO CART
             </button>
             <button
-              disabled={product.stock <= 0}
+              disabled={product.stockQuantity <= 0}
               className="h-[50px] w-[150px] text-[14px] flex justify-center items-center font-medium px-2 rounded-full text-[#0496FF] border border-[#0496FF] py-3 hover:bg-[#0496FF] hover:text-white transition-all duration-300 transform hover:scale-105 disabled:bg-gray-400 disabled:border-gray-400 disabled:text-gray-600 mr-3"
             >
               BUY NOW
@@ -434,13 +435,22 @@ const ProductDetail: React.FC = () => {
       </div>
 
       {/* Product Information (Tabs) */}
-      <ProductInformation product={productInfo} onWriteReview={scrollToComments}/>
+      <ProductInformation product={product} onWriteReview={scrollToComments}/>
 
       {/* Related Products */}
       <div className="mt-12">
         <RelatedProduct
           categorySlug={categorySlug || ""}
           currentProductId={product.id}
+          name={product.name}
+          description={product.description}
+          price={product.price}
+          image_url={product.image_url}
+          categoryId={product.categoryId}
+          type="normal"
+          id={product.id}
+          slug={product.slug}
+          stockQuantity={product.stockQuantity}
         />
       </div>
 

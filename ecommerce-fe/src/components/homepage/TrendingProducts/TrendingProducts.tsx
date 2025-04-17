@@ -1,16 +1,15 @@
 import React, {useEffect, useState} from "react";
 import ProductCard from "../../common/Card";
 import MenCollection from "./MenCollection";
-import { TrendingProductItem } from "./models/trendingProducts.model.ts";
 import { TrendingPorductService } from "./services/trendingProducts.service.ts";
-import { MenCollectionItem } from "./models/trendingProducts.model.ts";
 import { MenCollectionService } from "./services/menCollection.service.ts";
+import { Product } from "@/types/product.model.ts";
 
 const TrendingProducts: React.FC = () => {
   
-  const [trendingProducts, setTrendingProducts] = useState<TrendingProductItem[]>([]);
+  const [trendingProducts, setTrendingProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
-  const [menCollection, setMenCollection] = useState<MenCollectionItem[]>([])
+  const [menCollection, setMenCollection] = useState<Product[]>([])
   
     // fetch data trending Products
     useEffect(() => {
@@ -53,14 +52,7 @@ const TrendingProducts: React.FC = () => {
         {trendingProducts.map((product, index) => (
           <ProductCard
             key={index}
-            id={product.id}
-            title={product.title}
-            description={product.description}
-            price={Number(product.price)}
-            originalPrice={Number(product.originalPrice) || 0}
-            discount={Number(product.discount) || 0}
-            reviews={product.review}
-            image_url={product.image_url}
+            product={product}
           />
         ))}
         {/* Collection for Men */}

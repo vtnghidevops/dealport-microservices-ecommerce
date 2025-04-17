@@ -1,23 +1,8 @@
 import React, { useState } from "react";
-// import { MdOutlineLocalShipping } from "react-icons/md";
-// import { SlBadge } from "react-icons/sl";
-// import { BsHeadset } from "react-icons/bs";
-// import { CiCreditCard2 } from "react-icons/ci";
-// import { LiaHandshakeSolid } from "react-icons/lia";
+import { Product } from "@/types/product.model";
+
 interface ProductInformationProps {
-  product: {
-    description: string;
-    features: {
-      id: string;
-      value: string;
-    }[];
-    shippingInfo: {
-      courier: string;
-      local: string;
-      ups: string;
-      global: string;
-    };
-  };
+  product: Product;
   onWriteReview?: () => void; // Thêm prop này để scroll đến phần comments
 }
 
@@ -87,7 +72,7 @@ const ProductInformation: React.FC<ProductInformationProps> = ({ product, onWrit
             <div>
               <h3 className="text-lg font-semibold mb-3">Feature</h3>
               <ul className="space-y-2">
-                {product.features.map((feature, index) => (
+                {product.features?.map((feature, index) => (
                   <li key={index} className="text-[15px] flex items-center text-gray-600">
                     <span className="text-[15px] flex-shrink-0 w-6 h-6 flex items-center justify-center rounded-full bg-orange-100 text-orange-500 mr-2">
                       ✓
@@ -104,25 +89,25 @@ const ProductInformation: React.FC<ProductInformationProps> = ({ product, onWrit
               <ul className="space-y-2 text-gray-600 text-[15px]">
                 <li className="flex items-center gap-1">
                   <span className="text-gray-900 font-medium">Courier:</span>{" "}
-                  {product.shippingInfo.courier}
+                  {product.shippingInfo?.courier}
                 </li>
                 <li className="flex items-center gap-1">
                   <span className="text-gray-900 font-medium">
                     Local Shipping:
                   </span>
-                  {product.shippingInfo.local}
+                  {product.shippingInfo?.local}
                 </li>
                 <li className="flex items-center gap-1">
                   <span className="text-gray-900 font-medium">
                     UPS Ground Shipping:
                   </span>
-                  {product.shippingInfo.ups}
+                  {product.shippingInfo?.ups}
                 </li>
                 <li className="flex items-center gap-1">
                   <span className="text-gray-900 font-medium">
                     Unishop Global Export:
                   </span>
-                  {product.shippingInfo.global}
+                  {product.shippingInfo?.global}
                 </li>
               </ul>
             </div>

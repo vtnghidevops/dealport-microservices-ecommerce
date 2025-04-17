@@ -1,11 +1,11 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, Link,  } from 'react-router-dom';
-import { Product } from '../../components/product/models/product.model';
-import { Category } from '../../components/product/models/category.model';
-import { productService } from '../../components/product/services/product.service';
-import { categoryService } from '../../components/product/services/category.service';
-import ProductFilter from '../../components/product/components/ProductFilter';
-import ProductGrid from '../../components/product/components/ProductGrid';
+import { Product } from '@/types/product.model';
+import { Category } from '@/types/category.model';
+import { productService } from '@/components/product/services/product.service';
+import { categoryService } from '@/services/category.service';
+import ProductFilter from '@/components/product/components/ProductFilter';
+import ProductGrid from '@/components/product/components/ProductGrid';
 import NotFound from '../system/NotFound';
 import { CiSearch } from "react-icons/ci";
 import Pagination from '@/components/common/Pagination';
@@ -114,7 +114,7 @@ const ProductListPage: React.FC = () => {
         // Apply rating filter
         if (filterRating !== null) {
           filteredProducts = filteredProducts.filter(
-            product => product.rating && product.rating >= filterRating
+            product => product.reviews && product.reviews.rating && product.reviews.rating >= filterRating
           );
         }
   
@@ -175,7 +175,7 @@ const ProductListPage: React.FC = () => {
             filteredProducts.sort((a, b) => b.price - a.price);
             break;
           case 'rating':
-            filteredProducts.sort((a, b) => (b.rating || 0) - (a.rating || 0));
+            filteredProducts.sort((a, b) => (b.reviews?.rating || 0) - (a.reviews?.rating || 0));
             break;
           default:
             // Default sorting (popular)
@@ -206,7 +206,7 @@ const ProductListPage: React.FC = () => {
         sortedProducts.sort((a, b) => b.price - a.price);
         break;
       case 'rating':
-        sortedProducts.sort((a, b) => (b.rating || 0) - (a.rating || 0));
+        sortedProducts.sort((a, b) => (b.reviews?.rating || 0) - (a.reviews?.rating || 0));
         break;
       default:
         // Default sorting (popular)
@@ -230,7 +230,7 @@ const ProductListPage: React.FC = () => {
     productService.getProductsByCategorySlug(categorySlug || '').then(data => {
       if (data) {
         const filteredProducts = data.filter((product) => 
-          (product.rating && product.rating >= rating)
+          (product.reviews && product.reviews.rating && product.reviews.rating >= rating)
         );
         setProducts(filteredProducts);
       }

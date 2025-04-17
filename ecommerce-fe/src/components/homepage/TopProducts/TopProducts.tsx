@@ -5,13 +5,15 @@ import {
 } from './models/topProducts.model'
 import { TopProductsService } from "./services/topProducts.service";
 import { handleViewAll } from "../../../utils/helpers";
-import { handleProductClick } from "../../../utils/helpers";
+import { handleProductItemClick } from "../../../utils/helpers";
 import ProductCardItem from "./ProductsCard";
-
+import Loading from '@/components/shared/Loading'
+import { useNavigate } from "react-router-dom";
 const TopProducts: React.FC  = () => {
   // fetch data
   const [topProductsData, setTopProductsData] = useState<TopProductItem[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
+
   useEffect(() => {
         const fetchTopProductsData = async () => {
           try {
@@ -26,14 +28,17 @@ const TopProducts: React.FC  = () => {
     
         fetchTopProductsData();
       }, []);
+
+
     
   var topProducts: TopProductsProps = {
     title: "Best selling product",
     products: topProductsData,
     viewAllLabel: "View All",
-    onViewAllClick: handleViewAll,
-    onItemClick: handleProductClick,
+    onViewAllClick: () => handleViewAll(useNavigate()), // navigate to /products
+    onItemClick: (product: TopProductItem, index: number) => handleProductItemClick(useNavigate(), product, index), // Sử dụng hàm đã định nghĩa ở trên
   };
+
 
   const defaultGridPositions = [
     "col-span-1 row-span-1", // Sub1
@@ -43,6 +48,10 @@ const TopProducts: React.FC  = () => {
     "col-span-2 row-span-1 row-start-2", // Sub5
     "col-span-1 row-span-1 row-start-2", // Sub6
   ];
+
+  if (loading) {
+    return <Loading />;
+  }
 
   return (
     <div className="w-full py-6 md:px-6">

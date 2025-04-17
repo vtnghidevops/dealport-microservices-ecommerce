@@ -1,8 +1,8 @@
 import React from "react";
 import { getButtonClass } from "../../../utils/buttonUtils";
-import { MenCardItem } from "./models/trendingProducts.model";
+import { Product } from "@/types/product.model";
 
-const MenCard: React.FC<MenCardItem> = ({ image_url, price, discount }) => {
+const MenCard: React.FC<Product> = ({ image_url, price, discount }) => {
   // id: 1,
   // image:  `${urlImgMenCollection}pants.png`, // Replace with your image path
   // price: '25.95',

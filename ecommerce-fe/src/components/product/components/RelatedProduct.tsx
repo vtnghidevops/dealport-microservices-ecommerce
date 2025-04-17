@@ -1,19 +1,18 @@
 // src/components/product/components/RelatedProduct.tsx
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Product } from '../models/product.model';
+import { Product } from '@/types/product.model';
 import { productService } from '../services/product.service';
 import ProductCard from './ProductCard';
-interface RelatedProductProps {
-  categorySlug: string;
+
+interface RelatedProductProps extends Product {
   currentProductId: string;
-  title?: string;
 }
 
 const RelatedProduct: React.FC<RelatedProductProps> = ({ 
   categorySlug, 
   currentProductId,
-  title = "You may also like" 
+  name = "You may also like" 
 }) => {
   const [relatedProducts, setRelatedProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
@@ -63,7 +62,7 @@ const RelatedProduct: React.FC<RelatedProductProps> = ({
 
   return (
     <div className="py-10">
-      <h2 className="text-2xl font-bold mb-6 text-gray-800  pb-2">{title}</h2>
+      <h2 className="text-2xl font-bold mb-6 text-gray-800  pb-2">{name}</h2>
       <div className="flex gap-16">
         {relatedProducts.map((product) => (
           <Link

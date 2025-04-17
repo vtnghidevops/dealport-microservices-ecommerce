@@ -1,13 +1,15 @@
 import React, { useRef, useState, useEffect } from "react";
 import ProductCard from "../../common/Card";
 import { MdChevronRight, MdChevronLeft } from "react-icons/md";
-import { LimitedDealItem } from "./models/limitedDeal.model";
+import { Product } from "@/types/product.model";
 import { LimitedDealService } from "./services/litmitedDeal.service";
+import { handleViewAll } from "@/utils/helpers";
+import { useNavigate } from "react-router-dom";
 const LimitedDeal: React.FC = () => {
   // fetch data
-  const [limitedData, setLimitedData] = useState<LimitedDealItem[]>([]);
+  const [limitedData, setLimitedData] = useState<Product[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
-
+  const navigate = useNavigate();
   useEffect(() => {
     const fetchLimitedData = async () => {
       try {
@@ -99,14 +101,7 @@ const LimitedDeal: React.FC = () => {
             <div className="min-w-[280px]">
               <ProductCard
                 key={index} 
-                id={product.id}
-                title={product.title}
-                description={product.description}
-                price={Number(product.price) || 0}
-                originalPrice={Number(product.originalPrice) || 0}
-                discount={Number(product.discount) || 0}
-                reviews={product.review}
-                image_url={product.image_url}
+                product={product}
               />
             </div>
           ))}
@@ -126,13 +121,13 @@ const LimitedDeal: React.FC = () => {
           </>
         )}
       </div>
-
       <div className="absolute right-[1%] top-[2%]">
-        <button className="w-[8rem] h-[3rem] rounded-3xl border border-black bg-white hover:bg-black hover:text-white transition-all duration-300 ease-in-out">
+        <button onClick={() => handleViewAll(navigate)} className="w-[8rem] h-[3rem] rounded-3xl border border-black bg-white hover:bg-black hover:text-white transition-all duration-300 ease-in-out">
           View All
         </button>
       </div>
     </div>
+    
   );
 };
 

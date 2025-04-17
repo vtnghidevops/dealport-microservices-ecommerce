@@ -185,6 +185,16 @@ D:.
 │   │       └───services
 │   │               roleAdmin.service.ts
 │   │               
+│   ├───cart
+│   │   │   CartItemRow.tsx
+│   │   │   CartTotals.tsx
+│   │   │   CouponCode.tsx
+│   │   │   index.ts
+│   │   │   ShoppingCartTable.tsx
+│   │   │   
+│   │   └───models
+│   │           cart.model.ts
+│   │           
 │   ├───common
 │   │       Badge.tsx
 │   │       Card.tsx
@@ -283,27 +293,48 @@ D:.
 │   ├───product
 │   │   ├───components
 │   │   │       ProductCard.tsx
+│   │   │       ProductComments.tsx
 │   │   │       ProductFilter.tsx
 │   │   │       ProductGrid.tsx
 │   │   │       ProductInfomation.tsx
 │   │   │       RelatedProduct.tsx
+│   │   │       ReplyComment.tsx
 │   │   │       
 │   │   ├───models
 │   │   │       category.model.ts
+│   │   │       comment.model.ts
 │   │   │       product.model.ts
 │   │   │       
 │   │   └───services
 │   │           category.service.ts
+│   │           comment.service.ts
 │   │           product.service.ts
 │   │           
-│   └───ui
-│           button.tsx
-│           card.tsx
-│           input.tsx
-│           label.tsx
+│   ├───shared
+│   │   └───Loading
+│   │           index.ts
+│   │           Loading.tsx
+│   │           
+│   ├───ui
+│   │       button.tsx
+│   │       card.tsx
+│   │       input.tsx
+│   │       label.tsx
+│   │       
+│   └───wishlist
+│           index.ts
+│           WishlistItemRow.tsx
+│           WishlistTable.tsx
 │           
 ├───context
+│       AuthContext.tsx
+│       CartContext.tsx
+│       WishlistContext.tsx
+│       
 ├───hooks
+│       useCart.ts
+│       useWishList.ts
+│       
 ├───lib
 │       utils.ts
 │       
@@ -327,6 +358,9 @@ D:.
 │   │   └───role
 │   │           index.tsx
 │   │           
+│   ├───cart
+│   │       Cart.tsx
+│   │       
 │   ├───homepage
 │   │       Home.tsx
 │   │       
@@ -334,14 +368,22 @@ D:.
 │   │       ProductDetails.tsx
 │   │       ProductList.tsx
 │   │       
-│   └───system
-│           ForgotPassword.tsx
-│           Login.tsx
-│           NotFound.tsx
-│           Register.tsx
-│           ResetPassword.tsx
-│           VerifyEmail.tsx
+│   ├───system
+│   │       EmptyCart.tsx
+│   │       EmptyWishList.tsx
+│   │       ForgotPassword.tsx
+│   │       Login.tsx
+│   │       NotFound.tsx
+│   │       Register.tsx
+│   │       ResetPassword.tsx
+│   │       VerifyEmail.tsx
+│   │       
+│   └───wishlist
+│           Wishlist.tsx
 │           
+├───providers
+│       AppProvider.tsx
+│       
 ├───routers
 │       routers.tsx
 │       
