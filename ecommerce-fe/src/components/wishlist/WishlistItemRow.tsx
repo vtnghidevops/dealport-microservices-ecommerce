@@ -1,6 +1,6 @@
 import React from 'react';
 import { FiTrash2 } from 'react-icons/fi';
-import { Product } from '../product/models/product.model';
+import { Product } from '@/types/product.model';
 import { useWishlist } from '@/hooks/useWishList'
 import { useNavigate } from 'react-router-dom';
 import { useCart } from '@/hooks/useCart';
@@ -27,8 +27,9 @@ const WishlistItemRow: React.FC<WishlistItemRowProps> = ({ item }) => {
     name: item.name,
     price: item.price,
     originalPrice: item.originalPrice || undefined,
-    image: item.image_url // Đổi tên từ image sang image_url để match với model
-};
+    image: item.image_url,
+    stockQuantity: item.stockQuantity
+  };
   const { addToCart } = useCart();
 
 
@@ -60,7 +61,7 @@ const WishlistItemRow: React.FC<WishlistItemRowProps> = ({ item }) => {
       </td>
       <td className="px-6 py-4 whitespace-nowrap w-1/6">
         <div className="flex items-center">
-          {item.originalPrice && (
+          {item.originalPrice && item.originalPrice > 0 && (
             <span className="mr-2 text-xs text-gray-400 line-through">
               {formatPrice(item.originalPrice)}
             </span>
@@ -72,25 +73,23 @@ const WishlistItemRow: React.FC<WishlistItemRowProps> = ({ item }) => {
       </td>
       <td className="px-6 py-4 whitespace-nowrap w-[14%]">
         <span
-          className={`min-w-5 px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${
-            item.stock
-              ? "bg-green-100 text-success"
-              : "bg-red-100 text-error"
-          }`}
+          className={`min-w-5 px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${item.stockQuantity
+            ? "bg-green-100 text-success"
+            : "bg-red-100 text-error"
+            }`}
         >
-          {item.stock ? "IN STOCK" : "OUT OF STOCK"}
+          {item.stockQuantity ? "IN STOCK" : "OUT OF STOCK"}
         </span>
       </td>
       <td className="px-6 py-4 whitespace-nowrap">
         <div className="flex items-center ">
           <button
             onClick={() => addToCart(productForCart)}
-            disabled={!item.stock}
-            className={`h-[40px] w-[150px] text-[14px] flex justify-center items-center font-medium px-2 rounded-full  text-white py-3 mr-3 transition-all duration-300 transform text-sm ${
-              item.stock
-                ? "bg-[#0496FF] hover:bg-blue-500 text-white"
-                : "bg-gray-300 text-gray-500 cursor-not-allowed"
-            }`}
+            disabled={!item.stockQuantity}
+            className={`h-[40px] w-[150px] text-[14px] flex justify-center items-center font-medium px-2 rounded-full  text-white py-3 mr-3 transition-all duration-300 transform text-sm ${item.stockQuantity
+              ? "bg-[#0496FF] hover:bg-blue-500 text-white"
+              : "bg-gray-300 text-gray-500 cursor-not-allowed"
+              }`}
           >
             ADD TO CART
           </button>

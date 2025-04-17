@@ -1,5 +1,5 @@
 import React from 'react';
-import { Product } from '../product/models/product.model';
+import { Product } from '@/types/product.model';
 import WishlistItemRow from './WishlistItemRow';
 
 interface WishlistTableProps {

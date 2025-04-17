@@ -1,7 +1,7 @@
 import { useContext, useEffect } from 'react';
 import { CartContext, defaultCartTotals } from '@/context/CartContext';
 import { CartItem } from '@/components/cart/models/cart.model';
-import { showNotification } from '@/utils/notifications';
+import { useToast } from '@/hooks/use-toast';
 export interface UseCartReturn {
   cartItems: CartItem[];
   cartTotals: typeof defaultCartTotals;
@@ -14,6 +14,7 @@ export interface UseCartReturn {
 
 export const useCart = (): UseCartReturn => {
   const context = useContext(CartContext);
+  const { toast } = useToast();
   
   if (!context) {
     throw new Error('useCart must be used within a CartProvider');
@@ -52,10 +53,17 @@ export const useCart = (): UseCartReturn => {
         if (existingItemIndex !== -1) {
           newItems = [...prevItems];
           newItems[existingItemIndex].quantity += quantity;
-          showNotification(`Updated ${product.name} quantity in cart`);
+          toast({
+            title: `Updated ${product.name} quantity in cart`,
+            variant: 'success'
+          });
         } else {
           newItems = [...prevItems, { ...product, quantity }];
-          showNotification(`Added ${product.name} to cart`);
+          toast({
+            title: `Added ${product.name} to cart`,
+            description: 'You can now proceed to checkout',
+            variant: 'success'
+          });
         }
     
         return newItems;
@@ -64,14 +72,22 @@ export const useCart = (): UseCartReturn => {
     } catch (error: unknown) {
       const errorMessage = error instanceof Error ? error.message : 'Failed to add item to cart';
       setError(errorMessage);
-      showNotification(errorMessage, 'error');
+      toast({
+        title: 'Error',
+        description: errorMessage,
+        variant: 'error'
+      });
     }
   };
 
 
   const updateQuantity = (id: string, quantity: number) => {
     if (quantity < 1) {
-      showNotification('Quantity cannot be less than 1', 'warning');
+      toast({
+        title: 'Warning',
+        description: 'Quantity cannot be less than 1',
+        variant: 'success'
+      });
       return;
     }
     
@@ -80,13 +96,20 @@ export const useCart = (): UseCartReturn => {
         const newItems = prevItems.map(item =>
           item.id === id ? { ...item, quantity } : item
         );
-        showNotification('Cart quantity updated successfully');
+        toast({
+          title: 'Cart quantity updated successfully',
+          variant: 'success'
+        });
         return newItems;
       });
     } catch (error: unknown) {
       const errorMessage = error instanceof Error ? error.message : 'Failed to update quantity';
       setError(errorMessage);
-      showNotification(errorMessage, 'error');
+      toast({
+        title: 'Error',
+        description: errorMessage,
+        variant: 'destructive'
+      });
     }
   };
 
@@ -96,14 +119,21 @@ export const useCart = (): UseCartReturn => {
         const itemToRemove = prevItems.find(item => item.id === id);
         const newItems = prevItems.filter(item => item.id !== id);
         if (itemToRemove) {
-          showNotification(`Removed ${itemToRemove.name} from cart`);
+          toast({
+            title: `Removed ${itemToRemove.name} from cart`,
+            variant: 'success'
+          });
         }
         return newItems;
       });
     } catch (error: unknown) {
       const errorMessage = error instanceof Error ? error.message : 'Failed to remove item';
       setError(errorMessage);
-      showNotification(errorMessage, 'error');
+      toast({
+        title: 'Error',
+        description: errorMessage,
+        variant: 'destructive'
+      });
     }
   };
 
@@ -115,16 +145,26 @@ export const useCart = (): UseCartReturn => {
           discount: 10,
           total: prev.total - 10
         }));
-        showNotification('Coupon applied successfully!');
+        toast({
+          title: 'Coupon applied successfully!',
+          variant: 'success'
+        });
         return true;
       } else {
-        showNotification('Invalid coupon code', 'error');
+        toast({
+          title: 'Invalid coupon code',
+          variant: 'destructive'
+        });
         return false;
       }
     } catch (error: unknown) {
       const errorMessage = error instanceof Error ? error.message : 'Failed to apply coupon';
       setError(errorMessage);
-      showNotification(errorMessage, 'error');
+      toast({
+        title: 'Error',
+        description: errorMessage,
+        variant: 'destructive'
+      });
       return false;
     }
   };
