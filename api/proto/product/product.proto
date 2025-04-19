@@ -1,0 +1,230 @@
+// api/proto/product/product.proto
+syntax = "proto3";
+
+package product;
+option go_package = "ecommerce/api/product";
+
+import "google/protobuf/timestamp.proto";
+import "google/protobuf/empty.proto";
+
+service ProductService {
+  // Product management
+  rpc GetProduct(GetProductRequest) returns (ProductResponse);
+  rpc GetProductBySlug(GetProductBySlugRequest) returns (ProductResponse);
+  rpc ListProducts(ListProductsRequest) returns (ListProductsResponse);
+  rpc CreateProduct(CreateProductRequest) returns (ProductResponse);
+  rpc UpdateProduct(UpdateProductRequest) returns (ProductResponse);
+  rpc DeleteProduct(DeleteProductRequest) returns (google.protobuf.Empty);
+  
+  // Product reviews
+  rpc GetProductReviews(GetProductReviewsRequest) returns (ListReviewsResponse);
+  rpc AddProductReview(AddProductReviewRequest) returns (ReviewResponse);
+  rpc DeleteProductReview(DeleteProductReviewRequest) returns (google.protobuf.Empty);
+  
+  // Category management
+  rpc GetCategory(GetCategoryRequest) returns (CategoryResponse);
+  rpc GetCategoryBySlug(GetCategoryBySlugRequest) returns (CategoryResponse);
+  rpc ListCategories(ListCategoriesRequest) returns (ListCategoriesResponse);
+  rpc GetCategoryTree(google.protobuf.Empty) returns (ListCategoriesResponse);
+}
+
+// Product requests and responses
+message GetProductRequest {
+  string id = 1;
+}
+
+message GetProductBySlugRequest {
+  string slug = 1;
+}
+
+message ListProductsRequest {
+  int32 page = 1;
+  int32 page_size = 2;
+  string category_id = 3;
+  string category_slug = 4;
+  string brand = 5;
+  string type = 6;
+  string order_by = 7;
+  string order_dir = 8;
+}
+
+message CreateProductRequest {
+  string name = 1;
+  string slug = 2;
+  string description = 3;
+  string type = 4;
+  double price = 5;
+  double original_price = 6;
+  double discount = 7;
+  string image_url = 8;
+  string category_id = 9;
+  string category_slug = 10;
+  int32 stock_quantity = 11;
+  string brand = 12;
+  bytes features = 13; // JSON serialized
+  bytes shipping_info = 14; // JSON serialized
+  repeated ProductImage images = 15;
+  repeated string tags = 16;
+}
+
+message UpdateProductRequest {
+  string id = 1;
+  string name = 2;
+  string slug = 3;
+  string description = 4;
+  string type = 5;
+  double price = 6;
+  double original_price = 7;
+  double discount = 8;
+  string image_url = 9;
+  string category_id = 10;
+  string category_slug = 11;
+  int32 stock_quantity = 12;
+  string brand = 13;
+  bytes features = 14; // JSON serialized
+  bytes shipping_info = 15; // JSON serialized
+  repeated ProductImage images = 16;
+  repeated string tags = 17;
+}
+
+message DeleteProductRequest {
+  string id = 1;
+}
+
+message ProductResponse {
+  string id = 1;
+  string name = 2;
+  string slug = 3;
+  string description = 4;
+  string type = 5;
+  double price = 6;
+  double original_price = 7;
+  double discount = 8;
+  string image_url = 9;
+  string category_id = 10;
+  string category_slug = 11;
+  int32 stock_quantity = 12;
+  string brand = 13;
+  bytes features = 14; // JSON serialized
+  bytes shipping_info = 15; // JSON serialized
+  repeated ProductImage images = 16;
+  repeated string tags = 17;
+  ProductReviews reviews = 18;
+  google.protobuf.Timestamp created_at = 19;
+  google.protobuf.Timestamp updated_at = 20;
+}
+
+message ProductImage {
+  string id = 1;
+  string product_id = 2;
+  string url = 3;
+  bool is_primary = 4;
+  int32 display_order = 5;
+  google.protobuf.Timestamp created_at = 6;
+}
+
+message ListProductsResponse {
+  repeated ProductResponse products = 1;
+  PaginationMeta pagination = 2;
+}
+
+// Review requests and responses
+message GetProductReviewsRequest {
+  string product_id = 1;
+  int32 page = 2;
+  int32 page_size = 3;
+}
+
+message AddProductReviewRequest {
+  string product_id = 1;
+  string user_id = 2;
+  string user_name = 3;
+  int32 rating = 4;
+  string comment = 5;
+}
+
+message DeleteProductReviewRequest {
+  string id = 1;
+}
+
+message ReviewResponse {
+  string id = 1;
+  string product_id = 2;
+  string user_id = 3;
+  string user_name = 4;
+  int32 rating = 5;
+  string comment = 6;
+  google.protobuf.Timestamp created_at = 7;
+}
+
+message ListReviewsResponse {
+  repeated ReviewResponse reviews = 1;
+  PaginationMeta pagination = 2;
+}
+
+message ProductReviews {
+  double average_rating = 1;
+  int32 count = 2;
+}
+
+// Category requests and responses
+message GetCategoryRequest {
+  string id = 1;
+}
+
+message GetCategoryBySlugRequest {
+  string slug = 1;
+}
+
+message ListCategoriesRequest {
+  string parent_id = 1;
+  bool is_active = 2;
+  bool is_visible = 3;
+  int32 level = 4;
+  string order_by = 5;
+  string order_dir = 6;
+}
+
+message CategoryResponse {
+  string id = 1;
+  string name = 2;
+  string slug = 3;
+  string description = 4;
+  string image_url = 5;
+  string icon = 6;
+  string banner_url = 7;
+  int32 product_count = 8;
+  bool is_active = 9;
+  bool is_visible = 10;
+  int32 display_order = 11;
+  string meta_title = 12;
+  string meta_description = 13;
+  string parent_id = 14;
+  int32 level = 15;
+  repeated CategoryAttribute attributes = 16;
+  repeated CategoryResponse children = 17;
+  google.protobuf.Timestamp created_at = 18;
+  google.protobuf.Timestamp updated_at = 19;
+}
+
+message CategoryAttribute {
+  string id = 1;
+  string category_id = 2;
+  string name = 3;
+  string type = 4;
+  bool required = 5;
+  repeated string options = 6;
+  google.protobuf.Timestamp created_at = 7;
+}
+
+message ListCategoriesResponse {
+  repeated CategoryResponse categories = 1;
+}
+
+// Common responses
+message PaginationMeta {
+  int32 current_page = 1;
+  int32 page_size = 2;
+  int32 total_items = 3;
+  int32 total_pages = 4;
+}
