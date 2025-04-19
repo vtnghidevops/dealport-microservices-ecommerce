@@ -3,7 +3,7 @@ services:
     container_name: broker-service
     image: broker-service:v1
     build:
-      context: ./broker-service
+      context: ./services/broker-service
     restart: always
     ports:
       - "8080:8080"
@@ -13,7 +13,7 @@ services:
     container_name: authentication-service
     image: authenticate-service:v1
     build:
-      context: ./authentication-service
+      context: ./services/authentication-service
     restart: always
     ports:
       - "9000:9000"
@@ -22,11 +22,26 @@ services:
     networks:
       - net
 
+  product-service:
+    container_name: product-service
+    image: product-service:v1
+    build:
+      context: ./services/product-service
+    restart: always
+    ports:
+      - "8082:8082"
+    environment:
+      DSN: "host=postgres-products port=5432 user=postgres-products password=password dbname=products sslmode=disable timezone=UTC connect_timeout=5"
+    depends_on:
+      - postgres-products
+    networks:
+      - net
+
   logger-service:
     container_name: logger-service
     image: logger-service:v1
     build:
-      context: ./logger-service
+      context: ./services/logger-service
     restart: always
     networks:
       - net
@@ -35,7 +50,7 @@ services:
     container_name: mail-service
     image: mail-service:v1
     build:
-      context: ./mail-service
+      context: ./services/mail-service
     restart: always
     environment:
       MAIL_DOMAIN: localhost
@@ -53,7 +68,7 @@ services:
     container_name: listener-service
     image: listener-service:v1
     build:
-      context: ./listener-service
+      context: ./services/listener-service
     restart: always
     networks:
       - net
@@ -68,8 +83,27 @@ services:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: password
       POSTGRES_DB: users
+      POSTGRES_MULTIPLE_DATABASES: users,products
     volumes:
       - ./db-data/postgres:/var/lib/postgresql/data/
+      - ./postgres-init:/docker-entrypoint-initdb.d
+    networks:
+      - net
+
+  postgres-products:
+    container_name: postgres-products
+    image: "postgres:14.0"
+    ports:
+      - "5433:5432"
+    restart: always
+    environment:
+      POSTGRES_USER: postgres-products
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: products
+    volumes:
+      - ./db-data/postgres-products:/var/lib/postgresql/data/
+      - ./postgres-init/init-db.sql:/docker-entrypoint-initdb.d/init-db.sql
+    command: bash -c "chmod +x /docker-entrypoint-initdb.d/init-db.sql && docker-entrypoint.sh postgres"
     networks:
       - net
 
@@ -108,5 +142,5 @@ services:
       - net
 
 networks:
-  net:    
-   driver: bridge
+  net:
+    driver: bridge
