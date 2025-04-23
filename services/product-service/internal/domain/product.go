@@ -7,32 +7,47 @@ import (
 
 // Product represents a product entity
 type Product struct {
-	ID            string          `json:"id"`
-	Name          string          `json:"name"`
-	Slug          string          `json:"slug"`
-	Description   string          `json:"description"`
-	Type          string          `json:"type"`
-	Price         float64         `json:"price"`
-	OriginalPrice float64         `json:"original_price,omitempty"`
-	Discount      float64         `json:"discount,omitempty"`
-	ImageURL      string          `json:"image_url"`
-	CategoryID    string          `json:"category_id"`
-	CategorySlug  string          `json:"category_slug"`
-	StockQuantity int             `json:"stock_quantity"`
-	Brand         string          `json:"brand,omitempty"`
-	Features      json.RawMessage `json:"features,omitempty"`
-	ShippingInfo  json.RawMessage `json:"shipping_info,omitempty"`
-	Images        []ProductImage  `json:"images,omitempty"`
-	Tags          []string        `json:"tags,omitempty"`
-	Reviews       *ProductReviews `json:"reviews,omitempty"`
-	CreatedAt     time.Time       `json:"created_at"`
-	UpdatedAt     time.Time       `json:"updated_at"`
+	ID            int     `json:"id"`
+	Type          string  `json:"type"` // normal, trending, top-sale, new, limited
+	Name          string  `json:"name"`
+	Description   string  `json:"description"`
+	Slug          string  `json:"slug"`
+	Price         float64 `json:"price"`
+	ImageURL      string  `json:"image_url"`
+	CategoryID    int     `json:"categoryId"`
+	CategorySlug  string  `json:"categorySlug"`
+	StockQuantity int     `json:"stockQuantity"`
+
+	OriginalPrice float64        `json:"originalPrice,omitempty"`
+	Discount      float64        `json:"discount,omitempty"`
+	Images        []ProductImage `json:"images,omitempty"`
+	Categories    []string       `json:"categories,omitempty"`
+
+	Brand      string        `json:"brand,omitempty"`
+	Tags       []string      `json:"tags,omitempty"`
+	ReviewsAvg ProductRating `json:"reviewsAvg,omitempty"`
+	Orders     int           `json:"orders,omitempty"`
+	ImgSlider  []string      `json:"imgSlider,omitempty"`
+
+	Features     []string        `json:"features,omitempty"`
+	ShippingInfo ShippingInfo    `json:"shippingInfo,omitempty"`
+	UIMetadata   json.RawMessage `json:"uiMetadata,omitempty"`
+
+	CreatedAt time.Time `json:"created_at"`
+	UpdatedAt time.Time `json:"updated_at"`
+}
+
+type ShippingInfo struct {
+	Courier string `json:"courier,omitempty"`
+	Local   string `json:"local,omitempty"`
+	Ups     string `json:"ups,omitempty"`
+	Global  string `json:"global,omitempty"`
 }
 
 // ProductImage represents an image associated with a product
 type ProductImage struct {
-	ID           string    `json:"id"`
-	ProductID    string    `json:"product_id"`
+	ID           int       `json:"id"`
+	ProductID    int       `json:"product_id"`
 	URL          string    `json:"url"`
 	IsPrimary    bool      `json:"is_primary"`
 	DisplayOrder int       `json:"display_order"`
@@ -40,54 +55,76 @@ type ProductImage struct {
 }
 
 // ProductReviews represents a summary of product reviews
-type ProductReviews struct {
-	AverageRating float64 `json:"average_rating"`
+type ProductRating struct {
+	AverageRating float64 `json:"rating"`
 	Count         int     `json:"count"`
 }
 
 // ProductReview represents a review for a product
 type ProductReview struct {
-	ID        string    `json:"id"`
-	ProductID string    `json:"product_id"`
-	UserID    string    `json:"user_id"`
-	UserName  string    `json:"user_name,omitempty"`
-	Rating    int       `json:"rating"`
-	Comment   string    `json:"comment"`
-	CreatedAt time.Time `json:"created_at"`
+	ID         int       `json:"id"`
+	ProductID  int       `json:"product_id"`
+	UserID     string    `json:"user_id"`
+	UserName   string    `json:"user_name,omitempty"`
+	Rating     float64   `json:"rating"`
+	Comment    string    `json:"comment"`
+	CreatedAt  time.Time `json:"created_at"`
+	UserAvatar string    `json:"user_avatar,omitempty"` // Added for HappyCustomers display
+}
+
+// Testimonial represents a customer testimonial for display in HappyCustomers
+type Testimonial struct {
+	ID        string  `json:"id"`
+	Name      string  `json:"name"`
+	AvatarURL string  `json:"avatarUrl"`
+	Review    string  `json:"review"`
+	Rating    float64 `json:"rating"`
+	ProductID int     `json:"product_id,omitempty"`
 }
 
 // ProductRepository defines the interface for product data operations
 type ProductRepository interface {
-	GetByID(id string) (*Product, error)
-	GetBySlug(slug string) (*Product, error)
-	List(page, pageSize int, filters map[string]string) ([]*Product, int, error)
-	Create(product *Product) (string, error)
-	Update(product *Product) error
-	Delete(id string) error
+	GetProductByID(id int) (*Product, error)
+	GetProductBySlug(slug string) (*Product, error)
+	GetAllProducts(page, pageSize int, filters map[string]string) ([]*Product, int, error)
+	CreateProduct(product *Product) (int, error)
+	UpdateProduct(product *Product) error
+	DeleteProduct(id int) error
 
 	// Product image methods
-	GetProductImages(productID string) ([]ProductImage, error)
+	GetProductImages(productID int) ([]ProductImage, error)
 
 	// Product tag methods
-	GetProductTags(productID string) ([]string, error)
+	GetProductTags(productID int) ([]string, error)
 
 	// Review methods
-	GetProductReviews(productID string, page, pageSize int) ([]*ProductReview, int, error)
-	AddProductReview(review *ProductReview) (string, error)
-	DeleteProductReview(id string) error
+	GetProductReviews(productID int, page, pageSize int) ([]*ProductReview, int, error)
+	AddProductReview(review *ProductReview) (int, error)
+	UpdateProductReview(review *ProductReview) error
+	DeleteProductReview(id int) error
+
+	// Get random 5-star testimonials for HappyCustomers
+	GetRandomTopRatedReviews(limit int) ([]*Testimonial, error)
 }
 
 // ProductService defines the interface for product business logic
 type ProductService interface {
-	GetByID(id string) (*Product, error)
-	GetBySlug(slug string) (*Product, error)
-	List(page, pageSize int, filters map[string]string) ([]*Product, int, error)
-	Create(product *Product) (string, error)
-	Update(product *Product) error
-	Delete(id string) error
+	GetProductByID(id int) (*Product, error)
+	GetProductBySlug(slug string) (*Product, error)
+	GetAllProducts(page, pageSize int, filters map[string]string) ([]*Product, int, error)
+	CreateProduct(product *Product) (int, error)
+	UpdateProduct(product *Product) error
+	DeleteProduct(id int) error
+
+	// Product image methods
+	GetProductImages(productID int) ([]ProductImage, error)
 
 	// Review methods
-	GetProductReviews(productID string, page, pageSize int) ([]*ProductReview, int, error)
-	AddProductReview(review *ProductReview) (string, error)
-	DeleteProductReview(id string) error
+	GetProductReviews(productID int, page, pageSize int) ([]*ProductReview, int, error)
+	AddProductReview(review *ProductReview) (int, error)
+	UpdateProductReview(review *ProductReview) error
+	DeleteProductReview(id int) error
+
+	// Get random 5-star testimonials for HappyCustomers
+	GetRandomTopRatedReviews(limit int) ([]*Testimonial, error)
 }

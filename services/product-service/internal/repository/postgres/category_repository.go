@@ -5,10 +5,13 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"strconv"
 	"strings"
+	"time"
 
 	"product-service/internal/domain"
 
+	"github.com/google/uuid"
 	"github.com/jackc/pgx/v4"
 )
 
@@ -25,25 +28,27 @@ func NewCategoryRepository(db *sql.DB) *CategoryRepository {
 }
 
 // GetByID returns a category by ID
-func (r *CategoryRepository) GetByID(id string) (*domain.Category, error) {
+func (r *CategoryRepository) GetCategoryByID(id int) (*domain.Category, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), dbTimeout)
 	defer cancel()
 
 	query := `
 		SELECT 
-			id, name, slug, description, image_url, icon, banner_url,
-			product_count, is_active, is_visible, display_order,
-			meta_title, meta_description, parent_id, level,
-			created_at, updated_at
+			c.id, c.name, c.slug, c.description, c.image_url,
+			c.is_active, c.is_visible, c.created_at, c.updated_at,
+			COUNT(p.id) AS product_count
 		FROM 
-			categories
+			categories c
+		LEFT JOIN 
+			products p ON c.id = p.category_id
 		WHERE 
-			id = $1
+			c.id = $1
+		GROUP BY 
+			c.id
 	`
 
 	var category domain.Category
-	var parentID sql.NullString
-	var description, imageURL, icon, bannerURL, metaTitle, metaDescription sql.NullString
+	var description, imageURL sql.NullString
 
 	err := r.db.QueryRowContext(ctx, query, id).Scan(
 		&category.ID,
@@ -51,80 +56,52 @@ func (r *CategoryRepository) GetByID(id string) (*domain.Category, error) {
 		&category.Slug,
 		&description,
 		&imageURL,
-		&icon,
-		&bannerURL,
-		&category.ProductCount,
 		&category.IsActive,
 		&category.IsVisible,
-		&category.DisplayOrder,
-		&metaTitle,
-		&metaDescription,
-		&parentID,
-		&category.Level,
 		&category.CreatedAt,
 		&category.UpdatedAt,
+		&category.ProductCount,
 	)
 
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
-			return nil, errors.New("category not found")
+			return nil, domain.ErrCategoryNotFound
 		}
 		return nil, err
 	}
 
-	// Set nullable fields
 	if description.Valid {
 		category.Description = description.String
 	}
 	if imageURL.Valid {
 		category.ImageURL = imageURL.String
 	}
-	if icon.Valid {
-		category.Icon = icon.String
-	}
-	if bannerURL.Valid {
-		category.BannerURL = bannerURL.String
-	}
-	if metaTitle.Valid {
-		category.MetaTitle = metaTitle.String
-	}
-	if metaDescription.Valid {
-		category.MetaDescription = metaDescription.String
-	}
-	if parentID.Valid {
-		category.ParentID = parentID.String
-	}
-
-	// Get category attributes
-	attributes, err := r.GetCategoryAttributes(category.ID)
-	if err != nil {
-		return nil, err
-	}
-	category.Attributes = attributes
 
 	return &category, nil
 }
 
 // GetBySlug returns a category by slug
-func (r *CategoryRepository) GetBySlug(slug string) (*domain.Category, error) {
+func (r *CategoryRepository) GetCategoryBySlug(slug string) (*domain.Category, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), dbTimeout)
 	defer cancel()
 
 	query := `
 		SELECT 
-			id, name, slug, description, image_url, icon, banner_url,
-			product_count, is_active, is_visible, display_order,
-			meta_title, meta_description, parent_id, level,
-			created_at, updated_at
+			c.id, c.name, c.slug, c.description, c.image_url,
+			c.is_active, c.is_visible, c.created_at, c.updated_at,
+			COUNT(p.id) AS product_count
 		FROM 
-			categories
+			categories c
+		LEFT JOIN 
+			products p ON c.id = p.category_id
 		WHERE 
-			slug = $1
+			c.slug = $1
+		GROUP BY 
+			c.id
 	`
 
 	var category domain.Category
-	var parentID sql.NullString
-	var description, imageURL, icon, bannerURL, metaTitle, metaDescription sql.NullString
+	var description, imageURL sql.NullString
 
 	err := r.db.QueryRowContext(ctx, query, slug).Scan(
 		&category.ID,
@@ -132,74 +109,45 @@ func (r *CategoryRepository) GetBySlug(slug string) (*domain.Category, error) {
 		&category.Slug,
 		&description,
 		&imageURL,
-		&icon,
-		&bannerURL,
-		&category.ProductCount,
 		&category.IsActive,
 		&category.IsVisible,
-		&category.DisplayOrder,
-		&metaTitle,
-		&metaDescription,
-		&parentID,
-		&category.Level,
 		&category.CreatedAt,
 		&category.UpdatedAt,
+		&category.ProductCount,
 	)
 
 	if err != nil {
-		if errors.Is(err, pgx.ErrNoRows) {
-			return nil, errors.New("category not found")
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, domain.ErrCategoryNotFound
 		}
 		return nil, err
 	}
 
-	// Set nullable fields
 	if description.Valid {
 		category.Description = description.String
 	}
 	if imageURL.Valid {
 		category.ImageURL = imageURL.String
 	}
-	if icon.Valid {
-		category.Icon = icon.String
-	}
-	if bannerURL.Valid {
-		category.BannerURL = bannerURL.String
-	}
-	if metaTitle.Valid {
-		category.MetaTitle = metaTitle.String
-	}
-	if metaDescription.Valid {
-		category.MetaDescription = metaDescription.String
-	}
-	if parentID.Valid {
-		category.ParentID = parentID.String
-	}
-
-	// Get category attributes
-	attributes, err := r.GetCategoryAttributes(category.ID)
-	if err != nil {
-		return nil, err
-	}
-	category.Attributes = attributes
 
 	return &category, nil
 }
 
 // List returns categories with optional filtering
-func (r *CategoryRepository) List(filters map[string]string) ([]*domain.Category, error) {
+func (r *CategoryRepository) GetAllCategories(filters map[string]string) ([]*domain.Category, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), dbTimeout)
 	defer cancel()
 
-	// Start building the query
+	// Base query with product count calculation
 	baseQuery := `
 		SELECT 
-			id, name, slug, description, image_url, icon, banner_url,
-			product_count, is_active, is_visible, display_order,
-			meta_title, meta_description, parent_id, level,
-			created_at, updated_at
+			c.id, c.name, c.slug, c.description, c.image_url,
+			c.is_active, c.is_visible, c.created_at, c.updated_at,
+			COUNT(p.id) AS product_count
 		FROM 
-			categories
+			categories c
+		LEFT JOIN 
+			products p ON c.id = p.category_id
 	`
 
 	// Add WHERE clauses based on filters
@@ -211,33 +159,15 @@ func (r *CategoryRepository) List(filters map[string]string) ([]*domain.Category
 		whereClause = " WHERE "
 		whereParts := []string{}
 
-		if parentID, ok := filters["parent_id"]; ok && parentID != "" {
-			if parentID == "null" {
-				whereParts = append(whereParts, "parent_id IS NULL")
-			} else {
-				whereParts = append(whereParts, fmt.Sprintf("parent_id = $%d", argCount))
-				args = append(args, parentID)
-				argCount++
-			}
-		}
-
 		if isActive, ok := filters["is_active"]; ok && isActive != "" {
-			isActiveBool := isActive == "true"
-			whereParts = append(whereParts, fmt.Sprintf("is_active = $%d", argCount))
-			args = append(args, isActiveBool)
+			whereParts = append(whereParts, fmt.Sprintf("c.is_active = $%d", argCount))
+			args = append(args, isActive == "true")
 			argCount++
 		}
 
 		if isVisible, ok := filters["is_visible"]; ok && isVisible != "" {
-			isVisibleBool := isVisible == "true"
-			whereParts = append(whereParts, fmt.Sprintf("is_visible = $%d", argCount))
-			args = append(args, isVisibleBool)
-			argCount++
-		}
-
-		if level, ok := filters["level"]; ok && level != "" {
-			whereParts = append(whereParts, fmt.Sprintf("level = $%d", argCount))
-			args = append(args, level)
+			whereParts = append(whereParts, fmt.Sprintf("c.is_visible = $%d", argCount))
+			args = append(args, isVisible == "true")
 			argCount++
 		}
 
@@ -247,6 +177,9 @@ func (r *CategoryRepository) List(filters map[string]string) ([]*domain.Category
 			whereClause = ""
 		}
 	}
+
+	// Add GROUP BY clause
+	groupByClause := " GROUP BY c.id"
 
 	// Add ORDER BY clause
 	var orderClause string
@@ -259,11 +192,11 @@ func (r *CategoryRepository) List(filters map[string]string) ([]*domain.Category
 			orderClause += "ASC"
 		}
 	} else {
-		orderClause = " ORDER BY level ASC, display_order ASC, name ASC"
+		orderClause = " ORDER BY c.id ASC"
 	}
 
 	// Build the final query
-	query := baseQuery + whereClause + orderClause
+	query := baseQuery + whereClause + groupByClause + orderClause
 
 	// Execute query
 	rows, err := r.db.QueryContext(ctx, query, args...)
@@ -276,8 +209,7 @@ func (r *CategoryRepository) List(filters map[string]string) ([]*domain.Category
 
 	for rows.Next() {
 		var category domain.Category
-		var parentID sql.NullString
-		var description, imageURL, icon, bannerURL, metaTitle, metaDescription sql.NullString
+		var description, imageURL sql.NullString
 
 		err := rows.Scan(
 			&category.ID,
@@ -285,52 +217,22 @@ func (r *CategoryRepository) List(filters map[string]string) ([]*domain.Category
 			&category.Slug,
 			&description,
 			&imageURL,
-			&icon,
-			&bannerURL,
-			&category.ProductCount,
 			&category.IsActive,
 			&category.IsVisible,
-			&category.DisplayOrder,
-			&metaTitle,
-			&metaDescription,
-			&parentID,
-			&category.Level,
 			&category.CreatedAt,
 			&category.UpdatedAt,
+			&category.ProductCount,
 		)
 		if err != nil {
 			return nil, err
 		}
 
-		// Set nullable fields
 		if description.Valid {
 			category.Description = description.String
 		}
 		if imageURL.Valid {
 			category.ImageURL = imageURL.String
 		}
-		if icon.Valid {
-			category.Icon = icon.String
-		}
-		if bannerURL.Valid {
-			category.BannerURL = bannerURL.String
-		}
-		if metaTitle.Valid {
-			category.MetaTitle = metaTitle.String
-		}
-		if metaDescription.Valid {
-			category.MetaDescription = metaDescription.String
-		}
-		if parentID.Valid {
-			category.ParentID = parentID.String
-		}
-
-		// Get category attributes
-		attributes, err := r.GetCategoryAttributes(category.ID)
-		if err != nil {
-			return nil, err
-		}
-		category.Attributes = attributes
 
 		categories = append(categories, &category)
 	}
@@ -338,96 +240,133 @@ func (r *CategoryRepository) List(filters map[string]string) ([]*domain.Category
 	return categories, nil
 }
 
-// GetCategoryTree returns the full category tree
-func (r *CategoryRepository) GetCategoryTree() ([]*domain.Category, error) {
-	// First get all root categories (level 0)
-	filters := map[string]string{
-		"level": "0",
-	}
+// Create adds a new category
+func (r *CategoryRepository) CreateCategory(category *domain.Category) (int, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), dbTimeout)
+	defer cancel()
 
-	rootCategories, err := r.List(filters)
-	if err != nil {
-		return nil, err
-	}
+	// Generate a new ID if not provided
+	if category.ID == 0 {
+		// Lấy chữ cái đầu tiên của category name (nếu có)
+		prefix := "C" // Mặc định là "C" nếu name rỗng
+		if category.Name != "" {
+			prefix = strings.ToUpper(string(category.Name[0]))
+		}
 
-	// For each root category, get its children recursively
-	for _, rootCat := range rootCategories {
-		err = r.populateChildrenRecursively(rootCat)
+		// Tạo UUID và cắt ngắn để đảm bảo tổng độ dài không quá 36 ký tự
+		uuidStr := uuid.New().String()
+		// Giữ lại phần đầu của UUID và nối với prefix (tổng không quá 36 ký tự)
+		maxLen := 35 - len(prefix)
+		if len(uuidStr) > maxLen {
+			uuidStr = uuidStr[:maxLen]
+		}
+		var err error // declare err variable
+		category.ID, err = strconv.Atoi(prefix + uuidStr)
 		if err != nil {
-			return nil, err
+			return 0, err // handle error from Atoi conversion
 		}
 	}
 
-	return rootCategories, nil
-}
+	// Insert category - removing product_count as it will be calculated dynamically
+	query := `INSERT INTO categories (id, name, slug, description, image_url, is_active, is_visible, created_at, updated_at)
+			 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+			 RETURNING id`
 
-// populateChildrenRecursively populates all child categories recursively
-func (r *CategoryRepository) populateChildrenRecursively(parent *domain.Category) error {
-	// Get direct children
-	filters := map[string]string{
-		"parent_id": parent.ID,
+	now := time.Now()
+
+	var id int
+	err := r.db.QueryRowContext(ctx, query,
+		category.ID,
+		category.Name,
+		category.Slug,
+		category.Description,
+		category.ImageURL,
+		category.IsActive,
+		category.IsVisible,
+		now,
+		now,
+	).Scan(&id)
+
+	if err != nil {
+		return 0, err
 	}
 
-	children, err := r.List(filters)
+	// Get the actual product count for the new category (should be 0)
+	countQuery := `SELECT COUNT(*) FROM products WHERE category_id = $1`
+	err = r.db.QueryRowContext(ctx, countQuery, id).Scan(&category.ProductCount)
+	if err != nil {
+		// Non-critical error, just set to 0
+		category.ProductCount = 0
+	}
+
+	return id, nil
+}
+
+// Update updates an existing category
+func (r *CategoryRepository) UpdateCategory(category *domain.Category) error {
+	ctx, cancel := context.WithTimeout(context.Background(), dbTimeout)
+	defer cancel()
+
+	// Update category without updating product_count
+	query := `UPDATE categories
+			 SET name = $1, slug = $2, description = $3, image_url = $4, 
+			 is_active = $5, is_visible = $6, updated_at = $7
+			 WHERE id = $8`
+
+	_, err := r.db.ExecContext(ctx, query,
+		category.Name,
+		category.Slug,
+		category.Description,
+		category.ImageURL,
+		category.IsActive,
+		category.IsVisible,
+		time.Now(),
+		category.ID,
+	)
+
 	if err != nil {
 		return err
 	}
 
-	if len(children) > 0 {
-		parent.Children = children
-
-		// Recursively get children of children
-		for _, child := range children {
-			err = r.populateChildrenRecursively(child)
-			if err != nil {
-				return err
-			}
-		}
+	// Update the product_count in memory to reflect actual count
+	countQuery := `SELECT COUNT(*) FROM products WHERE category_id = $1`
+	err = r.db.QueryRowContext(ctx, countQuery, category.ID).Scan(&category.ProductCount)
+	if err != nil {
+		// Non-critical error, just don't update the count
+		return nil
 	}
 
 	return nil
 }
 
-// GetCategoryAttributes returns attributes for a category
-func (r *CategoryRepository) GetCategoryAttributes(categoryID string) ([]domain.CategoryAttribute, error) {
+// Delete removes a category
+func (r *CategoryRepository) DeleteCategory(id int) error {
 	ctx, cancel := context.WithTimeout(context.Background(), dbTimeout)
 	defer cancel()
 
-	query := `
-		SELECT id, category_id, name, type, required, options, created_at
-		FROM category_attributes
-		WHERE category_id = $1
-		ORDER BY name ASC
-	`
+	query := `DELETE FROM categories WHERE id = $1`
 
-	rows, err := r.db.QueryContext(ctx, query, categoryID)
+	result, err := r.db.ExecContext(ctx, query, id)
 	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-
-	var attributes []domain.CategoryAttribute
-
-	for rows.Next() {
-		var attr domain.CategoryAttribute
-		var options []string
-
-		err := rows.Scan(
-			&attr.ID,
-			&attr.CategoryID,
-			&attr.Name,
-			&attr.Type,
-			&attr.Required,
-			&options,
-			&attr.CreatedAt,
-		)
-		if err != nil {
-			return nil, err
-		}
-
-		attr.Options = options
-		attributes = append(attributes, attr)
+		return err
 	}
 
-	return attributes, nil
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		return err
+	}
+
+	if rowsAffected == 0 {
+		return domain.ErrCategoryNotFound
+	}
+
+	return nil
+}
+
+// SyncProductCounts updates product counts for all categories
+// This method is now redundant since counts are calculated dynamically,
+// but kept for backward compatibility
+func (r *CategoryRepository) SyncProductCounts() error {
+	// No-op as counts are calculated dynamically in queries
+	return nil
 }

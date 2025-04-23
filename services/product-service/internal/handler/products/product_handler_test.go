@@ -1,4 +1,4 @@
-package handler
+package products
 
 import (
 	"context"
@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
+
 	"github.com/go-chi/chi/v5"
 )
 
@@ -13,19 +14,12 @@ import (
 type TestConfig struct {
 	// Simplified config for testing
 }
-// TestResponse is the JSON response format for tests
-type TestResponse struct {
-	Status  int         `json:"status"`
-	Message string      `json:"message,omitempty"`
-	Data    interface{} `json:"data,omitempty"` 
-	Meta    interface{} `json:"meta,omitempty"`
-}
 
 // Mock the handlers for testing
 func (c *TestConfig) HealthCheck(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
-	response := Response{
+	response := TestResponse{
 		Status:  http.StatusOK,
 		Message: "Product service is healthy and running",
 	}
@@ -61,7 +55,7 @@ func (c *TestConfig) GetAllProducts(w http.ResponseWriter, r *http.Request) {
 		"total_items":  2,
 		"total_pages":  1,
 	}
-	response := Response{
+	response := TestResponse{
 		Status: http.StatusOK,
 		Data:   products,
 		Meta:   meta,
@@ -82,7 +76,7 @@ func (c *TestConfig) GetProductByID(w http.ResponseWriter, r *http.Request) {
 		"category_id":   "category-1",
 		"category_slug": "electronics",
 	}
-	response := Response{
+	response := TestResponse{
 		Status: http.StatusOK,
 		Data:   product,
 	}
@@ -92,6 +86,14 @@ func (c *TestConfig) GetProductByID(w http.ResponseWriter, r *http.Request) {
 // Create a test config
 func setupTest() *TestConfig {
 	return &TestConfig{}
+}
+
+// TestResponse is the JSON response format for tests
+type TestResponse struct {
+	Status  int         `json:"status"`
+	Message string      `json:"message,omitempty"`
+	Data    interface{} `json:"data,omitempty"`
+	Meta    interface{} `json:"meta,omitempty"`
 }
 
 func TestHealthCheck(t *testing.T) {
@@ -109,7 +111,7 @@ func TestHealthCheck(t *testing.T) {
 	}
 
 	// Check response body
-	var response Response
+	var response TestResponse
 	err := json.Unmarshal(rr.Body.Bytes(), &response)
 	if err != nil {
 		t.Errorf("error unmarshaling response: %v", err)
@@ -140,7 +142,7 @@ func TestGetAllProducts(t *testing.T) {
 	}
 
 	// Check response body
-	var response Response
+	var response TestResponse
 	err := json.Unmarshal(rr.Body.Bytes(), &response)
 	if err != nil {
 		t.Errorf("error unmarshaling response: %v", err)
@@ -184,7 +186,7 @@ func TestGetProductByID(t *testing.T) {
 	}
 
 	// Check response body
-	var response Response
+	var response TestResponse
 	err := json.Unmarshal(rr.Body.Bytes(), &response)
 	if err != nil {
 		t.Errorf("error unmarshaling response: %v", err)
