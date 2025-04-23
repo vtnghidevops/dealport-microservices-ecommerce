@@ -1,157 +1,40 @@
-import {
-  BestSellingProduct,
-  Product,
-  ProductCategory,
-  NewProduct,
-} from "../models/product.model";
+// import MainProductService, {
 
-export const ProductService = {
-  getBestSellingProducts: async (): Promise<BestSellingProduct[]> => {
-    // Giả lập API call
-    await new Promise((resolve) => setTimeout(resolve, 400));
+// } from "@/services/product.service";
 
-    return [
-      {
-        product: {
-          id: 1,
-          name: "Apple iPhone 13",
-          category: "Electronic",
-          image_url: "/images/limited/iphone_13.png",
-          itemCode: "#PX2-4567",
-          price: 999.0,
-        },
-        totalOrder: 104,
-        status: "Stock",
-        price: 999.0,
-      },
-      {
-        product: {
-          id: 2,
-          name: "Nike Air Jordan",
-          category: "Fashion",
-          image_url: "/images/limited/iphone_13.png",
-          itemCode: "#PX2-4567",
-          price: 999.0,
-        },
-        totalOrder: 56,
-        status: "Stock out",
-        price: 999.0,
-      },
-      {
-        product: {
-          id: 3,
-          name: "T-shirt",
-          category: "Fashion",
-          image_url: "/images/limited/iphone_13.png",
-          itemCode: "#PX2-4567",
-          price: 999.0,
-        },
-        totalOrder: 266,
-        status: "Stock",
-        price: 999.0,
-      },
-      {
-        product: {
-          id: 4,
-          name: "Cross Bag",
-          category: "Fashion",
-          image_url: "/images/limited/iphone_13.png",
-          itemCode: "#PX2-4567",
-          price: 999.0,
-        },
-        totalOrder: 506,
-        status: "Stock",
-        price: 999.0,
-      },
-    ];
-  },
+// // Reexport the types from the main service
+// export type {
+//   BestSellingProduct,
+//   ProductCategory,
+//   NewProduct,
+// };
 
-  getTopProducts: async (): Promise<Product[]> => {
-    // Giả lập API call
-    await new Promise((resolve) => setTimeout(resolve, 300));
+// // Define Product type for admin-specific properties if needed
+// export interface Product {
+//   id: number;
+//   name: string;
+//   category: string;
+//   image_url: string;
+//   itemCode: string;
+//   price: number;
+// }
 
-    return [
-      {
-        id: 1,
-        name: "Apple iPhone 13",
-        category: "Electronic",
-        price: 999.0,
-        image_url: "/images/limited/iphone_13.png",
-        itemCode: "#PX2-4567",
-      },
-      {
-        id: 2,
-        name: "Nike Air Jordan",
-        category: "Fashion",
-        price: 72.4,
-        image_url: "/images/limited/iphone_13.png",
-        itemCode: "#PX2-4567",
-      },
-      {
-        id: 3,
-        name: "T-shirt",
-        category: "Fashion",
-        price: 35.4,
-        image_url: "/images/limited/iphone_13.png",
-        itemCode: "#PX2-4567",
-      },
-      {
-        id: 4,
-        name: "Assorted Cross Bag",
-        category: "Fashion",
-        price: 80.0,
-        image_url: "/images/limited/iphone_13.png",
-        itemCode: "#PX2-4567",
-      },
-    ];
-  },
+// // Use the main service but provide admin-specific overrides
+// export const ProductService = {
+//   // Reuse the functions from the main service
+//   getBestSellingProducts: async (): Promise<BestSellingProduct[]> => {
+//     return MainProductService.getBestSellingProducts();
+//   },
 
-  getProductCategories: async (): Promise<ProductCategory[]> => {
-    // Giả lập API call
-    await new Promise((resolve) => setTimeout(resolve, 200));
+//   getTopProducts: async (): Promise<Product[]> => {
+//     return MainProductService.getTopProducts();
+//   },
 
-    return [
-      {
-        id: 1,
-        name: "Electronic",
-        image_url: "/images/limited/iphone_13.png",
-      },
-      {
-        id: 2,
-        name: "Fashion",
-        image_url: "/images/limited/iphone_13.png",
-      },
-      {
-        id: 3,
-        name: "Home",
-        image_url: "/images/limited/iphone_13.png",
-      },
-    ];
-  },
+//   getProductCategories: async (): Promise<ProductCategory[]> => {
+//     return MainProductService.getProductCategories();
+//   },
 
-  getNewProducts: async (): Promise<NewProduct[]> => {
-    // Giả lập API call
-    await new Promise((resolve) => setTimeout(resolve, 250));
-
-    return [
-      {
-        id: 1,
-        name: "Smart Fitness Tracker",
-        price: 39.99,
-        image_url: "/images/limited/smart_watch.png",
-      },
-      {
-        id: 2,
-        name: "Leather Wallet",
-        price: 19.99,
-        image_url: "/images/limited/smart_watch.png",
-      },
-      {
-        id: 3,
-        name: "Electric Hair Trimmer",
-        price: 24.99,
-        image_url: "/images/limited/smart_watch.png",
-      },
-    ];
-  },
-};
+//   getNewProducts: async (): Promise<NewProduct[]> => {
+//     return MainProductService.getNewProducts();
+//   },
+// };
