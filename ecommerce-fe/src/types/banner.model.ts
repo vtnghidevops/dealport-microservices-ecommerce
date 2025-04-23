@@ -1,34 +1,48 @@
 // Global banner model definitions
 
 export interface Banner {
-  id: string;
+  id: number;
   title: string;
   subtitle?: string;
   description?: string;
   image_url: string;
   link_url?: string;
   action_text?: string;
-  position?: string;
-  isActive: boolean;
-  startDate?: string;
-  endDate?: string;
+  is_active: boolean;
   priority?: number;
   type: BannerType;
-  createdAt?: string;
-  updatedAt?: string;
+  product_id?: number;
+  category_id?: number;
+  discount?: string;
+  highlight_text?: string;
+  background_color?: string;
+  text_color?: string;
+  animation_type?: 'fade' | 'slide' | 'zoom';
+  created_at?: string;
+  updated_at?: string;
 }
 
 export enum BannerType {
   HERO = 'hero',
-  PROMOTION = 'promotion',
+  PROMOTION = 'promotional',
   CATEGORY = 'category',
-  COLLECTION = 'collection',
+  PRODUCT = 'product',
   SEASONAL = 'seasonal',
   FEATURED = 'featured'
 }
 
-export interface SliderBannerItem extends Omit<Banner, 'type'> {
-  discount?: number | string;
+// Frontend-specific model for slider banners
+export interface SliderBannerItem {
+  id: number;
+  title: string;
+  subtitle?: string;
+  description?: string;
+  image_url: string;
+  link_url?: string;
+  action_text?: string;
+  is_active: boolean;
+  priority?: number;
+  discount?: string;
   highlight_text?: string;
   background_color?: string;
   text_color?: string;
@@ -36,20 +50,23 @@ export interface SliderBannerItem extends Omit<Banner, 'type'> {
 }
 
 export interface BannerResponse {
-  banners: Banner[];
-  total: number;
-  page?: number;
-  limit?: number;
+  status: number;
+  data: Banner[];
+  meta?: {
+    current_page: number;
+    page_size: number;
+    total_items: number;
+    total_pages: number;
+  };
 }
 
 export interface BannerFilter {
   type?: BannerType;
-  isActive?: boolean;
-  search?: string;
-  startDate?: string;
-  endDate?: string;
-  sortBy?: 'createdAt' | 'priority';
-  sortOrder?: 'asc' | 'desc';
+  is_active?: boolean;
+  product_id?: number;
+  category_id?: number;
   page?: number;
-  limit?: number;
+  page_size?: number;
+  order_by?: string;
+  order_dir?: 'ASC' | 'DESC';
 } 

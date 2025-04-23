@@ -1,7 +1,7 @@
 export type OrderStatus = 'Pending' | 'Processing' | 'Shipped' | 'Delivered' | 'Cancelled';
 
 export interface Order {
-  id: string;
+  id: number;
   orderId: string;
   customerId: string;
   customerName: string;
@@ -13,12 +13,12 @@ export interface Order {
 }
 
 export interface OrderProduct {
-  productId: string;
+  productId: number;
   productName: string;
   productImage: string;
   quantity: number;
   price: number;
-  id?: string;
+  id?: number;
   name?: string;
   image_url?: string;
   category?: string;
