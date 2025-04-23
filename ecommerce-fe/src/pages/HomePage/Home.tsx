@@ -1,7 +1,7 @@
 import { HappyCustomers } from "../../components/homepage/HappyCustomers";
 import { TrendingProducts } from "../../components/homepage/TrendingProducts";
 import { CategoryExplorer } from "../../components/homepage/CategoryExplorer";
-import { TopProducts } from "../../components/homepage/TopProducts";
+import { TopProducts } from "../../components/homepage/BestSelling";
 import { LimitedDeal } from "../../components/homepage/LimitedDeal";
 import { HeroBanner } from "../../components/homepage/SliderBanner";
 import { BannerShowCase } from "../../components/homepage/Ads";

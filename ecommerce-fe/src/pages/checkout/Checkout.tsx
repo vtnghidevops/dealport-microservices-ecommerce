@@ -19,11 +19,11 @@ const Checkout: React.FC = () => {
         // Simulate API call
         await new Promise(resolve => setTimeout(resolve, 1000));
         // Redirect to success page with payment method
-        navigate(`/checkout/success?method=${paymentMethod}`);
+        navigate(`/user/checkout/success?method=${paymentMethod}`);
       } else {
         // For cash on delivery
         await new Promise(resolve => setTimeout(resolve, 500));
-        navigate(`/checkout/success?method=cash`);
+        navigate(`/user/checkout/success?method=cash`);
       }
     } catch (error) {
       console.error("Error placing order:", error);

@@ -1,15 +1,16 @@
 import React, { useEffect, useState } from 'react';
-import { useParams, Link,  } from 'react-router-dom';
+import { useParams, Link, } from 'react-router-dom';
 import { Product } from '@/types/product.model';
 import { Category } from '@/types/category.model';
-import { productService } from '@/components/product/services/product.service';
-import { categoryService } from '@/services/category.service';
-import ProductFilter from '@/components/product/components/ProductFilter';
-import ProductGrid from '@/components/product/components/ProductGrid';
+import ProductService from '@/services/product.service';
+import { CategoryService } from '@/services/product.service';
+import ProductFilter from '@/components/product/ProductFilter';
+import ProductGrid from '@/components/product/ProductGrid';
 import NotFound from '../system/NotFound';
 import { CiSearch } from "react-icons/ci";
 import Pagination from '@/components/common/Pagination';
 import { normalizeText } from '@/utils/helpers';
+import Loading from '@/components/shared/Loading';
 const ProductListPage: React.FC = () => {
   const { categorySlug } = useParams<{ categorySlug: string }>();
   const [products, setProducts] = useState<Product[]>([]);
@@ -24,9 +25,9 @@ const ProductListPage: React.FC = () => {
   const indexOfLastProduct = currentPage * pageSize;
   const indexOfFirstProduct = indexOfLastProduct - pageSize;
   const currentProducts = products.slice(indexOfFirstProduct, indexOfLastProduct);
-  
-  const [priceFilter, setPriceFilter] = useState<{min: number | null, max: number | null}>({
-    min: null, 
+
+  const [priceFilter, setPriceFilter] = useState<{ min: number | null, max: number | null }>({
+    min: null,
     max: null
   });
   const [selectedBrands, setSelectedBrands] = useState<string[]>([]);
@@ -37,15 +38,15 @@ const ProductListPage: React.FC = () => {
       setLoading(true);
       try {
         if (categorySlug) {
-          const categoryData = await categoryService.getCategoryBySlug(categorySlug);
+          const categoryData = await CategoryService.getCategoryBySlug(categorySlug);
           if (!categoryData) {
             setNotFound(true);
             return;
           }
           setCategory(categoryData);
-          
-          const productsData = await productService.getProductsByCategorySlug(categorySlug);
-          setProducts(productsData || []);
+
+          const productsData = await ProductService.getProductsByCategorySlug(categorySlug);
+          setProducts(productsData.products || []);
         }
       } catch (error) {
         console.error('Error fetching data:', error);
@@ -54,204 +55,164 @@ const ProductListPage: React.FC = () => {
         setLoading(false);
       }
     };
-    
+
     fetchData();
   }, [categorySlug]);
-  
+  //console.log("products in category list", products)
+  //console.log("category in category list", category)
+
   const handleSearch = (event: React.ChangeEvent<HTMLInputElement>) => {
     const query = event.target.value;
     setSearchQuery(query);
-    
+
     if (!categorySlug) return;
-    
+
     // Get original products and filter
-    productService.getProductsByCategorySlug(categorySlug).then(products => {
+    ProductService.getProductsByCategorySlug(categorySlug).then(products => {
       if (!products) return;
-      
-      const filtered = products.filter(product => {
+
+      const filtered = products.products.filter(product => {
         const searchIn = [
           product.name,
           product.description,
           product.brand,
           ...(product.tags || [])
         ].map(text => normalizeText(text || ""));
-        
-        return searchIn.some(text => 
+
+        return searchIn.some(text =>
           text.includes(normalizeText(query))
         );
       });
-      
+
       setProducts(filtered);
       setCurrentPage(1); // Reset to first page when searching
     });
   };
 
-    // Handler functions for filters
-    const handlePriceRangeFilter = (min: number | null, max: number | null) => {
-      setPriceFilter({ min, max });
-      applyFilters();
-    };
-  
-    const handleBrandFilter = (brands: string[]) => {
-      setSelectedBrands(brands);
-      applyFilters();
-    };
-  
-    const handleTagFilter = (tag: string) => {
-      setSelectedTag(currentTag => currentTag === tag ? null : tag);
-      applyFilters();
-    };
-  
-    // Combined filter function
-    const applyFilters = async () => {
-      if (!categorySlug) return;
-      
-      try {
-        let filteredProducts = await productService.getProductsByCategorySlug(categorySlug);
-        
-        if (!filteredProducts) return;
-  
-        // Apply rating filter
-        if (filterRating !== null) {
-          filteredProducts = filteredProducts.filter(
-            product => product.reviews && product.reviews.rating && product.reviews.rating >= filterRating
-          );
-        }
-  
-        // Apply price filter
-        if (priceFilter.min !== null || priceFilter.max !== null) {
-          filteredProducts = filteredProducts.filter(product => {
-            const price = product.price;
-            if (priceFilter.min !== null && priceFilter.max !== null) {
-              return price >= priceFilter.min && price <= priceFilter.max;
-            }
-            if (priceFilter.min !== null) {
-              return price >= priceFilter.min;
-            }
-            if (priceFilter.max !== null) {
-              return price <= priceFilter.max;
-            }
-            return true;
-          });
-        }
-  
-        // Apply brand filter
-        if (selectedBrands.length > 0) {
-          filteredProducts = filteredProducts.filter(
-            product => product.brand && selectedBrands.includes(product.brand)
-          );
-        }
-  
-        // Apply tag filter
-        if (selectedTag) {
-          const normalizedSelectedTag = normalizeText(selectedTag);
-          filteredProducts = filteredProducts.filter(
-            product => product.tags?.some(tag => 
-              normalizeText(tag) === normalizedSelectedTag
-            )
-          );
-        }
-        // Apply search filter
-        if (searchQuery.trim()) {
-          filteredProducts = filteredProducts.filter(product => {
-            const searchIn = [
-              product.name,
-              product.description,
-              product.brand,
-              ...(product.tags || [])
-            ].map(text => normalizeText(text || ""));
-            
-            return searchIn.some(text => 
-              text.includes(normalizeText(searchQuery))
-            );
-          });
-        }
-        // Apply sorting
-        switch (sortOption) {
-          case 'price-low':
-            filteredProducts.sort((a, b) => a.price - b.price);
-            break;
-          case 'price-high':
-            filteredProducts.sort((a, b) => b.price - a.price);
-            break;
-          case 'rating':
-            filteredProducts.sort((a, b) => (b.reviews?.rating || 0) - (a.reviews?.rating || 0));
-            break;
-          default:
-            // Default sorting (popular)
-            break;
-        }
-  
-        setProducts(filteredProducts);
-        
-      } catch (error) {
-        console.error('Error applying filters:', error);
+  // Handler functions for filters
+  const handlePriceRangeFilter = (min: number | null, max: number | null) => {
+    setPriceFilter({ min, max });
+  };
+
+  const handleBrandFilter = (brands: string[]) => {
+    setSelectedBrands(brands);
+  };
+
+  const handleTagFilter = (tag: string) => {
+    setSelectedTag(currentTag => currentTag === tag ? null : tag);
+  };
+
+  // Combined filter function
+  const applyFilters = async () => {
+    if (!categorySlug) return;
+
+    try {
+      const response = await ProductService.getProductsByCategorySlug(categorySlug);
+
+      if (!response) return;
+
+      let filteredProducts = [...response.products];
+
+      // Apply rating filter (áp dụng bộ lọc đánh giá)
+      if (filterRating !== null) {
+        filteredProducts = filteredProducts.filter(
+          (product: Product) => product.reviewsAvg?.rating >= filterRating
+        );
       }
-    };
-  
-    useEffect(() => {
-      applyFilters();
-    }, [categorySlug, filterRating, priceFilter, selectedBrands, selectedTag, sortOption]);
+
+      // Apply price filter
+      if (priceFilter.min !== null || priceFilter.max !== null) {
+        filteredProducts = filteredProducts.filter(product => {
+          const price = product.price;
+          if (priceFilter.min !== null && priceFilter.max !== null) {
+            return price >= priceFilter.min && price <= priceFilter.max;
+          }
+          if (priceFilter.min !== null) {
+            return price >= priceFilter.min;
+          }
+          if (priceFilter.max !== null) {
+            return price <= priceFilter.max;
+          }
+          return true;
+        });
+      }
+
+      // Apply brand filter
+      if (selectedBrands.length > 0) {
+        filteredProducts = filteredProducts.filter(
+          (product: Product) => product.brand && selectedBrands.includes(product.brand)
+        );
+      }
+
+      // Apply tag filter
+      if (selectedTag) {
+        const normalizedSelectedTag = normalizeText(selectedTag);
+        filteredProducts = filteredProducts.filter(
+          (product: Product) => product.tags?.some(tag =>
+            normalizeText(tag) === normalizedSelectedTag
+          )
+        );
+      }
+
+      // Apply search filter
+      if (searchQuery.trim()) {
+        filteredProducts = filteredProducts.filter(product => {
+          const searchIn = [
+            product.name,
+            product.description,
+            product.brand,
+            ...(product.tags || [])
+          ].map(text => normalizeText(text || ""));
+
+          return searchIn.some(text =>
+            text.includes(normalizeText(searchQuery))
+          );
+        });
+      }
+
+      // Apply sorting
+      switch (sortOption) {
+        case 'price-low':
+          filteredProducts.sort((a, b) => a.price - b.price);
+          break;
+        case 'price-high':
+          filteredProducts.sort((a, b) => b.price - a.price);
+          break;
+        case 'rating':
+          filteredProducts.sort((a, b) => (b.reviewsAvg?.rating || 0) - (a.reviewsAvg?.rating || 0));
+          break;
+        default:
+          // Default sorting (popular)
+          break;
+      }
+
+      setProducts(filteredProducts);
+
+    } catch (error) {
+      console.error('Error applying filters:', error);
+    }
+  };
+
+  useEffect(() => {
+    applyFilters();
+  }, [categorySlug, filterRating, priceFilter, selectedBrands, selectedTag, sortOption]);
 
   const handleSortChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     setSortOption(e.target.value);
-    
-    // Sort products based on the selected option
-    const sortedProducts = [...products];
-    switch (e.target.value) {
-      case 'price-low':
-        sortedProducts.sort((a, b) => a.price - b.price);
-        break;
-      case 'price-high':
-        sortedProducts.sort((a, b) => b.price - a.price);
-        break;
-      case 'rating':
-        sortedProducts.sort((a, b) => (b.reviews?.rating || 0) - (a.reviews?.rating || 0));
-        break;
-      default:
-        // Default sorting (popular)
-        break;
-    }
-    setProducts(sortedProducts);
   };
 
   const handleFilterByRating = (rating: number | null) => {
     setFilterRating(rating);
-    
-    // Reset to original products list if no rating filter
-    if (rating === null) {
-      productService.getProductsByCategorySlug(categorySlug || '').then(data => {
-        setProducts(data || []);
-      });
-      return;
-    }
-    
-    // Filter products by rating
-    productService.getProductsByCategorySlug(categorySlug || '').then(data => {
-      if (data) {
-        const filteredProducts = data.filter((product) => 
-          (product.reviews && product.reviews.rating && product.reviews.rating >= rating)
-        );
-        setProducts(filteredProducts);
-      }
-    });
   };
-  
+
   if (loading) {
-    return (
-      <div className="container mx-auto p-4 min-h-screen flex justify-center items-center">
-        <div className="flex flex-col items-center">
-          <div className="w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
-          <p className="mt-4 text-gray-600">Loading products...</p>
-        </div>
-      </div>
-    );
+    return <Loading />
   }
 
   if (notFound) {
     return <NotFound />;
   }
-  
+
   return (
     <div className="container mx-auto px-[5rem] py-[1rem]">
       {/* Breadcrumb */}
@@ -328,9 +289,9 @@ const ProductListPage: React.FC = () => {
                   <span>{category.name}</span>
                 </div>
               )}
-                
-                
-                {/* Search filter tag */}
+
+
+              {/* Search filter tag */}
               {searchQuery && (
                 <div className="flex items-center bg-white rounded-full px-3 py-1 text-sm mr-2">
                   <span>Search: {searchQuery}</span>

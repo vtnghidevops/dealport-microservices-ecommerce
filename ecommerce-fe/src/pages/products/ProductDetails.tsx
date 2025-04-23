@@ -1,16 +1,17 @@
 import React, { useRef, useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { Product } from '@/types/product.model';
-import { productService } from '@/components/product/services/product.service';
+import ProductService from '@/services/product.service';
 import NotFound from '../system/NotFound';
-import ProductInformation from '@/components/product/components/ProductInfomation';
-import RelatedProduct from '@/components/product/components/RelatedProduct';
+import ProductInformation from '@/components/product/ProductInfomation';
+import RelatedProduct from '@/components/product/RelatedProduct';
 import { CiHeart } from "react-icons/ci";
 import { IoShareSocialOutline } from "react-icons/io5";
-import { IoIosArrowForward, IoIosArrowBack  } from "react-icons/io";
+import { IoIosArrowForward, IoIosArrowBack } from "react-icons/io";
 import { TbScale } from "react-icons/tb";
-import ProductComments from '@/components/product/components/ProductComments';
+import ProductComments from '@/components/product/ProductComments';
 import { useCart } from '@/hooks/useCart';
+import Loading from '@/components/shared/Loading';
 const ProductDetail: React.FC = () => {
   const { categorySlug, productSlug } = useParams<{
     categorySlug: string;
@@ -30,7 +31,7 @@ const ProductDetail: React.FC = () => {
     const fetchProduct = async () => {
       try {
         if (categorySlug && productSlug) {
-          const data = await productService.getProductByCategoryAndSlug(categorySlug, productSlug);
+          const data = await ProductService.getProductBySlug(productSlug);
           setProduct(data || null);
           if (data) {
             setSelectedImage(data.image_url);
@@ -42,32 +43,28 @@ const ProductDetail: React.FC = () => {
         setLoading(false);
       }
     };
-    
+
     fetchProduct();
   }, [categorySlug, productSlug]);
-  
+  console.log("product to receive: ", product)
+
   if (loading) {
-    return (
-      <div className="flex justify-center items-center h-64">
-        <div className="w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
-        <p className="ml-4 text-gray-600">Loading product details...</p>
-      </div>
-    );
+    return <Loading />
   }
-  
+
   if (!product) {
     return <NotFound />;
   }
 
   // Create an array of all images for the slider
   const allImages = [product.image_url, ...(product.imgSlider || [])];
-  
+
   // Calculate the end index for visible thumbnails
   const thumbnailEndIndex = Math.min(thumbnailStartIndex + maxVisibleThumbnails, allImages.length);
-  
+
   // Get only the thumbnails that should be visible in the current view
   const visibleThumbnails = allImages.slice(thumbnailStartIndex, thumbnailEndIndex);
-  
+
   // Check if navigation buttons should be shown
   const showPrevThumbnailsButton = thumbnailStartIndex > 0;
   const showNextThumbnailsButton = thumbnailEndIndex < allImages.length;
@@ -95,7 +92,7 @@ const ProductDetail: React.FC = () => {
     const newIndex = currentImageIndex > 0 ? currentImageIndex - 1 : allImages.length - 1;
     setCurrentImageIndex(newIndex);
     setSelectedImage(allImages[newIndex]);
-    
+
     // Make sure the thumbnail for the current image is visible
     if (newIndex < thumbnailStartIndex) {
       setThumbnailStartIndex(Math.max(0, newIndex));
@@ -108,7 +105,7 @@ const ProductDetail: React.FC = () => {
     const newIndex = currentImageIndex < allImages.length - 1 ? currentImageIndex + 1 : 0;
     setCurrentImageIndex(newIndex);
     setSelectedImage(allImages[newIndex]);
-    
+
     // Make sure the thumbnail for the current image is visible
     if (newIndex < thumbnailStartIndex) {
       setThumbnailStartIndex(Math.max(0, newIndex));
@@ -122,7 +119,7 @@ const ProductDetail: React.FC = () => {
     setSelectedImage(image);
     setCurrentImageIndex(index);
   };
-  
+
   // Thumbnail navigation functions
   const goToPreviousThumbnails = () => {
     setThumbnailStartIndex(Math.max(0, thumbnailStartIndex - 1));
@@ -131,30 +128,24 @@ const ProductDetail: React.FC = () => {
   const goToNextThumbnails = () => {
     setThumbnailStartIndex(Math.min(allImages.length - maxVisibleThumbnails, thumbnailStartIndex + 1));
   };
-  
+
   // Format discount percentage
   const discountPercentage = product.discount ? `${product.discount}% OFF` : null;
 
-  // Product features for product information component
-  const productInfo = {
-    description: product.description,
-    features: product.features,
-    shippingInfo: product.shippingInfo
-  };
-  
+
   // Hàm scroll đến phần comments
   const scrollToComments = () => {
     commentsRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
 
   const productForCart = {
-    id: product.id,
+    id: product.id.toString(),
     name: product.name,
     price: product.price,
     originalPrice: product.originalPrice || undefined,
     image: product.image_url,
     stockQuantity: product.stockQuantity
-};
+  };
   return (
     <div className="container mx-auto px-4 md:px-[5rem] py-[1rem]">
       {/* Breadcrumb */}
@@ -167,7 +158,7 @@ const ProductDetail: React.FC = () => {
           Shop
         </Link>
         <span className="mx-2">/</span>
-        <Link to={`/${categorySlug}`} className="hover:text-primary text-base">
+        <Link to={`/category/${categorySlug}`} className="hover:text-primary text-base">
           {(categorySlug || "")
             .split("-")
             .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
@@ -235,11 +226,10 @@ const ProductDetail: React.FC = () => {
                       key={absoluteIndex}
                       onClick={() => selectImage(img, absoluteIndex)}
                       className={`justify-center items-center rounded-lg flex w-[70px] h-[70px] border-2 overflow-hidden transition-all duration-300
-                      ${
-                        currentImageIndex === absoluteIndex
+                      ${currentImageIndex === absoluteIndex
                           ? "border-blue-500"
                           : "border-gray-200"
-                      }`}
+                        }`}
                     >
                       <img
                         src={img}
@@ -275,9 +265,8 @@ const ProductDetail: React.FC = () => {
                   return (
                     <span
                       key={index}
-                      className={`block w-2 h-2 rounded-full ${
-                        isActive ? "bg-blue-500" : "bg-gray-300"
-                      }`}
+                      className={`block w-2 h-2 rounded-full ${isActive ? "bg-blue-500" : "bg-gray-300"
+                        }`}
                     />
                   );
                 })}
@@ -287,32 +276,28 @@ const ProductDetail: React.FC = () => {
         </div>
 
         {/* Product Info */}
-        <div className="space-y-4 px-2 w-[75%] ">
+        <div className="space-y-4 px-2 w-[75%] flex flex-col justify-center h-[80%]">
           {/* Rating */}
-          {product.reviews && product.reviews.rating && (
-            <div className="mb-4 flex items-center">
-              {[...Array(5)].map((_, i) => (
-                <span
-                  key={i}
-                  className={`text-lg ${
-                    i < Math.floor(product.reviews?.rating || 0)
-                      ? "text-[#FF9017]"
-                      : "text-gray-300"
-                  }`}
-                >
-                  ★
-                </span>
-              ))}
-              <div className="flex items-center">
-                <span className="flex items-center h-[28px] ml-2 text-cyprus text-sm font-bold">
-                  {product.reviews.rating} Star Rating
-                </span>
-                <span className="text-gray-500 text-sm ml-2">
-                  ({product.reviews.count} Users feedback )
-                </span>
-              </div>
+          <div className="mb-4 flex items-center">
+            {[...Array(5)].map((_, i) => (
+              <span
+                key={i}
+                className={`text-lg ${i < product.reviewsAvg.rating
+                  ? "text-[#FF9017]"
+                  : "text-gray-300"}`}
+              >
+                ★
+              </span>
+            ))}
+            <div className="flex items-center">
+              <span className="flex items-center h-[28px] ml-2 text-cyprus text-sm font-bold">
+                {product.reviewsAvg.rating} Star Rating
+              </span>
+              <span className="text-gray-500 text-sm ml-2">
+                ({product.reviewsAvg.count} Users feedback )
+              </span>
             </div>
-          )}
+          </div>
           <h2 className="text-xl font-medium !mb-2">{product.name}</h2>
 
           {/* SKU and Category */}
@@ -330,9 +315,8 @@ const ProductDetail: React.FC = () => {
               <p className="mt-1">
                 Availability:{" "}
                 <span
-                  className={`text-sm font-bold ${
-                    product.stockQuantity > 0 ? "text-success" : "text-error"
-                  }`}
+                  className={`text-sm font-bold ${product.stockQuantity > 0 ? "text-success" : "text-error"
+                    }`}
                 >
                   {product.stockQuantity > 0 ? "In Stock" : "Out of Stock"}
                 </span>
@@ -435,13 +419,14 @@ const ProductDetail: React.FC = () => {
       </div>
 
       {/* Product Information (Tabs) */}
-      <ProductInformation product={product} onWriteReview={scrollToComments}/>
+      <ProductInformation product={product} onWriteReview={scrollToComments} />
 
       {/* Related Products */}
       <div className="mt-12">
+        <h2 className='text-[25px] font-bold'>You may also like</h2>
         <RelatedProduct
           categorySlug={categorySlug || ""}
-          currentProductId={product.id}
+          currentProductId={product.id.toString()}
           name={product.name}
           description={product.description}
           price={product.price}
@@ -451,12 +436,21 @@ const ProductDetail: React.FC = () => {
           id={product.id}
           slug={product.slug}
           stockQuantity={product.stockQuantity}
+          originalPrice={product.originalPrice}
+          discount={product.discount}
+          brand={product.brand}
+          tags={product.tags}
+          features={product.features}
+          shippingInfo={product.shippingInfo}
+          reviewsAvg={product.reviewsAvg}
+          orders={product.orders}
+          imgSlider={product.imgSlider}
         />
       </div>
 
       {/* Product Comments */}
       <div ref={commentsRef}>
-        <ProductComments productId={product.id} />
+        <ProductComments productId={product.id.toString()} />
       </div>
     </div>
   );

@@ -1,4 +1,3 @@
-import { useState } from "react";
 import { FaRegHeart, FaHeart } from "react-icons/fa";
 import { useCart } from '@/hooks/useCart';
 import { useWishlist } from "@/hooks/useWishList";
@@ -42,26 +41,26 @@ const ProductCard: React.FC<ProductCardProps> = ({
 }) => {
   // type for cart item
   const productForCart = {
-    id: product.id,
+    id: product.id.toString(),
     name: product.name,
     price: product.price,
     originalPrice: product.originalPrice || undefined,
     image: product.image_url
   };
-  //console.log(product);                    
+  // console.log("Here: ",product);                    
 
-  const rating = product.reviews?.rating || 0;
-  const reviewCount = product.reviews?.count || 0;
+  const rating = product.reviewsAvg?.rating || 0;
+  const reviewCount = product.reviewsAvg?.count || 0;
   const { addToCart } = useCart();
   const { addToWishlist, removeFromWishlist, isInWishlist } = useWishlist();
-  const isLiked = isInWishlist(product.id);
+  const isLiked = isInWishlist(product.id.toString());
 
   const handleLikeClick = (e: React.MouseEvent) => {
     e.preventDefault(); // Prevent event bubbling
     e.stopPropagation(); // Stop the event from propagating to parent elements
     // setLiked(!liked);
     if (isLiked) {
-      removeFromWishlist(product.id);
+      removeFromWishlist(product.id.toString());
 
     } else {
       addToWishlist(product);
@@ -71,13 +70,13 @@ const ProductCard: React.FC<ProductCardProps> = ({
 
 
   return (
-    <div className="mx-2 p-[10px] rounded-xl w-[272px] border border-grep-300 shadow-[0_2px_15px_-3px_rgba(0,0,0,0.1),0_4px_6px_-2px_rgba(0,0,0,0.05)] ">
+    <div className="mx-2 p-[10px] rounded-xl max-w-[272px] min-w-[272px] border border-grep-300 shadow-[0_2px_15px_-3px_rgba(0,0,0,0.1),0_4px_6px_-2px_rgba(0,0,0,0.05)] ">
       <div className="relative overflow-hidden rounded-xl">
         <a href={`/${product.categorySlug}/${product.slug}`} className="block overflow-hidden">
           <img
             src={product.image_url}
             alt={product.name}
-            className="w-[248px] h-[180px] object-cover rounded-xl transition-transform duration-700"
+            className="min-w-[248px] min-h-[180px] max-w-[248px] max-h-[180px] object-cover rounded-xl transition-transform duration-700"
           />
         </a>
         <button

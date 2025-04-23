@@ -1,7 +1,4 @@
 import React, { useEffect, useState } from "react";
-
-// Layout Components
-import Sidebar from "../../../components/admin/layout/Sidebar";
 import AdminHeader from "../../../components/admin/layout/AdminHeader";
 
 // Dashboard Components
@@ -17,7 +14,7 @@ import NewProductList from "../../../components/admin/dashboard/widgets/NewProdu
 // Services
 import { DashboardService } from "../../../components/admin/dashboard/services/dashboard.service";
 import { TransactionService } from "../../../components/admin/dashboard/services/transaction.service";
-import { ProductService } from "../../../components/admin/dashboard/services/product.service";
+import ProductService from "../../../services/product.service";
 
 // Models
 import { DashboardSummary } from "../../../components/admin/dashboard/models/dashboard.model";
@@ -33,13 +30,16 @@ import {
 import { HiOutlineDotsVertical } from "react-icons/hi";
 import { IoFilterSharp } from "react-icons/io5";
 import { CiCirclePlus } from "react-icons/ci";
+import { Category } from "@/types/category.model";
+import { TopProductItem } from "@/components/homepage/BestSelling/models/topProducts.model";
+import { CategoryService } from "@/services/product.service";
 const DashboardAdmin: React.FC = () => {
   const [loading, setLoading] = useState<boolean>(true);
   const [dashboardData, setDashboardData] = useState<DashboardSummary | null>(null);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
-  const [bestSellingProducts, setBestSellingProducts] = useState<BestSellingProduct[]>([]);
-  const [productCategories, setProductCategories] = useState<ProductCategory[]>([]);
-  const [newProducts, setNewProducts] = useState<NewProduct[]>([]);
+  const [bestSellingProducts, setBestSellingProducts] = useState<TopProductItem[]>([]);
+  const [productCategories, setProductCategories] = useState<Category[]>([]);
+  const [newProducts, setNewProducts] = useState<Product[]>([]);
   const [topProducts, setTopProducts] = useState<Product[]>([])
 
 
@@ -57,18 +57,18 @@ const DashboardAdmin: React.FC = () => {
         ] = await Promise.all([
           DashboardService.getDashboardSummary(),
           TransactionService.getTransactions(),
-          ProductService.getTopProducts(),
-          ProductService.getBestSellingProducts(),
-          ProductService.getProductCategories(),
-          ProductService.getNewProducts(),
+          ProductService.getTopSaleProducts(),
+          ProductService.getProducts(),
+          CategoryService.getAllCategories(),
+          ProductService.getProducts(),
         ]);
 
         setDashboardData(dashboardSummary);
         setTransactions(transactionData.transactions);
-        setTopProducts(topProducts);
-        setBestSellingProducts(bestSellingProducts);
+        //setTopProducts(topProducts);
+        //setBestSellingProducts(bestSellingProducts);
         setProductCategories(categories);
-        setNewProducts(latestProducts);
+        //setNewProducts(latestProducts);
       } catch (error) {
         console.error("Error fetching dashboard data:", error);
       } finally {
@@ -239,7 +239,7 @@ const DashboardAdmin: React.FC = () => {
                   <IoFilterSharp className="w-[18px] h-[18px]"></IoFilterSharp>
                 </button>
               </div>
-              <BestSellingTable bestProducts={bestSellingProducts} />
+            {/* <BestSellingTable bestProducts={bestSellingProducts} /> */}
               <div className="flex justify-end mt-[1rem] items-center mr-[1rem]">
                 <button className="text-sm bg-white text-primary border border-primary rounded-[25px] w-[96px] h-[32px]">
                   Details
