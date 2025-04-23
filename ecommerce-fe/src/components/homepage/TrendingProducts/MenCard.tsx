@@ -3,10 +3,6 @@ import { getButtonClass } from "../../../utils/buttonUtils";
 import { Product } from "@/types/product.model";
 
 const MenCard: React.FC<Product> = ({ image_url, price, discount }) => {
-  // id: 1,
-  // image:  `${urlImgMenCollection}pants.png`, // Replace with your image path
-  // price: '25.95',
-  // discount: '20% off',
   return (
     <div
       className="bg-white rounded-xl overflow-hidden relative w-[166px] h-[171px] 
