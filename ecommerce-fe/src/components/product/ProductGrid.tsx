@@ -10,12 +10,12 @@ interface ProductGridProps {
 
 const ProductGrid: React.FC<ProductGridProps> = ({ products }) => {
   const navigate = useNavigate();
-  
+  // console.log("products in product grid", products)
   const handleProductClick = (product: Product, e: React.MouseEvent) => {
     e.preventDefault();
     
     // Construct the product URL
-    const productUrl = `/${product.categorySlug}/${product.slug}`;
+    const productUrl = `${product.slug}`;
     
     // Navigate programmatically
     navigate(productUrl);

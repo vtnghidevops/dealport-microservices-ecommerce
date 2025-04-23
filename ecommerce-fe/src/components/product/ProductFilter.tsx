@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Range } from "react-range";
 import { Category } from "@/types/category.model";
-import { categoryService } from "@/services/category.service"
+import { CategoryService } from "@/services/product.service";
 import { FaStar } from "react-icons/fa";
 import { GoChevronDown, GoChevronUp } from "react-icons/go";
 interface ProductFilterProps {
@@ -87,7 +87,7 @@ const ProductFilter: React.FC<ProductFilterProps> = ({
     const fetchCategories = async () => {
       setIsLoading(true);
       try {
-        const categoriesData = await categoryService.getCategories();
+        const categoriesData = await CategoryService.getAllCategories();
         if (Array.isArray(categoriesData)) {
           setCategories(categoriesData);
         } else {

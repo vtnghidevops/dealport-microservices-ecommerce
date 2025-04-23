@@ -11,8 +11,9 @@ interface ProductCardProps {
 const ProductCard: React.FC<ProductCardProps> = ({ product, onClick }) => {
   const { addToWishlist, removeFromWishlist, isInWishlist } = useWishlist();
   const navigate = useNavigate();
-  const isLiked = isInWishlist(product.id); // Check if the product is in the wishlist
+  const isLiked = isInWishlist(product.id.toString()); // Check if the product is in the wishlist
   // const [liked, setLiked] = useState<boolean>(false); // State to manage like button
+  // console.log("product in product card", product.name)
   // Calculate discount percentage if not provided directly
   const discountPercentage = product.discount ? product.discount : 
     product.originalPrice ? Math.round(((product.originalPrice - product.price) / product.originalPrice) * 100) : 0;
@@ -22,7 +23,7 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onClick }) => {
     e.stopPropagation(); // Stop the event from propagating to parent elements
     // setLiked(!liked);
     if (isLiked) {
-      removeFromWishlist(product.id);
+      removeFromWishlist(product.id.toString());
       
     } else {
       addToWishlist(product);
@@ -38,7 +39,7 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onClick }) => {
       onClick(e);
     } else {
       // Otherwise handle navigation ourselves
-      const productUrl = `/${product.categorySlug}/${product.slug}`;
+      const productUrl = `/category/${product.categorySlug}/${product.slug}`;
       navigate(productUrl);
       
       // Scroll to top after navigation
@@ -142,14 +143,13 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onClick }) => {
         </div>
 
         {/* Rating */}
-        {product.reviews && product.reviews.rating && (
           <div className="mt-2 flex items-center">
             <div className="flex">
               {[...Array(5)].map((_, i) => (
                 <span
                   key={i}
                   className={`text-[16px] ${
-                    i < Math.floor(product.reviews && product.reviews.rating || 0)
+                    i < product.reviewsAvg.rating
                       ? "text-[#FF9017]"  
                       : "text-gray-300"
                   }`}
@@ -159,14 +159,13 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onClick }) => {
               ))}
             </div>
             <span className="ml-1 mr-2 text-sm text-[#FF9017]">
-              ({product.reviews.rating})
+              ({product.reviewsAvg.rating})
             </span>
             <div className="mr-1 w-1 h-1 rounded-full border border-neutral-400 bg-neutral-400"></div>
             <span className="ml-1 text-sm text-neutral-500">
               {product.orders} orders
             </span>
           </div>
-        )}
       </div>
     </div>
   );

@@ -1,8 +1,8 @@
 
 import React, { useEffect, useState, useRef } from "react";
 import { Comment } from "@/types/comment.model";
-import { commentService } from "@/services/comment.service";
-import ReplyComponent from "./ReplyComment";
+import { commentService } from "@/services/comment.service"; 
+import ReplyComment from './ReplyComment'
 import Pagination from "@/components/common/Pagination";
 
 interface ProductCommentsProps {
@@ -499,7 +499,7 @@ const ProductComments: React.FC<ProductCommentsProps> = ({ productId }) => {
 
                     {/* Show Reply Form */}
                     {replyTo === comment.id && (
-                      <ReplyComponent
+                      <ReplyComment
                         replyToUser={comment.userName}
                         onSubmit={(content) => handleReply(comment.id, content)}
                         onClose={() => setReplyTo(null)}

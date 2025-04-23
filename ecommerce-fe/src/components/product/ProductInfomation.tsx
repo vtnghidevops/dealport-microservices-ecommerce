@@ -58,7 +58,7 @@ const ProductInformation: React.FC<ProductInformationProps> = ({ product, onWrit
       {/* Content based on active tab */}
       {activeTab === "description" && (
         <div className="flex gap-16 py-[1.5rem] ">
-          <div className="col-span-2 max-w-[37rem]">
+          <div className="col-span-2 max-w-[40rem]">
             <h3 className="text-lg font-semibold mb-3">Description</h3>
             <p className="text-gray-600 text-[15px]">{product.description}</p>
             <p className="text-gray-600 mt-4 text-[15px]">
@@ -69,7 +69,7 @@ const ProductInformation: React.FC<ProductInformationProps> = ({ product, onWrit
             </p>
           </div>
           <div className="flex gap-5">
-            <div>
+            <div className="min-w-[270px] max-w-[270px]">
               <h3 className="text-lg font-semibold mb-3">Feature</h3>
               <ul className="space-y-2">
                 {product.features?.map((feature, index) => (
@@ -77,7 +77,7 @@ const ProductInformation: React.FC<ProductInformationProps> = ({ product, onWrit
                     <span className="text-[15px] flex-shrink-0 w-6 h-6 flex items-center justify-center rounded-full bg-orange-100 text-orange-500 mr-2">
                       ✓
                     </span>
-                    {feature.value}
+                    {feature}
                   </li>
                 ))}
               </ul>

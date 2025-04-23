@@ -6,12 +6,9 @@ interface ReplyComponentProps {
   onClose: () => void;
   currentUserAvatar?: string;
   currentUserInitial?: string;
-  // likes?: number;
-  // onLike?: () => void;
-  // isLiked?: boolean;
 }
 
-export default function ReplyComponent({ 
+export default function ReplyComment({ 
   replyToUser, 
   onSubmit, 
   onClose,
