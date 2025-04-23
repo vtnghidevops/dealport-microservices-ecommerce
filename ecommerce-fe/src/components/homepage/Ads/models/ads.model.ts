@@ -1,46 +1,40 @@
-
-// image: `${urlImgBanner}trousers_fashion.png`,
-// buttonType: "",
-// buttonText: "",
-// hasMore: false,
 export interface BannerShowCaseItem {
-  id: string,
+  id: number,
   image_url: string,
   buttonType?: string,
   buttonText?: string,
-  hasMore: boolean
+  hasMore: boolean,
+  type: string,     // Type of item (product or category)
+  categorySlug: string,      // Slug for navigation
 };
 
-// image: `${urlImgDisplay}ambilighttv.png`,
-// buttonType: "secondary",
-// price: "750.99",
-// title: "Philips 4K Ambilight TV",
-// discount_img: `${urlImgDisplay}discount_img.png`,
 export interface DisplayItem {
-  id: string,
+  id: number,
   image_url: string,
   buttonType?: string,
   price?: string | number,
   title?: string,
-  discount_img?: string
+  discount_img?: string,
+  type: string,     // Type of item (product or category)
+  productSlug: string,      // Slug for navigation
+  categorySlug: string // product type
 }
 
-// subtitle: "Headsets",
-// imgURL: `${urlImgGaming}headsets.png`,
-// href: "#",
+
 export interface GamingItem {
-  id: string,
+  id: number,
   subtitle: string,
   image_url: string,
-  href: string
+  type: string,     // Type of item (product or category)
+  categorySlug: string // product type
 }
 
-// title={"New Year! New Fashion"}
-// imgURL={`${urlImgProduct}new-fashion.png`}
-// ButtonType={"secondary"}
 export interface NewFashionItem {
-  id: string,
+  id: number,
   title: string,
   image_url: string,
-  buttonType: string
+  buttonType: string,
+  type: string,     // Type of item (product or category)
+  productSlug: string,      // Slug for 
+  categorySlug: string // product type
 }

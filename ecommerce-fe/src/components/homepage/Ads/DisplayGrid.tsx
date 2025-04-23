@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from "react";
 import { ButtonType, getButtonClass } from "@/utils/buttonUtils";
 import { DisplayItem } from "./models/ads.model";
-import { DisplayService } from "./services/ads.service";
+import { DisplayService } from "../../../services/ads.service";
+import { Link } from "react-router-dom";
 
 interface CardMain {
   id?: number;
@@ -10,15 +11,24 @@ interface CardMain {
   price?: string | number;
   title?: string;
   discount_img?: string;
+  type?: string;
+  productSlug?: string;
+  categorySlug?: string;
 }
 
 interface CardFirst {
   image_url: string;
+  type?: string;
+  productSlug?: string;
+  categorySlug?: string;
 }
 
 interface CardSecond {
   image_url: string;
   buttonType: string;
+  type?: string;
+  productSlug?: string;
+  categorySlug?: string;
 }
 
 const DisplayGrid: React.FC = () => {
@@ -40,6 +50,8 @@ const DisplayGrid: React.FC = () => {
     };
     fetchDisplayData();
   }, []);
+  console.log("item displaygrid:", displayData)
+
 
   return (
     <div className="h-[328px] w-[392px] mt-[-5%] text-black rounded-2xl relative">
@@ -57,10 +69,31 @@ const DisplayCard: React.FC<DisplayItem> = ({
   price,
   discount_img,
   buttonType,
+  type,
+  productSlug,
+  categorySlug,
 }) => {
-  // Kiểm tra các props để quyết định render card nào
-  if (title && price) {
+  // Get navigation path based on type and slug
+  const getNavigationPath = () => {
+    if (!productSlug) return "#";
+    if (type === "product") {
+      // If we have a product with categorySlug, use the proper format
+      if (productSlug) {
+        return `/category/${categorySlug}/${productSlug}`;
+      }
+      // Fallback to products route if no category is available
+      return `/products/${productSlug}`;
+    }
+    // For category type
+    return `/category/${categorySlug}`;
+  };
+
+  const navigationPath = getNavigationPath();
+
+  // Kiểm tra các props để quyết định render card nào (Check props to decide which card to render)
+  if (title && price && discount_img) {
     // Nếu có title và price, render CardMain (card đầy đủ thông tin)
+    // (If there is a title and price, render CardMain with full information)
     return (
       <div className="w-[392px] h-[165px] rounded-lg overflow-hidden shadow-md transition-all hover:shadow-xl">
         <CardMain
@@ -69,43 +102,81 @@ const DisplayCard: React.FC<DisplayItem> = ({
           price={price}
           discount_img={discount_img}
           buttonType={buttonType || ""}
+          type={type}
+          productSlug={productSlug}
+          categorySlug={categorySlug}
         />
       </div>
     );
   } else if (buttonType) {
     // Nếu có buttonType nhưng không có title/price, render CardSecond
+    // (If there is buttonType but no title/price, render CardSecond)
     return (
       <div className="rounded-lg h-[146px] w-[188px] overflow-hidden shadow-md transition-all hover:shadow-xl">
-        <CardSecond image_url={image_url} buttonType={buttonType} />
+        <CardSecond
+          image_url={image_url}
+          buttonType={buttonType}
+          type={type}
+          productSlug={productSlug}
+          categorySlug={categorySlug}
+        />
       </div>
     );
   } else {
     // Mặc định render CardFirst (chỉ có hình ảnh và link)
+    // (Default render CardFirst - only image and link)
     return (
       <div className="rounded-lg h-[146px] w-[188px] overflow-hidden shadow-md transition-all">
-        <CardFirst image_url={image_url} />
+        <CardFirst
+          image_url={image_url}
+          type={type}
+          productSlug={productSlug}
+          categorySlug={categorySlug}
+        />
       </div>
     );
   }
 };
 
-const CardFirst: React.FC<CardFirst> = ({ image_url }) => {
+const CardFirst: React.FC<CardFirst> = ({ image_url, type, productSlug, categorySlug }) => {
+  // Determine navigation path based on type
+  let navigationPath = "#";
+  if (type === "product" && productSlug) {
+    if (categorySlug) {
+      navigationPath = `/category/${categorySlug}/${productSlug}`;
+    } else {
+      navigationPath = `/products/${productSlug}`;
+    }
+  } else if (type === "category" && productSlug) {
+    navigationPath = `/category/${categorySlug}`;
+  }
+
   return (
-    <a href="#" className="relative h-[100%] block">
-      <img src={image_url} className="absolute rounded-xl "></img>
-      <a
-        href="#"
-        className="absolute text-white text-[10px] bottom-0 ml-[1rem] mb-[0.5rem] "
-      >
+    <Link to={navigationPath} className="relative h-[100%] block">
+      <img src={image_url} className="absolute rounded-xl" alt="Banner" />
+      <span className="absolute text-white text-[10px] bottom-0 ml-[1rem] mb-[0.5rem]">
         More Detail
-      </a>
-    </a>
+      </span>
+    </Link>
   );
 };
-const CardSecond: React.FC<CardSecond> = ({ image_url, buttonType }) => {
+
+const CardSecond: React.FC<CardSecond> = ({ image_url, buttonType, type, productSlug, categorySlug }) => {
+  // Determine navigation path based on type
+  let navigationPath = "#";
+  if (type === "product" && productSlug) {
+    if (categorySlug) {
+      navigationPath = `/category/${categorySlug}/${productSlug}`;
+    } else {
+      navigationPath = `/products/${productSlug}`;
+    }
+  } else if (type === "category" && productSlug) {
+    navigationPath = `/category/${categorySlug}`;
+  }
+
   return (
-    <a href="#" className="block relative">
-      <img src={image_url}></img>
+    <Link to={navigationPath} className="block relative">
+      <img src={image_url} alt="Product" />
       <div className="absolute bottom-2 left-1">
         <div className="rounded-3xl">
           <button
@@ -117,29 +188,45 @@ const CardSecond: React.FC<CardSecond> = ({ image_url, buttonType }) => {
           </button>
         </div>
       </div>
-    </a>
+    </Link>
   );
 };
+
 const CardMain: React.FC<CardMain> = ({
   image_url,
   title,
   price,
   discount_img,
   buttonType,
+  type,
+  productSlug,
+  categorySlug
 }) => {
+  // Determine navigation path based on type
+  let navigationPath = "#";
+  if (type === "product" && productSlug) {
+    if (categorySlug) {
+      navigationPath = `/category/${categorySlug}/${productSlug}`;
+    } else {
+      navigationPath = `/products/${productSlug}`;
+    }
+  } else if (type === "category" && productSlug) {
+    navigationPath = `/category/${categorySlug}`;
+  }
+
   return (
-    <div className="relative h-full w-full border border-gray-300 shadow-[0_4px_6px_-1px_rgba(0,0,0,0.1),5px_2px_3px_-3px_rgba(0,0,0,0.05),-5px_2px_3px_-3px_rgba(0,0,0,0.05)]">
+    <Link to={navigationPath} className="relative h-full w-full block border border-gray-300 shadow-[0_4px_6px_-1px_rgba(0,0,0,0.1),5px_2px_3px_-3px_rgba(0,0,0,0.05),-5px_2px_3px_-3px_rgba(0,0,0,0.05)]">
       <div className="absolute left-[-1rem] max-w-[14rem]">
-        <img src={image_url}></img>
+        <img src={image_url} alt={title || "Product"} />
       </div>
       <div className="absolute max-w-[60px] top-[10%] left-[42%]">
-        <img src={discount_img}></img>
+        {discount_img && <img src={discount_img} alt="Discount" />}
       </div>
       <div className="absolute top-[27%] right-[8%]">
         <h3>{title}</h3>
         <span>${price}</span>
       </div>
-      <a className="absolute right-[7%] block bottom-5">
+      <div className="absolute right-[7%] block bottom-5">
         <div className="rounded-3xl">
           <button
             className={`${getButtonClass(
@@ -149,8 +236,9 @@ const CardMain: React.FC<CardMain> = ({
             Shop Now
           </button>
         </div>
-      </a>
-    </div>
+      </div>
+    </Link>
   );
 };
+
 export default DisplayGrid;

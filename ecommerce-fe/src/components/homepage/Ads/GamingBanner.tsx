@@ -1,7 +1,8 @@
 // export default GamingBanner;
 import React, { useState, useEffect } from "react";
 import { GamingItem } from "./models/ads.model";
-import { GamingService } from "./services/ads.service";
+import { GamingService } from "../../../services/ads.service";
+import { Link } from "react-router-dom";
 
 const GamingBanner: React.FC = () => {
   // fetch data
@@ -13,28 +14,46 @@ const GamingBanner: React.FC = () => {
     const fetchBannerData = async () => {
       try {
         const data = await GamingService.getDataGaming();
-        setGamingData(data);
+        if (data) {
+          setGamingData(data);
+        }
         setLoading(false);
       } catch (error) {
-        console.error("Error fetching testimonials:", error);
+        console.error("Error fetching gaming data:", error);
         setLoading(false);
       }
     };
 
     fetchBannerData();
   }, []);
-  
+  console.log("item gamingbanner:", gamingData)
+
+
+  if (loading) {
+    return <div className="bg-white mt-[-5%] text-black h-[328px] w-[464px] rounded-2xl relative border border-gray-300 flex items-center justify-center">Loading gaming accessories...</div>;
+  }
+
+  if (!gamingData || gamingData.length === 0) {
+    return <div className="bg-white mt-[-5%] text-black h-[328px] w-[464px] rounded-2xl relative border border-gray-300 flex items-center justify-center">No gaming accessories available</div>;
+  }
+
   return (
     <div className="bg-white mt-[-5%] text-black h-[328px] w-[464px] rounded-2xl relative border border-gray-300 shadow-[0_4px_6px_-1px_rgba(0,0,0,0.1),5px_2px_3px_-3px_rgba(0,0,0,0.05),-5px_2px_3px_-3px_rgba(0,0,0,0.05)]">
       <span className="header-2 !text-[22px] absolute block top-[5%] left-[5%]">
         Gaming Accessories
       </span>
       <div className="grid grid-cols-2 gap-12 mt-4 absolute top-[15%] left-[5%]">
-        {gamingData.map((item) => (
-          <a key={item.id} href={item.href}>
-            <SubGamingBanner subtitle={item.subtitle} image={item.image_url} />
-          </a>
-        ))}
+        {gamingData.map((item) => {
+          const navigationPath = item.type && item.categorySlug
+            ? (item.type === "product" ? `/product/${item.categorySlug}` : `/category/${item.categorySlug}`)
+            : "#";
+
+          return (
+            <Link key={item.id} to={navigationPath}>
+              <SubGamingBanner subtitle={item.subtitle} image={item.image_url} />
+            </Link>
+          );
+        })}
       </div>
     </div>
   );
