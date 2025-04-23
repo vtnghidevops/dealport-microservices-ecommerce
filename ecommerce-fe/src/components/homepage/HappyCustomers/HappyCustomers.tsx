@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import TestimonialCard from "./TestimonialCard";
-import { TestimonialService } from "./services/testimonial.service";
+import { TestimonialService } from "@/services/product.service";
 import { TestimonialItem } from "./models/testimonial.model";
 import { getButtonClass } from "@/utils/buttonUtils";
 import "../../../app.css";

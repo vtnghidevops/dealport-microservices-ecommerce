@@ -37,37 +37,40 @@ const AppRouters: React.FC = () => {
       <Routes>
         {/* Public routes with MainLayout */}
         <Route path="/" element={<MainLayout />}>
-          <Route path="/" element={<Home />} />
-          <Route path="/categories" element={<ProductList />} />
+          {/* Home route */}
+          <Route index element={<Home />} />
+
+          {/* Authentication routes */}
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
           <Route path="/verify-email" element={<VerifyEmail />} />
           <Route path="/forgot-password" element={<ForgotPassword />} />
           <Route path="/reset-password" element={<ResetPassword />} />
 
-
-          {/* Route cho các URL theo slug */}
-          <Route path="/:categorySlug" element={<ProductList />} />
-          <Route
-            path="/:categorySlug/:productSlug"
-            element={<ProductDetail />}
-          />
-
-          {/* Routes cho giỏ hàng và thanh toán */}
+          {/* Product/Category routes - grouped for easier management */}
           <Route path="/products" element={<ProductList />} />
-          <Route path="/checkout" element={<Checkout />} />
-          <Route path="/checkout/success" element={<SuccessfulPayment />} />
+          <Route path="/categories" element={<ProductList />} />
+          <Route path="/category/:categorySlug" element={<ProductList />} />
+          <Route path="/category/:categorySlug/:productSlug" element={<ProductDetail />} />
 
-          <Route path="/user/dashboard" element={<UserDashboard />} />
-          <Route path="/user/wishlist" element={<Wishlist />} />
-          <Route path="/user/orders" element={<Cart />} />
-          <Route path="/user/profile" element={<Profile />} />
-          <Route path="/user/order-history" element={<OrdersHistory />} />
-          <Route path="/user/addresses" element={<Addresses />} />
-          <Route path="/user/security-settings" element={<SecuritySettings />} />
+          {/* Checkout flow routes */}
 
+
+          {/* User account routes */}
+          <Route path="/user">
+            <Route path="dashboard" element={<UserDashboard />} />
+            <Route path="wishlist" element={<Wishlist />} />
+            <Route path="profile" element={<Profile />} />
+            <Route path="order-history" element={<OrdersHistory />} />
+            <Route path="addresses" element={<Addresses />} />
+            <Route path="security-settings" element={<SecuritySettings />} />
+            <Route path="orders" element={<Cart />} />
+            <Route path="checkout" element={<Checkout />} />
+            <Route path="checkout/success" element={<SuccessfulPayment />} />
+          </Route>
         </Route>
 
+        {/* Admin routes */}
         <Route path="/admin" element={<AdminLayout />}>
           <Route index element={<DashboardAdmin />} />
           <Route path="dashboard" element={<DashboardAdmin />} />
@@ -78,7 +81,7 @@ const AppRouters: React.FC = () => {
           <Route path="role" element={<AdminRolePage />} />
         </Route>
 
-        {/* Redirect if route not found */}
+        {/* Not found route */}
         <Route path="*" element={<NotFound />} />
       </Routes>
     </>

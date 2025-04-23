@@ -2,9 +2,10 @@ import React, { useRef, useState, useEffect } from "react";
 import ProductCard from "../../common/Card";
 import { MdChevronRight, MdChevronLeft } from "react-icons/md";
 import { Product } from "@/types/product.model";
-import { LimitedDealService } from "./services/litmitedDeal.service";
+import ProductService from "@/services/product.service";
 import { handleViewAll } from "@/utils/helpers";
 import { useNavigate } from "react-router-dom";
+import Loading from "@/components/shared/Loading";
 const LimitedDeal: React.FC = () => {
   // fetch data
   const [limitedData, setLimitedData] = useState<Product[]>([]);
@@ -13,7 +14,7 @@ const LimitedDeal: React.FC = () => {
   useEffect(() => {
     const fetchLimitedData = async () => {
       try {
-        const data = await LimitedDealService.getLitmitedData();
+        const data = await ProductService.getLimitedProducts();
         setLimitedData(data);
         setLoading(false);
       } catch (error) {
@@ -65,6 +66,10 @@ const LimitedDeal: React.FC = () => {
       setTimeout(checkArrowVisibility, 500);
     }
   };
+
+  if (loading) {
+    return <Loading />;
+  }
 
   return (
     <div className="h-full relative">

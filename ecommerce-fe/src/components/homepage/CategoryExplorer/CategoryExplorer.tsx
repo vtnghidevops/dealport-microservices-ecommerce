@@ -1,21 +1,22 @@
 import React, { useRef, useState, useEffect } from "react";
 import { MdChevronRight, MdChevronLeft } from "react-icons/md";
-import { CategoryExplorerProps } from "./models/category.model";
 import CategoryCard from "./CategoryCard";
-import { CategoryItem } from "./models/category.model";
-import { CategoryExplorerService } from "./services/categoryExplorer.service";
 import { handleViewAll } from "../../../utils/helpers";
 import { handleCategoryClick } from "../../../utils/helpers";
 import { useNavigate } from 'react-router-dom';
+import { Category } from "@/types/category.model";
+import { CategoryService } from "@/services/product.service";
+import Loading from "@/components/shared/Loading";
+
 const CategoryExplorer: React.FC = () => {
   const navigate = useNavigate();
   // fetch data
-  const [categories, setCategories] = useState<CategoryItem[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   useEffect(() => {
     const fetchCategoryExplorer = async () => {
       try {
-        const data = await CategoryExplorerService.getCategoryData();
+        const data = await CategoryService.getAllCategories();
         setCategories(data);
         setLoading(false);
       } catch (error) {
@@ -26,13 +27,25 @@ const CategoryExplorer: React.FC = () => {
 
     fetchCategoryExplorer();
   }, []);
+  // console.log("categories", categories)
+
+  interface CategoryExplorerProps {
+    title: string;
+    categories: Category[];
+    viewAllLabel: string;
+    onViewAllClick: () => void;
+    onItemClick: (category: Category) => void;
+    itemWidth: string;
+    itemHeight: string;
+    showNavigationArrow: boolean;
+  }
 
   const categoryExplore: CategoryExplorerProps = {
-    title: "Start exploring now",
+    title: "Start exploring now", // khám phá ngay bây giờ
     categories: categories,
-    viewAllLabel: "View All",
+    viewAllLabel: "View All", // xem tất cả
     onViewAllClick: () => handleViewAll(navigate),
-    onItemClick: (category: CategoryItem) => handleCategoryClick(navigate, category),
+    onItemClick: (category: Category) => handleCategoryClick(navigate, category),
     itemWidth: "w-[180px]",
     itemHeight: "h-[220px]",
     showNavigationArrow: true,
@@ -94,6 +107,9 @@ const CategoryExplorer: React.FC = () => {
     }
   };
 
+  if (loading) {
+    return <Loading />;
+  }
   return (
     <div className="w-full py-6 md:px-6">
       {/* Header with title and view all button */}

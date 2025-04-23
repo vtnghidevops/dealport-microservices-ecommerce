@@ -3,9 +3,10 @@ import { useState, useEffect } from "react";
 import { getButtonClass } from "@/utils/buttonUtils";
 import { FaArrowLeft } from "react-icons/fa6";
 import { FaArrowRight } from "react-icons/fa6";
-import { bannerService } from "@/services/banner.service";
+import { BannerService } from "@/services/product.service";
 import { SliderBannerItem } from "@/types/banner.model";
 import { Link } from "react-router-dom";
+import Loading from "@/components/shared/Loading";
 
 const SliderBanner: React.FC = () => {
 
@@ -17,7 +18,7 @@ const SliderBanner: React.FC = () => {
   useEffect(() => {
     const fetchBanners = async () => {
       try {
-        const data = await bannerService.getSliderBanners();
+        const data = await BannerService.getSliderBanners();
         setSliderData(data);
         setLoading(false);
       } catch (error) {
@@ -66,14 +67,14 @@ const SliderBanner: React.FC = () => {
   ];
 
   if (loading) {
-    return <div className="w-full h-[500px] flex items-center justify-center">Loading...</div>;
+    return <Loading />
   }
 
   if (sliderData.length === 0) {
     return <div className="w-full h-[500px] flex items-center justify-center">No banner data available</div>;
   }
 
-  const currentSlide = sliderData[currentIndex];
+  // const currentSlide = sliderData[currentIndex];
 
   return (
     <div className="relative w-full text-white h-[500px] m-h-[500px]">
@@ -106,14 +107,15 @@ const SliderBanner: React.FC = () => {
             width: `${sliderData.length * 100}%`
           }}
         >
-          {sliderData.map((item, index) => (
-            <div key={index} className="w-full h-full flex-shrink-0 relative !bg-cyprus" style={{
+           {/* !bg-cyprus" style={{
               backgroundColor: item.background_color || '#1e3a8a'
-            }}>
+            }} */}
+          {sliderData.map((item, index) => (
+            <div key={index} className="w-full h-full flex-shrink-0 relative">
               <img
                 src={item.image_url}
                 alt={item.title}
-                className="absolute right-[65%] h-full object-contain max-w-[951px] "
+                className="absolute right-[75%] h-full object-contain max-w-[951px] "
               />
               <div className="absolute left-10 -top-5 w-[40%] h-full flex flex-col justify-center pl-12">
                 <div className="ml-[6rem] max-w-full z-10">

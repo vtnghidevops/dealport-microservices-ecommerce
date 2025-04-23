@@ -167,7 +167,7 @@ const Header: React.FC = () => {
           <SearchBar />
           <UserMenu />
           <a
-            href="/orders"
+            href="user/orders"
             className="flex items-center justify-center w-[4rem] h-[3rem] hover:text-green-600 transition-colors relative"
           >
             <FaShoppingCart className="mr-2 text-[1rem]" />
