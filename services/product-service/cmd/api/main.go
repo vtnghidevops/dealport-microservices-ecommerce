@@ -7,8 +7,9 @@ import (
 	"log"
 	"net/http"
 	"os"
-	"product-service/data"
 	"product-service/internal/handler"
+	"product-service/internal/repository/postgres"
+	"product-service/internal/service"
 	transportHttp "product-service/internal/transport/http"
 	"time"
 
@@ -29,14 +30,28 @@ func main() {
 	}
 	defer conn.Close()
 
-	// Set up application config
-	handlerConfig := &handler.Config{
-		Database: conn,
-		Models:   data.New(conn),
+	// Create repositories
+	productRepo := postgres.NewProductRepository(conn)
+	categoryRepo := postgres.NewCategoryRepository(conn)
+	bannerRepo := postgres.NewBannerRepository(conn)
+	adsRepo := postgres.NewAdsRepository(conn)
+
+	// Create services
+	productService := service.NewProductService(productRepo)
+	categoryService := service.NewCategoryService(categoryRepo)
+	bannerService := service.NewBannerService(bannerRepo)
+	adsService := service.NewAdsService(adsRepo)
+
+	// Configure handler dependencies
+	config := handler.Config{
+		ProductService:  productService,
+		CategoryService: categoryService,
+		BannerService:   bannerService,
+		AdsService:      adsService,
 	}
 
 	// Create HTTP server
-	server := transportHttp.NewServer(handlerConfig)
+	server := transportHttp.NewServer(&config)
 
 	// Define HTTP server
 	srv := &http.Server{

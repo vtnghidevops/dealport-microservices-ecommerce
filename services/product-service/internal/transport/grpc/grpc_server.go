@@ -1,30 +1,47 @@
-// // services/product-service/internal/transport/grpc_server.go
-// package transport
+// services/product-service/internal/transport/grpc/grpc_server.go
+package grpc
 
-// import (
-// 	"context"
-// 	"github.com/your-org/ecommerce/api/product"
-// 	"github.com/your-org/ecommerce/services/product-service/internal/service"
-// )
+import (
+	"context"
+	"errors"
+	"log"
+)
 
-// type GrpcServer struct {
-// 	product.UnimplementedProductServiceServer
-// 	productService service.ProductService
-// }
+// Placeholder for actual implementation
+// This is a stub that will be implemented later
 
-// func NewGrpcServer(productService service.ProductService) *GrpcServer {
-// 	return &GrpcServer{
-// 		productService: productService,
-// 	}
-// }
+// GrpcServer represents the gRPC server for product service
+type GrpcServer struct {
+	// Placeholder for actual implementation
+}
 
-// func (s *GrpcServer) GetProduct(ctx context.Context, req *product.GetProductRequest) (*product.ProductResponse, error) {
-// 	prod, err := s.productService.GetByID(ctx, req.Id)
-// 	if err != nil {
-// 		return nil, err
-// 	}
-	
-// 	return mapProductToProto(prod), nil
-// }
+// NewGrpcServer creates a new gRPC server
+func NewGrpcServer() *GrpcServer {
+	log.Println("Creating new gRPC server (placeholder)")
+	return &GrpcServer{}
+}
 
-// // Other RPC implementations...;
+// GetProduct gets a product by ID
+func (s *GrpcServer) GetProduct(ctx context.Context, id string) (interface{}, error) {
+	return nil, errors.New("not implemented")
+}
+
+// ListProducts lists products with pagination and filtering
+func (s *GrpcServer) ListProducts(ctx context.Context, page, pageSize int, filters map[string]string) (interface{}, error) {
+	return nil, errors.New("not implemented")
+}
+
+// CreateProduct creates a new product
+func (s *GrpcServer) CreateProduct(ctx context.Context, product interface{}) (string, error) {
+	return "", errors.New("not implemented")
+}
+
+// UpdateProduct updates an existing product
+func (s *GrpcServer) UpdateProduct(ctx context.Context, product interface{}) error {
+	return errors.New("not implemented")
+}
+
+// DeleteProduct deletes a product
+func (s *GrpcServer) DeleteProduct(ctx context.Context, id string) error {
+	return errors.New("not implemented")
+}
