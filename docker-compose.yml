@@ -102,10 +102,10 @@ services:
       POSTGRES_DB: products
     volumes:
       - ./db-data/postgres-products:/var/lib/postgresql/data/
-      - ./postgres-init/init-db.sql:/docker-entrypoint-initdb.d/init-db.sql
-    command: bash -c "chmod +x /docker-entrypoint-initdb.d/init-db.sql && docker-entrypoint.sh postgres"
+      - ./services/product-service/internal/repository/postgres/db:/docker-entrypoint-initdb.d
+    #command: bash -c "chmod +x /docker-entrypoint-initdb.d/db/01-schema.sql && chmod +x /docker-entrypoint-initdb.d/db/02-data.sql && docker-entrypoint.sh postgres"
     networks:
-      - net
+      - net 
 
   mongodb:
     image: "mongo:4.2.16-bionic"
