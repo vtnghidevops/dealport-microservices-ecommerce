@@ -2,3 +2,6 @@ users.sql
 db-data/
 frontend/
 .qodo
+.env
+.cursor
+tree.txt
