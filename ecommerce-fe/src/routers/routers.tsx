@@ -6,7 +6,7 @@ import OrderPage from "../pages/admin/order"; // Import Order Management page
 import AdminLayout from "../components/admin/layout/AdminLayout";
 import CustomerPage from "../pages/admin/customer";
 import CategoryPage from "../pages/admin/category";
-import ProductPage from "../pages/admin/product";
+// import ProductPage from "../pages/admin/product";
 import AdminRolePage from "../pages/admin/role";
 
 import MainLayout from "@/components/layouts/MainLayout";
@@ -29,7 +29,7 @@ import OrdersHistory from "../pages/user/OrdersHistory";
 import Addresses from "../pages/user/Addresses";
 import SecuritySettings from "../pages/user/SecuritySettings";
 import UserDashboard from "../pages/user/Dashboard";
-
+import ProductPage from "../pages/admin/product";
 const AppRouters: React.FC = () => {
   return (
     <>
@@ -77,8 +77,9 @@ const AppRouters: React.FC = () => {
           <Route path="orders" element={<OrderPage />} />
           <Route path="customers" element={<CustomerPage />} />
           <Route path="categories" element={<CategoryPage />} />
-          <Route path="products" element={<ProductPage />} />
+          {/* <Route path="products" element={<ProductPage />} /> */}
           <Route path="role" element={<AdminRolePage />} />
+          <Route path="add-product" element={<ProductPage />} />
         </Route>
 
         {/* Not found route */}

@@ -1,10 +1,10 @@
 // pages/admin/product/index.tsx
 import React from 'react';
-import { ProductManagement } from '../../../components/admin/addProduct';
+import { AddProduct } from '../../../components/admin/addProduct/AddProduct';
 
 const ProductPage: React.FC = () => {
   return (
-      <ProductManagement />
+      <AddProduct />
   );
 };
 
