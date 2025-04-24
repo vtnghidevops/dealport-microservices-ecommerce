@@ -18,6 +18,16 @@ export interface Product {
   imgSlider: string[];
   features: string[];
   shippingInfo: ShippingInfo;
+  uiMetadata?: any;
+  images?: ProductImage[];
+}
+
+export interface ProductImage {
+  id?: number;
+  product_id?: number;
+  url: string;
+  is_primary: boolean;
+  display_order?: number;
 }
 
 export interface ProductReview {
