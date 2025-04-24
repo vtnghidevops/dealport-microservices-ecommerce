@@ -9,6 +9,7 @@ interface ProductImagesProps {
   onImageUpload: (e: ChangeEvent<HTMLInputElement>) => void;
   onRemoveImage: (index: number) => void;
   onSetMainImage: (image: string) => void;
+  isUploading?: boolean;
 }
 
 export const ProductImages: React.FC<ProductImagesProps> = ({
@@ -17,27 +18,31 @@ export const ProductImages: React.FC<ProductImagesProps> = ({
   onImageUpload,
   onRemoveImage,
   onSetMainImage,
+  isUploading = false,
 }) => {
   return (
-    <div className="bg-white rounded-lg p-[1.25rem] shadow-sm mb-6 h-[500px]">
-      <h2 className="font-bold text-[22px] text-cyprus">
+    <div className="bg-white rounded-lg p-[1.25rem] shadow-sm mb-6 h-auto">
+      <h2 className="font-bold text-cyprus text-[22px] mb-[15px] flex items-center">
         Upload Product Image
+        {isUploading && (
+          <span className="ml-2 inline-block w-5 h-5 border-2 border-gray-300 border-t-ocean-green rounded-full animate-spin"></span>
+        )}
       </h2>
-      <p className="text-[15px] text-cyprus font-bold mt-[1rem]">
-        Product Image
-      </p>
 
       <div className="relative mb-4 p-4 flex flex-col items-center">
         {mainImage ? (
-          <div className="border border-neutral-300 rounded-lg relative w-full mb-3 h-[266px]">
-            <img
-              src={mainImage}
-              className="w-full h-full object-contain"
-              alt="Product"
-            />
+          <div className="border border-neutral-300 rounded-lg relative w-full mb-3 aspect-[4/3] overflow-hidden">
+            <div className="w-full h-full flex items-center justify-center bg-neutral-50">
+              <img
+                src={mainImage}
+                className="max-w-full max-h-full object-contain"
+                alt="Product main image"
+                style={{ maxHeight: "100%", maxWidth: "100%" }}
+              />
+            </div>
           </div>
         ) : (
-          <div className="border border-neutral-300 rounded-lg h-[266px] w-full  mb-3 flex items-center justify-center bg-white">
+          <div className="border border-neutral-300 rounded-lg aspect-[4/3] w-full mb-3 flex items-center justify-center bg-neutral-50">
             <svg
               className="w-16 h-16 text-gray-300"
               fill="none"
@@ -54,10 +59,11 @@ export const ProductImages: React.FC<ProductImagesProps> = ({
           </div>
         )}
 
-        <div className="left-[5%] bottom-[16%] absolute flex justify-between w-[94px] h-[36px] mb-4">
+        <div className="mt-2 flex justify-start w-full">
           <button
-            className="text-neutral-500 px-3 py-1 border border-gray-200 rounded-lg bg-gray-50 text-sm flex items-center"
+            className="text-neutral-500 px-3 py-1 border border-gray-200 rounded-lg bg-gray-50 text-sm flex items-center mr-2"
             onClick={() => document.getElementById("file-upload")?.click()}
+            disabled={isUploading}
           >
             <FaImage className="mr-2"></FaImage>
             Browse
@@ -68,16 +74,21 @@ export const ProductImages: React.FC<ProductImagesProps> = ({
               onChange={onImageUpload}
               multiple
               accept="image/*"
+              disabled={isUploading}
             />
           </button>
 
           {mainImage && (
             <button
-              className="ml-[12rem] w-[88px] h-[36px] px-3 py-1 border border-gray-200 rounded-lg bg-white text-sm flex items-center drop-shadow-sm filter"
+              className="px-3 py-1 border border-gray-200 rounded-lg bg-white text-sm flex items-center drop-shadow-sm filter"
               onClick={() => {
-                onSetMainImage("");
-                onRemoveImage(selectedImages.indexOf(mainImage));
+                // Find index of main image in selectedImages array
+                const index = selectedImages.indexOf(mainImage);
+                if (index !== -1) {
+                  onRemoveImage(index);
+                }
               }}
+              disabled={isUploading}
             >
               <PiRepeatFill className="min-w-[14px] h-[14px] mr-1"></PiRepeatFill>
               Replace
@@ -85,46 +96,59 @@ export const ProductImages: React.FC<ProductImagesProps> = ({
           )}
         </div>
       </div>
-      <div className="flex overflow-x-auto">
-        {selectedImages.length > 0 &&
-          selectedImages.map((img, idx) => (
-            <div
-              key={idx}
-              className="flex-shrink-0 min-w-[98px] h-[105px] relative rounded border border-neutral-200"
-            >
-              <img
-                src={img}
-                className="w-[98px] h-[98px] object-cover rounded"
-                alt={`Product ${idx + 1}`}
-              />
-              <button
-                className="absolute w-[16px] h-[16px] top-[10px] right-[10px] border border-neutral-500 bg-white rounded-full p-0.5 transform translate-x-1/3 -translate-y-1/3 shadow"
-                onClick={() => onRemoveImage(idx)}
-              >
-                <svg
-                  className=" text-black"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M6 18L18 6M6 6l12 12"
-                  />
-                </svg>
-              </button>
-            </div>
-          ))}
 
-        <div
-          className="ml-3 flex-shrink-0 min-w-[150px] h-[105px] border border-dashed border-gray-300 rounded flex items-center justify-center cursor-pointer hover:bg-gray-50"
-          onClick={() => document.getElementById("file-upload")?.click()}
-        >
-          <div className="flex items-center flex-col justify-center gap-8">
-            <CiCirclePlus className="w-24 h-24 rounded-full bg-ocean-green text-white"></CiCirclePlus>
-            <span className="text-[15px] font-medium text-ocean-green">Add Image</span>
+      <div className="mt-4">
+        <p className="text-sm text-gray-500 mb-2">All Images</p>
+        <div className="flex flex-wrap gap-2">
+          {selectedImages.length > 0 &&
+            selectedImages.map((img, idx) => (
+              <div
+                key={idx}
+                className={`relative rounded border ${img === mainImage ? 'border-ocean-green' : 'border-neutral-200'} cursor-pointer`}
+                onClick={() => onSetMainImage(img)}
+              >
+                <div className="w-[80px] h-[80px] flex items-center justify-center bg-neutral-50 overflow-hidden">
+                  <img
+                    src={img}
+                    className="max-w-full max-h-full object-contain"
+                    alt={`Product ${idx + 1}`}
+                  />
+                </div>
+                <button
+                  className="absolute w-[16px] h-[16px] top-[2px] right-[2px] border border-neutral-500 bg-white rounded-full p-0.5 transform shadow"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onRemoveImage(idx);
+                  }}
+                  disabled={isUploading}
+                >
+                  <svg
+                    className="text-black"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M6 18L18 6M6 6l12 12"
+                    />
+                  </svg>
+                </button>
+                {img === mainImage && (
+                  <div className="absolute bottom-0 w-full bg-ocean-green text-white text-[9px] text-center py-0.5">
+                    Main
+                  </div>
+                )}
+              </div>
+            ))}
+
+          <div
+            className={`w-[80px] h-[80px] border border-dashed border-gray-300 rounded flex items-center justify-center ${isUploading ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer hover:bg-gray-50'}`}
+            onClick={() => !isUploading && document.getElementById("file-upload")?.click()}
+          >
+            <CiCirclePlus className="w-8 h-8 text-ocean-green"></CiCirclePlus>
           </div>
         </div>
       </div>

@@ -17,54 +17,67 @@ export const ProductInventory: React.FC<ProductInventoryProps> = ({
   handlePublish,
   handleSaveDraft
 }) => {
+  // Handle quantity input to ensure only numbers
+  const handleQuantityChange = (e: ChangeEvent<HTMLInputElement>) => {
+    const { value } = e.target;
+    // Only allow numbers for stock quantity
+    if (value === '' || /^[0-9]+$/.test(value)) {
+      onChange({
+        ...e,
+        target: {
+          ...e.target,
+          name: "stock_quantity",
+          value
+        }
+      } as ChangeEvent<HTMLInputElement>);
+    }
+  };
+
+  const isUnlimited = product.stock_quantity === 999999;
+
   return (
-    <div className="bg-white p-[1.25rem] rounded-lg  mb-6">
-      <h2 className="block text-cyprus font-bold text-[22px] mb-12 mt-[1rem]">
+    <div className="bg-white p-[1.25rem] rounded-lg mb-5">
+      <h2 className="block text-cyprus font-bold text-[22px] mb-6">
         Inventory
       </h2>
-      <div className="flex items-center justify-between">
-        <div className="mb-4 w-[272px]">
-          <label className="block text-cyprus font-bold text-[15px] mb-12 mt-[1rem]">
+      <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-6">
+        <div className="mb-4 w-full md:w-[272px]">
+          <label className="block text-cyprus font-bold text-[15px] mb-2">
             Stock Quantity
           </label>
           <input
             type="text"
-            name="stockQuantity"
-            value={product.stockQuantity}
-            onChange={onChange}
-            placeholder="Unlimited"
-            className="mb-4 w-full border border-gray-200 rounded-lg p-2 bg-neutral-50 focus:outline-none focus:border-ocean-green"
+            name="stock_quantity"
+            value={isUnlimited ? "" : product.stock_quantity}
+            onChange={handleQuantityChange}
+            placeholder="Enter quantity"
+            disabled={isUnlimited}
+            className={`mb-4 w-full border border-gray-200 rounded-lg p-2 bg-neutral-50 focus:outline-none focus:border-ocean-green ${isUnlimited ? 'opacity-50' : ''}`}
           />
           <div className="flex items-center mt-2">
             <label className="flex items-center cursor-pointer">
               <div
-                className={`mr-2 relative inline-block w-[48px] h-[24px] transition-all duration-200 ease-in-out rounded-full ${
-                  product.stockQuantity === "Unlimited"
-                    ? "bg-green-500"
-                    : "bg-gray-300"
-                }`}
+                className={`mr-2 relative inline-block w-[48px] h-[24px] transition-all duration-200 ease-in-out rounded-full ${isUnlimited ? "bg-green-500" : "bg-gray-300"
+                  }`}
               >
                 <input
                   type="checkbox"
                   className="opacity-0 absolute w-full h-full"
-                  checked={product.stockQuantity === "Unlimited"}
-                  onChange={(e) =>
+                  checked={isUnlimited}
+                  onChange={(e) => {
                     onChange({
                       ...e,
                       target: {
                         ...e.target,
-                        name: "stockQuantity",
-                        value: e.target.checked ? "Unlimited" : "0",
+                        name: "stock_quantity",
+                        value: e.target.checked ? "999999" : "0",
                       },
-                    } as ChangeEvent<HTMLInputElement>)
-                  }
+                    } as ChangeEvent<HTMLInputElement>);
+                  }}
                 />
                 <span
-                  className={`absolute left-4 top-1/2 -translate-y-1/2 bg-white w-[15px] h-[15px] rounded-full transition-transform duration-200 ease-in-out transform ${
-                    product.stockQuantity === "Unlimited"
-                      ? "translate-x-5"
-                      : "translate-x-0"
-                  }`}
+                  className={`absolute left-1 top-1/2 -translate-y-1/2 bg-white w-[18px] h-[18px] rounded-full transition-transform duration-200 ease-in-out transform ${isUnlimited ? "translate-x-full" : "translate-x-0"
+                    }`}
                 ></span>
               </div>
               <span className="text-sm text-gray-700">Unlimited</span>
@@ -72,20 +85,21 @@ export const ProductInventory: React.FC<ProductInventoryProps> = ({
           </div>
         </div>
 
-        <div className="w-[272px] mb-[2.1rem]">
-          <label className="block text-cyprus font-bold text-[15px] mb-12 mt-[1rem]">
+        <div className="w-full md:w-[272px] mb-4">
+          <label className="block text-cyprus font-bold text-[15px] mb-2">
             Stock Status
           </label>
           <div className="relative">
             <select
-              name="stockStatus"
-              value={product.stockStatus}
-              onChange={(e) => onChange(e)}
+              name="stock_status"
+              value={product.stock_status}
+              onChange={onChange}
               className="text-cyprus w-full border border-gray-200 bg-neutral-50 rounded-lg p-2 pr-10 appearance-none focus:outline-none focus:border-ocean-green"
             >
               <option value="In Stock">In Stock</option>
               <option value="Out of Stock">Out of Stock</option>
               <option value="Pre-order">Pre-order</option>
+              <option value="Back Order">Back Order</option>
             </select>
             <div className="absolute inset-y-0 right-0 flex items-center px-3 text-gray-500 pointer-events-none">
               <svg
@@ -106,7 +120,21 @@ export const ProductInventory: React.FC<ProductInventoryProps> = ({
         </div>
       </div>
 
-      <div className="mb-4 mt-[0.5rem]">
+      <div className="mb-4 mt-4">
+        <label className="block text-cyprus font-bold text-[15px] mb-2">
+          SKU (Stock Keeping Unit)
+        </label>
+        <input
+          type="text"
+          name="sku"
+          value={product.sku || ''}
+          onChange={onChange}
+          placeholder="e.g. PRD-12345"
+          className="w-full border border-gray-200 rounded-lg p-2 bg-neutral-50 focus:outline-none focus:border-ocean-green"
+        />
+      </div>
+
+      <div className="mb-4 mt-4">
         <label className="flex items-center cursor-pointer">
           <input
             type="checkbox"
@@ -126,33 +154,7 @@ export const ProductInventory: React.FC<ProductInventoryProps> = ({
         </label>
       </div>
 
-      <div className="flex justify-end mt-6 space-x-3">
-            <button
-              onClick={handleSaveDraft}
-              className="px-5 py-2 border border-gray-200 rounded-lg flex items-center hover:bg-gray-50"
-            >
-              <svg
-                className="w-5 h-5 mr-2"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4"
-                />
-              </svg>
-              Save to draft
-            </button>
-            <button
-              onClick={handlePublish}
-              className="px-5 py-2 bg-ocean-green hover:bg-green-600 text-white rounded-lg"
-            >
-              Publish Product
-            </button>
-          </div>
+
     </div>
   );
 };

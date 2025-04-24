@@ -1,5 +1,5 @@
 // components/admin/product/add/components/ProductPricing.tsx
-import React, { ChangeEvent } from "react";
+import React, { ChangeEvent, useEffect } from "react";
 import { Product } from "../models/product.model";
 
 interface ProductPricingProps {
@@ -13,25 +13,93 @@ export const ProductPricing: React.FC<ProductPricingProps> = ({
   onChange,
   discountAmount,
 }) => {
+  // Handle numeric input to ensure only numbers and decimal points
+  const handleNumericInput = (e: ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    // Only allow numbers and a single decimal point
+    const regex = /^[0-9]*\.?[0-9]*$/;
+
+    if (value === '' || regex.test(value)) {
+      onChange({
+        ...e,
+        target: {
+          ...e.target,
+          name,
+          value
+        }
+      });
+    }
+  };
+
+  // Calculate discounted price based on original price and discount percentage
+  const calculateDiscountedPrice = () => {
+    if (product.original_price && product.discount) {
+      const discountedPrice = product.original_price - (product.original_price * product.discount / 100);
+      return discountedPrice.toFixed(2);
+    }
+    return product.price ? product.price.toString() : '';
+  };
+
+  // Handle date changes for expiration dates
+  const handleDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    onChange(e);
+  };
+
+  // Update price whenever original_price or discount changes
+  useEffect(() => {
+    if (product.original_price && product.discount) {
+      const discountedPrice = product.original_price - (product.original_price * product.discount / 100);
+
+      // Create synthetic event to update price
+      const priceEvent = {
+        target: {
+          name: "price",
+          value: discountedPrice.toString()
+        }
+      } as ChangeEvent<HTMLInputElement>;
+
+      onChange(priceEvent);
+    }
+  }, [product.original_price, product.discount, onChange]);
+
+  // Handle price change directly
+  const handlePriceChange = (e: ChangeEvent<HTMLInputElement>) => {
+    const { value } = e.target;
+    // Only allow numbers and a single decimal point
+    const regex = /^[0-9]*\.?[0-9]*$/;
+
+    if (value === '' || regex.test(value)) {
+      onChange({
+        ...e,
+        target: {
+          ...e.target,
+          name: "price",
+          value
+        }
+      });
+    }
+  };
+
   return (
     <div className="bg-white rounded-lg p-[1.25rem] mt-5 mb-6">
-      <h2 className="block text-cyprus font-bold text-[22px] mb-12 mt-[1rem]">
+      <h2 className="block text-cyprus font-bold text-[22px] mb-6">
         Pricing
       </h2>
 
       <div className="mb-4">
-        <label className="block text-cyprus font-bold text-[15px] mb-12 mt-[1rem]">
-          Product Price
+        <label className="block text-cyprus font-bold text-[15px] mb-2">
+          Original Price
         </label>
         <div className="flex">
-          <div className="flex-grow">
+          <div className="flex-grow relative">
+            <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500">$</span>
             <input
               type="text"
-              name="price"
-              value={product.price || ""}
-              onChange={onChange}
-              placeholder="$999.89"
-              className="w-full border text-cyprus bg-neutral-50 border-gray-200 rounded-lg p-2 focus:outline-none focus:border-ocean-green"
+              name="original_price"
+              value={product.original_price || ""}
+              onChange={handleNumericInput}
+              placeholder="999.89"
+              className="w-full border pl-[25px] text-cyprus bg-neutral-50 border-gray-200 rounded-lg p-2 focus:outline-none focus:border-ocean-green"
             />
           </div>
         </div>
@@ -39,44 +107,58 @@ export const ProductPricing: React.FC<ProductPricingProps> = ({
 
       <div className="grid grid-cols-2 gap-4 mb-4">
         <div>
-          <label className="block text-cyprus font-bold text-[15px] mb-12 mt-[1rem]">
-            Discounted Price <span className="text-neutral-500">(Optional)</span>
+          <label className="block text-cyprus font-bold text-[15px] mb-2">
+            Discount Percentage <span className="text-neutral-500">(Optional)</span>
           </label>
-          <div className="border border-gray-200 bg-neutral-50 rounded-lg flex items-center w-[272px] gap-4">
-            <span className="ml-2 flex items-center justify-center bg-aqua-spring w-[32px] h-[32px] text-black rounded-lg mr-2">
-              $
-            </span>
+          <div className="relative">
             <input
               type="text"
-              name="discountedPrice"
-              value={product.discountedPrice || ""}
-              onChange={onChange}
-              placeholder="$99"
-              className="w-[108px] flex-grow py-[10px] text-cyprus bg-neutral-50 px-12 focus:outline-none focus:border-ocean-green"
+              name="discount"
+              value={product.discount || ""}
+              onChange={handleNumericInput}
+              placeholder="10"
+              className="w-full border text-cyprus bg-neutral-50 border-gray-200 rounded-lg p-2 pr-8 focus:outline-none focus:border-ocean-green"
             />
-            <label className="block text-[15px] font-bold text-cyprus mb-1 w-[103px] h-[18px]">
-              Sale = <span className="text-cyprus">${discountAmount}</span>
-            </label>
+            <span className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500">%</span>
           </div>
+        </div>
+
+        <div>
+          <label className="block text-cyprus font-bold text-[15px] mb-2">
+            Sale Price <span className="text-neutral-500">{product.discount > 0 ? "(Calculated)" : ""}</span>
+          </label>
+          <div className="relative">
+            <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500">$</span>
+            <input
+              type="text"
+              name="price"
+              value={product.price || ""}
+              onChange={handlePriceChange}
+              placeholder="899.90"
+              className="w-full border pl-[25px] text-cyprus bg-neutral-50 border-gray-200 rounded-lg p-2 focus:outline-none focus:border-ocean-green"
+              readOnly={product.discount > 0}
+            />
+          </div>
+          {parseFloat(discountAmount) > 0 && (
+            <p className="text-sm text-green-600 mt-1">
+              Save: <span className="font-semibold">${discountAmount}</span>
+            </p>
+          )}
         </div>
       </div>
 
       <div className="mb-4">
-        <label className="block text-cyprus font-bold text-[15px] mb-12 mt-[1rem]">
-          Expiration
+        <label className="block text-cyprus font-bold text-[15px] mb-2">
+          Sale Period
         </label>
         <div className="grid grid-cols-2 gap-4">
           <div className="relative">
             <input
-              type="text"
-              onFocus={(e) => (e.target.type = "date")}
-              onBlur={(e) => {
-                if (!e.target.value) e.target.type = "text";
-              }}
+              type="date"
               name="expirationStart"
-              value={product.expirationStart}
-              onChange={onChange}
-              placeholder="Start"
+              value={product.expirationStart || ""}
+              onChange={handleDateChange}
+              placeholder="Start Date"
               className="w-full border border-gray-200 rounded-lg p-2 pr-10 text-cyprus bg-neutral-50 focus:outline-none focus:border-ocean-green"
             />
             <div className="absolute inset-y-0 right-0 flex items-center px-3 text-gray-500">
@@ -97,15 +179,11 @@ export const ProductPricing: React.FC<ProductPricingProps> = ({
           </div>
           <div className="relative">
             <input
-              type="text"
-              onFocus={(e) => (e.target.type = "date")}
-              onBlur={(e) => {
-                if (!e.target.value) e.target.type = "text";
-              }}
+              type="date"
               name="expirationEnd"
-              value={product.expirationEnd}
-              onChange={onChange}
-              placeholder="End"
+              value={product.expirationEnd || ""}
+              onChange={handleDateChange}
+              placeholder="End Date"
               className="w-full border border-gray-200 rounded-lg p-2 pr-10 bg-neutral-50 focus:outline-none focus:border-ocean-green"
             />
             <div className="absolute inset-y-0 right-0 flex items-center px-3 text-gray-500">

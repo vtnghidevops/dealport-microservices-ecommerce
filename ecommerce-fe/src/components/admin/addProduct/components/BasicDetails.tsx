@@ -18,7 +18,7 @@ export const BasicDetails: React.FC<BasicDetailsProps> = ({
       </h2>
 
       <div className="mb-4">
-        <label className="block text-cyprus font-bold text-[15px] mb-12 mt-[1rem]">
+        <label className="block text-cyprus font-bold text-[15px] mb-2">
           Product Name
         </label>
         <input
@@ -31,8 +31,27 @@ export const BasicDetails: React.FC<BasicDetailsProps> = ({
         />
       </div>
 
+      <div className="mb-4">
+        <label className="block text-cyprus font-bold text-[15px] mb-2">
+          Product Slug <span className="text-neutral-500 text-sm">(Auto-generated)</span>
+        </label>
+        <div className="flex">
+          <input
+            type="text"
+            name="slug"
+            value={product.slug}
+            onChange={onChange}
+            placeholder="product-name"
+            className="text-cyprus bg-neutral-50 w-full border border-neutral-300 rounded-lg p-2 focus:outline-none focus:border-ocean-green"
+          />
+        </div>
+        <p className="text-xs text-gray-500 mt-1">
+          The slug is automatically generated from the product name and used in the product URL.
+        </p>
+      </div>
+
       <div className="mb-4 mt-12">
-        <label className="block text-cyprus font-bold text-[15px] mb-12">
+        <label className="block text-cyprus font-bold text-[15px] mb-2">
           Product Description
         </label>
         <textarea
