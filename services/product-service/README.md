@@ -55,6 +55,67 @@ The service will start on port 8082 by default.
 - `GET /api/v1/categories/slug/{slug}`: Get category by slug
 - `GET /api/v1/categories/tree`: Get the full category hierarchy
 
+### Product Images API
+
+#### Upload a Product Image
+```
+POST /api/v1/products/{id}/images
+```
+
+**Parameters:**
+- `id` (path parameter): The ID of the product to upload the image for
+
+**Form Data:**
+- `image`: The image file (multipart/form-data)
+- `isPrimary`: Whether this should be the primary product image (true/false)
+
+**Response:**
+```json
+{
+  "status": 201,
+  "data": {
+    "url": "/api/products/images/1234_1624567890.jpg"
+  }
+}
+```
+
+#### Delete a Product Image
+```
+DELETE /api/v1/products/{id}/images/{imageId}
+```
+
+**Parameters:**
+- `id` (path parameter): The ID of the product
+- `imageId` (path parameter): The ID of the image to delete
+
+**Response:**
+```json
+{
+  "status": 200,
+  "message": "Image deleted successfully"
+}
+```
+
+#### Set Primary Product Image
+```
+PUT /api/v1/products/{id}/images/{imageId}/primary
+```
+
+**Parameters:**
+- `id` (path parameter): The ID of the product
+- `imageId` (path parameter): The ID of the image to set as primary
+
+**Response:**
+```json
+{
+  "status": 200,
+  "message": "Primary image set successfully"
+}
+```
+
+The image URLs in the API responses can be used directly in your frontend application. 
+Images are stored in the backend filesystem and served through the `/api/products/images/` endpoint.
+
 ## Testing
 
 ### Unit Tests
@@ -151,6 +212,106 @@ curl -X PATCH http://localhost:8082/api/v1/products/7d1e7337-2722-4a20-a685-3e53
 ```
 
 This request will update the price, completely replace the features object with the new one, and update the tags array.
+
+### PATCH Product Endpoint
+
+The PATCH endpoint provides a flexible way to update only specific fields of a product without having to send the entire product object.
+
+```
+PATCH /api/v1/products/{id}
+```
+
+**Parameters:**
+- `id` (path parameter): The ID of the product to update
+
+**Request Body:**
+A JSON object containing only the fields you want to update. The endpoint supports updating the following fields:
+
+```json
+{
+  "name": "Updated Product Name",
+  "description": "New description text",
+  "slug": "updated-product-slug",
+  "price": 99.99,
+  "original_price": 129.99,
+  "discount": 30.00,
+  "category_id": 5,
+  "category_slug": "electronics",
+  "stock_quantity": 150,
+  "type": "trending",
+  "brand": "BrandName",
+  "features": ["Feature 1", "Feature 2", "Feature 3"],
+  "shipping_info": {
+    "courier": "Express",
+    "local": "Free",
+    "ups": "Available",
+    "global": "Available"
+  },
+  "images": [
+    "https://example.com/image1.jpg",
+    "https://example.com/image2.jpg"
+  ],
+  "tags": ["tag1", "tag2", "tag3"],
+  "orders": 25,
+  "ui_metadata": {
+    "featured": true,
+    "position": "top"
+  }
+}
+```
+
+You can include any combination of these fields in your request, and only the included fields will be updated.
+
+**Response:**
+```json
+{
+  "status": 200,
+  "message": "Product updated successfully",
+  "data": {
+    // The full updated product object
+  }
+}
+```
+
+**Example: Update only the price and stock quantity**
+```bash
+curl -X PATCH http://localhost:8082/api/v1/products/123 \
+  -H "Content-Type: application/json" \
+  -d '{
+    "price": 89.99,
+    "stock_quantity": 75
+  }'
+```
+
+**Example: Update product images**
+```bash
+curl -X PATCH http://localhost:8082/api/v1/products/123 \
+  -H "Content-Type: application/json" \
+  -d '{
+    "images": [
+      "/api/products/images/123_image1.jpg",
+      "/api/products/images/123_image2.jpg",
+      "/api/products/images/123_image3.jpg"
+    ]
+  }'
+```
+
+**Example: Update product type and add tags**
+```bash
+curl -X PATCH http://localhost:8082/api/v1/products/123 \
+  -H "Content-Type: application/json" \
+  -d '{
+    "type": "top-sale",
+    "tags": ["featured", "sale", "bestseller"]
+  }'
+```
+
+The PATCH endpoint is particularly useful for operations like:
+- Updating price or stock quantity without changing other fields
+- Adding or removing product images
+- Changing the product type or category
+- Adding or removing tags
+- Updating metadata for UI display
 
 ## Database Structure
 

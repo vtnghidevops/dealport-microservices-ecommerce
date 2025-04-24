@@ -1338,3 +1338,171 @@ func (r *ProductRepository) GetRandomTopRatedReviews(limit int) ([]*domain.Testi
 
 	return testimonials, nil
 }
+
+// AddProductImage adds an image for a product and returns the image ID
+func (r *ProductRepository) AddProductImage(productID int, imageURL string, isPrimary bool, displayOrder int) (int, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), dbTimeout)
+	defer cancel()
+
+	// Start a transaction
+	tx, err := r.db.BeginTx(ctx, nil)
+	if err != nil {
+		return 0, err
+	}
+	defer tx.Rollback()
+
+	// If this is primary, update all other images to not primary
+	if isPrimary {
+		_, err = tx.ExecContext(ctx, `
+			UPDATE product_images
+			SET is_primary = false
+			WHERE product_id = $1
+		`, productID)
+		if err != nil {
+			return 0, err
+		}
+	}
+
+	// Insert the new image
+	query := `
+		INSERT INTO product_images (product_id, url, is_primary, display_order, created_at)
+		VALUES ($1, $2, $3, $4, $5)
+		RETURNING id
+	`
+
+	var id int
+	err = tx.QueryRowContext(ctx, query,
+		productID,
+		imageURL,
+		isPrimary,
+		displayOrder,
+		time.Now(),
+	).Scan(&id)
+
+	if err != nil {
+		return 0, err
+	}
+
+	// Commit the transaction
+	if err = tx.Commit(); err != nil {
+		return 0, err
+	}
+
+	return id, nil
+}
+
+// DeleteProductImage deletes a product image by ID
+func (r *ProductRepository) DeleteProductImage(imageID int) error {
+	ctx, cancel := context.WithTimeout(context.Background(), dbTimeout)
+	defer cancel()
+
+	// Start a transaction
+	tx, err := r.db.BeginTx(ctx, nil)
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+
+	// Check if this is a primary image
+	var isPrimary bool
+	var productID int
+	err = tx.QueryRowContext(ctx, `
+		SELECT is_primary, product_id FROM product_images WHERE id = $1
+	`, imageID).Scan(&isPrimary, &productID)
+
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			// Image doesn't exist, nothing to do
+			return nil
+		}
+		return err
+	}
+
+	// Delete the image
+	_, err = tx.ExecContext(ctx, `
+		DELETE FROM product_images WHERE id = $1
+	`, imageID)
+	if err != nil {
+		return err
+	}
+
+	// If this was a primary image, set a new primary
+	if isPrimary {
+		// Find another image for this product
+		var newPrimaryID int
+		err = tx.QueryRowContext(ctx, `
+			SELECT id FROM product_images 
+			WHERE product_id = $1 
+			ORDER BY display_order ASC LIMIT 1
+		`, productID).Scan(&newPrimaryID)
+
+		if err == nil {
+			// Set as primary
+			_, err = tx.ExecContext(ctx, `
+				UPDATE product_images 
+				SET is_primary = true 
+				WHERE id = $1
+			`, newPrimaryID)
+			if err != nil {
+				return err
+			}
+		} else if !errors.Is(err, sql.ErrNoRows) {
+			// Only return error if it's not a "no rows" error
+			return err
+		}
+	}
+
+	// Commit the transaction
+	return tx.Commit()
+}
+
+// UpdateProductImageOrder updates the display order of a product image
+func (r *ProductRepository) UpdateProductImageOrder(imageID int, displayOrder int) error {
+	ctx, cancel := context.WithTimeout(context.Background(), dbTimeout)
+	defer cancel()
+
+	query := `
+		UPDATE product_images
+		SET display_order = $1
+		WHERE id = $2
+	`
+
+	_, err := r.db.ExecContext(ctx, query, displayOrder, imageID)
+	return err
+}
+
+// SetPrimaryProductImage sets the primary image for a product
+func (r *ProductRepository) SetPrimaryProductImage(productID int, imageID int) error {
+	ctx, cancel := context.WithTimeout(context.Background(), dbTimeout)
+	defer cancel()
+
+	// Start a transaction
+	tx, err := r.db.BeginTx(ctx, nil)
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+
+	// Set all images for this product to non-primary
+	_, err = tx.ExecContext(ctx, `
+		UPDATE product_images
+		SET is_primary = false
+		WHERE product_id = $1
+	`, productID)
+	if err != nil {
+		return err
+	}
+
+	// Set the selected image as primary
+	_, err = tx.ExecContext(ctx, `
+		UPDATE product_images
+		SET is_primary = true
+		WHERE id = $1 AND product_id = $2
+	`, imageID, productID)
+	if err != nil {
+		return err
+	}
+
+	// Commit the transaction
+	return tx.Commit()
+}

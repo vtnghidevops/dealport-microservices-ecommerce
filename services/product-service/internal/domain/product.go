@@ -2,6 +2,7 @@ package domain
 
 import (
 	"encoding/json"
+	"mime/multipart"
 	"time"
 )
 
@@ -93,6 +94,10 @@ type ProductRepository interface {
 
 	// Product image methods
 	GetProductImages(productID int) ([]ProductImage, error)
+	AddProductImage(productID int, imageURL string, isPrimary bool, displayOrder int) (int, error)
+	DeleteProductImage(imageID int) error
+	UpdateProductImageOrder(imageID int, displayOrder int) error
+	SetPrimaryProductImage(productID int, imageID int) error
 
 	// Product tag methods
 	GetProductTags(productID int) ([]string, error)
@@ -118,6 +123,10 @@ type ProductService interface {
 
 	// Product image methods
 	GetProductImages(productID int) ([]ProductImage, error)
+	UploadProductImage(productID int, file *multipart.FileHeader, isPrimary bool) (string, error)
+	DeleteProductImage(imageID int) error
+	UpdateProductImageOrder(imageID int, displayOrder int) error
+	SetPrimaryProductImage(productID int, imageID int) error
 
 	// Review methods
 	GetProductReviews(productID int, page, pageSize int) ([]*ProductReview, int, error)

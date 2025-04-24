@@ -38,7 +38,7 @@ func (s *Server) Routes() http.Handler {
 	router.Use(middleware.Timeout(60 * time.Second))
 	router.Use(cors.Handler(cors.Options{
 		AllowedOrigins:   []string{"*"},
-		AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
+		AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"},
 		AllowedHeaders:   []string{"Accept", "Authorization", "Content-Type", "X-CSRF-Token"},
 		ExposedHeaders:   []string{"Link"},
 		AllowCredentials: true,
@@ -60,12 +60,18 @@ func (s *Server) Routes() http.Handler {
 			r.Get("/{id}", products.GetByID(s.Handler))
 			r.Get("/slug/{slug}", products.GetBySlug(s.Handler))
 			r.Put("/{id}", products.Update(s.Handler))
+			r.Patch("/{id}", products.Patch(s.Handler))
 			r.Delete("/{id}", products.Delete(s.Handler))
 
 			// Product reviews
 			r.Get("/{id}/reviews", products.GetReviews(s.Handler))
 			r.Post("/{id}/reviews", products.AddReview(s.Handler))
 			r.Put("/{id}/reviews/{reviewId}", products.UpdateReview(s.Handler))
+
+			// Product images
+			r.Post("/{id}/images", products.UploadProductImage(s.Handler))
+			r.Delete("/{id}/images/{imageId}", products.DeleteProductImage(s.Handler))
+			r.Put("/{id}/images/{imageId}/primary", products.SetPrimaryProductImage(s.Handler))
 		})
 
 		// Testimonials endpoint for HappyCustomers section
@@ -104,6 +110,9 @@ func (s *Server) Routes() http.Handler {
 			r.Delete("/placements/{id}", ads.DeleteAdsPlacement(s.Handler))
 		})
 	})
+
+	router.Handle("/images/*", http.StripPrefix("/images/", http.FileServer(http.Dir("./static/images"))))
+	router.Handle("/api/products/images/*", http.StripPrefix("/api/products/images/", http.FileServer(http.Dir("./uploads/products"))))
 
 	return router
 }

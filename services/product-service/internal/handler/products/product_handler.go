@@ -9,6 +9,7 @@ import (
 	"product-service/internal/domain"
 	"product-service/internal/handler"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/go-chi/chi/v5"
@@ -166,7 +167,15 @@ func Create(app *handler.Config) http.HandlerFunc {
 		var product domain.Product
 
 		err := app.ParseJSON(w, r, &product)
-		fmt.Println("Product received:", product.Name)
+		fmt.Println("------------------------------")
+		fmt.Println("Product received name:", product.Name)
+		fmt.Println("Product received slug:", product.Slug)
+		fmt.Println("Product received price:", product.Price)
+		fmt.Println("Product receive CategoryID:", product.CategoryID)
+		fmt.Println("Product received imgSlider:", product.ImgSlider)
+		fmt.Println("Product received images:", product.Images)
+		fmt.Println("------------------------------")
+
 		if err != nil {
 			app.ErrorResponse(w, err, http.StatusBadRequest)
 			return
@@ -804,6 +813,139 @@ func GetTopRatedTestimonials(app *handler.Config) http.HandlerFunc {
 		payload := handler.Response{
 			Status: http.StatusOK,
 			Data:   testimonials,
+		}
+
+		app.SuccessResponse(w, http.StatusOK, payload)
+	}
+}
+
+// UploadProductImage handles image uploads for products
+func UploadProductImage(app *handler.Config) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		// Parse multipart form (limit file size to 10MB)
+		if err := r.ParseMultipartForm(10 << 20); err != nil {
+			app.ErrorResponse(w, errors.New("file too large or invalid form"), http.StatusBadRequest)
+			return
+		}
+
+		// Get product ID from URL
+		idStr := chi.URLParam(r, "id")
+		id, err := strconv.Atoi(idStr)
+		if err != nil {
+			app.ErrorResponse(w, errors.New("invalid product ID"), http.StatusBadRequest)
+			return
+		}
+
+		// Get uploaded file
+		file, handler, err := r.FormFile("image")
+		if err != nil {
+			app.ErrorResponse(w, errors.New("no image file provided"), http.StatusBadRequest)
+			return
+		}
+		defer file.Close()
+
+		// Check file type (allow only images)
+		contentType := handler.Header.Get("Content-Type")
+		if !strings.HasPrefix(contentType, "image/") {
+			app.ErrorResponse(w, errors.New("only image files are allowed"), http.StatusBadRequest)
+			return
+		}
+
+		// Check file size (max 5MB)
+		if handler.Size > 5*1024*1024 {
+			app.ErrorResponse(w, errors.New("image file size exceeds 5MB limit"), http.StatusBadRequest)
+			return
+		}
+
+		// Get isPrimary flag from form
+		isPrimary := false
+		isPrimaryStr := r.FormValue("isPrimary")
+		if isPrimaryStr == "true" {
+			isPrimary = true
+		}
+
+		// Upload to service
+		imageURL, err := app.ProductService.UploadProductImage(id, handler, isPrimary)
+		if err != nil {
+			app.ErrorResponse(w, err, http.StatusInternalServerError)
+			return
+		}
+
+		// Return image URL
+		responseData := struct {
+			URL string `json:"url"`
+		}{
+			URL: imageURL,
+		}
+
+		// Create a response payload directly instead of using handler.Response
+		payload := struct {
+			Status  int         `json:"status"`
+			Message string      `json:"message,omitempty"`
+			Data    interface{} `json:"data,omitempty"`
+		}{
+			Status:  http.StatusCreated,
+			Message: "Image uploaded successfully",
+			Data:    responseData,
+		}
+
+		app.WriteJSON(w, http.StatusCreated, payload)
+	}
+}
+
+// DeleteProductImage handles deletion of product images
+func DeleteProductImage(app *handler.Config) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		// Get image ID from URL
+		idStr := chi.URLParam(r, "imageId")
+		id, err := strconv.Atoi(idStr)
+		if err != nil {
+			app.ErrorResponse(w, errors.New("invalid image ID"), http.StatusBadRequest)
+			return
+		}
+
+		// Delete image
+		if err := app.ProductService.DeleteProductImage(id); err != nil {
+			app.ErrorResponse(w, err, http.StatusInternalServerError)
+			return
+		}
+
+		payload := handler.Response{
+			Status:  http.StatusOK,
+			Message: "Image deleted successfully",
+		}
+
+		app.SuccessResponse(w, http.StatusOK, payload)
+	}
+}
+
+// SetPrimaryProductImage sets the primary image for a product
+func SetPrimaryProductImage(app *handler.Config) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		// Get product ID and image ID from URL
+		productIDStr := chi.URLParam(r, "id")
+		productID, err := strconv.Atoi(productIDStr)
+		if err != nil {
+			app.ErrorResponse(w, errors.New("invalid product ID"), http.StatusBadRequest)
+			return
+		}
+
+		imageIDStr := chi.URLParam(r, "imageId")
+		imageID, err := strconv.Atoi(imageIDStr)
+		if err != nil {
+			app.ErrorResponse(w, errors.New("invalid image ID"), http.StatusBadRequest)
+			return
+		}
+
+		// Set as primary
+		if err := app.ProductService.SetPrimaryProductImage(productID, imageID); err != nil {
+			app.ErrorResponse(w, err, http.StatusInternalServerError)
+			return
+		}
+
+		payload := handler.Response{
+			Status:  http.StatusOK,
+			Message: "Primary image set successfully",
 		}
 
 		app.SuccessResponse(w, http.StatusOK, payload)

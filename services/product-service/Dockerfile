@@ -15,6 +15,8 @@ RUN chmod +x /app/product-service
 FROM alpine:latest
 
 RUN mkdir /app
+RUN mkdir -p /app/uploads/products
+
 COPY --from=builder /app/product-service /app
 COPY data/products.sql /app/products.sql
 CMD ["/app/product-service"]
