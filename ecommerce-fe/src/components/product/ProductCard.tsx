@@ -108,7 +108,7 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onClick }) => {
         <div onClick={handleProductClick} className="cursor-pointer">
           <div className="p-2 flex justify-center items-center relative h-[180px] w-[190px] overflow-hidden">
             <img
-              src={product.image_url}
+              src={product.imageUrl}
               alt={product.name}
               className="max-w-[150px] h-full object-contain transition-transform hover:scale-105"
             />

@@ -26,7 +26,7 @@ export const BannerService = {
   getBannerData: async (): Promise<BannerShowCaseItem[]> => {
     try {
       const response = await axios.get(`${API_URL}/ads/placement/banner`);
-      console.log("item banner....:", response.data.data)
+      // console.log("item banner....:", response.data.data)
 
       // Transform API data to match frontend models
       return response.data.data.map((item: any) => {
@@ -34,10 +34,10 @@ export const BannerService = {
 
         return {
           id: item.id,
-          image_url: item.image_url,
-          buttonType: uiSettings.button_type,
-          buttonText: uiSettings.button_text,
-          hasMore: uiSettings.has_more || false,
+          imageUrl: item.imageUrl,
+          buttonType: uiSettings.buttonType,
+          buttonText: uiSettings.buttonText,
+          hasMore: uiSettings.hasMore || false,
           type: item.type, // category type
           categorySlug: item.slug // product type
         };
@@ -54,45 +54,44 @@ export const DisplayService = {
   getDataDisplay: async (): Promise<DisplayItem[]> => {
     try {
       const response = await axios.get(`${API_URL}/ads/placement/display`);
-
       // Transform API data to match frontend models
       return response.data.data.map((item: any) => {
-        const uiSettings = parseUISettings(item);
-
+        // Parse uiSettings if it's a string
+        let uiSettings = item.uiSettings || item.ui_settings;
+        if (typeof uiSettings === 'string') {
+          try {
+            uiSettings = JSON.parse(uiSettings);
+          } catch (err) {
+            console.error("Error parsing uiSettings:", err);
+            uiSettings = {};
+          }
+        }
+        console.log("-----------------------")
+        console.log("Button type:", uiSettings.button_type);
+        console.log("Discount img:", uiSettings.discount_img);
+        console.log("Price:", item.price);
+        console.log("Custom title:", item.customTitle);
+        console.log("Name:", item.name);
+        console.log("Type:", item.type);
+        console.log("Product slug:", item.slug);
+        console.log("-----------------------")
+        
         return {
           id: item.id,
-          image_url: item.image_url,
+          imageUrl: item.imageUrl,
           buttonType: uiSettings.button_type,
           price: item.type === 'product' ? item.price : undefined,
-          title: item.custom_title || item.name,
-          discount_img: uiSettings.discount_img,
+          title: item.customTitle || item.name,
+          discountImg: uiSettings.discount_img,
           type: item.type,
           productSlug: item.slug,
-          categorySlug: item.category_slug // product type
+          categorySlug: item.categorySlug // product type
         };
       });
     } catch (error) {
       console.error("Error fetching display data:", error);
       // Fallback data
-      return [
-        // {
-        //   id: 1,
-        //   image_url: `/images/ads/display/be-winner.png`,
-        // },
-        // {
-        //   id: 2,
-        //   image_url: `/images/ads/display/redmi-y3.png`,
-        //   buttonType: "gradient",
-        // },
-        // {
-        //   id: 3,
-        //   image_url: `/images/ads/display/ambilighttv.png`,
-        //   buttonType: "secondary",
-        //   price: "750.99",
-        //   title: "Philips 4K Ambilight TV",
-        //   discount_img: `/images/ads/display/discount_img.png`,
-        // }
-      ];
+      return [];
     }
   }
 };
@@ -108,7 +107,7 @@ export const GamingService = {
         return {
           id: item.id,
           subtitle: item.name,
-          image_url: item.image_url,
+          imageUrl: item.imageUrl,
           type: item.type,
           categorySlug: item.slug // category type
         };
@@ -133,12 +132,12 @@ export const NewFashionService = {
 
         return {
           id: item.id,
-          title: item.custom_title || item.name,
-          image_url: item.image_url,
-          buttonType: uiSettings.button_type || "secondary",
+          title: "New Year! New Fashion", //item.custom_title || item.name,
+          imageUrl: item.imageUrl,
+          buttonType: uiSettings.buttonType || "secondary",
           type: item.type,
           productSlug: item.slug,
-          categorySlug: item.category_slug // product type
+          categorySlug: item.categorySlug // product type
         };
       }
 
@@ -146,7 +145,7 @@ export const NewFashionService = {
       return {
         id: 1,
         title: "New Year! New Fashion",
-        image_url: `/images/ads/products/new-fashion.png`,
+        imageUrl: `/images/ads/products/new-fashion.png`,
         buttonType: "secondary",
         type: "category",
         productSlug: "new-fashion",
@@ -158,7 +157,7 @@ export const NewFashionService = {
       return {
         id: 1,
         title: "New Year! New Fashion",
-        image_url: `/images/ads/products/new-fashion.png`,
+        imageUrl: `/images/ads/products/new-fashion.png`,
         buttonType: "secondary",
         type: "category",
         productSlug: "new-fashion",

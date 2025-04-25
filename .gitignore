@@ -5,3 +5,10 @@ frontend/
 .env
 .cursor
 tree.txt
+# .gitignore
+*.exe
+*.png
+*.jpg
+uploads/products/
+*.DS_Store
+*.log
