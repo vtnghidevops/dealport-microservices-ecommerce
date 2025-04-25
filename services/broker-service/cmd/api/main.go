@@ -1,40 +1,64 @@
 package main
 
 import (
-	"log"
 	"fmt"
-	"net/http"
-	"os"
-	"time"
+	"log"
 	"math"
+	"net/http"
+	"time"
+
+	grpcProductHandler "broker-service/internal/handler/grpc/product"
+	httpProductHandler "broker-service/internal/handler/http/product"
 
 	amqp "github.com/rabbitmq/amqp091-go"
 )
 
 type Config struct {
-	Rabbit *amqp.Connection
+	Rabbit             *amqp.Connection
+	httpProductHandler *httpProductHandler.Config
+	ProductHandler     *grpcProductHandler.ProductHandler
+	CategoryHandler    *grpcProductHandler.CategoryGrpcHandler
+	BannerHandler      *grpcProductHandler.BannerGrpcHandler
+	AdsHandler         *grpcProductHandler.AdsGrpcHandler
 }
 
 const port string = "8080"
 
 func main() {
 	// try to connect to rabbitmq
-	rabbitConn, err := connect()
+	// rabbitConn, err := connect()
+	// if err != nil {
+	// 	log.Println(err)
+	// 	os.Exit(1)
+	// }
+	// defer rabbitConn.Close()
+
+	// Initialize the gRPC client
+	productClient, err := grpcProductHandler.GetProductClient()
 	if err != nil {
-		log.Println(err)
-		os.Exit(1)
+		log.Fatal("Error connecting to product service: ", err)
 	}
-	defer rabbitConn.Close()
 
+	// Initialize proxy handlers with productClient for image handling via gRPC
+	httpProductHandler := &httpProductHandler.Config{
+		ProductClient: productClient,
+	}
+
+	// Initialize the gRPC handlers for product service
 	app := Config{
-		Rabbit: rabbitConn,
+		// Rabbit:      rabbitConn,
+		httpProductHandler: httpProductHandler,
+		ProductHandler:     grpcProductHandler.NewProductHandler(productClient),
+		CategoryHandler:    grpcProductHandler.NewCategoryGrpcHandler(productClient),
+		BannerHandler:      grpcProductHandler.NewBannerGrpcHandler(productClient),
+		AdsHandler:         grpcProductHandler.NewAdsGrpcHandler(productClient),
 	}
 
-	log.Printf("Starting broken service on port %s \n", port)
+	log.Printf("Starting broker service on port %s\n", port)
 
 	// define http server
 	srv := &http.Server{
-		Addr:  fmt.Sprintf(":%s", port),
+		Addr:    fmt.Sprintf(":%s", port),
 		Handler: app.routers(),
 	}
 

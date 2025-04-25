@@ -1,4 +1,4 @@
-module broker
+module broker-service
 
 go 1.24
 
