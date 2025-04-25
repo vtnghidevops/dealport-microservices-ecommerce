@@ -2,7 +2,7 @@ import React from "react";
 import { getButtonClass } from "../../../utils/buttonUtils";
 import { Product } from "@/types/product.model";
 
-const MenCard: React.FC<Product> = ({ image_url, price, discount }) => {
+const MenCard: React.FC<Product> = ({ imageUrl  , price, discount }) => {
   return (
     <div
       className="bg-white rounded-xl overflow-hidden relative w-[166px] h-[171px] 
@@ -17,7 +17,7 @@ const MenCard: React.FC<Product> = ({ image_url, price, discount }) => {
       )}
       <a href="#" className="flex justify-center items-center w-full h-full">
         <img
-          src={image_url}
+          src={imageUrl}
           alt="Black pants"
           className="w-full h-full object-contain "
         />

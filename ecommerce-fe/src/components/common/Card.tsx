@@ -45,7 +45,7 @@ const ProductCard: React.FC<ProductCardProps> = ({
     name: product.name,
     price: product.price,
     originalPrice: product.originalPrice || undefined,
-    image: product.image_url
+    imageUrl: product.imageUrl
   };
   // console.log("Here: ",product);                    
 
@@ -74,7 +74,7 @@ const ProductCard: React.FC<ProductCardProps> = ({
       <div className="relative overflow-hidden rounded-xl">
         <a href={`/${product.categorySlug}/${product.slug}`} className="block overflow-hidden">
           <img
-            src={product.image_url}
+            src={product.imageUrl}
             alt={product.name}
             className="min-w-[248px] min-h-[180px] max-w-[248px] max-h-[180px] object-cover rounded-xl transition-transform duration-700"
           />

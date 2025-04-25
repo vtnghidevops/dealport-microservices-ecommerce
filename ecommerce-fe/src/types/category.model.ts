@@ -4,7 +4,7 @@ export interface Category {
   name: string;
   slug: string;
   description: string;
-  image_url: string;
+  imageUrl: string;
   productCount: number;
   isActive: boolean;
   isVisible: boolean;

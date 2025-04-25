@@ -5,7 +5,7 @@ export interface Product {
   description: string;
   slug: string;
   price: number;
-  image_url: string;
+  imageUrl: string;
   categoryId: string;
   categorySlug: string;
   stockQuantity: number;
@@ -24,20 +24,20 @@ export interface Product {
 
 export interface ProductImage {
   id?: number;
-  product_id?: number;
+  productId?: number;
   url: string;
-  is_primary: boolean;
-  display_order?: number;
+  isPrimary: boolean;
+  displayOrder?: number;
 }
 
 export interface ProductReview {
   id?: number;
-  product_id: number;
-  user_id: number;
-  user_name?: string;
+  productId: number;
+  userId: number;
+  userName?: string;
   rating: number;
   comment: string;
-  created_at?: string;
+  createdAt?: string;
 }
 
 export interface ShippingInfo {

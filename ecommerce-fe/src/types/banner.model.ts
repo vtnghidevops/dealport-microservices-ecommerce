@@ -5,21 +5,21 @@ export interface Banner {
   title: string;
   subtitle?: string;
   description?: string;
-  image_url: string;
-  link_url?: string;
-  action_text?: string;
-  is_active: boolean;
+  imageUrl: string;
+  linkUrl?: string;
+  actionText?: string;
+  isActive: boolean;
   priority?: number;
   type: BannerType;
-  product_id?: number;
-  category_id?: number;
+  productId?: number;
+  categoryId?: number;
   discount?: string;
-  highlight_text?: string;
-  background_color?: string;
-  text_color?: string;
-  animation_type?: 'fade' | 'slide' | 'zoom';
-  created_at?: string;
-  updated_at?: string;
+  highlightText?: string;
+  backgroundColor?: string;
+  textColor?: string;
+  animationType?: 'fade' | 'slide' | 'zoom';
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export enum BannerType {
@@ -37,16 +37,16 @@ export interface SliderBannerItem {
   title: string;
   subtitle?: string;
   description?: string;
-  image_url: string;
-  link_url?: string;
-  action_text?: string;
-  is_active: boolean;
+  imageUrl: string;
+  linkUrl?: string;
+  actionText?: string;
+  isActive: boolean;
   priority?: number;
   discount?: string;
-  highlight_text?: string;
-  background_color?: string;
-  text_color?: string;
-  animation_type?: 'fade' | 'slide' | 'zoom';
+  highlightText?: string;
+  backgroundColor?: string;
+  textColor?: string;
+  animationType?: 'fade' | 'slide' | 'zoom';
 }
 
 export interface BannerResponse {
@@ -62,11 +62,11 @@ export interface BannerResponse {
 
 export interface BannerFilter {
   type?: BannerType;
-  is_active?: boolean;
-  product_id?: number;
-  category_id?: number;
+  isActive?: boolean;
+  productId?: number;
+  categoryId?: number;
   page?: number;
-  page_size?: number;
-  order_by?: string;
-  order_dir?: 'ASC' | 'DESC';
+  pageSize?: number;
+  orderBy?: string;
+  orderDir?: 'ASC' | 'DESC';
 } 

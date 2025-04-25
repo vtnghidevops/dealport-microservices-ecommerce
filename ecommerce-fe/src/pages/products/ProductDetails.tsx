@@ -34,7 +34,7 @@ const ProductDetail: React.FC = () => {
           const data = await ProductService.getProductBySlug(productSlug);
           setProduct(data || null);
           if (data) {
-            setSelectedImage(data.image_url);
+            setSelectedImage(data.imageUrl);
           }
         }
       } catch (error) {
@@ -57,7 +57,7 @@ const ProductDetail: React.FC = () => {
   }
 
   // Create an array of all images for the slider
-  const allImages = [product.image_url, ...(product.imgSlider || [])];
+  const allImages = [product.imageUrl, ...(product.imgSlider || [])];
 
   // Calculate the end index for visible thumbnails
   const thumbnailEndIndex = Math.min(thumbnailStartIndex + maxVisibleThumbnails, allImages.length);
@@ -143,7 +143,7 @@ const ProductDetail: React.FC = () => {
     name: product.name,
     price: product.price,
     originalPrice: product.originalPrice || undefined,
-    image: product.image_url,
+    imageUrl: product.imageUrl,
     stockQuantity: product.stockQuantity
   };
   return (
@@ -186,7 +186,7 @@ const ProductDetail: React.FC = () => {
             {/* Main Image */}
             <div className="w-full h-full flex items-center justify-center">
               <img
-                src={selectedImage || product.image_url}
+                src={selectedImage || product.imageUrl}
                 alt={product.name}
                 className="w-full h-full object-contain max-h-[15rem] max-w-[30rem]"
               />
@@ -430,7 +430,7 @@ const ProductDetail: React.FC = () => {
           name={product.name}
           description={product.description}
           price={product.price}
-          image_url={product.image_url}
+          imageUrl={product.imageUrl}
           categoryId={product.categoryId}
           type="normal"
           id={product.id}

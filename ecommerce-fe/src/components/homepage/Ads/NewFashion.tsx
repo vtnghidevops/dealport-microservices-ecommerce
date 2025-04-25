@@ -24,13 +24,13 @@ const NewFashion: React.FC = () => {
 
     fetchBannerData();
   }, []);
-  console.log("item newfashion:", newFashionData)
+  // console.log("item newfashion:", newFashionData)
 
 
   if (loading || !newFashionData) {
     return <div>Loading...</div>;
   }
-  const { title, image_url, buttonType, type, productSlug, categorySlug } = newFashionData;
+  const { title, imageUrl, buttonType, type, productSlug, categorySlug } = newFashionData;
 
   // Determine the correct navigation path based on item type and available data
   let navigationPath = "#";
@@ -52,7 +52,7 @@ const NewFashion: React.FC = () => {
       <Link to={navigationPath}>
         <div className="rounded-xl relative w-full h-[80%] p-3">
           <img
-            src={image_url}
+            src={imageUrl}
             className="max-w-[27rem] absolute top-[20%] rounded-xl"
             alt={title}
           />

@@ -20,7 +20,7 @@ export interface OrderProduct {
   price: number;
   id?: number;
   name?: string;
-  image_url?: string;
+  imageUrl?: string;
   category?: string;
 }
 

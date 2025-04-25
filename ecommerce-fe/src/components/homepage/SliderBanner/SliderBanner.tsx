@@ -113,24 +113,24 @@ const SliderBanner: React.FC = () => {
           {sliderData.map((item, index) => (
             <div key={index} className="w-full h-full flex-shrink-0 relative">
               <img
-                src={item.image_url}
+                src={item.imageUrl}
                 alt={item.title}
                 className="absolute right-[75%] h-full object-contain max-w-[951px] "
               />
               <div className="absolute left-10 -top-5 w-[40%] h-full flex flex-col justify-center pl-12">
                 <div className="ml-[6rem] max-w-full z-10">
-                  <h2 className="text-4xl font-bold mb-2 !text-white" style={{ color: item.text_color || '#ffffff' }}>
+                  <h2 className="text-4xl font-bold mb-2 !text-white" style={{ color: item.textColor || '#ffffff' }}>
                     {item.title}
                   </h2>
-                  <p className="text-5xl font-bold mb-6 italic !text-white" style={{ color: item.text_color || '#ffffff' }}>
+                  <p className="text-5xl font-bold mb-6 italic !text-white" style={{ color: item.textColor || '#ffffff' }}>
                     {item.discount}
                   </p>
                 </div>
 
                 <div className="mt-5 z-10 ml-[6rem]">
-                  <Link to={item.link_url || "#"}>
+                  <Link to={item.linkUrl || "#"}>
                     <button className={`${getButtonClass("secondary")} px-8 py-3`}>
-                      {item.action_text || "Shop now"}
+                      {item.actionText || "Shop now"}
                     </button>
                   </Link>
                 </div>

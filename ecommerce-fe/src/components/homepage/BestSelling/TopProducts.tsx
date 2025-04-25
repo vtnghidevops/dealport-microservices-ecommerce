@@ -9,28 +9,28 @@ import { handleProductItemClick } from "../../../utils/helpers";
 import ProductCardItem from "./ProductsCard";
 import Loading from '@/components/shared/Loading'
 import { useNavigate } from "react-router-dom";
-const TopProducts: React.FC  = () => {
+const TopProducts: React.FC<TopProductsProps> = () => {
   // fetch data
   const [topProductsData, setTopProductsData] = useState<TopProductItem[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
 
   useEffect(() => {
-        const fetchTopProductsData = async () => {
-          try {
-            const data = await ProductService.getTopSaleProducts();
-            setTopProductsData(data);
-            setLoading(false);
-          } catch (error) {
-            console.error("Error fetching testimonials:", error);
-            setLoading(false);
-          }
-        };
-    
-        fetchTopProductsData();
-      }, []);
+    const fetchTopProductsData = async () => {
+      try {
+        const data = await ProductService.getTopSaleProducts();
+        setTopProductsData(data);
+        setLoading(false);
+      } catch (error) {
+        console.error("Error fetching testimonials:", error);
+        setLoading(false);
+      }
+    };
+
+    fetchTopProductsData();
+  }, []);
+  // console.log("topProductsData", topProductsData[0].uiMetadata)
 
 
-    
   var topProducts: TopProductsProps = {
     title: "Best selling product",
     products: topProductsData,
@@ -53,6 +53,71 @@ const TopProducts: React.FC  = () => {
     return <Loading />;
   }
 
+  // Rearrange products to prioritize specific designs for positions 4 and 5
+  const arrangeProductsByDesign = (products: TopProductItem[]): TopProductItem[] => {
+    // Make a copy of the products array to avoid modifying the original
+    let sortedProducts = [...products];
+
+    // First, handle specific design priorities
+
+    // Find products with specific designs
+    const colProducts = sortedProducts.filter(
+      (product) => product.uiMetadata.setUpDesign === "col"
+    );
+
+    const doubleProducts = sortedProducts.filter(
+      (product) => product.uiMetadata.setUpDesign === "double"
+    );
+
+    // Remove the col and double products from the original array
+    sortedProducts = sortedProducts.filter(
+      (product) =>
+        product.uiMetadata.setUpDesign !== "col" &&
+        product.uiMetadata.setUpDesign !== "double"
+    );
+
+    // Create a new array with prioritized positions
+    const result: TopProductItem[] = [];
+
+    // Fill positions 1-3 with regular products
+    for (let i = 0; i < Math.min(3, sortedProducts.length); i++) {
+      result.push(sortedProducts[i]);
+    }
+
+    // Position 4 should be col design if available
+    if (colProducts.length > 0) {
+      result.push(colProducts[0]);
+    } else if (sortedProducts.length > 3) {
+      // Use next regular product if no col design
+      result.push(sortedProducts[3]);
+    }
+
+    // Position 5 should be double design if available
+    if (doubleProducts.length > 0) {
+      result.push(doubleProducts[0]);
+    } else if (sortedProducts.length > 4) {
+      // Use next regular product if no double design
+      result.push(sortedProducts[4]);
+    }
+
+    // Add a 6th product if available and we don't have 6 yet
+    if (result.length < 6) {
+      const remainingProducts = sortedProducts.filter(
+        (p, index) => index > (result.length - (colProducts.length + doubleProducts.length) - 1)
+      );
+
+      if (remainingProducts.length > 0) {
+        result.push(remainingProducts[0]);
+      }
+    }
+
+    // Ensure we limit to exactly 6 products maximum
+    return result.slice(0, 6);
+  };
+
+  // Apply the arrangement
+  const arrangedProducts = arrangeProductsByDesign(topProducts.products);
+
   return (
     <div className="w-full py-6 md:px-6">
       {/* Header */}
@@ -64,13 +129,13 @@ const TopProducts: React.FC  = () => {
         >
           {topProducts.viewAllLabel}
         </button>
-        
+
       </div>
 
       {/* Grid layout */}
-      
+
       <div className="grid grid-cols-4 gap-4">
-        {topProducts.products.map((product, index) => {
+        {arrangedProducts.map((product, index) => {
           // Ưu tiên gridSpan từ dữ liệu, nếu không có thì dùng mặc định
           const gridPosition = defaultGridPositions[index] || "col-span-1 row-span-1";
           // console.log("product in top", product)

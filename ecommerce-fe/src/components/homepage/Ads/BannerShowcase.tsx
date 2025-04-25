@@ -24,7 +24,7 @@ const BannerShowCase: React.FC = () => {
 
     fetchBannerData();
   }, []);
-  console.log("item bannershowcae:", bannerData)
+  //console.log("item bannershowcae:", bannerData)
 
   return (
     <div className="px-4 py-8">
@@ -33,7 +33,7 @@ const BannerShowCase: React.FC = () => {
           <ItemBannerShowCase
             key={index}
             id={category.id}
-            image_url={category.image_url}
+            imageUrl={category.imageUrl}  
             buttonType={category.buttonType}
             buttonText={category.buttonText}
             hasMore={category.hasMore}
@@ -48,7 +48,7 @@ const BannerShowCase: React.FC = () => {
 
 
 const ItemBannerShowCase: React.FC<BannerShowCaseItem> = ({
-  image_url,
+  imageUrl,
   buttonType,
   buttonText,
   hasMore,
@@ -75,7 +75,7 @@ const ItemBannerShowCase: React.FC<BannerShowCaseItem> = ({
         <div className="h-[190px] w-[327px] rounded-[12px] bg-white relative overflow-hidden cursor-pointer">
           <Link to={navigationPath}>
             <img
-              src={image_url}
+              src={imageUrl}
               className={`w-full h-full rounded-[12px] object-cover ${!isShopNow ? "transition-transform duration-300 ease-out hover:scale-110" : ""}`}
               alt="Banner image"
             ></img>
@@ -98,7 +98,7 @@ const ItemBannerShowCase: React.FC<BannerShowCaseItem> = ({
         <div className="h-[190px] w-[327px] rounded-[12px] bg-white relative overflow-hidden cursor-pointer">
           <Link to={navigationPath}>
             <img
-              src={image_url}
+              src={imageUrl}
               className={`w-full h-full rounded-[12px] object-cover ${!isShopNow ? "transition-transform duration-300 ease-out hover:scale-110" : ""}`}
               alt="Banner image"
             ></img>
@@ -121,7 +121,7 @@ const ItemBannerShowCase: React.FC<BannerShowCaseItem> = ({
     return (
       <div className="h-[190px] w-[327px] rounded-[12px] bg-white relative overflow-hidden cursor-pointer">
         <img
-          src={image_url}
+          src={imageUrl}
           className="w-full h-full rounded-[12px] object-cover transition-transform duration-300 ease-out hover:scale-110"
           alt="Banner image"
         ></img>
@@ -138,7 +138,7 @@ const ItemBannerShowCase: React.FC<BannerShowCaseItem> = ({
       <div className="h-[190px] w-[327px] rounded-[12px] bg-white overflow-hidden cursor-pointer">
         <Link to={navigationPath} className="block h-full w-full">
           <img
-            src={image_url}
+            src={imageUrl}
             className="w-full h-full rounded-[12px] object-cover transition-transform duration-300 ease-out hover:scale-110"
             alt="Banner image"
           />

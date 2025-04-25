@@ -23,11 +23,11 @@ const WishlistItemRow: React.FC<WishlistItemRowProps> = ({ item }) => {
   //   }
   // };
   const productForCart = {
-    id: item.id,
+    id: item.id.toString(),
     name: item.name,
     price: item.price,
     originalPrice: item.originalPrice || undefined,
-    image: item.image_url,
+    imageUrl: item.imageUrl,
     stockQuantity: item.stockQuantity
   };
   const { addToCart } = useCart();
@@ -48,7 +48,7 @@ const WishlistItemRow: React.FC<WishlistItemRowProps> = ({ item }) => {
           <div className="h-[30px] w-[30px] flex-shrink-0">
             <img
               className="h-full w-full object-contain"
-              src={item.image_url}
+              src={item.imageUrl}
               alt={item.name}
             />
           </div>
@@ -94,7 +94,7 @@ const WishlistItemRow: React.FC<WishlistItemRowProps> = ({ item }) => {
             ADD TO CART
           </button>
           <button
-            onClick={() => removeFromWishlist(item.id)}
+            onClick={() => removeFromWishlist(item.id.toString())}
             className="text-gray-400 hover:text-red-500"
           >
             <FiTrash2 size={18} />

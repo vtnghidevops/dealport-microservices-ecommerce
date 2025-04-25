@@ -14,7 +14,7 @@
 //   id: number;
 //   name: string;
 //   category: string;
-//   image_url: string;
+//   imageUrl: string;
 //   itemCode: string;
 //   price: number;
 // }

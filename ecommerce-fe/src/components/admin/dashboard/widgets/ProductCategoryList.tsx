@@ -24,7 +24,7 @@ const ProductCategoryList: React.FC<ProductCategoryListProps> = ({
             <div className="flex items-center gap-3">
               <div className="w-[46px] h-[46px] bg-gray-50 rounded-md flex items-center justify-center overflow-hidden">
                 <img
-                  src={category.image_url}
+                  src={category.imageUrl}
                   alt={category.name}
                   className="w-full h-full object-contain"
                 />

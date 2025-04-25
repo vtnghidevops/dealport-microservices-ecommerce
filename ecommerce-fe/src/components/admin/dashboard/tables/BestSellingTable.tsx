@@ -29,7 +29,7 @@ const BestSellingTable: React.FC<BestSellingTableProps> = ({
               <div className="flex items-center gap-3 pl-4 w-[240px]">
                 <div className="w-10 h-10 relative">
                   <img
-                    src={item.product.image_url}
+                    src={item.product.imageUrl}
                     alt={item.product.name}
                     className="rounded-md object-cover w-full h-full"
                   />
@@ -43,11 +43,10 @@ const BestSellingTable: React.FC<BestSellingTableProps> = ({
                 <span
                   className={`
                 inline-flex items-center px-2 py-1 text-xs rounded-full
-                ${
-                  item.status === "Stock"
-                    ? "text-green-600 bg-green-100"
-                    : "text-red-600 bg-red-100"
-                }
+                ${item.status === "Stock"
+                      ? "text-green-600 bg-green-100"
+                      : "text-red-600 bg-red-100"
+                    }
               `}
                 >
                   <span

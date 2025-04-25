@@ -12,7 +12,7 @@ const ProductCardItem: React.FC<ProductCard> = ({ product, onClick }) => {
   const {
     name,
     price,
-    image_url,
+    imageUrl,
     // actionLabel,
     uiMetadata,
     categorySlug,
@@ -23,7 +23,7 @@ const ProductCardItem: React.FC<ProductCard> = ({ product, onClick }) => {
       return (
         <div className="rounded-xl mr-[0.5rem] mt-[0.5rem] border border-gray-200">
           <Link to={`/category/${categorySlug}/${slug}`}>
-            <img src={image_url} alt={name} className="rounded-xl h-[200px] w-[310px]"></img>
+            <img src={imageUrl} alt={name} className="rounded-xl h-[200px] w-[310px]"></img>
           </Link>
         </div>
       );
@@ -31,28 +31,11 @@ const ProductCardItem: React.FC<ProductCard> = ({ product, onClick }) => {
       return (
         <div className="rounded-xl relative mr-[0.5rem] mt-[0.5rem]  border border-gray-200">
           <Link to={`/category/${categorySlug}/${slug}`}>
-            <img src={image_url
-            } alt={name} className="rounded-xl h-[200px] w-[310px]"></img>
+            <img src={imageUrl} alt={name} className="rounded-xl h-[200px] w-[310px]"></img>
           </Link>
           <span className="absolute bottom-0 p-2 text-white title font-bold right-5">
             ${price}
           </span>
-          {/* {actionLabel === "Visit store" ? (
-            <button className={buttonClasses}>
-              <span className="flex justify-center items-center ml-[-0.5rem] ">
-                {actionLabel}
-              </span>
-              <div className="bg-white border border-black w-[1.2rem] h-[1.2rem] rounded-[50%] absolute flex items-center justify-center right-2">
-                <RxArrowTopRight></RxArrowTopRight>
-              </div>
-            </button> */}
-          {/* ) : (
-            <button className={`${buttonClasses} bg-ocean-blue`}>
-              <span className="flex justify-center items-center">
-                {actionLabel}
-              </span>
-            </button>
-          )} */}
         </div>
       );
     }
@@ -61,16 +44,11 @@ const ProductCardItem: React.FC<ProductCard> = ({ product, onClick }) => {
       <div className="rounded-xl mr-[0.5rem] relative mt-[0.5rem] ">
         <Link to={`/category/${categorySlug}/${slug}`} className="block h-full">
           <img
-            src={image_url}
+            src={imageUrl}
             alt={name}
             className="rounded-xl w-[310px] h-[420px]"
           ></img>
         </Link>
-        {/* <button className={`${buttonClasses}`}>
-          <span className="flex justify-center items-center ml-[-0.5rem]">
-            {actionLabel}
-          </span>
-        </button> */}
       </div>
     );
   } else {
@@ -78,27 +56,12 @@ const ProductCardItem: React.FC<ProductCard> = ({ product, onClick }) => {
       <div className="flex rounded-xl mr-[0.5rem] items-center relative mt-[0.5rem] ">
         <Link to={`/category/${categorySlug}/${slug}`} className="flex max-w-[39rem]">
           <img
-            src={image_url}
+            src={imageUrl}
             alt={name}
             className="aspect-[16/9] h-[200px] w-[630px] rounded-xl"
           />
         </Link>
-        {/* {actionLabel === "Visit store" ? (
-          <button className={buttonClasses}>
-            <span className="flex justify-center items-center ml-[-0.5rem]">
-              {actionLabel}
-            </span>
-            <div className="bg-white border border-black w-[1.2rem] h-[1.2rem] rounded-[50%] absolute flex items-center justify-center right-2">
-              <RxArrowTopRight />
-            </div>
-          </button>
-        ) : (
-          <button className={buttonClasses}>
-            <span className="flex justify-center items-center">
-              {actionLabel}
-            </span>
-          </button>
-        )} */}
+      
       </div>
     );
   }

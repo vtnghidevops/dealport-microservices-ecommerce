@@ -11,7 +11,7 @@ const NewProductItem: React.FC<NewProductItemProps> = ({ product }) => {
       <div className="flex items-center gap-3 ">
         <div className="w-[46px] h-[46px] bg-white border border-neutral-200 rounded-md flex items-center justify-center overflow-hidden">
           <img
-            src={product.image_url}
+            src={product.imageUrl}
             alt={product.name}
             className="w-full h-[35px] object-contain"
           />

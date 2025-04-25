@@ -1,6 +1,6 @@
 export interface BannerShowCaseItem {
   id: number,
-  image_url: string,
+  imageUrl: string,
   buttonType?: string,
   buttonText?: string,
   hasMore: boolean,
@@ -10,11 +10,11 @@ export interface BannerShowCaseItem {
 
 export interface DisplayItem {
   id: number,
-  image_url: string,
+  imageUrl: string,
   buttonType?: string,
   price?: string | number,
   title?: string,
-  discount_img?: string,
+  discountImg?: string,
   type: string,     // Type of item (product or category)
   productSlug: string,      // Slug for navigation
   categorySlug: string // product type
@@ -24,7 +24,7 @@ export interface DisplayItem {
 export interface GamingItem {
   id: number,
   subtitle: string,
-  image_url: string,
+  imageUrl: string,
   type: string,     // Type of item (product or category)
   categorySlug: string // product type
 }
@@ -32,7 +32,7 @@ export interface GamingItem {
 export interface NewFashionItem {
   id: number,
   title: string,
-  image_url: string,
+  imageUrl: string,
   buttonType: string,
   type: string,     // Type of item (product or category)
   productSlug: string,      // Slug for 

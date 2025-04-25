@@ -26,7 +26,7 @@ const CategoryTable: React.FC<CategoryTableProps> = ({
       webcam: <div className="w-6 h-6 bg-black-100 rounded-full flex items-center justify-center">🎥</div>,
       bulb: <div className="w-6 h-6 bg-yellow-100 rounded-full flex items-center justify-center">💡</div>,
     };
-    
+
     return iconMap[icon] || <div className="w-6 h-6 bg-gray-100 rounded-full flex items-center justify-center">📦</div>;
   };
 
@@ -57,7 +57,7 @@ const CategoryTable: React.FC<CategoryTableProps> = ({
               <td className="py-4 px-6">
                 <div className="flex items-center">
                   <div className="border border-neutral-200 w-[40px] h-[40px] mr-3 rounded flex items-center justify-center overflow-hidden">
-                    {getCategoryIcon(category.image_url)}
+                    {getCategoryIcon(category.imageUrl)}
                   </div>
                   <span className="text-[15px] max-w-[140px]">{category.name}</span>
                 </div>
@@ -70,7 +70,7 @@ const CategoryTable: React.FC<CategoryTableProps> = ({
               </td>
               <td className="py-4 px-6">
                 <div className="flex space-x-2">
-                  <button 
+                  <button
                     onClick={() => onEdit(category)}
                     className="text-gray-500 hover:text-blue-600"
                   >
@@ -78,7 +78,7 @@ const CategoryTable: React.FC<CategoryTableProps> = ({
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 0L19 7.586l-5.586 5.586-2.762.552.552-2.762L19 4.414z" />
                     </svg>
                   </button>
-                  <button 
+                  <button
                     onClick={() => onDelete(Number(category.id))}
                     className="text-gray-500 hover:text-red-600"
                   >

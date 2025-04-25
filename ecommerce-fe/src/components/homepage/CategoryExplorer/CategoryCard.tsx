@@ -42,7 +42,7 @@ const CategoryCard: React.FC<CategoryExplorerCard> = ({
           className={`${itemHeight} w-full flex items-center justify-center overflow-hidden`}
         >
           <img
-            src={category.image_url}
+            src={category.imageUrl}
             alt={category.name}
             className="w-[148px] h-[140px] object-cover transition-transform duration-300 ease-out hover:scale-110"
           />

@@ -3,7 +3,7 @@ export interface Category {
   id: string;
   name: string;
   slug: string;
-  image_url: string; // Path or name of icon
+  imageUrl: string; // Path or name of icon
   productCount: number; // Optional count of products in this category
   createdAt: Date;
   updatedAt: Date;
@@ -28,10 +28,10 @@ export interface CategoryFilterCounts {
   outOfStock: number;
 }
 // Available category types for the discover section
-export type CategoryType = 
-  | 'Electronics' 
-  | 'Fashion' 
-  | 'Accessories' 
+export type CategoryType =
+  | 'Electronics'
+  | 'Fashion'
+  | 'Accessories'
   | 'Home & Kitchen'
   | 'Sports & Outdoors'
   | 'Toys & Games'
@@ -42,7 +42,7 @@ export type CategoryType =
  * Response structure for paginated category API calls
  */
 export interface CategoryResponse {
-    categories: Category[];
-    total: number;
-  }
+  categories: Category[];
+  total: number;
+}
 

@@ -1,8 +1,8 @@
 export interface TestimonialItem {
   id: string;
-  name: string;
-  avatarUrl: string;
-  review: string;
+  userName: string;
+  avatar: string;
+  reviewText: string;
   rating: number;
 }
 

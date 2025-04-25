@@ -6,25 +6,25 @@ import { Link } from "react-router-dom";
 
 interface CardMain {
   id?: number;
-  image_url: string;
+  imageUrl: string;
   buttonType: string;
   price?: string | number;
   title?: string;
-  discount_img?: string;
+  discountImg?: string;
   type?: string;
   productSlug?: string;
   categorySlug?: string;
 }
 
 interface CardFirst {
-  image_url: string;
+  imageUrl: string;
   type?: string;
   productSlug?: string;
   categorySlug?: string;
 }
 
 interface CardSecond {
-  image_url: string;
+  imageUrl: string;
   buttonType: string;
   type?: string;
   productSlug?: string;
@@ -50,7 +50,7 @@ const DisplayGrid: React.FC = () => {
     };
     fetchDisplayData();
   }, []);
-  console.log("item displaygrid:", displayData)
+  //console.log("item displaygrid:", displayData)
 
 
   return (
@@ -64,10 +64,10 @@ const DisplayGrid: React.FC = () => {
   );
 };
 const DisplayCard: React.FC<DisplayItem> = ({
-  image_url,
+  imageUrl,
   title,
   price,
-  discount_img,
+  discountImg,
   buttonType,
   type,
   productSlug,
@@ -91,16 +91,16 @@ const DisplayCard: React.FC<DisplayItem> = ({
   const navigationPath = getNavigationPath();
 
   // Kiểm tra các props để quyết định render card nào (Check props to decide which card to render)
-  if (title && price && discount_img) {
+  if (discountImg) {
     // Nếu có title và price, render CardMain (card đầy đủ thông tin)
     // (If there is a title and price, render CardMain with full information)
     return (
       <div className="w-[392px] h-[165px] rounded-lg overflow-hidden shadow-md transition-all hover:shadow-xl">
         <CardMain
-          image_url={image_url}
+          imageUrl={imageUrl}
           title={title}
           price={price}
-          discount_img={discount_img}
+          discountImg={discountImg}
           buttonType={buttonType || ""}
           type={type}
           productSlug={productSlug}
@@ -114,7 +114,7 @@ const DisplayCard: React.FC<DisplayItem> = ({
     return (
       <div className="rounded-lg h-[146px] w-[188px] overflow-hidden shadow-md transition-all hover:shadow-xl">
         <CardSecond
-          image_url={image_url}
+          imageUrl={imageUrl}
           buttonType={buttonType}
           type={type}
           productSlug={productSlug}
@@ -128,7 +128,7 @@ const DisplayCard: React.FC<DisplayItem> = ({
     return (
       <div className="rounded-lg h-[146px] w-[188px] overflow-hidden shadow-md transition-all">
         <CardFirst
-          image_url={image_url}
+          imageUrl={imageUrl}
           type={type}
           productSlug={productSlug}
           categorySlug={categorySlug}
@@ -138,7 +138,7 @@ const DisplayCard: React.FC<DisplayItem> = ({
   }
 };
 
-const CardFirst: React.FC<CardFirst> = ({ image_url, type, productSlug, categorySlug }) => {
+const CardFirst: React.FC<CardFirst> = ({ imageUrl, type, productSlug, categorySlug }) => {
   // Determine navigation path based on type
   let navigationPath = "#";
   if (type === "product" && productSlug) {
@@ -153,7 +153,7 @@ const CardFirst: React.FC<CardFirst> = ({ image_url, type, productSlug, category
 
   return (
     <Link to={navigationPath} className="relative h-[100%] block">
-      <img src={image_url} className="absolute rounded-xl" alt="Banner" />
+      <img src={imageUrl} className="absolute rounded-xl" alt="Banner" />
       <span className="absolute text-white text-[10px] bottom-0 ml-[1rem] mb-[0.5rem]">
         More Detail
       </span>
@@ -161,7 +161,7 @@ const CardFirst: React.FC<CardFirst> = ({ image_url, type, productSlug, category
   );
 };
 
-const CardSecond: React.FC<CardSecond> = ({ image_url, buttonType, type, productSlug, categorySlug }) => {
+  const CardSecond: React.FC<CardSecond> = ({ imageUrl, buttonType, type, productSlug, categorySlug }) => {
   // Determine navigation path based on type
   let navigationPath = "#";
   if (type === "product" && productSlug) {
@@ -176,7 +176,7 @@ const CardSecond: React.FC<CardSecond> = ({ image_url, buttonType, type, product
 
   return (
     <Link to={navigationPath} className="block relative">
-      <img src={image_url} alt="Product" />
+      <img src={imageUrl} alt="Product" />
       <div className="absolute bottom-2 left-1">
         <div className="rounded-3xl">
           <button
@@ -193,10 +193,10 @@ const CardSecond: React.FC<CardSecond> = ({ image_url, buttonType, type, product
 };
 
 const CardMain: React.FC<CardMain> = ({
-  image_url,
+  imageUrl,
   title,
   price,
-  discount_img,
+  discountImg,
   buttonType,
   type,
   productSlug,
@@ -217,10 +217,10 @@ const CardMain: React.FC<CardMain> = ({
   return (
     <Link to={navigationPath} className="relative h-full w-full block border border-gray-300 shadow-[0_4px_6px_-1px_rgba(0,0,0,0.1),5px_2px_3px_-3px_rgba(0,0,0,0.05),-5px_2px_3px_-3px_rgba(0,0,0,0.05)]">
       <div className="absolute left-[-1rem] max-w-[14rem]">
-        <img src={image_url} alt={title || "Product"} />
+        <img src={imageUrl} alt={title || "Product"} />
       </div>
       <div className="absolute max-w-[60px] top-[10%] left-[42%]">
-        {discount_img && <img src={discount_img} alt="Discount" />}
+        {discountImg && <img src={discountImg} alt="Discount" />}
       </div>
       <div className="absolute top-[27%] right-[8%]">
         <h3>{title}</h3>

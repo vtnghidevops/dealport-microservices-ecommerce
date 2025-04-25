@@ -6,7 +6,7 @@ import { Product } from "../models/product.model";
 //   name: string;
 //   category: string;
 //   price: number;
-//   image_url: string;
+//   imageUrl: string;
 //   itemCode: string;
 // }
 
@@ -63,7 +63,7 @@ const TopProductsTable: React.FC<TopProductsTableProps> = ({ products }) => {
               <div className="flex items-center gap-[16px] w-full ">
                 <div className="relative bg-gray-100 rounded-md overflow-hidden w-[56px] h-[56px]">
                   <img
-                    src={product.image_url}
+                    src={product.imageUrl}
                     alt={product.name}
                     className="object-cover w-[56px] h-[56px]"
                   />

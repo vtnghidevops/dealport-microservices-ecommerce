@@ -26,7 +26,7 @@ const GamingBanner: React.FC = () => {
 
     fetchBannerData();
   }, []);
-  console.log("item gamingbanner:", gamingData)
+  //console.log("item gamingbanner:", gamingData)
 
 
   if (loading) {
@@ -50,7 +50,7 @@ const GamingBanner: React.FC = () => {
 
           return (
             <Link key={item.id} to={navigationPath}>
-              <SubGamingBanner subtitle={item.subtitle} image={item.image_url} />
+              <SubGamingBanner subtitle={item.subtitle} image={item.imageUrl} />
             </Link>
           );
         })}

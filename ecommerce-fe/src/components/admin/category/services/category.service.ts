@@ -10,7 +10,7 @@ const mockCategories: Category[] = [
     id: '1',
     name: 'Wireless Bluetooth Headphones',
     slug: 'wireless-bluetooth-headphones',
-    image_url: 'headphones',
+    imageUrl: 'headphones',
     productCount: 25,
     createdAt: new Date('2025-01-01'),
     updatedAt: new Date('2025-01-01'),
@@ -20,7 +20,7 @@ const mockCategories: Category[] = [
     id: '2',
     name: 'Men\'s T-Shirt',
     slug: 'mens-t-shirt',
-    image_url: 'tshirt',
+    imageUrl: 'tshirt',
     productCount: 20,
     createdAt: new Date('2025-01-01'),
     updatedAt: new Date('2025-01-01'),
@@ -30,7 +30,7 @@ const mockCategories: Category[] = [
     id: '3',
     name: 'Men\'s Leather Wallet',
     slug: 'mens-leather-wallet',
-    image_url: 'wallet',
+    imageUrl: 'wallet',
     productCount: 35,
     createdAt: new Date('2025-01-01'),
     updatedAt: new Date('2025-01-01'),
@@ -40,7 +40,7 @@ const mockCategories: Category[] = [
     id: '4',
     name: 'Memory Foam Pillow',
     slug: 'memory-foam-pillow',
-    image_url: 'pillow',
+    imageUrl: 'pillow',
     productCount: 40,
     createdAt: new Date('2025-01-01'),
     updatedAt: new Date('2025-01-01'),
@@ -50,7 +50,7 @@ const mockCategories: Category[] = [
     id: '5',
     name: 'Coffee Maker',
     slug: 'coffee-maker',
-    image_url: 'coffee',
+    imageUrl: 'coffee',
     productCount: 45,
     createdAt: new Date('2025-01-01'),
     updatedAt: new Date('2025-01-01'),
@@ -60,7 +60,7 @@ const mockCategories: Category[] = [
     id: '6',
     name: 'Casual Baseball Cap',
     slug: 'casual-baseball-cap',
-    image_url: 'cap',
+    imageUrl: 'cap',
     productCount: 55,
     createdAt: new Date('2025-01-01'),
     updatedAt: new Date('2025-01-01'),
@@ -70,7 +70,7 @@ const mockCategories: Category[] = [
     id: '7',
     name: 'Full HD Webcam',
     slug: 'full-hd-webcam',
-    image_url: 'webcam',
+    imageUrl: 'webcam',
     productCount: 20,
     createdAt: new Date('2025-01-01'),
     updatedAt: new Date('2025-01-01'),
@@ -80,7 +80,7 @@ const mockCategories: Category[] = [
     id: '8',
     name: 'Smart LED Color Bulb',
     slug: 'smart-led-color-bulb',
-    image_url: 'bulb',
+    imageUrl: 'bulb',
     productCount: 16,
     createdAt: new Date('2025-01-01'),
     updatedAt: new Date('2025-01-01'),
@@ -90,7 +90,7 @@ const mockCategories: Category[] = [
     id: '9',
     name: 'Men\'s T-Shirt',
     slug: 'mens-t-shirt-2',
-    image_url: 'tshirt',
+    imageUrl: 'tshirt',
     productCount: 10,
     createdAt: new Date('2025-01-01'),
     updatedAt: new Date('2025-01-01'),
@@ -100,7 +100,7 @@ const mockCategories: Category[] = [
     id: '10',
     name: 'Men\'s Leather Wallet',
     slug: 'mens-leather-wallet-2',
-    image_url: 'wallet',
+    imageUrl: 'wallet',
     productCount: 35,
     createdAt: new Date('2025-01-01'),
     updatedAt: new Date('2025-01-01'),
@@ -112,14 +112,14 @@ const mockCategories: Category[] = [
  * Mock discover categories for the UI
  */
 export const discoverCategories = [
-  { name: 'Electronics', image_url: '/images/exploring/electronic.png' },
-  { name: 'Fashion', image_url: '/images/exploring/fashion.png' },
-  { name: 'Accessories', image_url: '/images/exploring/fashion.png' },
-  { name: 'Home & Kitchen', image_url: '/images/exploring/home.png' },
-  { name: 'Sports & Outdoors', image_url: '/images/exploring/grocery.png' },
-  { name: 'Toys & Games', image_url: '/images/exploring/toys.png' },
-  { name: 'Health & Fitness', image_url: '/images/exploring/toys.png' },
-  { name: 'Books', image_url: '/images/exploring/toys.png' },
+  { name: 'Electronics', imageUrl: '/images/exploring/electronic.png' },
+  { name: 'Fashion', imageUrl: '/images/exploring/fashion.png' },
+  { name: 'Accessories', imageUrl: '/images/exploring/fashion.png' },
+  { name: 'Home & Kitchen', imageUrl: '/images/exploring/home.png' },
+  { name: 'Sports & Outdoors', imageUrl: '/images/exploring/grocery.png' },
+  { name: 'Toys & Games', imageUrl: '/images/exploring/toys.png' },
+  { name: 'Health & Fitness', imageUrl: '/images/exploring/toys.png' },
+  { name: 'Books', imageUrl: '/images/exploring/toys.png' },
 ];
 
 /**
@@ -132,20 +132,20 @@ export class CategoryService {
    */
   static getCategories = async (filter: CategoryFilter): Promise<CategoryResponse> => {
     let filteredCategories = [...mockCategories];
-    
+
     if (filter.search) {
       const searchTerm = filter.search.toLowerCase();
-      filteredCategories = filteredCategories.filter(category => 
+      filteredCategories = filteredCategories.filter(category =>
         category.name.toLowerCase().includes(searchTerm)
       );
     }
-    
+
     if (filter.status !== 'all') {
-      filteredCategories = filteredCategories.filter(category => 
+      filteredCategories = filteredCategories.filter(category =>
         filter.status === 'active' ? category.isActive : !category.isActive
       );
     }
-    
+
     // Apply product filter if specified
     if (filter.productFilter) {
       switch (filter.productFilter) {
@@ -173,16 +173,16 @@ export class CategoryService {
         // 'all' case doesn't need filtering
       }
     }
-    
+
     // Get total count before pagination
     const total = filteredCategories.length;
-    
+
     // Pagination
     const page = filter.page || 1;
     const limit = filter.limit || 10;
     const start = (page - 1) * limit;
     const paginatedCategories = filteredCategories.slice(start, start + limit);
-    
+
     return Promise.resolve({
       categories: paginatedCategories,
       total
@@ -253,7 +253,7 @@ export class CategoryService {
   /**
    * Delete a category
    */
-  static deleteCategory = async (id: string ): Promise<boolean> => {
+  static deleteCategory = async (id: string): Promise<boolean> => {
     const index = mockCategories.findIndex((c) => c.id === id);
     if (index !== -1) {
       mockCategories.splice(index, 1);

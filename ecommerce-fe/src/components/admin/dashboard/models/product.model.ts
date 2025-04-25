@@ -4,7 +4,7 @@ export interface Product {
   category: string;
   price: number;
   itemCode?: string;
-  image_url?: string;
+  imageUrl?: string;
 }
 
 export interface BestSellingProduct {
@@ -17,13 +17,13 @@ export interface BestSellingProduct {
 export interface ProductCategory {
   id: number;
   name: string;
-  image_url: string;
+  imageUrl: string;
 }
 
 export interface NewProduct {
   id: number;
   name: string;
   price: number;
-  image_url?: string;
+  imageUrl?: string;
   itemCode?: string;
 }

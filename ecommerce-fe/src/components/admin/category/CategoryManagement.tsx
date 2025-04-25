@@ -152,7 +152,7 @@ export const CategoryManagement: React.FC = () => {
                   <CategoryCard
                     key={index}
                     name={category.name}
-                    image_url={category.image_url}
+                    imageUrl={category.imageUrl}
                   />
                 ))}
                 <div className="absolute right-[2%] top-1/2 -translate-y-1/2 ">
