@@ -1,6 +1,6 @@
 // components/admin/product/add/components/ProductShipping.tsx
 import React from "react";
-import { ShippingInfo } from "../models/product.model";
+import { ShippingInfo } from "@/types/product.model";
 
 interface ProductShippingProps {
   shipping: ShippingInfo;

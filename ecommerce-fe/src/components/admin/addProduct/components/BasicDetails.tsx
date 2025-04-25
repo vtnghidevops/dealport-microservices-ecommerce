@@ -1,6 +1,6 @@
 // components/admin/product/add/components/BasicDetails.tsx
 import React, { ChangeEvent } from "react";
-import { Product } from "../models/product.model";
+import { Product } from "@/types/product.model";
 
 interface BasicDetailsProps {
   product: Product;

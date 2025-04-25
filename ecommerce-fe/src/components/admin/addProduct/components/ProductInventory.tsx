@@ -1,6 +1,6 @@
 // components/admin/product/add/components/ProductInventory.tsx
 import React, { ChangeEvent } from "react";
-import { Product } from "../models/product.model";
+import { Product } from "@/types/product.model";
 
 interface ProductInventoryProps {
   product: Product;
@@ -26,14 +26,14 @@ export const ProductInventory: React.FC<ProductInventoryProps> = ({
         ...e,
         target: {
           ...e.target,
-          name: "stock_quantity",
+          name: "stockQuantity",
           value
         }
       } as ChangeEvent<HTMLInputElement>);
     }
   };
 
-  const isUnlimited = product.stock_quantity === 999999;
+  const isUnlimited = product.stockQuantity === 999999;
 
   return (
     <div className="bg-white p-[1.25rem] rounded-lg mb-5">
@@ -47,8 +47,8 @@ export const ProductInventory: React.FC<ProductInventoryProps> = ({
           </label>
           <input
             type="text"
-            name="stock_quantity"
-            value={isUnlimited ? "" : product.stock_quantity}
+            name="stockQuantity"
+            value={isUnlimited ? "" : product.stockQuantity}
             onChange={handleQuantityChange}
             placeholder="Enter quantity"
             disabled={isUnlimited}
@@ -69,7 +69,7 @@ export const ProductInventory: React.FC<ProductInventoryProps> = ({
                       ...e,
                       target: {
                         ...e.target,
-                        name: "stock_quantity",
+                        name: "stockQuantity",
                         value: e.target.checked ? "999999" : "0",
                       },
                     } as ChangeEvent<HTMLInputElement>);
@@ -92,7 +92,6 @@ export const ProductInventory: React.FC<ProductInventoryProps> = ({
           <div className="relative">
             <select
               name="stock_status"
-              value={product.stock_status}
               onChange={onChange}
               className="text-cyprus w-full border border-gray-200 bg-neutral-50 rounded-lg p-2 pr-10 appearance-none focus:outline-none focus:border-ocean-green"
             >
@@ -118,40 +117,6 @@ export const ProductInventory: React.FC<ProductInventoryProps> = ({
             </div>
           </div>
         </div>
-      </div>
-
-      <div className="mb-4 mt-4">
-        <label className="block text-cyprus font-bold text-[15px] mb-2">
-          SKU (Stock Keeping Unit)
-        </label>
-        <input
-          type="text"
-          name="sku"
-          value={product.sku || ''}
-          onChange={onChange}
-          placeholder="e.g. PRD-12345"
-          className="w-full border border-gray-200 rounded-lg p-2 bg-neutral-50 focus:outline-none focus:border-ocean-green"
-        />
-      </div>
-
-      <div className="mb-4 mt-4">
-        <label className="flex items-center cursor-pointer">
-          <input
-            type="checkbox"
-            name="highlighted"
-            checked={product.highlighted}
-            onChange={(e) =>
-              onChange({
-                ...e,
-                target: { ...e.target, name: "highlighted", type: "checkbox" },
-              } as ChangeEvent<HTMLInputElement>)
-            }
-            className="h-[20px] w-[20px] text-ocean-green focus:ring-green-500 border-gray-300 rounded"
-          />
-          <span className="ml-2 text-[15px] text-neutral-500">
-            Highlight this product in a featured section.
-          </span>
-        </label>
       </div>
 
 

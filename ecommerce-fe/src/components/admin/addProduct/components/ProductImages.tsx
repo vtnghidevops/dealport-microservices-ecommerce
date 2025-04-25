@@ -3,6 +3,7 @@ import React, { ChangeEvent } from "react";
 import { FaImage } from "react-icons/fa6";
 import { PiRepeatFill } from "react-icons/pi";
 import { CiCirclePlus } from "react-icons/ci";
+
 interface ProductImagesProps {
   selectedImages: string[];
   mainImage: string | null;
@@ -11,6 +12,22 @@ interface ProductImagesProps {
   onSetMainImage: (image: string) => void;
   isUploading?: boolean;
 }
+
+// Đơn giản hóa việc xử lý URL hình ảnh
+const getDisplayImageUrl = (url: string): string => {
+  // Nếu URL đã là URL đầy đủ, giữ nguyên
+  if (url && url.startsWith('http')) {
+    return url;
+  }
+
+  // Nếu URL là đường dẫn tương đối của product image
+  if (url && url.startsWith('/api/products/images/')) {
+    return `http://localhost:8080${url}`;
+  }
+
+  // Trường hợp khác - giữ nguyên URL
+  return url;
+};
 
 export const ProductImages: React.FC<ProductImagesProps> = ({
   selectedImages,
@@ -34,7 +51,7 @@ export const ProductImages: React.FC<ProductImagesProps> = ({
           <div className="border border-neutral-300 rounded-lg relative w-full mb-3 aspect-[4/3] overflow-hidden">
             <div className="w-full h-full flex items-center justify-center bg-neutral-50">
               <img
-                src={mainImage}
+                src={getDisplayImageUrl(mainImage)}
                 className="max-w-full max-h-full object-contain"
                 alt="Product main image"
                 style={{ maxHeight: "100%", maxWidth: "100%" }}
@@ -109,7 +126,7 @@ export const ProductImages: React.FC<ProductImagesProps> = ({
               >
                 <div className="w-[80px] h-[80px] flex items-center justify-center bg-neutral-50 overflow-hidden">
                   <img
-                    src={img}
+                    src={getDisplayImageUrl(img)}
                     className="max-w-full max-h-full object-contain"
                     alt={`Product ${idx + 1}`}
                   />

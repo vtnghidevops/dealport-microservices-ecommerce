@@ -1,6 +1,6 @@
 // components/admin/product/add/components/ProductPricing.tsx
 import React, { ChangeEvent, useEffect } from "react";
-import { Product } from "../models/product.model";
+import { Product } from "@/types/product.model";
 
 interface ProductPricingProps {
   product: Product;
@@ -33,8 +33,8 @@ export const ProductPricing: React.FC<ProductPricingProps> = ({
 
   // Calculate discounted price based on original price and discount percentage
   const calculateDiscountedPrice = () => {
-    if (product.original_price && product.discount) {
-      const discountedPrice = product.original_price - (product.original_price * product.discount / 100);
+    if (product.originalPrice && product.discount) {
+      const discountedPrice = product.originalPrice - (product.originalPrice * product.discount / 100);
       return discountedPrice.toFixed(2);
     }
     return product.price ? product.price.toString() : '';
@@ -47,20 +47,20 @@ export const ProductPricing: React.FC<ProductPricingProps> = ({
 
   // Update price whenever original_price or discount changes
   useEffect(() => {
-    if (product.original_price && product.discount) {
-      const discountedPrice = product.original_price - (product.original_price * product.discount / 100);
+    if (product.originalPrice && product.discount) {
+      const discountedPrice = product.originalPrice - (product.originalPrice * product.discount / 100);
 
       // Create synthetic event to update price
       const priceEvent = {
         target: {
           name: "price",
-          value: discountedPrice.toString()
+          value: discountedPrice.toFixed(2)
         }
       } as ChangeEvent<HTMLInputElement>;
 
       onChange(priceEvent);
     }
-  }, [product.original_price, product.discount, onChange]);
+  }, [product.originalPrice, product.discount, onChange]);
 
   // Handle price change directly
   const handlePriceChange = (e: ChangeEvent<HTMLInputElement>) => {
@@ -80,6 +80,12 @@ export const ProductPricing: React.FC<ProductPricingProps> = ({
     }
   };
 
+  // Format discount amount to display with 2 decimal places
+  const formatSavingsAmount = (amount: string) => {
+    if (!amount) return "0.00";
+    return parseFloat(amount).toFixed(2);
+  };
+
   return (
     <div className="bg-white rounded-lg p-[1.25rem] mt-5 mb-6">
       <h2 className="block text-cyprus font-bold text-[22px] mb-6">
@@ -95,8 +101,8 @@ export const ProductPricing: React.FC<ProductPricingProps> = ({
             <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500">$</span>
             <input
               type="text"
-              name="original_price"
-              value={product.original_price || ""}
+              name="originalPrice"
+              value={product.originalPrice || ""}
               onChange={handleNumericInput}
               placeholder="999.89"
               className="w-full border pl-[25px] text-cyprus bg-neutral-50 border-gray-200 rounded-lg p-2 focus:outline-none focus:border-ocean-green"
@@ -141,7 +147,7 @@ export const ProductPricing: React.FC<ProductPricingProps> = ({
           </div>
           {parseFloat(discountAmount) > 0 && (
             <p className="text-sm text-green-600 mt-1">
-              Save: <span className="font-semibold">${discountAmount}</span>
+              Save: <span className="font-semibold">${formatSavingsAmount(discountAmount)}</span>
             </p>
           )}
         </div>
@@ -156,7 +162,7 @@ export const ProductPricing: React.FC<ProductPricingProps> = ({
             <input
               type="date"
               name="expirationStart"
-              value={product.expirationStart || ""}
+              value={product.uiMetadata?.expirationStart || ""}
               onChange={handleDateChange}
               placeholder="Start Date"
               className="w-full border border-gray-200 rounded-lg p-2 pr-10 text-cyprus bg-neutral-50 focus:outline-none focus:border-ocean-green"
@@ -181,7 +187,7 @@ export const ProductPricing: React.FC<ProductPricingProps> = ({
             <input
               type="date"
               name="expirationEnd"
-              value={product.expirationEnd || ""}
+              value={product.uiMetadata?.expirationEnd || ""}
               onChange={handleDateChange}
               placeholder="End Date"
               className="w-full border border-gray-200 rounded-lg p-2 pr-10 bg-neutral-50 focus:outline-none focus:border-ocean-green"
