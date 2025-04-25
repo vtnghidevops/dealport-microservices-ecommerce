@@ -140,8 +140,8 @@ export function useImageUpload() {
         // Create a ProductImage object with the local URL
         newImages.push({
           url: localUrl,
-          is_primary: images.length === 0 && i === 0,
-          display_order: images.length + i
+          isPrimary: images.length === 0 && i === 0,
+          displayOrder: images.length + i
         });
       }
 
@@ -154,7 +154,7 @@ export function useImageUpload() {
       // Set first image as main if this is the first upload
       if (images.length === 0 && newImages.length > 0) {
         setMainImageIndex(0);
-        updatedImages[0].is_primary = true;
+        updatedImages[0].isPrimary = true;
       }
 
       setImages(updatedImages);
@@ -195,11 +195,11 @@ export function useImageUpload() {
     // Ensure there is still one primary image
     if (newImages.length > 0) {
       // Reset all images to non-primary
-      newImages.forEach(img => img.is_primary = false);
+      newImages.forEach(img => img.isPrimary = false);
 
       // Set the new main image as primary
       const newMainIndex = mainImageIndex >= newImages.length ? 0 : (mainImageIndex < 0 ? 0 : mainImageIndex);
-      newImages[newMainIndex].is_primary = true;
+      newImages[newMainIndex].isPrimary = true;
       setMainImageIndex(newMainIndex);
     }
 
@@ -211,10 +211,10 @@ export function useImageUpload() {
       const newImages = [...images];
 
       // Remove primary status from all images
-      newImages.forEach(img => img.is_primary = false);
+      newImages.forEach(img => img.isPrimary = false);
 
       // Set new image as primary
-      newImages[index].is_primary = true;
+      newImages[index].isPrimary = true;
       setMainImageIndex(index);
       setImages(newImages);
     }
@@ -228,20 +228,35 @@ export function useImageUpload() {
       throw new Error('Product ID is required for image upload');
     }
 
-    console.log('🧪 DEBUG - prepareImagesForSubmit: Using product ID:', productId);
+   // console.log('🧪 DEBUG - prepareImagesForSubmit: Using product ID:', productId);
 
     // Step 1: Find all local images that need to be uploaded
     const localImagesUrls = Object.keys(localImages);
     const dataUrls = images.filter(img => img.url.startsWith('data:'));
-    const needsUpload = localImagesUrls.length > 0 || dataUrls.length > 0;
+    const blobUrls = images.filter(img => img.url.startsWith('blob:'));
 
-    console.log('🧪 DEBUG - prepareImagesForSubmit: Found', localImagesUrls.length, 'blob URLs and',
-      dataUrls.length, 'data URLs that need uploading');
+    // Make sure we capture ALL blob URLs, not just those in localImages
+    blobUrls.forEach(img => {
+      if (!localImagesUrls.includes(img.url)) {
+        console.warn('⚠️ WARNING - Found blob URL not in localImages:', img.url);
+        // Add to localImages if we can find the corresponding file
+        // Note: This is a fallback and may not work in all cases
+      }
+    });
 
-    // If no uploads needed, just return current URLs
+    const needsUpload = localImagesUrls.length > 0 || dataUrls.length > 0 || blobUrls.length > 0;
+
+    // console.log('🧪 DEBUG - prepareImagesForSubmit: Found', localImagesUrls.length, 'blob URLs in localImages,',
+      // blobUrls.length, 'total blob URLs, and', dataUrls.length, 'data URLs that need uploading');
+
+    // If no uploads needed, just return current URLs that are not blob: or data: URLs
     if (!needsUpload) {
-      console.log('🧪 DEBUG - No local images to upload, returning current server URLs');
-      return images.map(img => img.url);
+      const validServerUrls = images
+        .map(img => img.url)
+        .filter(url => !url.startsWith('blob:') && !url.startsWith('data:'));
+
+      // console.log('🧪 DEBUG - No local images to upload, returning valid server URLs:', validServerUrls);
+      return validServerUrls;
     }
 
     setIsUploading(true);
@@ -252,12 +267,14 @@ export function useImageUpload() {
 
       // Add files from localImages (blob URLs)
       localImagesUrls.forEach(url => {
-        filesToUpload.push(localImages[url]);
+        if (localImages[url]) {
+          filesToUpload.push(localImages[url]);
+        }
       });
 
       // Convert data URLs to files if any
       if (dataUrls.length > 0) {
-        console.log('🧪 DEBUG - Converting', dataUrls.length, 'data URLs to files');
+        // console.log('🧪 DEBUG - Converting', dataUrls.length, 'data URLs to files');
 
         // Convert data URLs to files
         const dataUrlFiles = await Promise.all(
@@ -282,14 +299,17 @@ export function useImageUpload() {
       // Step 3: Upload all files to server
       if (filesToUpload.length === 0) {
         console.warn('⚠️ WARNING - No files to upload after preparation');
-        return images.map(img => img.url);
+        // Return only valid server URLs (not blob: or data:)
+        return images
+          .map(img => img.url)
+          .filter(url => !url.startsWith('blob:') && !url.startsWith('data:'));
       }
 
-      console.log('🧪 DEBUG - Uploading', filesToUpload.length, 'files to server with product ID:', productId);
+     // console.log('🧪 DEBUG - Uploading', filesToUpload.length, 'files to server with product ID:', productId);
 
       // Upload files to server with product ID
       const serverUrls = await productService.uploadImages(filesToUpload, productId);
-      console.log('🧪 DEBUG - Server responded with', serverUrls.length, 'URLs:', serverUrls);
+      // console.log('🧪 DEBUG - Server responded with', serverUrls.length, 'URLs:', serverUrls);
 
       // Step 4: Replace local URLs with server URLs
       if (serverUrls.length > 0) {
@@ -321,6 +341,7 @@ export function useImageUpload() {
               url: serverUrl
             };
           }
+          // Don't add hostname to relative paths - server expects relative URLs
           return img;
         });
 
@@ -333,22 +354,29 @@ export function useImageUpload() {
         setImages(updatedImages);
         setLocalImages({});
 
-        // Return just the URLs for the product
-        const finalUrls = updatedImages.map(img => img.url);
-        console.log('✅ Final image URLs after upload:', finalUrls);
+        // Return just the valid URLs for the product (no blob: or data: URLs)
+        const finalUrls = updatedImages
+          .map(img => img.url)
+          .filter(url => !url.startsWith('blob:') && !url.startsWith('data:'));
+
+       // console.log('✅ Final image URLs after upload:', finalUrls);
         return finalUrls;
       } else {
-        // If no URLs returned but upload didn't throw, return existing images
+        // If no URLs returned but upload didn't throw, return existing valid images
         console.warn('⚠️ Warning: Upload succeeded but no URLs returned');
-        return images.map(img => img.url);
+        return images
+          .map(img => img.url)
+          .filter(url => !url.startsWith('blob:') && !url.startsWith('data:'));
       }
     } catch (error) {
       console.error('❌ ERROR - Image upload failed:', error);
       setUploadError('Failed to upload images to server: ' +
         (error instanceof Error ? error.message : 'Unknown error'));
 
-      // Return current URLs even on failure
-      return images.map(img => img.url);
+      // Return current valid URLs even on failure (filter out blob: and data:)
+      return images
+        .map(img => img.url)
+        .filter(url => !url.startsWith('blob:') && !url.startsWith('data:'));
     } finally {
       setIsUploading(false);
     }
@@ -356,7 +384,10 @@ export function useImageUpload() {
 
   // Get image URLs in the right format for the product object
   const getImageUrlsForProduct = (): string[] => {
-    return images.map(img => img.url);
+    return images.map(img => {
+      // Return URLs as is - don't add hostname
+      return img.url;
+    });
   };
 
   return {

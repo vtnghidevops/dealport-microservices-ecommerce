@@ -166,7 +166,7 @@ const ProductService = {
   addProductReview: async (review: Omit<ProductReview, "id">): Promise<ProductReview> => {
     try {
       const response = await axios.post<ApiResponse<ProductReview>>(
-        `${API_BASE_URL}/products/${review.product_id}/reviews`,
+        `${API_BASE_URL}/products/${review.productId}/reviews`,
         review
       );
       return response.data.data;
@@ -213,11 +213,21 @@ const ProductService = {
       );
 
       return response.data.data.map(product => {
+        // Parse the uiMetadata if it's a string
+        let metadata = product.uiMetadata;
+        if (typeof product.uiMetadata === 'string') {
+          try {
+            metadata = JSON.parse(product.uiMetadata);
+          } catch (err) {
+            console.error("Error parsing uiMetadata:", err);
+          }
+        }
+
         return {
           ...product,
           uiMetadata: {
-            setUpDesign: product.uiMetadata.setUpDesign,
-            isCommingSoon: product.uiMetadata.isCommingSoon
+            setUpDesign: metadata.setUpDesign || 'row',
+            isCommingSoon: metadata.isCommingSoon || false
           }
         };
       });
@@ -271,7 +281,7 @@ const CategoryService = {
       return handleApiError(error);
     }
   },
-  
+
   getCategoryById: async (id: string): Promise<Category> => {
     try {
       const response = await axios.get<ApiResponse<Category>>(
@@ -282,7 +292,7 @@ const CategoryService = {
       return handleApiError(error);
     }
   },
-  
+
   getCategoryBySlug: async (slug: string): Promise<Category> => {
     try {
       const response = await axios.get<ApiResponse<Category>>(
@@ -293,7 +303,7 @@ const CategoryService = {
       return handleApiError(error);
     }
   },
-  };
+};
 
 const BannerService = {
   // Slider banner methods
@@ -314,16 +324,16 @@ const BannerService = {
         title: banner.title,
         subtitle: banner.subtitle,
         description: banner.description,
-        image_url: banner.image_url,
-        link_url: banner.link_url,
-        action_text: banner.action_text,
-        is_active: banner.is_active,
+        imageUrl: banner.imageUrl,
+        linkUrl: banner.linkUrl,
+        actionText: banner.actionText,
+        isActive: banner.isActive,
         priority: banner.priority,
         discount: banner.discount,
-        highlight_text: banner.highlight_text,
-        background_color: banner.background_color,
-        text_color: banner.text_color,
-        animation_type: banner.animation_type
+        highlightText: banner.highlightText,
+        backgroundColor: banner.backgroundColor,
+        textColor: banner.textColor,
+        animationType: banner.animationType
       }));
     } catch (error) {
       console.error('Error fetching slider banners:', error);
@@ -340,16 +350,16 @@ const BannerService = {
         title: banner.title,
         subtitle: banner.subtitle,
         description: banner.description,
-        image_url: banner.image_url,
-        link_url: banner.link_url,
-        action_text: banner.action_text,
-        is_active: banner.is_active,
+        imageUrl: banner.imageUrl,
+        linkUrl: banner.linkUrl,
+        actionText: banner.actionText,
+        isActive: banner.isActive,
         priority: banner.priority,
         discount: banner.discount,
-        highlight_text: banner.highlight_text,
-        background_color: banner.background_color,
-        text_color: banner.text_color,
-        animation_type: banner.animation_type
+        highlightText: banner.highlightText,
+        backgroundColor: banner.backgroundColor,
+        textColor: banner.textColor,
+        animationType: banner.animationType
       };
     } catch (error) {
       console.error(`Error fetching slider banner with ID ${id}:`, error);
@@ -391,7 +401,7 @@ const BannerService = {
       return undefined;
     }
   }
-}; 
+};
 
 const TestimonialService = {
   getTestimonials: async (limit: number = 7): Promise<TestimonialItem[]> => {

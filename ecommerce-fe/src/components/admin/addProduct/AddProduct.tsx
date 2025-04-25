@@ -73,7 +73,7 @@ export const AddProduct: React.FC = () => {
         imgSlider: imageUrls
       }));
 
-      console.log("Updated product images:", imageUrls);
+      // console.log("Updated product images:", imageUrls);
     }
   }, [images, setProduct, getImageUrlsForProduct]);
 
@@ -94,7 +94,7 @@ export const AddProduct: React.FC = () => {
   // Override handlePublish to upload images first
   const handlePublish = async () => {
     try {
-      console.log("🚀 Starting publish workflow...");
+      // console.log("🚀 Starting publish workflow...");
 
       // 1. Validate product data
       const validationError = validateProductData();
@@ -113,7 +113,7 @@ export const AddProduct: React.FC = () => {
       setIsUploading(true);
 
       // 3. First, create a basic product without images to get a valid product ID
-      console.log("🔄 Creating initial product without images to get an ID...");
+     // console.log("🔄 Creating initial product without images to get an ID...");
 
       // Make a copy of the product and set imgSlider to empty for initial creation
       const initialProduct = {
@@ -134,11 +134,11 @@ export const AddProduct: React.FC = () => {
 
         // Double check ID was returned
         if (!productId) {
-          console.error("❌ Created product missing ID:", createdProduct);
+          // console.error("❌ Created product missing ID:", createdProduct);
           throw new Error("Created product is missing ID");
         }
 
-        console.log("✅ Product created with ID:", productId);
+        // console.log("✅ Product created with ID:", productId);
 
         // Update product state explicitly to ensure ID is captured
         setProduct(prevProduct => ({
@@ -152,20 +152,20 @@ export const AddProduct: React.FC = () => {
           hasLocalImages = images.some(img => img.url.startsWith('blob:') || img.url.startsWith('data:'));
         }
 
-        console.log("🖼️ Images check: ", images.length, "images,", hasLocalImages ? "has local images" : "all images are server URLs");
+        // console.log("🖼️ Images check: ", images.length, "images,", hasLocalImages ? "has local images" : "all images are server URLs");
 
         // 5. If we have local images, upload them with the product ID
         if (hasLocalImages) {
-          console.log("🔄 Uploading local images to server with product ID:", productId);
+          // console.log("🔄 Uploading local images to server with product ID:", productId);
 
           try {
             // Upload images with the valid product ID
             const serverImageUrls = await prepareImagesForSubmit(productId);
-            console.log("✅ Local images uploaded successfully, received URLs:", serverImageUrls);
+           // console.log("✅ Local images uploaded successfully, received URLs:", serverImageUrls);
 
             // Update the product with server URLs
             if (serverImageUrls.length > 0) {
-              console.log("🔄 Updating product with image URLs...");
+             // console.log("🔄 Updating product with image URLs...");
 
               // Important: Update local product state with images
               setProduct(prev => ({
@@ -180,8 +180,9 @@ export const AddProduct: React.FC = () => {
               });
 
               if (result) {
-                console.log("✅ Product updated with images successfully!");
+               // console.log("✅ Product updated with images successfully!");
                 toast({
+                  variant: "success",
                   title: "Success",
                   description: "Product published and images uploaded successfully!"
                 });
@@ -195,7 +196,7 @@ export const AddProduct: React.FC = () => {
               }
             }
           } catch (uploadError: any) {
-            console.error("❌ Error during image upload:", uploadError);
+           //  console.error("❌ Error during image upload:", uploadError);
             toast({
               title: "Image Upload Failed",
               description: "Product was created but image upload failed: " + (uploadError.message || "Unknown error"),
@@ -205,12 +206,13 @@ export const AddProduct: React.FC = () => {
         } else {
           // No images to upload
           toast({
+            variant: "success",
             title: "Success",
             description: "Product published successfully!"
           });
         }
       } catch (createError: any) {
-        console.error("❌ Error creating product:", createError);
+       // console.error("❌ Error creating product:", createError);
         toast({
           title: "Create Product Failed",
           description: createError.message || "Unknown error creating product",
@@ -218,7 +220,7 @@ export const AddProduct: React.FC = () => {
         });
       }
     } catch (error: any) {
-      console.error("❌ Uncaught error in handlePublish:", error);
+      // console.error("❌ Uncaught error in handlePublish:", error);
       toast({
         title: "Error",
         description: error.message || "An unexpected error occurred",
@@ -235,7 +237,7 @@ export const AddProduct: React.FC = () => {
     const selectedCategory = categories.find(cat => cat.id === parseInt(categoryId));
 
     if (selectedCategory) {
-      console.log("Selected category in component:", selectedCategory);
+      //console.log("Selected category in component:", selectedCategory);
 
       setProduct(prev => ({
         ...prev,
@@ -269,10 +271,10 @@ export const AddProduct: React.FC = () => {
     setShowDebugData(true);
 
     // Additional logging focused on slug
-    console.log("Debug - Product name:", product.name);
-    console.log("Debug - Product slug:", product.slug);
-    console.log("Debug - Category:", product.categoryId, product.categorySlug);
-    console.log("Debug - imgSlider:", debugProduct.imgSlider?.length || 0, "images");
+    // console.log("Debug - Product name:", product.name);
+    // console.log("Debug - Product slug:", product.slug);
+    // console.log("Debug - Category:", product.categoryId, product.categorySlug);
+    // console.log("Debug - imgSlider:", debugProduct.imgSlider?.length || 0, "images");
   };
 
   return (
