@@ -25,7 +25,7 @@ const initialProduct: Product = { // TypeScript hack: undefined for new products
   discount: 0,
   categoryId: "0",
   stockQuantity: 10,
-  image_url: "",
+  imageUrl: "",
   imgSlider: [], // This will always be a string[] in the frontend
   tags: [],
   features: [],
@@ -65,7 +65,7 @@ export function useProductForm() {
       try {
         const categoryData = await productService.getCategories();
         setCategories(categoryData || []);
-        console.log("Categories loaded:", categoryData);
+        // console.log("Categories loaded:", categoryData);
       } catch (error) {
         console.error("Error fetching categories:", error);
         setError("Failed to load categories");
@@ -229,13 +229,13 @@ export function useProductForm() {
       return img;
     });
 
-    // Also update image_url to use the first image
-    const image_url = imgSlider.length > 0 ? imgSlider[0] : '';
+    // Also update imageUrl to use the first image
+    const imageUrl = imgSlider.length > 0 ? imgSlider[0] : '';
 
     setProduct((prev: Product) => ({
       ...prev,
       imgSlider,
-      image_url,
+      imageUrl,
       images: productImages // Add the images array with ProductImage objects
     }));
   };
@@ -317,7 +317,7 @@ export function useProductForm() {
       // Generate slug from name if empty
       if (!updatedProduct.slug) {
         updatedProduct.slug = generateSlug(updatedProduct.name);
-        console.log("Generated slug for publishing:", updatedProduct.slug);
+       // console.log("Generated slug for publishing:", updatedProduct.slug);
       }
 
       // Double-check that categorySlug is set
@@ -325,7 +325,7 @@ export function useProductForm() {
         const selectedCategory = categories.find(cat => cat.id === parseInt(updatedProduct.categoryId));
         if (selectedCategory) {
           updatedProduct.categorySlug = selectedCategory.slug;
-          console.log("Fixed missing categorySlug:", updatedProduct.categorySlug);
+          // console.log("Fixed missing categorySlug:", updatedProduct.categorySlug);
         }
       }
 
@@ -334,7 +334,7 @@ export function useProductForm() {
         // Check if any object exists in imgSlider and convert to strings
         const normalizedImgUrls = updatedProduct.imgSlider.map(img => {
           if (typeof img === 'object' && img !== null && 'url' in img) {
-            console.log('⚠️ Found complex object in imgSlider, converting to URL string:', img);
+           // console.log('⚠️ Found complex object in imgSlider, converting to URL string:', img);
             return (img as any).url;
           }
           return img;
@@ -342,11 +342,11 @@ export function useProductForm() {
 
         // Update imgSlider with normalized data
         if (JSON.stringify(normalizedImgUrls) !== JSON.stringify(updatedProduct.imgSlider)) {
-          console.log('📝 Normalized imgSlider before sending to API:', normalizedImgUrls);
+          // console.log('📝 Normalized imgSlider before sending to API:', normalizedImgUrls);
           updatedProduct.imgSlider = normalizedImgUrls;
 
-          // Also update image_url
-          updatedProduct.image_url = normalizedImgUrls.length > 0 ? normalizedImgUrls[0] : "";
+          // Also update imageUrl
+          updatedProduct.imageUrl = normalizedImgUrls.length > 0 ? normalizedImgUrls[0] : "";
         }
       }
 
@@ -361,26 +361,26 @@ export function useProductForm() {
         // Đảm bảo giá không âm
         updatedProduct.price = Math.max(0, parseFloat(discountedPrice.toFixed(2)));
 
-        console.log(`Giá gốc: ${updatedProduct.originalPrice}, Số tiền giảm: ${updatedProduct.discount}, Giá sau giảm: ${updatedProduct.price}`);
+        // console.log(`Giá gốc: ${updatedProduct.originalPrice}, Số tiền giảm: ${updatedProduct.discount}, Giá sau giảm: ${updatedProduct.price}`);
       }
 
-      console.log("Final product data before validation:", updatedProduct);
+      // console.log("Final product data before validation:", updatedProduct);
 
       // Display key data in console for debugging
-      console.group("📋 KEY PRODUCT DATA");
-      console.log(`Name: ${updatedProduct.name}`);
-      console.log(`Slug: ${updatedProduct.slug}`);
-      console.log(`Category ID: ${updatedProduct.categoryId} (${typeof updatedProduct.categoryId})`);
-      console.log(`Category Slug: ${updatedProduct.categorySlug}`);
-      console.log(`Price: ${updatedProduct.price}`);
-      console.log(`Original Price: ${updatedProduct.originalPrice}`);
-      console.log(`Brand: ${updatedProduct.brand}`);
-      console.log(`Images: ${updatedProduct.imgSlider.length} images`);
-      if (updatedProduct.imgSlider.length > 0) {
-        console.log(`Primary Image: ${updatedProduct.imgSlider[0] || 'None'}`);
-      }
-      console.log(`UI Metadata: ${JSON.stringify(updatedProduct.uiMetadata)}`);
-      console.groupEnd();
+      // console.group("📋 KEY PRODUCT DATA");
+      // console.log(`Name: ${updatedProduct.name}`);
+      // console.log(`Slug: ${updatedProduct.slug}`);
+      // console.log(`Category ID: ${updatedProduct.categoryId} (${typeof updatedProduct.categoryId})`);
+      // console.log(`Category Slug: ${updatedProduct.categorySlug}`);
+      // console.log(`Price: ${updatedProduct.price}`);
+      // console.log(`Original Price: ${updatedProduct.originalPrice}`);
+      // console.log(`Brand: ${updatedProduct.brand}`);
+      // console.log(`Images: ${updatedProduct.imgSlider.length} images`);
+      // if (updatedProduct.imgSlider.length > 0) {
+      //   console.log(`Primary Image: ${updatedProduct.imgSlider[0] || 'None'}`);
+      // }
+      // console.log(`UI Metadata: ${JSON.stringify(updatedProduct.uiMetadata)}`);
+      // console.groupEnd();
 
       // Validate product data before submitting
       const validationError = validateProduct(updatedProduct);
@@ -393,14 +393,14 @@ export function useProductForm() {
       // Remove id property before sending to API (backend will assign a new ID)
       const { id, ...productDataForBackend } = updatedProduct;
 
-      console.log("Sending product data to API:", productDataForBackend);
+      // console.log("Sending product data to API:", productDataForBackend);
       const result = await productService.createProduct(productDataForBackend);
 
-      console.log("API response:", result);
+      // console.log("API response:", result);
 
       if (result) {
         // IMPORTANT! Update the product state with the new ID from the API response
-        console.log("Updating product state with new ID:", result.id);
+        // console.log("Updating product state with new ID:", result.id);
         if (result.id) {
           setProduct(prev => ({
             ...prev,

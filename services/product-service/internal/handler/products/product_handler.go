@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"math"
+	"mime/multipart"
 	"net/http"
 	"product-service/internal/domain"
 	"product-service/internal/handler"
@@ -819,7 +820,7 @@ func GetTopRatedTestimonials(app *handler.Config) http.HandlerFunc {
 	}
 }
 
-// UploadProductImage handles image uploads for products
+// UploadProductImage handles uploading of product images
 func UploadProductImage(app *handler.Config) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		// Parse multipart form (limit file size to 10MB)
@@ -864,8 +865,11 @@ func UploadProductImage(app *handler.Config) http.HandlerFunc {
 			isPrimary = true
 		}
 
+		// Create a wrapper for fileHeader that implements the domain.FileUpload interface
+		fileUpload := &fileHeaderWrapper{handler}
+
 		// Upload to service
-		imageURL, err := app.ProductService.UploadProductImage(id, handler, isPrimary)
+		imageURL, err := app.ProductService.UploadProductImage(id, fileUpload, isPrimary)
 		if err != nil {
 			app.ErrorResponse(w, err, http.StatusInternalServerError)
 			return
@@ -891,6 +895,26 @@ func UploadProductImage(app *handler.Config) http.HandlerFunc {
 
 		app.WriteJSON(w, http.StatusCreated, payload)
 	}
+}
+
+// fileHeaderWrapper adapts *multipart.FileHeader to the domain.FileUpload interface
+type fileHeaderWrapper struct {
+	*multipart.FileHeader
+}
+
+// Filename returns the file's name
+func (w *fileHeaderWrapper) Filename() string {
+	return w.FileHeader.Filename
+}
+
+// Size returns the file's size
+func (w *fileHeaderWrapper) Size() int64 {
+	return w.FileHeader.Size
+}
+
+// Open implements the Open method required for the domain.FileUpload interface
+func (w *fileHeaderWrapper) Open() (multipart.File, error) {
+	return w.FileHeader.Open()
 }
 
 // DeleteProductImage handles deletion of product images
@@ -946,6 +970,56 @@ func SetPrimaryProductImage(app *handler.Config) http.HandlerFunc {
 		payload := handler.Response{
 			Status:  http.StatusOK,
 			Message: "Primary image set successfully",
+		}
+
+		app.SuccessResponse(w, http.StatusOK, payload)
+	}
+}
+
+// GetHealth returns the health status of the service
+func GetHealth(app *handler.Config) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		payload := handler.Response{
+			Status:  http.StatusOK,
+			Message: "Product service is healthy",
+			Data: map[string]string{
+				"status":    "ok",
+				"timestamp": time.Now().Format(time.RFC3339),
+				"service":   "product-service",
+			},
+		}
+
+		app.SuccessResponse(w, http.StatusOK, payload)
+	}
+}
+
+// GetProductImages returns all images for a specific product
+func GetProductImages(app *handler.Config) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		// Get product ID from URL parameter
+		idStr := chi.URLParam(r, "id")
+		if idStr == "" {
+			app.ErrorResponse(w, errors.New("missing product ID"), http.StatusBadRequest)
+			return
+		}
+
+		// Convert string ID to int
+		id, err := strconv.Atoi(idStr)
+		if err != nil {
+			app.ErrorResponse(w, errors.New("invalid product ID format"), http.StatusBadRequest)
+			return
+		}
+
+		// Get product images from service
+		images, err := app.ProductService.GetProductImages(id)
+		if err != nil {
+			app.ErrorResponse(w, err, http.StatusInternalServerError)
+			return
+		}
+
+		payload := handler.Response{
+			Status: http.StatusOK,
+			Data:   images,
 		}
 
 		app.SuccessResponse(w, http.StatusOK, payload)
