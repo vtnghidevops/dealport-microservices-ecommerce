@@ -5,23 +5,32 @@ import (
 	"database/sql"
 	"fmt"
 	"log"
+	"net"
 	"net/http"
 	"os"
+	"product-service/internal/domain"
 	"product-service/internal/handler"
 	"product-service/internal/repository/postgres"
 	"product-service/internal/service"
+	transportGrpc "product-service/internal/transport/grpc"
 	transportHttp "product-service/internal/transport/http"
 	"time"
+
+	pb "product-service/proto/product"
 
 	_ "github.com/jackc/pgconn"
 	_ "github.com/jackc/pgx/v4"
 	_ "github.com/jackc/pgx/v4/stdlib"
+	"google.golang.org/grpc"
 )
 
-const port = "8082"
+const (
+	httpPort = "8082"
+	grpcPort = "50051"
+)
 
 func main() {
-	log.Printf("Starting product service on %s", port)
+	log.Printf("Starting product service - gRPC port: %s, HTTP port: %s", grpcPort, httpPort)
 
 	// Connect to database
 	conn := connectToDB()
@@ -42,28 +51,73 @@ func main() {
 	bannerService := service.NewBannerService(bannerRepo)
 	adsService := service.NewAdsService(adsRepo)
 
-	// Configure handler dependencies
-	config := handler.Config{
-		ProductService:  productService,
-		CategoryService: categoryService,
-		BannerService:   bannerService,
-		AdsService:      adsService,
-	}
+	// Create a channel to catch errors
+	errCh := make(chan error, 2)
 
-	// Create HTTP server
-	server := transportHttp.NewServer(&config)
+	// Start gRPC server in a goroutine
+	go func() {
+		log.Printf("Starting gRPC server on port %s...", grpcPort)
+		errCh <- startGRPCServer(productService, categoryService, bannerService, adsService, grpcPort)
+	}()
 
-	// Define HTTP server
-	srv := &http.Server{
-		Addr:    fmt.Sprintf(":%s", port),
-		Handler: server.Routes(),
-	}
+	// Start HTTP server in a goroutine
+	go func() {
+		log.Printf("Starting HTTP server on port %s...", httpPort)
 
-	// Start the server
-	err := srv.ListenAndServe()
+		// Create handler config
+		handlerConfig := &handler.Config{
+			ProductService:  productService,
+			CategoryService: categoryService,
+			BannerService:   bannerService,
+			AdsService:      adsService,
+		}
+
+		// Create HTTP server
+		httpServer := transportHttp.NewServer(handlerConfig)
+
+		// Start HTTP server
+		errCh <- http.ListenAndServe(fmt.Sprintf(":%s", httpPort), httpServer.Routes())
+	}()
+
+	// Block until we get an error from one of the servers
+	log.Fatalf("Server error: %v", <-errCh)
+}
+
+func startGRPCServer(
+	productService domain.ProductService,
+	categoryService domain.CategoryService,
+	bannerService domain.BannerService,
+	adsService domain.AdsService,
+	port string,
+) error {
+	// Create TCP listener
+	lis, err := net.Listen("tcp", fmt.Sprintf(":%s", port))
 	if err != nil {
-		log.Panic(err)
+		return fmt.Errorf("failed to listen for gRPC: %w", err)
 	}
+
+	// Create gRPC server
+	grpcServer := grpc.NewServer()
+
+	// Create and register product service server
+	productGrpcServer := transportGrpc.NewGrpcServer(productService)
+	categoryGrpcServer := transportGrpc.NewCategoryGrpcServer(categoryService)
+	bannerGrpcServer := transportGrpc.NewBannerGrpcServer(bannerService)
+	adsGrpcServer := transportGrpc.NewAdsGrpcServer(adsService)
+
+	// Log before registration
+	log.Printf("Registering services with gRPC server...")
+
+	// Register the services with the gRPC server
+	pb.RegisterProductServiceServer(grpcServer, productGrpcServer)
+	pb.RegisterCategoryServiceServer(grpcServer, categoryGrpcServer)
+	pb.RegisterBannerServiceServer(grpcServer, bannerGrpcServer)
+	pb.RegisterAdsServiceServer(grpcServer, adsGrpcServer)
+
+	log.Printf("gRPC server listening on port %s", port)
+
+	// Start gRPC server (this blocks)
+	return grpcServer.Serve(lis)
 }
 
 func openDB(dsn string) (*sql.DB, error) {

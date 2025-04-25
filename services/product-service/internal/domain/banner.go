@@ -12,20 +12,20 @@ type Banner struct {
 	Subtitle       string    `json:"subtitle,omitempty"`
 	Description    string    `json:"description,omitempty"`
 	Discount       string    `json:"discount,omitempty"`
-	HighlightText  string    `json:"highlight_text,omitempty"`
-	ImageURL       string    `json:"image_url"`
-	LinkURL        string    `json:"link_url,omitempty"`
-	ActionText     string    `json:"action_text,omitempty"`
-	BackgroundColor string   `json:"background_color,omitempty"`
-	TextColor      string    `json:"text_color,omitempty"`
-	AnimationType  string    `json:"animation_type,omitempty"`
-	IsActive       bool      `json:"is_active"`
+	HighlightText  string    `json:"highlightText,omitempty"`
+	ImageURL       string    `json:"imageUrl"`
+	LinkURL        string    `json:"linkUrl,omitempty"`
+	ActionText     string    `json:"actionText,omitempty"`
+	BackgroundColor string   `json:"backgroundColor,omitempty"`
+	TextColor      string    `json:"textColor,omitempty"`
+	AnimationType  string    `json:"animationType,omitempty"`
+	IsActive       bool      `json:"isActive"`
 	Priority       int       `json:"priority,omitempty"`
 	Type           string    `json:"type"` // hero, promotional, category, seasonal, product
-	ProductID      *int      `json:"product_id,omitempty"`
-	CategoryID     *int      `json:"category_id,omitempty"`
-	CreatedAt      time.Time `json:"created_at"`
-	UpdatedAt      time.Time `json:"updated_at"`
+	ProductID      *int      `json:"productId,omitempty"`
+	CategoryID     *int      `json:"categoryId,omitempty"`
+	CreatedAt      time.Time `json:"createdAt"`
+	UpdatedAt      time.Time `json:"updatedAt"`
 }
 
 // Định nghĩa các loại banner

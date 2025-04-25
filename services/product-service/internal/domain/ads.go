@@ -9,15 +9,15 @@ import (
 type AdsPlacement struct {
 	ID             int             `json:"id"`
 	Location       string          `json:"location"`
-	ReferenceType  string          `json:"reference_type"`
-	ReferenceID    int             `json:"reference_id"`
-	DisplayOrder   int             `json:"display_order"`
-	CustomTitle    string          `json:"custom_title,omitempty"`
-	CustomImageURL string          `json:"custom_image_url,omitempty"`
-	UISettings     json.RawMessage `json:"ui_settings,omitempty"`
-	IsActive       bool            `json:"is_active"`
-	CreatedAt      time.Time       `json:"created_at"`
-	UpdatedAt      time.Time       `json:"updated_at"`
+	ReferenceType  string          `json:"referenceType"`
+	ReferenceID    int             `json:"referenceId"`
+	DisplayOrder   int             `json:"displayOrder"`
+	CustomTitle    string          `json:"customTitle,omitempty"`
+	CustomImageURL string          `json:"customImageUrl,omitempty"`
+	UISettings     json.RawMessage `json:"uiSettings,omitempty"`
+	IsActive       bool            `json:"isActive"`
+	CreatedAt      time.Time       `json:"createdAt"`
+	UpdatedAt      time.Time       `json:"updatedAt"`
 }
 
 // AdsData represents the combined ad data with product/category information
@@ -26,12 +26,12 @@ type AdsData struct {
 	Type         string          `json:"type"` // "product" or "category"
 	Name         string          `json:"name"`
 	Slug         string          `json:"slug"`
-	ImageURL     string          `json:"image_url"`
+	ImageURL     string          `json:"imageUrl"`
 	Price        float64         `json:"price,omitempty"`
-	CategoryID   int             `json:"category_id,omitempty"`
-	CategorySlug string          `json:"category_slug,omitempty"`
-	CustomTitle  string          `json:"custom_title,omitempty"`
-	UISettings   json.RawMessage `json:"ui_settings,omitempty"`
+	CategoryID   int             `json:"categoryId,omitempty"`
+	CategorySlug string          `json:"categorySlug,omitempty"`
+	CustomTitle  string          `json:"customTitle,omitempty"`
+	UISettings   json.RawMessage `json:"uiSettings,omitempty"`
 }
 
 // AdsRepository defines the interface for advertisement data operations

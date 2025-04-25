@@ -10,12 +10,12 @@ type Category struct {
 	Name         string    `json:"name"`
 	Slug         string    `json:"slug"`
 	Description  string    `json:"description,omitempty"`
-	ImageURL     string    `json:"image_url,omitempty"`
-	ProductCount int       `json:"product_count"`
-	IsActive     bool      `json:"is_active"`
-	IsVisible    bool      `json:"is_visible"`
-	CreatedAt    time.Time `json:"created_at"`
-	UpdatedAt    time.Time `json:"updated_at"`
+	ImageURL     string    `json:"imageUrl,omitempty"`
+	ProductCount int       `json:"productCount"`
+	IsActive     bool      `json:"isActive"`
+	IsVisible    bool      `json:"isVisible"`
+	CreatedAt    time.Time `json:"createdAt"`
+	UpdatedAt    time.Time `json:"updatedAt"`
 }
 
 // CategoryRepository defines the interface for category data operations

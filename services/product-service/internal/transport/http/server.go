@@ -46,10 +46,7 @@ func (s *Server) Routes() http.Handler {
 	}))
 
 	// Health check endpoint
-	router.Get("/health", func(w http.ResponseWriter, r *http.Request) {
-		w.WriteHeader(http.StatusOK)
-		w.Write([]byte("OK"))
-	})
+	router.Get("/health", products.GetHealth(s.Handler))
 
 	// API routes
 	router.Route("/api/v1", func(r chi.Router) {
@@ -69,6 +66,7 @@ func (s *Server) Routes() http.Handler {
 			r.Put("/{id}/reviews/{reviewId}", products.UpdateReview(s.Handler))
 
 			// Product images
+			r.Get("/{id}/images", products.GetProductImages(s.Handler))
 			r.Post("/{id}/images", products.UploadProductImage(s.Handler))
 			r.Delete("/{id}/images/{imageId}", products.DeleteProductImage(s.Handler))
 			r.Put("/{id}/images/{imageId}/primary", products.SetPrimaryProductImage(s.Handler))

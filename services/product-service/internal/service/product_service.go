@@ -3,7 +3,7 @@ package service
 import (
 	"fmt"
 	"io"
-	"mime/multipart"
+	"log"
 	"os"
 	"path/filepath"
 	"product-service/internal/domain"
@@ -77,7 +77,13 @@ func (s *ProductService) UpdateProduct(product *domain.Product) error {
 		product.Slug = util.CreateSlug(product.Name)
 	}
 
-	return s.productRepo.UpdateProduct(product)
+	// Call repository layer
+	err := s.productRepo.UpdateProduct(product)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 // DeleteProduct deletes a product by ID
@@ -129,47 +135,66 @@ func (s *ProductService) GetRandomTopRatedReviews(limit int) ([]*domain.Testimon
 }
 
 // UploadProductImage uploads a product image and returns the URL
-func (s *ProductService) UploadProductImage(productID int, file *multipart.FileHeader, isPrimary bool) (string, error) {
+func (s *ProductService) UploadProductImage(productID int, file domain.FileUpload, isPrimary bool) (string, error) {
+	// Log the start of the upload process
+	log.Printf("Starting image upload for product ID %d, isPrimary: %v", productID, isPrimary)
+
 	// Check if product exists
 	product, err := s.GetProductByID(productID)
 	if err != nil {
+		log.Printf("ERROR: Failed to find product ID %d: %v", productID, err)
 		return "", err
 	}
 	if product == nil {
+		log.Printf("ERROR: Product ID %d not found", productID)
 		return "", domain.ErrProductNotFound
 	}
 
 	// Create uploads directory if it doesn't exist
 	uploadsDir := "./uploads/products"
 	if err := os.MkdirAll(uploadsDir, 0755); err != nil {
+		log.Printf("ERROR: Failed to create uploads directory: %v", err)
 		return "", fmt.Errorf("failed to create uploads directory: %w", err)
 	}
 
 	// Generate unique filename
-	fileExt := filepath.Ext(file.Filename)
+	fileExt := filepath.Ext(file.Filename())
 	fileName := fmt.Sprintf("%d_%d%s", productID, time.Now().UnixNano(), fileExt)
 	filePath := filepath.Join(uploadsDir, fileName)
+
+	log.Printf("Generated filename: %s", fileName)
 
 	// Save the file
 	src, err := file.Open()
 	if err != nil {
+		log.Printf("ERROR: Failed to open uploaded file: %v", err)
 		return "", fmt.Errorf("failed to open uploaded file: %w", err)
 	}
 	defer src.Close()
 
+	log.Printf("Successfully opened source file for reading")
+
 	dst, err := os.Create(filePath)
 	if err != nil {
+		log.Printf("ERROR: Failed to create destination file: %v", err)
 		return "", fmt.Errorf("failed to create destination file: %w", err)
 	}
 	defer dst.Close()
 
-	if _, err = io.Copy(dst, src); err != nil {
+	log.Printf("Successfully created destination file for writing")
+
+	written, err := io.Copy(dst, src)
+	if err != nil {
+		log.Printf("ERROR: Failed to copy file: %v", err)
 		return "", fmt.Errorf("failed to copy file: %w", err)
 	}
+
+	log.Printf("Successfully copied %d bytes to destination file", written)
 
 	// Get current display order
 	images, err := s.GetProductImages(productID)
 	if err != nil {
+		log.Printf("ERROR: Failed to get product images: %v", err)
 		return "", err
 	}
 
@@ -181,6 +206,12 @@ func (s *ProductService) UploadProductImage(productID int, file *multipart.FileH
 
 	// Create relative URL path for database
 	imageURL := fmt.Sprintf("/api/products/images/%s", fileName)
+	fmt.Printf("Image URL: %s, display order: %d", imageURL, displayOrder)
+
+	// Create fully qualified URL for response - make sure we provide full URL
+	// This is what will be returned to the client after upload
+	fullImageURL := fmt.Sprintf("http://localhost:8080/api/products/images/%s", fileName)
+	fmt.Printf("Full image URL for response: %s", fullImageURL)
 
 	// If this is set as primary and there are existing images,
 	// we need to update other images to non-primary
@@ -190,24 +221,34 @@ func (s *ProductService) UploadProductImage(productID int, file *multipart.FileH
 		if err != nil {
 			// Try to clean up the file
 			os.Remove(filePath)
+			log.Printf("ERROR: Failed to add product image to database: %v", err)
 			return "", err
 		}
+
+		log.Printf("Added image to database with ID %d", imageID)
 
 		// Then set it as primary (which will handle updating other images)
 		if err := s.productRepo.SetPrimaryProductImage(productID, imageID); err != nil {
+			log.Printf("ERROR: Failed to set image as primary: %v", err)
 			return "", err
 		}
+
+		log.Printf("Successfully set image as primary")
 	} else {
 		// Regular insert
-		_, err = s.productRepo.AddProductImage(productID, imageURL, isPrimary, displayOrder)
+		imageID, err := s.productRepo.AddProductImage(productID, imageURL, isPrimary, displayOrder)
 		if err != nil {
 			// Try to clean up the file
 			os.Remove(filePath)
+			log.Printf("ERROR: Failed to add product image to database: %v", err)
 			return "", err
 		}
+
+		log.Printf("Added image to database with ID %d", imageID)
 	}
 
-	return imageURL, nil
+	log.Printf("Image upload completed successfully")
+	return fullImageURL, nil
 }
 
 // DeleteProductImage deletes a product image by ID
@@ -233,5 +274,3 @@ func (s *ProductService) UpdateProductImageOrder(imageID int, displayOrder int) 
 func (s *ProductService) SetPrimaryProductImage(productID int, imageID int) error {
 	return s.productRepo.SetPrimaryProductImage(productID, imageID)
 }
-
-

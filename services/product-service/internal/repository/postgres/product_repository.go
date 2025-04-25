@@ -142,23 +142,21 @@ func (r *ProductRepository) GetProductByID(id int) (*domain.Product, error) {
 		Count:         reviewCount,
 	}
 
-	// Log the ReviewsAvg values for debugging
-	log.Printf("Product %d (%s) has ReviewsAvg: count=%d, avg_rating=%.2f",
-		product.ID, product.Name, reviewCount, avgRating)
-
 	// Get product images
 	images, err := r.GetProductImages(product.ID)
 	if err == nil && len(images) > 0 {
 		product.Images = images
 
-		// Create imgSlider from images
-		product.ImgSlider = []string{}
-		for _, img := range images {
-			product.ImgSlider = append(product.ImgSlider, img.URL)
+		// Create imgSlider from images if it wasn't loaded from the database
+		if len(product.ImgSlider) == 0 {
+			product.ImgSlider = []string{}
+			for _, img := range images {
+				product.ImgSlider = append(product.ImgSlider, img.URL)
 
-			// Use primary image (is_primary=true) for ImageURL
-			if img.IsPrimary {
-				product.ImageURL = img.URL
+				// Use primary image (is_primary=true) for ImageURL
+				if img.IsPrimary {
+					product.ImageURL = img.URL
+				}
 			}
 		}
 
@@ -291,8 +289,8 @@ func (r *ProductRepository) GetProductBySlug(slug string) (*domain.Product, erro
 	}
 
 	// Log the ReviewsAvg values for debugging
-	log.Printf("Product %d (%s) has ReviewsAvg: count=%d, avg_rating=%.2f",
-		product.ID, product.Name, reviewCount, avgRating)
+	// log.Printf("Product %d (%s) has ReviewsAvg: count=%d, avg_rating=%.2f",
+	// 	product.ID, product.Name, reviewCount, avgRating)
 
 	// Get product images
 	images, err := r.GetProductImages(product.ID)
@@ -526,8 +524,8 @@ func (r *ProductRepository) GetAllProducts(page, pageSize int, filters map[strin
 		}
 
 		// Log ReviewsAvg for debugging
-		log.Printf("Product %d (%s): ReviewsAvg count=%d, avg_rating=%.2f",
-			product.ID, product.Name, reviewCount, avgRating)
+		// log.Printf("Product %d (%s): ReviewsAvg count=%d, avg_rating=%.2f",
+		// 	product.ID, product.Name, reviewCount, avgRating)
 
 		// Get product images
 		images, err := r.GetProductImages(product.ID)
@@ -722,8 +720,8 @@ func (r *ProductRepository) Insert(product *domain.Product) (int, error) {
 		product.ReviewsAvg.AverageRating = averageRating
 
 		// Log thông tin đã cập nhật
-		log.Printf("Updated ReviewsAvg for product %d: count=%d, avg_rating=%.2f",
-			id, reviewCount, averageRating)
+		// log.Printf("Updated ReviewsAvg for product %d: count=%d, avg_rating=%.2f",
+		// 	id, reviewCount, averageRating)
 	} else {
 		log.Printf("Error updating ReviewsAvg for product %d: %v", id, err)
 	}
@@ -736,38 +734,47 @@ func (r *ProductRepository) Update(product *domain.Product) error {
 	ctx, cancel := context.WithTimeout(context.Background(), dbTimeout)
 	defer cancel()
 
-	// Start a transaction
+	// Start transaction
 	tx, err := r.db.BeginTx(ctx, nil)
 	if err != nil {
 		return err
 	}
 	defer tx.Rollback()
 
-	// Reset sequence to fix duplicate key issue
-	// This ensures the sequence counter is synced with the highest ID value in the table
-	_, err = tx.ExecContext(ctx, `SELECT setval('products_id_seq', (SELECT COALESCE(MAX(id), 0) FROM products), true)`)
-	if err != nil {
-		return fmt.Errorf("failed to reset sequence: %w", err)
+	// Reset product ID sequence if needed (for testing)
+	if product.ID > 0 {
+		_, err = tx.ExecContext(ctx, "SELECT setval('products_id_seq', (SELECT MAX(id) FROM products), true)")
+		if err != nil {
+			return err
+		}
 	}
 
-	// Convert Features and ShippingInfo to JSON for storage
+	// Marshal features to JSON
 	featuresJSON, err := json.Marshal(product.Features)
 	if err != nil {
 		return err
 	}
 
+	// Marshal shipping info to JSON
 	shippingInfoJSON, err := json.Marshal(product.ShippingInfo)
 	if err != nil {
 		return err
 	}
 
-	// Update the product - loại bỏ image_url
-	stmt := `
+	// Marshal UI metadata to JSON if it exists
+	var uiMetadataJSON = []byte("{}")
+	if product.UIMetadata != nil && len(product.UIMetadata) > 0 {
+		// Use the UIMetadata directly as it's already RawMessage ([]byte)
+		uiMetadataJSON = product.UIMetadata
+	}
+
+	// Update the product
+	query := `
 		UPDATE products SET
-			name = $1,
-			slug = $2,
-			description = $3,
-			type = $4,
+			type = $1,
+			name = $2,
+			slug = $3,
+			description = $4,
 			price = $5,
 			original_price = $6,
 			discount = $7,
@@ -777,17 +784,16 @@ func (r *ProductRepository) Update(product *domain.Product) error {
 			brand = $11,
 			features = $12,
 			shipping_info = $13,
-			orders = $14,
-			updated_at = $15,
-			ui_metadata = $16
-		WHERE id = $17
+			ui_metadata = $14,
+			updated_at = NOW()
+		WHERE id = $15
 	`
 
-	_, err = tx.ExecContext(ctx, stmt,
+	_, err = tx.ExecContext(ctx, query,
+		product.Type,
 		product.Name,
 		product.Slug,
 		product.Description,
-		product.Type,
 		product.Price,
 		product.OriginalPrice,
 		product.Discount,
@@ -797,120 +803,75 @@ func (r *ProductRepository) Update(product *domain.Product) error {
 		product.Brand,
 		featuresJSON,
 		shippingInfoJSON,
-		product.Orders,
-		time.Now(),
-		product.UIMetadata,
+		uiMetadataJSON,
 		product.ID,
 	)
+
 	if err != nil {
 		return err
 	}
 
-	// Xác định ảnh chính nếu không có
-	if len(product.Images) > 0 {
-		hasPrimaryImage := false
-		for _, img := range product.Images {
-			if img.IsPrimary {
-				hasPrimaryImage = true
-				break
-			}
-		}
-
-		// Nếu không có ảnh nào được đánh dấu là chính, đặt ảnh đầu tiên làm ảnh chính
-		if !hasPrimaryImage {
-			product.Images[0].IsPrimary = true
+	// Handle product images
+	// First, check if we have at least one primary image
+	hasPrimary := false
+	for _, img := range product.Images {
+		if img.IsPrimary {
+			hasPrimary = true
+			break
 		}
 	}
 
-	// Delete existing product images
+	// If no primary image is set but we have images, set the first one as primary
+	if !hasPrimary && len(product.Images) > 0 {
+		product.Images[0].IsPrimary = true
+	}
+
+	// Delete existing images for the product
 	_, err = tx.ExecContext(ctx, "DELETE FROM product_images WHERE product_id = $1", product.ID)
 	if err != nil {
 		return err
 	}
 
-	// Reset the product_images sequence to avoid duplicate key violations
-	_, err = tx.ExecContext(ctx, `SELECT setval('product_images_id_seq', (SELECT COALESCE(MAX(id), 0) FROM product_images), true)`)
+	// Reset product_images ID sequence
+	_, err = tx.ExecContext(ctx, "SELECT setval('product_images_id_seq', (SELECT COALESCE(MAX(id), 0) FROM product_images), true)")
 	if err != nil {
-		return fmt.Errorf("failed to reset product_images sequence: %w", err)
+		return err
 	}
 
-	// Insert updated product images if any
+	// Insert new images if any
 	if len(product.Images) > 0 {
-		imageStmt := `
-			INSERT INTO product_images (
-				product_id, url, is_primary, display_order, created_at
-			) VALUES ($1, $2, $3, $4, $5)
-		`
-
 		for i, img := range product.Images {
-			_, err = tx.ExecContext(ctx, imageStmt,
-				product.ID,
-				img.URL,
-				img.IsPrimary,
-				i,
-				time.Now(),
-			)
+			_, err = tx.ExecContext(ctx,
+				"INSERT INTO product_images (product_id, url, is_primary, display_order) VALUES ($1, $2, $3, $4)",
+				product.ID, img.URL, img.IsPrimary, i)
 			if err != nil {
 				return err
 			}
 		}
 	}
 
-	// Delete existing product tags
+	// Delete existing tags for the product
 	_, err = tx.ExecContext(ctx, "DELETE FROM product_tags WHERE product_id = $1", product.ID)
 	if err != nil {
 		return err
 	}
 
-	// Insert updated product tags if any
+	// Insert new tags if any
 	if len(product.Tags) > 0 {
-		tagStmt := `
-			INSERT INTO product_tags (product_id, tag)
-			VALUES ($1, $2)
-		`
-
 		for _, tag := range product.Tags {
-			_, err = tx.ExecContext(ctx, tagStmt, product.ID, tag)
+			_, err = tx.ExecContext(ctx,
+				"INSERT INTO product_tags (product_id, tag) VALUES ($1, $2)",
+				product.ID, tag)
 			if err != nil {
 				return err
 			}
 		}
 	}
 
-	// Commit the transaction
+	// Commit transaction
 	err = tx.Commit()
 	if err != nil {
 		return err
-	}
-
-	// Luôn cập nhật thông tin ReviewsAvg từ bảng product_reviews
-	// Việc này được thực hiện sau khi commit transaction để không ảnh hưởng đến việc lưu chính sản phẩm
-	// Đếm số lượng reviews trong database và tính rating trung bình
-	var averageRating float64
-	var reviewCount int
-
-	countQuery := `
-		SELECT 
-			COUNT(*) as count, 
-			COALESCE(AVG(rating), 0) as avg_rating 
-		FROM product_reviews 
-		WHERE product_id = $1
-	`
-
-	row := r.db.QueryRowContext(context.Background(), countQuery, product.ID)
-	err = row.Scan(&reviewCount, &averageRating)
-
-	// Luôn cập nhật lại trường ReviewsAvg trong model để đảm bảo tính nhất quán
-	if err == nil {
-		// Cập nhật lại product.ReviewsAvg
-		product.ReviewsAvg.Count = reviewCount
-		product.ReviewsAvg.AverageRating = averageRating
-
-		// Log thông tin đã cập nhật
-		log.Printf("Updated ReviewsAvg for product %d: count=%d, avg_rating=%.2f",
-			product.ID, reviewCount, averageRating)
-	} else {
-		log.Printf("Error updating ReviewsAvg for product %d: %v", product.ID, err)
 	}
 
 	return nil
@@ -1311,7 +1272,7 @@ func (r *ProductRepository) GetRandomTopRatedReviews(limit int) ([]*domain.Testi
 		err := rows.Scan(
 			&testimonial.ID,
 			&userID,
-			&testimonial.Name,
+			&testimonial.UserName,
 			&testimonial.Review,
 			&testimonial.Rating,
 			&testimonial.ProductID,
@@ -1321,7 +1282,7 @@ func (r *ProductRepository) GetRandomTopRatedReviews(limit int) ([]*domain.Testi
 		}
 
 		// Use default avatars in rotation until user service is implemented
-		testimonial.AvatarURL = defaultAvatars[avatarIndex%len(defaultAvatars)]
+		testimonial.Avatar = defaultAvatars[avatarIndex%len(defaultAvatars)]
 		avatarIndex++
 
 		// Format the review text with quotes

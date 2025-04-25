@@ -14,7 +14,7 @@ type Product struct {
 	Description   string  `json:"description"`
 	Slug          string  `json:"slug"`
 	Price         float64 `json:"price"`
-	ImageURL      string  `json:"image_url"`
+	ImageURL      string  `json:"imageUrl"`
 	CategoryID    int     `json:"categoryId"`
 	CategorySlug  string  `json:"categorySlug"`
 	StockQuantity int     `json:"stockQuantity"`
@@ -48,11 +48,11 @@ type ShippingInfo struct {
 // ProductImage represents an image associated with a product
 type ProductImage struct {
 	ID           int       `json:"id"`
-	ProductID    int       `json:"product_id"`
+	ProductID    int       `json:"productId"`
 	URL          string    `json:"url"`
-	IsPrimary    bool      `json:"is_primary"`
-	DisplayOrder int       `json:"display_order"`
-	CreatedAt    time.Time `json:"created_at"`
+	IsPrimary    bool      `json:"isPrimary"`
+	DisplayOrder int       `json:"displayOrder"`
+	CreatedAt    time.Time `json:"createdAt"`
 }
 
 // ProductReviews represents a summary of product reviews
@@ -64,23 +64,23 @@ type ProductRating struct {
 // ProductReview represents a review for a product
 type ProductReview struct {
 	ID         int       `json:"id"`
-	ProductID  int       `json:"product_id"`
-	UserID     string    `json:"user_id"`
-	UserName   string    `json:"user_name,omitempty"`
+	ProductID  int       `json:"productId"`
+	UserID     string    `json:"userId"`
+	UserName   string    `json:"userName,omitempty"`
 	Rating     float64   `json:"rating"`
 	Comment    string    `json:"comment"`
-	CreatedAt  time.Time `json:"created_at"`
-	UserAvatar string    `json:"user_avatar,omitempty"` // Added for HappyCustomers display
+	CreatedAt  time.Time `json:"createdAt"`
+	UserAvatar string    `json:"userAvatar,omitempty"` // Added for HappyCustomers display
 }
 
 // Testimonial represents a customer testimonial for display in HappyCustomers
 type Testimonial struct {
-	ID        string  `json:"id"`
-	Name      string  `json:"name"`
-	AvatarURL string  `json:"avatarUrl"`
+	ID        string  `json:"userId"`
+	UserName  string  `json:"userName"`
+	Avatar    string  `json:"avatar"`
 	Review    string  `json:"review"`
 	Rating    float64 `json:"rating"`
-	ProductID int     `json:"product_id,omitempty"`
+	ProductID int     `json:"productId,omitempty"`
 }
 
 // ProductRepository defines the interface for product data operations
@@ -123,7 +123,7 @@ type ProductService interface {
 
 	// Product image methods
 	GetProductImages(productID int) ([]ProductImage, error)
-	UploadProductImage(productID int, file *multipart.FileHeader, isPrimary bool) (string, error)
+	UploadProductImage(productID int, file FileUpload, isPrimary bool) (string, error)
 	DeleteProductImage(imageID int) error
 	UpdateProductImageOrder(imageID int, displayOrder int) error
 	SetPrimaryProductImage(productID int, imageID int) error
@@ -136,4 +136,11 @@ type ProductService interface {
 
 	// Get random 5-star testimonials for HappyCustomers
 	GetRandomTopRatedReviews(limit int) ([]*Testimonial, error)
+}
+
+// FileUpload defines an interface for file uploads to allow custom implementations
+type FileUpload interface {
+	Open() (multipart.File, error)
+	Filename() string
+	Size() int64
 }
