@@ -11,14 +11,45 @@ services:
       - net
   authentication-service:
     container_name: authentication-service
-    image: authenticate-service:v1
+    image: authentication-service:v1
     build:
       context: ./services/authentication-service
     restart: always
     ports:
-      - "9000:9000"
+      - "50051:50051"
     environment:
-      DSN: "host=postgres port=5432 user=postgres password=password dbname=users sslmode=disable timezone=UTC connect_timeout=5"
+      DB_HOST: postgres-auth
+      DB_PORT: 5432
+      DB_USER: postgres
+      DB_PASSWORD: password
+      DB_NAME: auth
+      DB_SSLMODE: disable
+      JWT_ACCESS_SECRET: "your-access-token-secret-key"
+      JWT_REFRESH_SECRET: "your-refresh-token-secret-key"
+      JWT_ACCESS_DURATION: 15
+      JWT_REFRESH_DURATION: 168
+    depends_on:
+      - postgres-auth
+    networks:
+      - net
+    
+  user-service:
+    container_name: user-service
+    image: user-service:v1
+    build:
+      context: ./services/user-service
+    restart: always
+    ports:
+      - "50052:50052"
+    environment:
+      DB_HOST: postgres-users
+      DB_PORT: 5432
+      DB_USER: postgres-users
+      DB_PASSWORD: password
+      DB_NAME: users
+      DB_SSLMODE: disable
+    depends_on:
+      - postgres-users
     networks:
       - net
 
@@ -103,6 +134,38 @@ services:
     volumes:
       - ./db-data/postgres-products:/var/lib/postgresql/data/
       - ./services/product-service/internal/repository/postgres/db:/docker-entrypoint-initdb.d
+    #command: bash -c "chmod +x /docker-entrypoint-initdb.d/db/01-schema.sql && chmod +x /docker-entrypoint-initdb.d/db/02-data.sql && docker-entrypoint.sh postgres"
+    networks:
+      - net 
+
+  postgres-auth:
+    container_name: postgres-auth
+    image: "postgres:14.0"
+    ports:
+      - "5435:5432"
+    restart: always
+    environment:
+      POSTGRES_USER: postgres-auth
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: auth
+    volumes:
+      - ./db-data/postgres-auth:/var/lib/postgresql/data/
+      - ./services/authentication-service/scripts/db:/docker-entrypoint-initdb.d
+    networks:
+      - net
+  postgres-users:
+    container_name: postgres-users
+    image: "postgres:14.0"
+    ports:
+      - "5434:5432"
+    restart: always
+    environment:
+      POSTGRES_USER: postgres-users
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: users
+    volumes:
+      - ./db-data/postgres-users:/var/lib/postgresql/data/
+      - ./services/user-service/scripts/db:/docker-entrypoint-initdb.d
     #command: bash -c "chmod +x /docker-entrypoint-initdb.d/db/01-schema.sql && chmod +x /docker-entrypoint-initdb.d/db/02-data.sql && docker-entrypoint.sh postgres"
     networks:
       - net 

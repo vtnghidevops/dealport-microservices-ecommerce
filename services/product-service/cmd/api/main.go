@@ -7,7 +7,7 @@ import (
 	"log"
 	"net"
 	"net/http"
-	"os"
+	// "os"
 	"product-service/internal/domain"
 	"product-service/internal/handler"
 	"product-service/internal/repository/postgres"
@@ -15,7 +15,7 @@ import (
 	transportGrpc "product-service/internal/transport/grpc"
 	transportHttp "product-service/internal/transport/http"
 	"time"
-
+	"product-service/internal/config"
 	pb "product-service/proto/product"
 
 	_ "github.com/jackc/pgconn"
@@ -24,16 +24,18 @@ import (
 	"google.golang.org/grpc"
 )
 
-const (
-	httpPort = "8082"
-	grpcPort = "50051"
-)
 
 func main() {
-	log.Printf("Starting product service - gRPC port: %s, HTTP port: %s", grpcPort, httpPort)
+	// Load config (Tải cấu hình)
+	cfg, err := config.LoadConfig("")
+	if err != nil {
+		log.Fatalf("Failed to load config: %v", err)
+	}
+
+	log.Printf("Starting product service - gRPC port: %s, HTTP port: %s", cfg.Server.GRPCPort, cfg.Server.HTTPPort)
 
 	// Connect to database
-	conn := connectToDB()
+	conn := connectToDB(cfg.Database)
 	if conn == nil {
 		log.Panic("Could not connect to Postgres")
 	}
@@ -56,13 +58,13 @@ func main() {
 
 	// Start gRPC server in a goroutine
 	go func() {
-		log.Printf("Starting gRPC server on port %s...", grpcPort)
-		errCh <- startGRPCServer(productService, categoryService, bannerService, adsService, grpcPort)
+		log.Printf("Starting gRPC server on port %s...", cfg.Server.GRPCPort)
+		errCh <- startGRPCServer(productService, categoryService, bannerService, adsService, cfg.Server.GRPCPort)
 	}()
 
 	// Start HTTP server in a goroutine
 	go func() {
-		log.Printf("Starting HTTP server on port %s...", httpPort)
+		log.Printf("Starting HTTP server on port %s...", cfg.Server.HTTPPort)
 
 		// Create handler config
 		handlerConfig := &handler.Config{
@@ -76,7 +78,7 @@ func main() {
 		httpServer := transportHttp.NewServer(handlerConfig)
 
 		// Start HTTP server
-		errCh <- http.ListenAndServe(fmt.Sprintf(":%s", httpPort), httpServer.Routes())
+		errCh <- http.ListenAndServe(fmt.Sprintf(":%s", cfg.Server.HTTPPort), httpServer.Routes())
 	}()
 
 	// Block until we get an error from one of the servers
@@ -135,8 +137,12 @@ func openDB(dsn string) (*sql.DB, error) {
 	return db, nil
 }
 
-func connectToDB() *sql.DB {
-	dsn := os.Getenv("DSN")
+func connectToDB(dbCfg config.DatabaseConfig) *sql.DB {
+	//dsn := os.Getenv("DSN")
+	dsn := fmt.Sprintf(
+		"host=%s port=%s user=%s password=%s dbname=%s sslmode=%s",
+		dbCfg.Host, dbCfg.Port, dbCfg.User, dbCfg.Password, dbCfg.DBName, dbCfg.SSLMode,
+	)
 
 	// For development, provide a fallback if the environment variable is not set
 	if dsn == "" {
