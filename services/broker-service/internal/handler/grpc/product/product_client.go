@@ -16,7 +16,7 @@ import (
 
 const (
 	// ProductServiceAddress là địa chỉ của product-service
-	ProductServiceAddress = "localhost:50051"
+	ProductServiceAddress = "localhost:50053"
 )
 
 // ProductClient là client gRPC cho product-service

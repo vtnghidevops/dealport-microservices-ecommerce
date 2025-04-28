@@ -7,8 +7,13 @@ import (
 	"net/http"
 	"time"
 
+	grpcAuthHandler "broker-service/internal/handler/grpc/auth"
 	grpcProductHandler "broker-service/internal/handler/grpc/product"
+	grpcUserHandler "broker-service/internal/handler/grpc/user"
+	httpAuthHandler "broker-service/internal/handler/http/auth"
 	httpProductHandler "broker-service/internal/handler/http/product"
+	httpUserHandler "broker-service/internal/handler/http/user"
+	custommiddleware "broker-service/internal/middleware"
 
 	amqp "github.com/rabbitmq/amqp091-go"
 )
@@ -20,6 +25,11 @@ type Config struct {
 	CategoryHandler    *grpcProductHandler.CategoryGrpcHandler
 	BannerHandler      *grpcProductHandler.BannerGrpcHandler
 	AdsHandler         *grpcProductHandler.AdsGrpcHandler
+
+	// Add auth and user handlers
+	AuthHandler    *httpAuthHandler.Config
+	UserHandler    *httpUserHandler.Config
+	AuthMiddleware *custommiddleware.AuthMiddleware
 }
 
 const port string = "8080"
@@ -33,10 +43,34 @@ func main() {
 	// }
 	// defer rabbitConn.Close()
 
-	// Initialize the gRPC client
+	// Initialize the gRPC clients
 	productClient, err := grpcProductHandler.GetProductClient()
 	if err != nil {
-		log.Fatal("Error connecting to product service: ", err)
+		log.Println("Error connecting to product service:", err)
+		// Continue without product service functionality
+	}
+
+	// Connect to auth service
+	authClient, err := grpcAuthHandler.GetAuthClient()
+	if err != nil {
+		log.Println("Error connecting to authentication service:", err)
+		// Continue without auth service functionality
+	}
+
+	// Connect to user service
+	userClient, err := grpcUserHandler.GetUserClient()
+	if err != nil {
+		log.Println("Error connecting to user service:", err)
+		// Continue without user service functionality
+	}
+
+	// Initialize HTTP handlers
+	authHttpHandler := &httpAuthHandler.Config{
+		AuthClient: authClient,
+	}
+
+	userHttpHandler := &httpUserHandler.Config{
+		UserClient: userClient,
 	}
 
 	// Initialize proxy handlers with productClient for image handling via gRPC
@@ -44,7 +78,12 @@ func main() {
 		ProductClient: productClient,
 	}
 
-	// Initialize the gRPC handlers for product service
+	// Initialize auth middleware
+	authMiddleware := &custommiddleware.AuthMiddleware{
+		AuthClient: authClient,
+	}
+
+	// Initialize the application config
 	app := Config{
 		// Rabbit:      rabbitConn,
 		httpProductHandler: httpProductHandler,
@@ -52,6 +91,11 @@ func main() {
 		CategoryHandler:    grpcProductHandler.NewCategoryGrpcHandler(productClient),
 		BannerHandler:      grpcProductHandler.NewBannerGrpcHandler(productClient),
 		AdsHandler:         grpcProductHandler.NewAdsGrpcHandler(productClient),
+
+		// Add auth and user handlers to config
+		AuthHandler:    authHttpHandler,
+		UserHandler:    userHttpHandler,
+		AuthMiddleware: authMiddleware,
 	}
 
 	log.Printf("Starting broker service on port %s\n", port)

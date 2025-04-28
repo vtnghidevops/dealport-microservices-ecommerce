@@ -4,7 +4,7 @@ import (
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
-	"github.com/go-chi/chi/v5/middleware"
+	chimiddleware "github.com/go-chi/chi/v5/middleware"
 	"github.com/go-chi/cors"
 )
 
@@ -21,7 +21,7 @@ func (app *Config) routers() http.Handler {
 		MaxAge:           300,  // Maximum value not ignored by any of major browsers
 	}))
 
-	mux.Use(middleware.Heartbeat("/ping")) // Check if server is alive
+	mux.Use(chimiddleware.Heartbeat("/ping")) // Check if server is alive
 
 	// [POST] /broker
 	// mux.Post("/broker", app.Broker)
@@ -34,6 +34,38 @@ func (app *Config) routers() http.Handler {
 
 	// [Product-Service]
 	mux.Route("/api/v1", func(r chi.Router) {
+		// Authentication routes
+		r.Route("/auth", func(r chi.Router) {
+			r.Post("/register", app.AuthHandler.Register)
+			r.Post("/login", app.AuthHandler.Login)
+			r.Post("/refresh", app.AuthHandler.RefreshToken)
+			r.Get("/validate", app.AuthHandler.ValidateToken)
+		})
+
+		// User routes with authentication
+		r.Route("/users", func(r chi.Router) {
+			// Protected routes
+			r.Group(func(r chi.Router) {
+				r.Use(app.AuthMiddleware.RequireAuth)
+				r.Get("/me", app.UserHandler.GetUserProfile)
+				r.Put("/me", app.UserHandler.UpdateUserProfile)
+
+				// Wishlist routes
+				r.Route("/me/wishlist", func(r chi.Router) {
+					r.Get("/", app.UserHandler.GetWishlist)
+					r.Post("/", app.UserHandler.AddToWishlist)
+					r.Delete("/{product_id}", app.UserHandler.RemoveFromWishlist)
+				})
+			})
+
+			// Admin routes
+			r.Group(func(r chi.Router) {
+				r.Use(app.AuthMiddleware.RequireAuth)
+				// TODO: Add admin role check middleware
+				r.Get("/{id}", app.UserHandler.GetUser)
+			})
+		})
+
 		// Products
 		r.Route("/health", func(r chi.Router) {
 			r.Get("/", app.ProductHandler.GetProductHealth)
