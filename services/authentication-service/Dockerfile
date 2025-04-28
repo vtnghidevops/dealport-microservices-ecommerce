@@ -1,21 +1,34 @@
-# base image
-FROM golang:1.18-alpine AS builder
-
-RUN mkdir /app
-
-COPY . /app
+FROM golang:1.21-alpine AS builder
 
 WORKDIR /app
 
-RUN CGO_ENABLE=0 go build -o authentication-service ./cmd/api
+# Copy go.mod, go.sum files
+COPY go.mod ./
+# Copy the entire service directory
+COPY . .
 
-RUN chmod +x /app/authentication-service
+# Download dependencies
+RUN go mod download
 
-# final stage with tiny img
+# Build the application
+RUN CGO_ENABLED=0 GOOS=linux go build -o authService ./cmd/api
+
+# Use a minimal alpine image for the final stage
 FROM alpine:latest
 
-RUN mkdir /app
-COPY --from=builder /app/authentication-service /app
+WORKDIR /app
 
-CMD ["/app/authentication-service"]
+# Copy the binary from the builder stage
+COPY --from=builder /app/authService .
 
+# Copy migrations
+COPY --from=builder /app/scripts/migrations ./scripts/migrations
+
+# Install necessary tools for migrations
+RUN apk add --no-cache postgresql-client
+
+# Expose the port
+EXPOSE 50051
+
+# Command to run the application
+CMD ["./authService"] 

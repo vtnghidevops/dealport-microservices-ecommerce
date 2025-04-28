@@ -1,0 +1,87 @@
+syntax = "proto3";
+
+package auth;
+option go_package = "services/authentication-service/proto/auth";
+
+service AuthService {
+  // Register creates a new user account
+  rpc Register(RegisterRequest) returns (RegisterResponse) {}
+
+  // Login authenticates a user and returns a JWT token
+  rpc Login(LoginRequest) returns (LoginResponse) {}
+
+  // Validate checks if a token is valid
+  rpc Validate(ValidateRequest) returns (ValidateResponse) {}
+
+  // RefreshToken refreshes an existing token
+  rpc RefreshToken(RefreshTokenRequest) returns (RefreshTokenResponse) {}
+}
+
+// RegisterRequest contains user registration data
+message RegisterRequest {
+  string email = 1;
+  string password = 2;
+  string first_name = 3;
+  string last_name = 4;
+  string username = 5;
+}
+
+// RegisterResponse returns registration result
+message RegisterResponse {
+  bool success = 1;
+  string user_id = 2;
+  string message = 3;
+}
+
+// LoginRequest contains user login credentials
+message LoginRequest {
+  string email = 1;
+  string password = 2;
+}
+
+// LoginResponse returns authentication tokens and user info
+message LoginResponse {
+  string access_token = 1;
+  string refresh_token = 2;
+  string user_id = 3;
+  UserInfo user_info = 4;
+  bool success = 5;
+  string message = 6;
+}
+
+// ValidateRequest contains the token to validate
+message ValidateRequest {
+  string token = 1;
+}
+
+// ValidateResponse returns token validation result
+message ValidateResponse {
+  bool valid = 1;
+  string user_id = 2;
+  map<string, string> claims = 3;
+}
+
+// RefreshTokenRequest contains the refresh token
+message RefreshTokenRequest {
+  string refresh_token = 1;
+}
+
+// RefreshTokenResponse returns new authentication tokens
+message RefreshTokenResponse {
+  string access_token = 1;
+  string refresh_token = 2;
+  bool success = 3;
+  string message = 4;
+}
+
+// UserInfo contains basic user information
+message UserInfo {
+  string user_id = 1;
+  string email = 2;
+  string first_name = 3;
+  string last_name = 4;
+  string username = 5;
+  string role = 6;
+  string status = 7;
+  bool active = 8;
+}

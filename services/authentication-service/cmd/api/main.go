@@ -1,87 +1,90 @@
 package main
 
 import (
-	"authentication/data"
-	"database/sql"
 	"fmt"
 	"log"
-	"net/http"
+	"net"
 	"os"
-	"time"
+	"os/signal"
+	"syscall"
 
-	// import the postgres driver
-	_ "github.com/jackc/pgx/v4"
-	_ "github.com/jackc/pgconn"
-	_ "github.com/jackc/pgx/v4/stdlib"
+	"github.com/jmoiron/sqlx"
+	_ "github.com/lib/pq"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/reflection"
+
+	"authentication-service/internal/config"
+	"authentication-service/internal/repository/postgres"
+	"authentication-service/internal/service"
+	grpcHandler "authentication-service/internal/transport/grpc"
+	pb "authentication-service/proto/auth"
 )
 
-const port string = "9000"
-
-type Config struct {
-	Database *sql.DB // Connection to the database
-	// Models is obj to def in data/models.go that 
-	// contain all the models integrated in the database
-	Models data.Models 
-}
-
 func main() {
-	log.Printf("Starting authentication service on %s", port)
-
-	// connect to db
-	connect := connectToDB()
-	defer connect.Close()
-	if connect == nil {
-		log.Panic("Could not connect to the database Postgres.")
-	}
-
-	// set up config
-	app := Config{
-		Database: connect,
-		Models: data.New(connect), // create a new table in the database => Users
-	}
-
-	srv := &http.Server{
-		Addr: fmt.Sprintf(":%s", port),
-		Handler: app.routers(),
-	}
-
-	err := srv.ListenAndServe()
+	// Load config
+	cfg, err := config.LoadConfig("")
 	if err != nil {
-		log.Panic(err)
+		log.Fatalf("Failed to load config: %v", err)
 	}
 
-}
+	// Set up logger
+	logger := log.New(os.Stdout, "[AUTH-SVC] ", log.LstdFlags)
+	logger.Printf("Starting authentication service on port %s", cfg.Server.Port)
 
-func openDB(dsn string) (*sql.DB, error){
-	// open the connection to the database
-	db, err := sql.Open("pgx", dsn) 
+	// Connect to database
+	db, err := sqlx.Connect("postgres", cfg.PostgresConnectionString())
 	if err != nil {
-		return nil, err
+		logger.Fatalf("Failed to connect to database: %v", err)
+	}
+	defer db.Close()
+	logger.Println("Connected to PostgreSQL database")
+
+	// Ping the database to ensure connection
+	if err := db.Ping(); err != nil {
+		logger.Fatalf("Failed to ping database: %v", err)
 	}
 
-	// check if the connection is working
-	err = db.Ping()
+	// Initialize repository
+	userRepo := postgres.NewPostgresRepository(db)
+
+	// Initialize service
+	authService := service.NewAuthService(
+		userRepo,
+		cfg.JWT.AccessSecret,
+		cfg.JWT.RefreshSecret,
+		cfg.JWT.AccessDuration,
+		cfg.JWT.RefreshDuration,
+	)
+
+	// Initialize gRPC handler
+	authHandler := grpcHandler.NewAuthHandler(authService)
+
+	// Create gRPC server
+	grpcServer := grpc.NewServer()
+	pb.RegisterAuthServiceServer(grpcServer, authHandler)
+
+	// Register reflection service on gRPC server
+	reflection.Register(grpcServer)
+
+	// Start listening
+	lis, err := net.Listen("tcp", fmt.Sprintf(":%s", cfg.Server.Port))
 	if err != nil {
-		return nil, err
+		logger.Fatalf("Failed to listen: %v", err)
 	}
 
-	return db, nil
-}
+	// Handle shutdown gracefully
+	sigChan := make(chan os.Signal, 1)
+	signal.Notify(sigChan, os.Interrupt, syscall.SIGTERM)
 
-func connectToDB() *sql.DB {
-	dsn := os.Getenv("DSN")
-	// dsn := "host=localhost port=5432 user=postgres password=password dbname=users sslmode=disable timezone=UTC connect_timeout=5"
+	go func() {
+		<-sigChan
+		logger.Println("Received termination signal, shutting down...")
+		grpcServer.GracefulStop()
+	}()
 
-	for {
-		connection, err := openDB(dsn)
-		if err != nil {
-			log.Println("Could not connect to the database Postgres. Retrying in 3 seconds.")
-			time.Sleep(3 * time.Second)
-			continue
-		}else {
-			log.Println("Connected to the database Postgres.")
-			return connection
-		}
+	// Start gRPC server
+	logger.Printf("gRPC server is running on port %s", cfg.Server.Port)
+	if err := grpcServer.Serve(lis); err != nil {
+		logger.Fatalf("Failed to serve: %v", err)
 	}
-
 }
