@@ -3,7 +3,10 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { FcGoogle } from "react-icons/fc";
 import { FaApple } from "react-icons/fa";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
+import { useAuth } from "@/hooks/useAuth";
+import { useToast } from "@/hooks/use-toast";
+import { FiEye, FiEyeOff } from "react-icons/fi";
 
 interface LoginFormData {
   email: string;
@@ -11,10 +14,15 @@ interface LoginFormData {
 }
 
 const Login: React.FC = () => {
+  const navigate = useNavigate();
+  const { login, authState } = useAuth();
   const [formData, setFormData] = useState<LoginFormData>({
     email: "",
     password: ""
   });
+  const [isLoading, setIsLoading] = useState(false);
+  const { toast } = useToast();
+  const [showPassword, setShowPassword] = useState(false);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>): void => {
     const { name, value } = e.target;
@@ -24,9 +32,42 @@ const Login: React.FC = () => {
     }));
   };
 
-  const handleLogin = (): void => {
-    console.log("Login data", formData);
-    // TODO: Gọi API backend để đăng nhập
+  const handleLogin = async (e: React.FormEvent): Promise<void> => {
+    e.preventDefault();
+
+    // Validation
+    if (!formData.email || !formData.password) {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Please fill in all required fields"
+      });
+      return;
+    }
+
+    setIsLoading(true);
+
+    const result = await login(formData.email, formData.password);
+
+    if (result.success) {
+      toast({
+        variant: "success",
+        title: "Success",
+        description: "Login successful!"
+      });
+      navigate("/");
+    } else {
+      let friendlyMsg = result.error || "Login failed";
+      if (friendlyMsg.includes('rpc error: code = Unauthenticated')) {
+        friendlyMsg = 'Invalid credentials. Please check your email and password.';
+      }
+      toast({
+        variant: "destructive",
+        title: "Login Failed",
+        description: friendlyMsg
+      });
+    }
+    setIsLoading(false);
   };
 
   return (
@@ -35,15 +76,15 @@ const Login: React.FC = () => {
         <button className="w-1/2 text-[18px] pb-3 border-b-4 border-orange-500">
           Sign In
         </button>
-        <Link 
-          to="/register" 
+        <Link
+          to="/register"
           className="flex text-[18px] pb-3 items-center justify-center text-neutral-500 w-1/2 hover:text-neutral-800"
         >
           Sign Up
         </Link>
       </div>
 
-      <div className="space-y-4 mt-5">
+      <form onSubmit={handleLogin} className="space-y-4 mt-5">
         <Input
           type="email"
           name="email"
@@ -51,17 +92,29 @@ const Login: React.FC = () => {
           value={formData.email}
           onChange={handleChange}
           className="mb-3 h-[44px] focus:border-2 focus:border-blue-400"
+          disabled={isLoading}
+          required
         />
-        
+
         <div className="relative mb-5">
           <Input
-            type="password"
+            type={showPassword ? "text" : "password"}
             name="password"
             placeholder="Password"
             value={formData.password}
             onChange={handleChange}
-            className="mb-3 h-[44px] focus:border-2 focus:border-blue-400"
+            className="mb-3 h-[44px] focus:border-2 focus:border-blue-400 pr-10"
+            disabled={isLoading}
+            required
           />
+          <button
+            type="button"
+            className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-700"
+            tabIndex={-1}
+            onClick={() => setShowPassword((v) => !v)}
+          >
+            {showPassword ? <FiEyeOff /> : <FiEye />}
+          </button>
           <Link
             to="/forgot-password"
             className="absolute -bottom-[35px] right-2 text-sm text-blue-500 hover:text-blue-700"
@@ -71,28 +124,33 @@ const Login: React.FC = () => {
         </div>
 
         <Button
-          onClick={handleLogin}
+          type="submit"
           className="font-sans !mt-[2.5rem] w-full bg-orange-500 text-white hover:bg-orange-600 h-[44px]"
+          disabled={isLoading}
         >
-          SIGN IN
+          {isLoading ? "SIGNING IN..." : "SIGN IN"}
         </Button>
 
         <div className="text-center text-gray-500">or</div>
 
         <Button
+          type="button"
           variant="outline"
           className="!mb-5 h-[44px] w-full flex items-center gap-2 justify-center hover:bg-gray-100 transition-colors"
+          disabled={isLoading}
         >
           <FcGoogle className="!h-[20px] !w-[20px]" /> Login with Google
         </Button>
 
         <Button
+          type="button"
           variant="outline"
           className="w-full h-[44px] flex items-center gap-2 justify-center hover:bg-gray-100 transition-colors"
+          disabled={isLoading}
         >
           <FaApple className="!h-[20px] !w-[20px]" /> Login with Apple
         </Button>
-      </div>
+      </form>
     </div>
   );
 };

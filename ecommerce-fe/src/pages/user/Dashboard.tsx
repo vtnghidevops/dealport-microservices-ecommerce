@@ -3,6 +3,7 @@ import { FiBell, FiEye, FiEdit } from 'react-icons/fi';
 import UserLayout from '@/components/layouts/UserLayout';
 import { Link } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
+import UserAvatar from '@/components/user/UserAvatar';
 
 // Types for user dashboard data
 interface UserData {
@@ -45,9 +46,24 @@ interface Order {
 const UserDashboard: React.FC = () => {
   const { authState } = useAuth();
   const [isLoading, setIsLoading] = useState<boolean>(true);
-  const [userData, setUserData] = useState<UserData | null>(null);
-  const [billingAddress, setBillingAddress] = useState<BillingAddress | null>(null);
-  const [orderStats, setOrderStats] = useState<OrderStats>({ total: 0, pending: 0, completed: 0 });
+  const [userData, setUserData] = useState<UserData>({
+    id: '',
+    name: '',
+    email: '',
+    phone: '',
+    location: '',
+  });
+  const [billingAddress, setBillingAddress] = useState<BillingAddress>({
+    address: 'No address provided',
+    city: '',
+    zipCode: '',
+    country: '',
+  });
+  const [orderStats, setOrderStats] = useState<OrderStats>({
+    total: 0,
+    pending: 0,
+    completed: 0,
+  });
   const [paymentCards, setPaymentCards] = useState<PaymentCard[]>([]);
   const [recentOrders, setRecentOrders] = useState<Order[]>([]);
 
@@ -55,96 +71,83 @@ const UserDashboard: React.FC = () => {
     const fetchDashboardData = async () => {
       setIsLoading(true);
       try {
-        // For demo purposes, we'll simulate API calls with setTimeout
-        // In a real app, you would fetch this data from your backend API
+        // In a real app, this would fetch data from your API
+        // For now, we'll use mock data based on the authenticated user
+        if (authState.user) {
+          // Extract user data from auth state
+          const firstName = authState.user.profile?.firstName || '';
+          const lastName = authState.user.profile?.lastName || '';
+          const fullName = `${firstName} ${lastName}`.trim() || authState.user.username || 'User';
 
-        // Simulate API response delay
-        await new Promise(resolve => setTimeout(resolve, 500));
+          setUserData({
+            id: authState.user.id || '',
+            name: fullName,
+            email: authState.user.email || '',
+            phone: authState.user.profile?.phone || 'No phone number',
+            location: 'No location set',
+          });
 
-        // Set demo data - in a real app, these would come from API responses
-        setUserData({
-          id: '1',
-          name: authState?.user?.email?.split('@')[0] || 'Kevin Gilbert',
-          email: authState?.user?.email || 'kevin.gilbert@gmail.com',
-          phone: '+1-202-555-0118',
-          location: 'Dhaka-1207, Bangladesh'
-        });
+          // Mock address data - in a real app, this would come from API
+          // Try to get the first address if exists
+          const userAddress = authState.user.addresses && authState.user.addresses.length > 0
+            ? authState.user.addresses[0]
+            : null;
 
-        setBillingAddress({
-          address: 'East Tejturi Bazar, Word No. 04, Road No. 13/x, House no. 1320/C, Flat No. 5D',
-          city: 'Dhaka',
-          zipCode: '1200',
-          country: 'Bangladesh'
-        });
+          setBillingAddress({
+            address: userAddress?.street || 'No address provided',
+            city: userAddress?.city || '',
+            zipCode: userAddress?.zipCode || '',
+            country: userAddress?.country || 'Vietnam',
+          });
 
-        setOrderStats({
-          total: 154,
-          pending: 5,
-          completed: 149
-        });
+          // Mock order stats - in a real app, this would come from API
+          setOrderStats({
+            total: 5,
+            pending: 2,
+            completed: 3,
+          });
 
-        setPaymentCards([
-          {
-            id: '1',
-            last4: '3814',
-            cardHolder: userData?.name || 'Kevin Gilbert',
-            type: 'visa',
-            balance: 95400.00
-          },
-          {
-            id: '2',
-            last4: '1761',
-            cardHolder: userData?.name || 'Kevin Gilbert',
-            type: 'mastercard',
-            balance: 87583.00
-          }
-        ]);
-
-        setRecentOrders([
-          {
-            id: '96459781',
-            status: 'IN PROGRESS',
-            date: 'Dec 30, 2019 05:18',
-            total: 1500,
-            productCount: 5
-          },
-          {
-            id: '71667167',
-            status: 'COMPLETED',
-            date: 'Feb 2, 2019 19:28',
-            total: 80,
-            productCount: 1
-          },
-          {
-            id: '95214362',
-            status: 'CANCELED',
-            date: 'Mar 20, 2019 23:14',
-            total: 160,
-            productCount: 3
-          },
-          {
-            id: '51746385',
-            status: 'COMPLETED',
-            date: 'Feb 2, 2019 19:28',
-            total: 2300,
-            productCount: 2
-          }
-        ]);
+          // Mock recent orders - in a real app, this would come from API
+          setRecentOrders([
+            {
+              id: 'ORD-12345',
+              status: 'COMPLETED',
+              date: '2023-05-15',
+              total: 129.99,
+              productCount: 2,
+            },
+            {
+              id: 'ORD-12346',
+              status: 'IN PROGRESS',
+              date: '2023-05-20',
+              total: 59.99,
+              productCount: 1,
+            },
+            {
+              id: 'ORD-12347',
+              status: 'CANCELED',
+              date: '2023-05-25',
+              total: 89.99,
+              productCount: 3,
+            },
+          ]);
+        }
       } catch (error) {
         console.error('Error fetching dashboard data:', error);
+        // In a real app, you'd show an error message to the user
       } finally {
         setIsLoading(false);
       }
     };
 
     fetchDashboardData();
-  }, [authState]);
+  }, [authState.user]);
 
   if (isLoading) {
     return (
       <UserLayout>
-        <div className="bg-white p-6 rounded-lg shadow-sm flex justify-center items-center h-96">
-          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-orange-500"></div>
+        <div className="flex justify-center items-center h-64">
+          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
         </div>
       </UserLayout>
     );
@@ -183,51 +186,46 @@ const UserDashboard: React.FC = () => {
             <div className="!min-w-1/3 w-1/3 border border-neutral-200 flex flex-col justify-start px-5 bg-white rounded-lg py-5 space-x-4">
               <span className="text-[16px] font-medium font-sans mb-5">ACCOUNT INFO</span>
               <div className="flex gap-16 items-center">
-                <img
-                  src="/images/system/default-avatars.png"
-                  alt="User Avatar"
-                  className="w-[40px] h-[40px] rounded-full object-cover"
-                  onError={(e) => {
-                    const target = e.target as HTMLImageElement;
-                    target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(userData?.name || 'User')}&background=random`;
-                  }}
+                <UserAvatar
+                  user={authState.user}
+                  size="md"
                 />
                 <div>
-                  <h3 className="font-bold text-[16px]">{userData?.name}</h3>
-                  <p className="text-gray-500 text-sm">{userData?.location}</p>
+                  <h3 className="font-bold text-[16px]">{userData?.name || 'Update your profile'}</h3>
+                  <p className="text-gray-500 text-sm">{userData?.location || 'No location set'}</p>
                 </div>
-
-
               </div>
               <div className="flex flex-col gap-4 mt-5">
-                <span className="text-sm font-bold">Email: <span className="text-gray-600">{userData?.email}</span></span>
-                <span className="text-sm font-bold">Phone: <span className="text-gray-600">{userData?.phone}</span></span>
+                <span className="text-sm font-bold">Email: <span className="text-gray-600">{userData?.email || 'No email provided'}</span></span>
+                <span className="text-sm font-bold">Phone: <span className="text-gray-600">{userData?.phone || 'No phone number'}</span></span>
               </div>
 
               <div className="flex justify-start mt-5">
-                <button className="text-[#0496FF] px-5 hover:bg-blue-50 text-sm font-medium border border-[#0496FF] rounded-md py-2">
+                <Link to="/user/profile" className="text-[#0496FF] px-5 hover:bg-blue-50 text-sm font-medium border border-[#0496FF] rounded-md py-2">
                   EDIT ACCOUNT
-                </button>
+                </Link>
               </div>
 
             </div>
             <div className="bg-white w-1/3 min-w-1/3 rounded-lg p-5 border border-neutral-200 flex-1">
               <div>
                 <h3 className="font-medium font-sans text-[16px] mb-3">BILLING ADDRESS</h3>
-                <span className="font-bold text-[16px] mb-3 block">{userData?.name}</span>
+                <span className="font-bold text-[16px] mb-3 block">{userData?.name || 'Update your profile'}</span>
                 <p className="text-gray-600 text-sm font-medium">
-                  {billingAddress?.address},
-                  <br />{billingAddress?.city}-{billingAddress?.zipCode}, {billingAddress?.country}
+                  {billingAddress?.address || 'No address provided'}{billingAddress?.address ? ',' : ''}
+                  <br />
+                  {billingAddress?.city ? `${billingAddress.city}${billingAddress?.zipCode ? '-' + billingAddress.zipCode : ''}` : 'No city provided'}
+                  {billingAddress?.country ? `, ${billingAddress.country}` : ''}
                 </p>
               </div>
               <div className="flex flex-col gap-4 mt-3">
-                <span className="text-sm font-bold">Email: <span className="text-gray-600">{userData?.email}</span></span>
-                <span className="text-sm font-bold">Phone: <span className="text-gray-600">{userData?.phone}</span></span>
+                <span className="text-sm font-bold">Email: <span className="text-gray-600">{userData?.email || 'No email provided'}</span></span>
+                <span className="text-sm font-bold">Phone: <span className="text-gray-600">{userData?.phone || 'No phone number'}</span></span>
               </div>
               <div className="flex justify-start mt-5">
-                <button className="text-[#0496FF] px-5 hover:bg-blue-50 text-sm font-medium border border-[#0496FF] rounded-md py-2">
-                  EDIT ACCOUNT
-                </button>
+                <Link to="/user/profile" className="text-[#0496FF] px-5 hover:bg-blue-50 text-sm font-medium border border-[#0496FF] rounded-md py-2">
+                  EDIT ADDRESS
+                </Link>
               </div>
             </div>
 

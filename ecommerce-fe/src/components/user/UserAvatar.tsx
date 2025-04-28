@@ -25,7 +25,6 @@ const UserAvatar: React.FC<UserAvatarProps> = ({
     md: 'w-20 h-20',
     lg: 'w-32 h-32',
     xl: 'w-[120px] h-[120px]'
-
   };
 
   const handleImageClick = () => {
@@ -55,26 +54,42 @@ const UserAvatar: React.FC<UserAvatarProps> = ({
   const getInitials = () => {
     if (!user) return '?';
 
+    // If user has username but no profile info
+    if (user.username && (!user.profile?.firstName && !user.profile?.lastName)) {
+      return user.username.substring(0, 2).toUpperCase();
+    }
+
     const firstName = user.profile?.firstName || '';
     const lastName = user.profile?.lastName || '';
+
+    if (!firstName && !lastName) {
+      // If no name data at all, use first 1-2 chars of email
+      return user.email ? user.email.substring(0, 2).toUpperCase() : '?';
+    }
 
     return `${firstName[0] || ''}${lastName[0] || ''}`.toUpperCase();
   };
 
-  const avatarUrl = preview || user?.profile?.avatar || "/images/system/default-avatars.png";
-  const userName = user ? `${user.profile?.firstName || ''} ${user.profile?.lastName || ''}`.trim() : '';
+  // Determine avatar URL with appropriate fallbacks
+  const avatarUrl = preview || user?.profile?.avatar || null;
+
+  // Get user's name for alt text with fallbacks
+  const userName = user ?
+    (user.profile?.firstName || user.profile?.lastName) ?
+      `${user.profile?.firstName || ''} ${user.profile?.lastName || ''}`.trim() :
+      user.username || user.email || 'User' :
+    'User';
 
   return (
     <div className="flex flex-col items-center">
       <div
-        className={`${sizeClasses[size]} relative rounded-full overflow-hidden ${editable ? 'cursor-pointer' : ''
-          }`}
+        className={`${sizeClasses[size]} relative rounded-full overflow-hidden ${editable ? 'cursor-pointer' : ''}`}
         onClick={handleImageClick}
       >
         {avatarUrl ? (
           <img
             src={avatarUrl}
-            alt={userName || 'User avatar'}
+            alt={userName}
             className="w-full h-full object-cover"
           />
         ) : (
@@ -84,11 +99,25 @@ const UserAvatar: React.FC<UserAvatarProps> = ({
         )}
 
         {editable && (
-          <div className="absolute inset-0 bg-black bg-opacity-40 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity">
-            <FiCamera className="text-white text-xl" />
-          </div>
+          <>
+            <div className="absolute inset-0 bg-black bg-opacity-40 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity">
+              <FiCamera className="text-white text-xl" />
+            </div>
+            <input
+              type="file"
+              ref={fileInputRef}
+              onChange={handleFileChange}
+              accept="image/*"
+              className="hidden"
+            />
+          </>
         )}
       </div>
+
+      {/* Optional: Display user name below avatar */}
+      {size === 'lg' || size === 'xl' ? (
+        <p className="mt-2 text-sm font-medium text-gray-700">{userName}</p>
+      ) : null}
     </div>
   );
 };

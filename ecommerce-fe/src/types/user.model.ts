@@ -1,4 +1,4 @@
-export type UserRole = 'customer' | 'admin' | 'manager' | 'support';
+export type UserRole = 'user' | 'admin';
 export type UserStatus = 'active' | 'inactive' | 'suspended' | 'pending';
 
 export interface UserAddress {
@@ -17,21 +17,13 @@ export interface UserAddress {
 
 export interface UserPaymentMethod {
   id: string;
-  type: 'credit_card' | 'paypal' | 'bank_transfer' | 'other';
+  type: 'credit_card' | 'mono' | 'other';
   provider?: string;
   accountNumber?: string;
   expiryDate?: string;
   isDefault?: boolean;
 }
 
-export interface UserPreferences {
-  newsletter: boolean;
-  marketingEmails: boolean;
-  orderNotifications: boolean;
-  twoFactorAuth: boolean;
-  language: string;
-  currency: string;
-}
 
 export interface UserProfile {
   firstName: string;
@@ -45,21 +37,19 @@ export interface UserProfile {
 export interface User {
   id: string;
   email: string;
-  username?: string;
-  profile: UserProfile;
+  username: string;
   role: UserRole;
   status: UserStatus;
-  addresses: UserAddress[];
+  isActive: boolean;
+  profile?: UserProfile;
+  addresses?: UserAddress[];
   paymentMethods?: UserPaymentMethod[];
-  preferences?: UserPreferences;
-  createdAt: string;
-  updatedAt: string;
-  lastLogin?: string;
   wishlist?: string[]; // Product IDs
-  recentlyViewed?: string[]; // Product IDs
+  createdAt?: string;
+  updatedAt?: string;
+  lastLogin?: string;
   cartId?: string;
   orderCount?: number;
-  totalSpent?: number;
 }
 
 export interface UserLoginCredentials {
@@ -73,13 +63,14 @@ export interface UserRegistrationData {
   confirmPassword: string;
   firstName: string;
   lastName: string;
+  username: string;
   phone?: string;
   acceptTerms: boolean;
 }
 
 export interface AuthState {
   user: User | null;
-  token: string | null;
+  accessToken: string | null;
   isAuthenticated: boolean;
   isLoading: boolean;
   error: string | null;

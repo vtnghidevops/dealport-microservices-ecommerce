@@ -1,5 +1,5 @@
 // pages/user/Profile.tsx
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../hooks/useAuth';
 import { Button } from '../../components/ui/button';
 import { Input } from '../../components/ui/input';
@@ -7,7 +7,8 @@ import { useToast } from '@/hooks/use-toast';
 import UserLayout from '../../components/layouts/UserLayout';
 import UserAvatar from '../../components/user/UserAvatar';
 import { FiEdit, FiCheck } from 'react-icons/fi';
-import { User, UserProfile } from '@/types/user.model';
+import { User, UserProfile, UserAddress } from '@/types/user.model';
+import userService from '@/services/api/user.service';
 
 const Profile: React.FC = () => {
   const { authState, updateProfile } = useAuth();
@@ -19,15 +20,39 @@ const Profile: React.FC = () => {
     email: authState.user?.email || '',
     phone: authState.user?.profile?.phone || '',
     dateOfBirth: authState.user?.profile?.dateOfBirth || '',
-    displayName: authState.user?.profile?.firstName || '',
-    username: authState.user?.email?.split('@')[0] || '',
-    secondaryEmail: '',
-    country: 'Bangladesh',
-    region: 'Dhaka',
-    city: 'Dhaka',
-    zipCode: '1207',
-    // address: authState.user?.profile?.address || '',
+    displayName: authState.user?.profile?.firstName ?
+      `${authState.user?.profile?.firstName} ${authState.user?.profile?.lastName || ''}`.trim() :
+      authState.user?.username || '',
+    username: authState.user?.profile?.lastName && authState.user?.profile?.firstName ?
+      `${authState.user?.profile?.lastName}${authState.user?.profile?.firstName}` :
+      authState.user?.username || '',
+    address: '',
+    country: 'Vietnam',
+    region: '',
+    city: '',
+    zipCode: '',
+    addressId: '',
   });
+
+  // Update formData when authState.user changes
+  useEffect(() => {
+    if (authState.user) {
+      setFormData(prev => ({
+        ...prev,
+        firstName: authState.user?.profile?.firstName || '',
+        lastName: authState.user?.profile?.lastName || '',
+        email: authState.user?.email || '',
+        phone: authState.user?.profile?.phone || '',
+        dateOfBirth: authState.user?.profile?.dateOfBirth || '',
+        displayName: authState.user?.profile?.firstName ?
+          `${authState.user?.profile?.firstName} ${authState.user?.profile?.lastName || ''}`.trim() :
+          authState.user?.username || '',
+        username: authState.user?.profile?.lastName && authState.user?.profile?.firstName ?
+          `${authState.user?.profile?.lastName}${authState.user?.profile?.firstName}` :
+          authState.user?.username || '',
+      }));
+    }
+  }, [authState.user]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -36,6 +61,20 @@ const Profile: React.FC = () => {
 
   const startEditing = (fieldName: string) => {
     setEditingField(fieldName);
+
+    // If starting to edit address, populate with current address data if available
+    if (fieldName === 'address' && authState.user?.addresses && authState.user.addresses.length > 0) {
+      const defaultAddress = authState.user.addresses.find(addr => addr.isDefault) || authState.user.addresses[0];
+      setFormData(prev => ({
+        ...prev,
+        address: defaultAddress.street || '',
+        city: defaultAddress.city || '',
+        region: defaultAddress.state || '',
+        zipCode: defaultAddress.zipCode || '',
+        country: defaultAddress.country || 'Vietnam',
+        addressId: defaultAddress.id || '',
+      }));
+    }
   };
 
   const cancelEditing = () => {
@@ -53,39 +92,132 @@ const Profile: React.FC = () => {
 
   const updateField = async (fieldName: string) => {
     try {
-      let updatedProfile: Partial<UserProfile> = {};
-
       if (fieldName === 'name') {
-        updatedProfile = {
+        const updatedProfile: Partial<UserProfile> = {
           firstName: formData.firstName,
           lastName: formData.lastName
         };
+
+        const userUpdate: Partial<User> = {
+          profile: {
+            ...(authState.user?.profile || {}),
+            ...updatedProfile
+          } as UserProfile
+        };
+
+        await updateProfile(userUpdate);
+
+        // Also update username to match lastName + firstName pattern
+        setFormData(prev => ({
+          ...prev,
+          username: `${formData.lastName}${formData.firstName}`,
+          displayName: `${formData.firstName} ${formData.lastName}`.trim()
+        }));
       } else if (fieldName === 'phone') {
-        updatedProfile = {
+        const updatedProfile: Partial<UserProfile> = {
           phone: formData.phone
         };
+
+        const userUpdate: Partial<User> = {
+          profile: {
+            ...(authState.user?.profile || {}),
+            ...updatedProfile
+          } as UserProfile
+        };
+
+        await updateProfile(userUpdate);
       } else if (fieldName === 'dateOfBirth') {
-        updatedProfile = {
+        const updatedProfile: Partial<UserProfile> = {
           dateOfBirth: formData.dateOfBirth
         };
+
+        const userUpdate: Partial<User> = {
+          profile: {
+            ...(authState.user?.profile || {}),
+            ...updatedProfile
+          } as UserProfile
+        };
+
+        await updateProfile(userUpdate);
+      } else if (fieldName === 'address') {
+        // Basic validation
+        if (!formData.address || !formData.city || !formData.country) {
+          toast({
+            title: 'Validation Error',
+            description: 'Address, city and country are required fields',
+            variant: 'error',
+          });
+          return;
+        }
+
+        // Format address data for API call
+        const addressData = {
+          name: `${formData.firstName} ${formData.lastName}`.trim(),
+          phone: formData.phone || '',
+          line1: formData.address,
+          city: formData.city,
+          state: formData.region,
+          postal_code: formData.zipCode,
+          country: formData.country,
+          is_default: true,
+          address_type: 'billing'
+        };
+
+        try {
+          let updatedAddress;
+
+          // Check if we're updating an existing address or creating a new one
+          if (formData.addressId) {
+            // Update existing address
+            updatedAddress = await userService.updateAddress(formData.addressId, addressData);
+            console.log('Address updated:', updatedAddress);
+          } else {
+            // Create new address
+            updatedAddress = await userService.createAddress(addressData);
+            console.log('New address created:', updatedAddress);
+          }
+
+          // Refresh user data to get updated addresses
+          const userId = userService.getUserIdFromStorage();
+          if (userId) {
+            try {
+              const updatedUser = await userService.getUserById(userId);
+              console.log('User data refreshed:', updatedUser);
+
+              // If the function call didn't update the global state, we could manually update it here
+              // This depends on how your auth context is set up
+            } catch (refreshError) {
+              console.error('Error refreshing user data:', refreshError);
+            }
+          }
+
+          toast({
+            title: 'Address Updated',
+            description: 'Your address has been updated successfully',
+            variant: 'success',
+          });
+        } catch (error) {
+          console.error('Error updating address:', error);
+          toast({
+            title: 'Address Update Failed',
+            description: 'Failed to update your address. Please try again.',
+            variant: 'error',
+          });
+          return; // Don't clear editing field on error
+        }
       }
 
-      // Create user update object
-      const userUpdate: Partial<User> = {
-        profile: {
-          ...authState.user?.profile,
-          ...updatedProfile
-        } as UserProfile
-      };
-
-      await updateProfile(userUpdate);
       setEditingField(null);
-      toast({
-        title: 'Profile Updated',
-        description: 'Your profile has been updated successfully',
-        variant: 'success',
-      });
+
+      if (fieldName !== 'address') {
+        toast({
+          title: 'Profile Updated',
+          description: 'Your profile has been updated successfully',
+          variant: 'success',
+        });
+      }
     } catch (error) {
+      console.error('Update error:', error);
       toast({
         title: 'Update Failed',
         description: 'Failed to update profile',
@@ -130,6 +262,7 @@ const Profile: React.FC = () => {
                     value={formData.displayName}
                     readOnly
                     className="bg-gray-50"
+                    placeholder="Your display name"
                   />
                 </div>
 
@@ -141,7 +274,11 @@ const Profile: React.FC = () => {
                     value={formData.username}
                     readOnly
                     className="bg-gray-50"
+                    placeholder="Your username"
                   />
+                  {/* <p className="text-sm text-gray-500 mt-1">
+                    Username is automatically generated as lastName + firstName
+                  </p> */}
                 </div>
               </div>
 
@@ -154,19 +291,7 @@ const Profile: React.FC = () => {
                   value={formData.email}
                   readOnly
                   className="bg-gray-50"
-                />
-              </div>
-
-              <div className="mb-5">
-                <label className="block text-[15px] font-sans font-medium text-gray-700 mb-1">
-                  Secondary Email
-                </label>
-                <Input
-                  name="secondaryEmail"
-                  value={formData.secondaryEmail}
-                  placeholder="Add secondary email"
-                  readOnly
-                  className="bg-gray-50"
+                  placeholder="Your email address"
                 />
               </div>
 
@@ -181,6 +306,7 @@ const Profile: React.FC = () => {
                     onChange={handleChange}
                     readOnly={editingField !== 'phone'}
                     className={editingField !== 'phone' ? "bg-gray-50 flex-grow" : "flex-grow"}
+                    placeholder="Add your phone number"
                   />
                   {editingField === 'phone' ? (
                     <div className="flex ml-2 gap-3">
@@ -205,7 +331,7 @@ const Profile: React.FC = () => {
               </div>
 
               <div className="mb-5">
-                  <label className="block text-[15px] font-sans font-medium text-gray-700 mb-1">
+                <label className="block text-[15px] font-sans font-medium text-gray-700 mb-1">
                   Full Name
                 </label>
                 <div className="flex items-center">
@@ -250,20 +376,20 @@ const Profile: React.FC = () => {
               </div>
 
               <div className="mb-5">
-                  <label className="block text-[15px] font-sans font-medium text-gray-700 mb-1">
+                <label className="block text-[15px] font-sans font-medium text-gray-700 mb-1">
                   Date of Birth
                 </label>
                 <div className="flex items-center">
                   <Input
-                    name="dateOfBirth"
                     type="date"
+                    name="dateOfBirth"
                     value={formData.dateOfBirth}
                     onChange={handleChange}
                     readOnly={editingField !== 'dateOfBirth'}
-                    className={editingField !== 'dateOfBirth' ? "bg-gray-50 flex-grow text-neutral-500" : "flex-grow text-[15px] font-sans"}
+                    className={editingField !== 'dateOfBirth' ? "bg-gray-50 flex-grow" : "flex-grow"}
                   />
                   {editingField === 'dateOfBirth' ? (
-                    <div className="flex ml-2 gap-2">
+                    <div className="flex ml-2 gap-3">
                       <Button variant="ghost" className="hover:bg-neutral-300 bg-neutral-200 text-[15px] text-gray-700 !h-[40px] !w-[80px]" onClick={cancelEditing}>
                         Cancel
                       </Button>
@@ -283,142 +409,202 @@ const Profile: React.FC = () => {
                   )}
                 </div>
               </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-[15px] font-sans font-medium text-gray-700 mb-1">
-                    Country/Region
-                  </label>
-                  <Input
-                    value={formData.country}
-                    readOnly
-                    className="bg-gray-50 text-neutral-500"
-                  />
-                </div>
-                <div>
-                  <label className="block text-[15px] font-sans font-medium text-gray-700 mb-1">
-                    Status
-                  </label>
-                  <Input
-                    value="Active"
-                    readOnly
-                    className="bg-gray-50 text-neutral-500  "
-                  />
-                </div>
-              </div>
             </div>
           </div>
         </div>
 
         <div className="bg-white rounded-lg shadow-sm p-6 mb-5">
           <h2 className="text-[18px] font-sans font-medium mb-4">BILLING ADDRESS</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-            <div>
-              <label className="block text-[15px] font-sans font-medium text-gray-700 mb-1">
-                First Name
-              </label>
-              <Input
-                value={formData.firstName}
-                readOnly
-                className="bg-gray-50 text-neutral-500"
-              />
-            </div>
-            <div>
-              <label className="block text-[15px] font-sans font-medium text-gray-700 mb-1">
-                Last Name
-              </label>
-              <Input
-                value={formData.lastName}
-                readOnly
-                className="bg-gray-50 text-neutral-500"
-              />
-            </div>
 
-            <div>
-              <label className="block text-[15px] font-sans font-medium text-gray-700 mb-1">
-                Address
-              </label>
-              <Input
-                value={formData.city + ', ' + formData.country}
-                readOnly
-                className="bg-gray-50 text-neutral-500"
-              />
-            </div>
+          {editingField === 'address' ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+              <div>
+                <label className="block text-[15px] font-sans font-medium text-gray-700 mb-1">
+                  Address
+                </label>
+                <Input
+                  name="address"
+                  value={formData.address}
+                  onChange={handleChange}
+                  placeholder="Enter your street address"
+                />
+              </div>
 
-            <div>
-              <label className="block text-[15px] font-sans font-medium text-gray-700 mb-1">
-                Country
-              </label>
-              <Input
-                value={formData.country}
-                readOnly
-                className="bg-gray-50 text-neutral-500"
-              />
-            </div>
+              <div>
+                <label className="block text-[15px] font-sans font-medium text-gray-700 mb-1">
+                  Country
+                </label>
+                <Input
+                  name="country"
+                  value={formData.country}
+                  onChange={handleChange}
+                  placeholder="Country"
+                />
+              </div>
 
-            <div>
-              <label className="block text-[15px] font-sans font-medium text-gray-700 mb-1">
-                Region/State
-              </label>
-              <Input
-                value={formData.region}
-                readOnly
-                className="bg-gray-50 text-neutral-500"
-              />
-            </div>
+              <div>
+                <label className="block text-[15px] font-sans font-medium text-gray-700 mb-1">
+                  Region/State
+                </label>
+                <Input
+                  name="region"
+                  value={formData.region}
+                  onChange={handleChange}
+                  placeholder="Region/State"
+                />
+              </div>
 
-            <div>
-              <label className="block text-[15px] font-sans font-medium text-gray-700 mb-1">
-                City
-              </label>
-              <Input
-                value={formData.city}
-                readOnly
-                className="bg-gray-50 text-neutral-500"
-              />
-            </div>
+              <div>
+                <label className="block text-[15px] font-sans font-medium text-gray-700 mb-1">
+                  City
+                </label>
+                <Input
+                  name="city"
+                  value={formData.city}
+                  onChange={handleChange}
+                  placeholder="City"
+                />
+              </div>
 
-            <div>
-              <label className="block text-[15px] font-sans font-medium text-gray-700 mb-1">
-                Zip Code
-              </label>
-              <Input
-                value={formData.zipCode}
-                readOnly
-                className="bg-gray-50 text-neutral-500"
-              />
-            </div>
+              <div>
+                <label className="block text-[15px] font-sans font-medium text-gray-700 mb-1">
+                  Zip Code
+                </label>
+                <Input
+                  name="zipCode"
+                  value={formData.zipCode}
+                  onChange={handleChange}
+                  placeholder="Zip Code"
+                />
+              </div>
 
-            <div>
-              <label className="block text-[15px] font-sans font-medium text-gray-700 mb-1">
-                Email
-              </label>
-              <Input
-                value={formData.email}
-                readOnly
-                className="bg-gray-50 text-neutral-500"
-              />
+              <div className="md:col-span-2 mt-4 flex gap-3">
+                <Button
+                  variant="ghost"
+                  className="p-3 hover:bg-neutral-300 bg-neutral-200 text-[15px] text-gray-700 !h-[40px]"
+                  onClick={cancelEditing}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  className="p-3 hover:bg-blue-500 bg-[#0496FF] text-[15px] text-white !h-[40px]"
+                  onClick={() => updateField('address')}
+                >
+                  Save Address
+                  <FiCheck className="ml-1 !w-[15px] !h-[15px]" />
+                </Button>
+              </div>
             </div>
+          ) : (
+            <>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                <div>
+                  <label className="block text-[15px] font-sans font-medium text-gray-700 mb-1">
+                    First Name
+                  </label>
+                  <Input
+                    value={formData.firstName}
+                    readOnly
+                    className="bg-gray-50 text-neutral-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-[15px] font-sans font-medium text-gray-700 mb-1">
+                    Last Name
+                  </label>
+                  <Input
+                    value={formData.lastName}
+                    readOnly
+                    className="bg-gray-50 text-neutral-500"
+                  />
+                </div>
 
-            <div>
-              <label className="block text-[15px] font-sans font-medium text-gray-700 mb-1">
-                Phone Number
-              </label>
-              <Input
-                value={formData.phone}
-                readOnly
-                className="bg-gray-50 text-neutral-500"
-              />
-            </div>
-          </div>
-          <div className="mt-5">
-            <Button
-              variant="outline" 
-              className="hover:bg-orange-600 hover:text-white text-[15px] bg-orange-500 font-sans font-medium text-white w-[110px] h-[40px] p-4"
-            >
-              Edit Address
-            </Button>
-          </div>
+                <div>
+                  <label className="block text-[15px] font-sans font-medium text-gray-700 mb-1">
+                    Address
+                  </label>
+                  <Input
+                    value={authState.user?.addresses && authState.user.addresses.length > 0
+                      ? authState.user.addresses[0].street
+                      : 'No address provided'}
+                    readOnly
+                    className="bg-gray-50 text-neutral-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-[15px] font-sans font-medium text-gray-700 mb-1">
+                    Country
+                  </label>
+                  <Input
+                    value={authState.user?.addresses && authState.user.addresses.length > 0
+                      ? authState.user.addresses[0].country
+                      : 'Vietnam'}
+                    readOnly
+                    className="bg-gray-50 text-neutral-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-[15px] font-sans font-medium text-gray-700 mb-1">
+                    Region/State
+                  </label>
+                  <Input
+                    value={authState.user?.addresses && authState.user.addresses.length > 0
+                      ? authState.user.addresses[0].state
+                      : ''}
+                    readOnly
+                    className="bg-gray-50 text-neutral-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-[15px] font-sans font-medium text-gray-700 mb-1">
+                    City
+                  </label>
+                  <Input
+                    value={authState.user?.addresses && authState.user.addresses.length > 0
+                      ? authState.user.addresses[0].city
+                      : ''}
+                    readOnly
+                    className="bg-gray-50 text-neutral-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-[15px] font-sans font-medium text-gray-700 mb-1">
+                    Zip Code
+                  </label>
+                  <Input
+                    value={authState.user?.addresses && authState.user.addresses.length > 0
+                      ? authState.user.addresses[0].zipCode
+                      : ''}
+                    readOnly
+                    className="bg-gray-50 text-neutral-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-[15px] font-sans font-medium text-gray-700 mb-1">
+                    Phone Number
+                  </label>
+                  <Input
+                    value={formData.phone}
+                    readOnly
+                    className="bg-gray-50 text-neutral-500"
+                  />
+                </div>
+              </div>
+              <div className="mt-5">
+                <Button
+                  onClick={() => startEditing('address')}
+                  className="hover:bg-orange-600 bg-orange-500 text-[15px] font-sans font-medium text-white w-[110px] h-[40px] p-4"
+                >
+                  Edit Address
+                </Button>
+              </div>
+            </>
+          )}
         </div>
 
         <div className="bg-white rounded-lg shadow-sm p-6">
