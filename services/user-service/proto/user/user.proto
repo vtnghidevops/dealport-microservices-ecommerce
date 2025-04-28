@@ -1,0 +1,128 @@
+syntax = "proto3";
+
+package user;
+option go_package = "user-service/proto/user";
+
+service UserService {
+  // GetUser retrieves a user by ID
+  rpc GetUser(GetUserRequest) returns (UserResponse) {}
+
+  // GetUsers retrieves a list of users with optional filtering
+  rpc GetUsers(GetUsersRequest) returns (GetUsersResponse) {}
+
+  // CreateUser creates a new user
+  rpc CreateUser(CreateUserRequest) returns (UserResponse) {}
+
+  // UpdateUser updates user information
+  rpc UpdateUser(UpdateUserRequest) returns (UserResponse) {}
+
+  // DeleteUser deletes a user
+  rpc DeleteUser(DeleteUserRequest) returns (DeleteUserResponse) {}
+
+  // SearchUsers searches for users based on criteria
+  rpc SearchUsers(SearchUsersRequest) returns (GetUsersResponse) {}
+}
+
+// User represents a user entity
+message User {
+  string id = 1;
+  string email = 2;
+  string first_name = 3;
+  string last_name = 4;
+  string display_name = 5;
+  string phone = 6;
+  string profile_image = 7;
+  repeated Address addresses = 8;
+  string role = 9;
+  bool active = 10;
+  string created_at = 11;
+  string updated_at = 12;
+}
+
+// Address represents a user address
+message Address {
+  string id = 1;
+  string line1 = 2;
+  string line2 = 3;
+  string city = 4;
+  string state = 5;
+  string postal_code = 6;
+  string country = 7;
+  bool is_default = 8;
+  string address_type = 9;  // shipping, billing, etc.
+}
+
+// GetUserRequest is used to request a user by ID
+message GetUserRequest {
+  string id = 1;
+}
+
+// CreateUserRequest contains data for creating a new user
+message CreateUserRequest {
+  string email = 1;
+  string first_name = 2;
+  string last_name = 3;
+  string display_name = 4;
+  string phone = 5;
+  string password = 6;
+  string profile_image = 7;
+  repeated Address addresses = 8;
+  string role = 9;
+}
+
+// UpdateUserRequest contains data for updating a user
+message UpdateUserRequest {
+  string id = 1;
+  string email = 2;
+  string first_name = 3;
+  string last_name = 4;
+  string display_name = 5;
+  string phone = 6;
+  string profile_image = 7;
+  repeated Address addresses = 8;
+  string role = 9;
+  bool active = 10;
+}
+
+// DeleteUserRequest is used to request deletion of a user
+message DeleteUserRequest {
+  string id = 1;
+}
+
+// DeleteUserResponse is the response for a delete user operation
+message DeleteUserResponse {
+  bool success = 1;
+  string message = 2;
+}
+
+// UserResponse is the response containing user data
+message UserResponse {
+  User user = 1;
+  string message = 2;
+}
+
+// GetUsersRequest is used to request a list of users with optional filtering
+message GetUsersRequest {
+  int32 page = 1;
+  int32 limit = 2;
+  string sort_by = 3;
+  string sort_order = 4;
+  string role = 5;
+}
+
+// GetUsersResponse contains a list of users
+message GetUsersResponse {
+  repeated User users = 1;
+  int32 total = 2;
+  int32 page = 3;
+  int32 limit = 4;
+  string message = 5;
+}
+
+// SearchUsersRequest is used to search for users
+message SearchUsersRequest {
+  string query = 1;
+  string field = 2;
+  int32 page = 3;
+  int32 limit = 4;
+}
