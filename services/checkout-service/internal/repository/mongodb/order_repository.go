@@ -1,0 +1,257 @@
+package mongodb
+
+import (
+	"context"
+	"errors"
+	"fmt"
+	"log"
+	"time"
+
+	"checkout-service/internal/domain"
+
+	"github.com/google/uuid"
+	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
+)
+
+// OrderRepository handles order data persistence with MongoDB
+type OrderRepository struct {
+	db         *mongo.Database
+	collection *mongo.Collection
+}
+
+// NewOrderRepository creates a new MongoDB order repository
+func NewOrderRepository(db *mongo.Database) *OrderRepository {
+	return &OrderRepository{
+		db:         db,
+		collection: db.Collection("orders"),
+	}
+}
+
+// CreateOrder creates a new order in the database
+func (r *OrderRepository) CreateOrder(ctx context.Context, order *domain.Order) (*domain.Order, error) {
+	// Debug: In ra thông tin đơn hàng trước khi lưu
+	log.Printf("OrderRepository.CreateOrder received: %+v", order)
+	log.Printf("BillingInfo in repo: %+v", order.BillingInfo)
+	log.Printf("ShippingInfo in repo: %+v", order.ShippingInfo)
+	log.Printf("PaymentInfo in repo: %+v", order.PaymentInfo)
+
+	// Generate IDs and timestamps if not provided
+	if order.ID == "" {
+		order.ID = uuid.New().String()
+	}
+
+	// Generate order number if not provided
+	if order.OrderNumber == "" {
+		timestamp := time.Now().Unix()
+		order.OrderNumber = fmt.Sprintf("ORD-%s-%d", uuid.New().String()[:8], timestamp)
+	}
+
+	// Set status if not provided
+	if order.Status == "" {
+		order.Status = "pending"
+	}
+
+	// Set timestamps
+	now := time.Now()
+	order.CreatedAt = now
+	order.UpdatedAt = now
+
+	// Prepare a map for MongoDB insertion with proper types
+	orderDoc := bson.M{
+		"_id":           order.ID,
+		"id":            order.ID, // Add this field to satisfy schema validation
+		"user_id":       order.UserID,
+		"order_number":  order.OrderNumber,
+		"status":        order.Status,
+		"items":         order.Items,
+		"billing_info":  order.BillingInfo,
+		"shipping_info": order.ShippingInfo,
+		"payment_info":  order.PaymentInfo,
+		"totals":        order.Totals,
+		"coupon_code":   order.CouponCode,
+		"notes":         order.Notes,
+		"created_at":    order.CreatedAt, // Use time.Time object
+		"updated_at":    order.UpdatedAt, // Use time.Time object
+	}
+
+	// Debug: BSON document trước khi insert
+	log.Printf("BSON document to be inserted: %+v", orderDoc)
+
+	// Insert order
+	log.Printf("DEBUG: About to insert order with ID: %s, OrderNumber: %s", order.ID, order.OrderNumber)
+	result, err := r.collection.InsertOne(ctx, orderDoc)
+	if err != nil {
+		log.Printf("ERROR: MongoDB InsertOne error: %v", err)
+		return nil, errors.Join(domain.ErrDatabaseOperation, err)
+	}
+
+	log.Printf("SUCCESS: Order inserted with MongoDB ID: %v", result.InsertedID)
+
+	// Verify the order was saved correctly by querying it back
+	var savedOrder domain.Order
+	filter := bson.M{"_id": order.ID}
+	err = r.collection.FindOne(ctx, filter).Decode(&savedOrder)
+	if err != nil {
+		log.Printf("ERROR: Failed to verify order insertion: %v", err)
+		if err == mongo.ErrNoDocuments {
+			log.Printf("CRITICAL: Order with ID %s was not found after insertion!", order.ID)
+		}
+	} else {
+		log.Printf("VERIFICATION: Successfully retrieved the order after insertion")
+		log.Printf("VERIFICATION: Retrieved order ID: %s, OrderNumber: %s, UserID: %s",
+			savedOrder.ID, savedOrder.OrderNumber, savedOrder.UserID)
+		log.Printf("VERIFICATION: Order has %d items, total amount: %+v",
+			len(savedOrder.Items), savedOrder.Totals)
+	}
+
+	// List all orders in collection to debug
+	log.Printf("DEBUGGING: Listing all orders in collection...")
+	cursor, err := r.collection.Find(ctx, bson.M{})
+	if err != nil {
+		log.Printf("ERROR: Failed to list orders: %v", err)
+	} else {
+		defer cursor.Close(ctx)
+		var orders []bson.M
+		if err = cursor.All(ctx, &orders); err != nil {
+			log.Printf("ERROR: Failed to decode orders: %v", err)
+		} else {
+			log.Printf("DEBUGGING: Found %d total orders in collection", len(orders))
+			for i, o := range orders {
+				if i < 5 { // Only show up to 5 orders to avoid log spam
+					log.Printf("DEBUGGING: Order #%d: ID=%v, OrderNumber=%v",
+						i+1, o["_id"], o["order_number"])
+				}
+			}
+		}
+	}
+
+	return order, nil
+}
+
+// GetOrderByID retrieves an order by ID
+func (r *OrderRepository) GetOrderByID(ctx context.Context, orderID string) (*domain.Order, error) {
+	var order domain.Order
+
+	filter := bson.M{"_id": orderID}
+	err := r.collection.FindOne(ctx, filter).Decode(&order)
+	if err != nil {
+		if err == mongo.ErrNoDocuments {
+			return nil, domain.ErrOrderNotFound
+		}
+		return nil, errors.Join(domain.ErrDatabaseOperation, err)
+	}
+
+	return &order, nil
+}
+
+// ListOrdersByUserID retrieves orders for a user with pagination
+func (r *OrderRepository) ListOrdersByUserID(ctx context.Context, userID string, skip, limit int) ([]*domain.Order, int, error) {
+	log.Printf("OrderRepository.ListOrdersByUserID: Starting fetch for userID=%s, skip=%d, limit=%d", userID, skip, limit)
+
+	filter := bson.M{"user_id": userID}
+	log.Printf("MongoDB filter: %+v", filter)
+
+	// Count total orders for this user
+	total, err := r.collection.CountDocuments(ctx, filter)
+	if err != nil {
+		log.Printf("ERROR: CountDocuments failed: %v", err)
+		return nil, 0, errors.Join(domain.ErrDatabaseOperation, err)
+	}
+	log.Printf("Total documents matching filter: %d", total)
+
+	// Configure options for pagination and sorting
+	findOptions := options.Find().
+		SetSkip(int64(skip)).
+		SetLimit(int64(limit)).
+		SetSort(bson.M{"created_at": -1}) // Most recent first
+
+	// Execute the query
+	log.Printf("Executing Find with options: skip=%d, limit=%d, sort=created_at:-1", skip, limit)
+	cursor, err := r.collection.Find(ctx, filter, findOptions)
+	if err != nil {
+		log.Printf("ERROR: Find operation failed: %v", err)
+		return nil, 0, errors.Join(domain.ErrDatabaseOperation, err)
+	}
+	defer cursor.Close(ctx)
+
+	// Decode results
+	var orders []*domain.Order
+	log.Printf("Decoding results...")
+	if err := cursor.All(ctx, &orders); err != nil {
+		log.Printf("ERROR: Cursor.All failed during decoding: %v", err)
+		return nil, 0, errors.Join(domain.ErrDatabaseOperation, err)
+	}
+
+	log.Printf("Successfully decoded %d orders", len(orders))
+	// Debug for the first few orders
+	for i, order := range orders {
+		if i < 3 { // Limit debug output to at most 3 orders
+			log.Printf("Order %d: ID=%s, Total=%v, CreatedAt=%v",
+				i+1, order.ID, order.Totals.Total, order.CreatedAt)
+		}
+	}
+
+	return orders, int(total), nil
+}
+
+// UpdateOrderStatus updates the status of an order
+func (r *OrderRepository) UpdateOrderStatus(ctx context.Context, orderID string, status string) error {
+	filter := bson.M{"_id": orderID}
+	update := bson.M{
+		"$set": bson.M{
+			"status":     status,
+			"updated_at": time.Now(),
+		},
+	}
+
+	result, err := r.collection.UpdateOne(ctx, filter, update)
+	if err != nil {
+		return errors.Join(domain.ErrDatabaseOperation, err)
+	}
+
+	if result.MatchedCount == 0 {
+		return domain.ErrOrderNotFound
+	}
+
+	return nil
+}
+
+// UpdatePaymentInfo updates the payment information for an order
+func (r *OrderRepository) UpdatePaymentInfo(ctx context.Context, orderID string, paymentInfo domain.PaymentInfo) error {
+	filter := bson.M{"_id": orderID}
+	update := bson.M{
+		"$set": bson.M{
+			"payment_info": paymentInfo,
+			"updated_at":   time.Now(),
+		},
+	}
+
+	result, err := r.collection.UpdateOne(ctx, filter, update)
+	if err != nil {
+		return errors.Join(domain.ErrDatabaseOperation, err)
+	}
+
+	if result.MatchedCount == 0 {
+		return domain.ErrOrderNotFound
+	}
+
+	return nil
+}
+
+// GetOrderByPaymentTransactionID finds an order by its payment transaction ID
+func (r *OrderRepository) GetOrderByPaymentTransactionID(ctx context.Context, transactionID string) (*domain.Order, error) {
+	var order domain.Order
+
+	filter := bson.M{"payment_info.transaction_id": transactionID}
+	err := r.collection.FindOne(ctx, filter).Decode(&order)
+	if err != nil {
+		if err == mongo.ErrNoDocuments {
+			return nil, domain.ErrOrderNotFound
+		}
+		return nil, errors.Join(domain.ErrDatabaseOperation, err)
+	}
+
+	return &order, nil
+}
