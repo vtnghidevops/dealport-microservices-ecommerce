@@ -333,13 +333,13 @@ const Header: React.FC = () => {
   };
 
   // Debug code để kiểm tra trạng thái đăng nhập
-  console.log("Header Auth State:", {
-    isAuthenticated,
-    isLoading,
-    hasUser: !!user,
-    user: user,
-    forceRerender
-  });
+  // console.log("Header Auth State:", {
+  //   isAuthenticated,
+  //   isLoading,
+  //   hasUser: !!user,
+  //   user: user,
+  //   forceRerender
+  // });
 
   // Determine if logged in by checking both context and localStorage
   const token = localStorage.getItem('token');
@@ -358,11 +358,11 @@ const Header: React.FC = () => {
   }
 
   // Debug the menu state
-  console.log("Menu rendering state:", {
-    isLoggedIn,
-    token: token ? "exists" : "none",
-    userInStorage: userString ? "exists" : "none"
-  });
+  // console.log("Menu rendering state:", {
+  //   isLoggedIn,
+  //   token: token ? "exists" : "none",
+  //   userInStorage: userString ? "exists" : "none"
+  // });
 
   return (
     <HeaderContext.Provider value={{
@@ -409,14 +409,14 @@ const Header: React.FC = () => {
       <header className="bg-white sticky top-0 z-50 flex justify-between items-center p-4 border-b-2 border-gray-200 h-[5rem] w-full">
         <div className="flex items-center space-x-4 ml-[80px] min-h-56 w-1/2">
           <Logo />
-          {process.env.NODE_ENV === 'development' && !showDebug && (
+          {/* {process.env.NODE_ENV === 'development' && !showDebug && (
             <button
               onClick={() => setShowDebug(true)}
               className="text-xs text-gray-400 hover:text-gray-600 absolute top-1 left-1"
             >
               Debug
             </button>
-          )}
+          )} */}
           <span className="flex items-center space-x-1 h-[3rem]">
             <TbMinusVertical className="h-[100%] text-[30px]" />
             <a href="/" className="flex items-center space-x-2 max-w-[9rem]">

@@ -21,15 +21,15 @@ const LoggedInUserMenu: React.FC = () => {
   const user = authState.user;
   const isAdmin = user?.role === 'admin';
 
-  console.log("LoggedInUserMenu - User data:", user);
-  console.log("LoggedInUserMenu - Is admin:", isAdmin);
-  console.log("LoggedInUserMenu - User profile structure:", user?.profile);
+  // console.log("LoggedInUserMenu - User data:", user);
+  // console.log("LoggedInUserMenu - Is admin:", isAdmin);
+  // console.log("LoggedInUserMenu - User profile structure:", user?.profile);
 
   // Add debugging log for component rendering
-  useEffect(() => {
-    console.log("LoggedInUserMenu rendered - User data:", user);
-    console.log("LoggedInUserMenu - Component mounted with auth state:", authState);
-  }, []);
+  // useEffect(() => {
+  //   console.log("LoggedInUserMenu rendered - User data:", user);
+  //   console.log("LoggedInUserMenu - Component mounted with auth state:", authState);
+  // }, []);
 
   // Handle click outside to close menu
   useEffect(() => {
