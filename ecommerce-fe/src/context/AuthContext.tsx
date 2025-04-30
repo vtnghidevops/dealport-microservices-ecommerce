@@ -1,8 +1,8 @@
 // context/AuthContext.tsx
 import React, { createContext, useState, ReactNode, useEffect } from 'react';
 import { User, AuthState, UserLoginCredentials, UserRegistrationData } from '@/types/user.model';
-import authService from '@/services/api/auth.service';
-import userService from '@/services/api/user.service';
+import authService from '@/services/user/auth.service';
+import userService from '@/services/user/user.service';
 
 // Initial state
 const initialState: AuthState = {
@@ -96,15 +96,15 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       if (authState.accessToken) {
         try {
           setAuthState(prev => ({ ...prev, isLoading: true }));
-          console.log("Token found, validating...");
+          // console.log("Token found, validating...");
 
           // Kiểm tra token
           const validateResult = await authService.validateToken();
-          console.log("Token validation result:", validateResult);
+          // console.log("Token validation result:", validateResult);
 
           // Kiểm tra các claims để debug
           if (validateResult.claims) {
-            console.log("Claims from validated token:", validateResult.claims);
+            // console.log("Claims from validated token:", validateResult.claims);
             // Nếu có role trong claims, lưu tạm vào localStorage
             if (validateResult.claims.role) {
               const userStr = localStorage.getItem('user');
@@ -113,7 +113,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                   const userData = JSON.parse(userStr);
                   userData.role = validateResult.claims.role;
                   localStorage.setItem('user', JSON.stringify(userData));
-                  console.log("Updated user role from token claims:", validateResult.claims.role);
+                  // console.log("Updated user role from token claims:", validateResult.claims.role);
                 } catch (e) {
                   console.error("Failed to update role from claims", e);
                 }
@@ -125,9 +125,9 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             // Nếu token hợp lệ, lấy thông tin user đầy đủ
             try {
               const userId = validateResult.user_id;
-              console.log("Token valid, fetching user data for ID:", userId);
+              // console.log("Token valid, fetching user data for ID:", userId);
               const userData = await userService.getUserById(userId) as User;
-              console.log("User data fetched successfully from /user/me:", userData);
+              // console.log("User data fetched successfully from /user/me:", userData);
 
               // Đảm bảo role từ API /user/me được sử dụng
               const updatedUserData = {
