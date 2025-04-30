@@ -3,7 +3,7 @@ import {
   TopProductItem,
   TopProductsProps,
 } from './models/topProducts.model'
-import ProductService from "@/services/product.service";
+import ProductService from "@/services/product/product.service";
 import { handleViewAll } from "../../../utils/helpers";
 import { handleProductItemClick } from "../../../utils/helpers";
 import ProductCardItem from "./ProductsCard";

@@ -5,7 +5,7 @@ import { handleViewAll } from "../../../utils/helpers";
 import { handleCategoryClick } from "../../../utils/helpers";
 import { useNavigate } from 'react-router-dom';
 import { Category } from "@/types/category.model";
-import { CategoryService } from "@/services/product.service";
+import { CategoryService } from "@/services/product/product.service";
 import Loading from "@/components/shared/Loading";
 
 const CategoryExplorer: React.FC = () => {

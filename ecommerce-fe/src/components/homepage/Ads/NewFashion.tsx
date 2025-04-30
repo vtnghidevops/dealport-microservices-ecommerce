@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { getButtonClass, ButtonType } from "../../../utils/buttonUtils";
 import { NewFashionItem } from "./models/ads.model";
-import { NewFashionService } from "../../../services/ads.service";
+import { NewFashionService } from "../../../services/product/ads.service";
 import { Link } from "react-router-dom";
 
 const NewFashion: React.FC = () => {

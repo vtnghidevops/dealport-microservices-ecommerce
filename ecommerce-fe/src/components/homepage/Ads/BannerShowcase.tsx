@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { ButtonType, getButtonClass } from "@/utils/buttonUtils";
 import { BannerShowCaseItem } from "./models/ads.model";
-import { BannerService } from "../../../services/ads.service";
+import { BannerService } from "../../../services/product/ads.service";
 import { Link } from "react-router-dom";
 
 const BannerShowCase: React.FC = () => {
@@ -33,7 +33,7 @@ const BannerShowCase: React.FC = () => {
           <ItemBannerShowCase
             key={index}
             id={category.id}
-            imageUrl={category.imageUrl}  
+            imageUrl={category.imageUrl}
             buttonType={category.buttonType}
             buttonText={category.buttonText}
             hasMore={category.hasMore}
@@ -63,7 +63,7 @@ const ItemBannerShowCase: React.FC<BannerShowCaseItem> = ({
     if (!categorySlug) return "#";
     if (type === "category") {
       return `/category/${categorySlug}`;
-    } 
+    }
     return `/category/${categorySlug}`;
   };
 

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { ButtonType, getButtonClass } from "@/utils/buttonUtils";
 import { DisplayItem } from "./models/ads.model";
-import { DisplayService } from "../../../services/ads.service";
+import { DisplayService } from "../../../services/product/ads.service";
 import { Link } from "react-router-dom";
 
 interface CardMain {
@@ -161,7 +161,7 @@ const CardFirst: React.FC<CardFirst> = ({ imageUrl, type, productSlug, categoryS
   );
 };
 
-  const CardSecond: React.FC<CardSecond> = ({ imageUrl, buttonType, type, productSlug, categorySlug }) => {
+const CardSecond: React.FC<CardSecond> = ({ imageUrl, buttonType, type, productSlug, categorySlug }) => {
   // Determine navigation path based on type
   let navigationPath = "#";
   if (type === "product" && productSlug) {

@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import ProductCard from "../../common/Card";
 import MenCollection from "./MenCollection";
-import ProductService from "@/services/product.service";
+import ProductService from "@/services/product/product.service";
 import { Product } from "@/types/product.model.ts";
 import Loading from "@/components/shared/Loading";
 import { useNavigate } from "react-router-dom";

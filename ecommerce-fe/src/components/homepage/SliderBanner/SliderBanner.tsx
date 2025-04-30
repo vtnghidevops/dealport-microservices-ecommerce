@@ -3,7 +3,7 @@ import { useState, useEffect } from "react";
 import { getButtonClass } from "@/utils/buttonUtils";
 import { FaArrowLeft } from "react-icons/fa6";
 import { FaArrowRight } from "react-icons/fa6";
-import { BannerService } from "@/services/product.service";
+import { BannerService } from "@/services/product/product.service";
 import { SliderBannerItem } from "@/types/banner.model";
 import { Link } from "react-router-dom";
 import Loading from "@/components/shared/Loading";
@@ -107,7 +107,7 @@ const SliderBanner: React.FC = () => {
             width: `${sliderData.length * 100}%`
           }}
         >
-           {/* !bg-cyprus" style={{
+          {/* !bg-cyprus" style={{
               backgroundColor: item.background_color || '#1e3a8a'
             }} */}
           {sliderData.map((item, index) => (

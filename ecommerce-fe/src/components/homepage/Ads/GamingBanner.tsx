@@ -1,7 +1,7 @@
 // export default GamingBanner;
 import React, { useState, useEffect } from "react";
 import { GamingItem } from "./models/ads.model";
-import { GamingService } from "../../../services/ads.service";
+import { GamingService } from "../../../services/product/ads.service";
 import { Link } from "react-router-dom";
 
 const GamingBanner: React.FC = () => {

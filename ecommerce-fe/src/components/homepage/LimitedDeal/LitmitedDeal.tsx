@@ -2,7 +2,7 @@ import React, { useRef, useState, useEffect } from "react";
 import ProductCard from "../../common/Card";
 import { MdChevronRight, MdChevronLeft } from "react-icons/md";
 import { Product } from "@/types/product.model";
-import ProductService from "@/services/product.service";
+import ProductService from "@/services/product/product.service";
 import { handleViewAll } from "@/utils/helpers";
 import { useNavigate } from "react-router-dom";
 import Loading from "@/components/shared/Loading";
@@ -105,7 +105,7 @@ const LimitedDeal: React.FC = () => {
           {limitedData.map((product, index) => (
             <div className="min-w-[280px]">
               <ProductCard
-                key={index} 
+                key={index}
                 product={product}
               />
             </div>
@@ -132,7 +132,7 @@ const LimitedDeal: React.FC = () => {
         </button>
       </div>
     </div>
-    
+
   );
 };
 
