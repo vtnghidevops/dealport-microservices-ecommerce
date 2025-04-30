@@ -1,198 +1,132 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { IoFilterOutline } from "react-icons/io5";
 import { PiArrowsDownUp } from "react-icons/pi";
 import { HiDotsVertical } from "react-icons/hi";
 import { MdOutlineSearch } from "react-icons/md";
-import { orderService } from "../services/order.service";
+
 
 interface OrderFilterProps {
   onSearch: (searchTerm: string) => void;
   onFilterChange: (filter: string) => void;
-  counts?: {
+  counts: {
     all: number;
-    completed: number;
+    paid: number;
     pending: number;
     shipped: number;
     cancelled: number;
+    processing?: number;
+    delivered?: number;
+    refunded?: number;
   };
   loading?: boolean;
 }
 
-export const OrderFilter: React.FC<OrderFilterProps> = ({ 
-  onSearch, 
-  onFilterChange, 
-  counts = { all: 0, completed: 0, pending: 0, shipped: 0, cancelled: 0 },
-  loading = false
+export const OrderFilter: React.FC<OrderFilterProps> = ({
+  onSearch,
+  onFilterChange,
+  counts = { all: 0, paid: 0, pending: 0, shipped: 0, cancelled: 0 },
+  loading = false,
 }) => {
-  const [searchTerm, setSearchTerm] = useState('');
-  const [activeFilter, setActiveFilter] = useState('All order');
-  const [orderCounts, setOrderCounts] = useState(counts);
-  const [isLoading, setIsLoading] = useState(loading);
-  
-  // Fetch order counts when component mounts
-  useEffect(() => {
-    const fetchOrderCounts = async () => {
-      setIsLoading(true);
-      try {
-        // Get all orders to calculate counts
-        const { total: all } = await orderService.fetchOrders({ page: 1, limit: 1 });
-        const { total: completed } = await orderService.fetchOrders({ status: 'Delivered', page: 1, limit: 1 });
-        const { total: pending } = await orderService.fetchOrders({ status: 'Pending', page: 1, limit: 1 });
-        const { total: shipped } = await orderService.fetchOrders({ status: 'Shipped', page: 1, limit: 1 });
-        const { total: cancelled } = await orderService.fetchOrders({ status: 'Cancelled', page: 1, limit: 1 });
-        
-        setOrderCounts({
-          all,
-          completed,
-          pending,
-          shipped,
-          cancelled
-        });
-      } catch (error) {
-        console.error("Failed to fetch order counts:", error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
+  const [activeFilter, setActiveFilter] = useState<string>("All");
+  const [searchTerm, setSearchTerm] = useState("");
 
-    // Only fetch if counts are not provided as props
-    if (counts.all === 0) {
-      fetchOrderCounts();
-    } else {
-      setOrderCounts(counts);
-    }
-  }, [counts]);
-  
+  // Ensure counts are valid numbers
+  const safeCounts = {
+    all: typeof counts.all === 'number' ? counts.all : 0,
+    paid: typeof counts.paid === 'number' ? counts.paid : 0,
+    pending: typeof counts.pending === 'number' ? counts.pending : 0,
+    shipped: typeof counts.shipped === 'number' ? counts.shipped : 0,
+    cancelled: typeof counts.cancelled === 'number' ? counts.cancelled : 0,
+    processing: typeof counts.processing === 'number' ? counts.processing : 0,
+    delivered: typeof counts.delivered === 'number' ? counts.delivered : 0,
+    refunded: typeof counts.refunded === 'number' ? counts.refunded : 0,
+  };
+
+  const handleFilterChange = (filter: string) => {
+    setActiveFilter(filter);
+    onFilterChange(filter);
+  };
+
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     onSearch(searchTerm);
   };
-  
-  const handleFilterClick = (filter: string) => {
-    setActiveFilter(filter);
-    onFilterChange(filter);
-  };
-  
-  return (
-    <div className="flex flex-col md:flex-row justify-between mb-5 ">
-      <div className="gap-[14px] p-4 rounded-lg flex items-center space-x-2 mb-3 md:mb-0 overflow-x-auto bg-aqua-spring w-[540px] h-[40px]">
-        <button
-          onClick={() => handleFilterClick("All order")}
-          className={`px-[12px] py-[6px] h-[32px] rounded-md whitespace-nowrap ${
-            activeFilter === "All order"
-              ? "bg-white text-black"
-              : "bg-aqua-spring text-neutral-600"
-          }`}
-        >
-          All order <span className="text-xs ml-1">({isLoading ? '...' : orderCounts.all})</span>
-        </button>
-        <button
-          onClick={() => handleFilterClick("Completed")}
-          className={`px-[12px] py-[6px] h-[32px] rounded-md whitespace-nowrap ${
-            activeFilter === "Completed"
-              ? "bg-white text-black"
-              : "bg-aqua-spring text-neutral-600"
-          }`}
-        >
-          Completed <span className="text-xs ml-1">({isLoading ? '...' : orderCounts.completed})</span>
-        </button>
-        <button
-          onClick={() => handleFilterClick("Pending")}
-          className={`px-[12px] py-[6px] h-[32px] rounded-md whitespace-nowrap ${
-            activeFilter === "Pending"
-              ? "bg-white text-black"
-              : "bg-aqua-spring text-neutral-600"
-          }`}
-        >
-          Pending <span className="text-xs ml-1">({isLoading ? '...' : orderCounts.pending})</span>
-        </button>
-        <button
-          onClick={() => handleFilterClick("Cancelled")}
-          className={`px-[12px] py-[6px] h-[32px] rounded-md whitespace-nowrap ${
-            activeFilter === "Cancelled"
-              ? "bg-white text-black"
-              : "bg-aqua-spring text-neutral-600"
-          }`}
-        >
-          Cancelled <span className="text-xs ml-1">({isLoading ? '...' : orderCounts.cancelled})</span>
-        </button>
-      </div>
 
-      <form onSubmit={handleSearch} className="flex">
-        <div className="w-[420px] h-[40px] flex items-center gap-12">
-          <div className='w-[264px] h-full relative flex items-center'>
+  // Handle Enter key press in search input
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      onSearch(searchTerm);
+    }
+  };
+
+  const filterButtons = [
+    { name: "All", count: safeCounts.all },
+    { name: "Pending", count: safeCounts.pending },
+    { name: "Processing", count: safeCounts.processing },
+    { name: "Paid", count: safeCounts.paid },
+    { name: "Shipped", count: safeCounts.shipped },
+    { name: "Delivered", count: safeCounts.delivered },
+    { name: "Cancelled", count: safeCounts.cancelled },
+    { name: "Refunded", count: safeCounts.refunded },
+  ];
+
+  return (
+    <>
+      <div className="mb-4 flex justify-between">
+        <form onSubmit={handleSearch} className="relative flex items-center w-[326px] h-[48px]">
+          <div className="absolute inset-y-0 start-0 flex items-center ps-3 pointer-events-none">
+            <MdOutlineSearch className="w-[20px] h-[20px] text-gray-500" />
+          </div>
+          <div className='w-full border border-gray-300 rounded-lg '>
             <input
-              type="text"
-              placeholder="Search order report"
-              className="w-[264px] py-6 px-8 pl-[1rem] bg-neutral-50 h-[40px] rounded-md focus:outline-none text-neutral-500"
+              type="search"
+              className="w-[80%] h-[48px] p-4 pl-10 text-sm text-gray-900 outline-none"
+              placeholder="Search"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
+              onKeyDown={handleKeyDown}
+              disabled={loading}
             />
-            <MdOutlineSearch className='text-[25px] text-neutral-500 absolute right-[5%] top-1/2 -translate-y-1/2'></MdOutlineSearch>
+            <button
+              type="submit"
+              className="text-white absolute end-2.5 !px-5 bottom-1.5 top-1.5 bg-ocean-green hover:bg-green-700 font-medium rounded text-sm py-2"
+              disabled={loading}
+            >
+              Search
+            </button>
           </div>
-          <button className='w-[40px] h-[40px] flex items-center justify-center border border-neutral-200 rounded-lg hover:bg-aqua-spring'>
-            <IoFilterOutline></IoFilterOutline>
+
+        </form>
+
+        <div className="flex items-center">
+          <button className="w-[48px] h-[48px] rounded-lg border border-neutral-200 flex justify-center items-center mr-2 bg-white">
+            <IoFilterOutline className="w-[20px] h-[20px] text-gray-500" />
           </button>
-          <button className='w-[40px] h-[40px] flex items-center justify-center border border-neutral-200 rounded-lg hover:bg-aqua-spring'>
-            <PiArrowsDownUp></PiArrowsDownUp>
+          <button className="w-[48px] h-[48px] rounded-lg border border-neutral-200 flex justify-center items-center mr-2 bg-white">
+            <PiArrowsDownUp className="w-[20px] h-[20px] text-gray-500" />
           </button>
-          <button className='w-[40px] h-[40px] flex items-center justify-center border border-neutral-200 rounded-lg hover:bg-aqua-spring'>
-            <HiDotsVertical></HiDotsVertical>
+          <button className="w-[48px] h-[48px] rounded-lg border border-neutral-200 flex justify-center items-center bg-white">
+            <HiDotsVertical className="w-[20px] h-[20px] text-gray-500" />
           </button>
         </div>
-      </form>
-    </div>
+      </div>
+
+      <div className="mb-6 mt-5 flex flex-wrap">
+        {filterButtons.map((button) => (
+          <button
+            key={button.name}
+            className={`mr-6 mb-2 px-5 py-2 rounded-lg text-[15px] font-medium ${activeFilter === button.name
+              ? "bg-ocean-green text-white"
+              : "bg-gray-100 text-gray-500 hover:bg-gray-200"
+              }`}
+            onClick={() => handleFilterChange(button.name)}
+            disabled={loading}
+          >
+            {button.name} ({button.count})
+          </button>
+        ))}
+      </div>
+    </>
   );
 };
-// Updated OrderFilter component to use the reusable components
-// import React from 'react';
-// import TabFilter from '../../../common/TabFilter';
-// import SearchFilter from '../../../common/SearchFilter';
-
-// interface OrderFilterProps {
-//   onSearch: (searchTerm: string) => void;
-//   onFilterChange: (filter: string) => void;
-//   counts?: {
-//     all: number;
-//     completed: number;
-//     pending: number;
-//     shipped: number;
-//     cancelled: number;
-//   };
-//   activeFilter: string;
-//   loading?: boolean;
-// }
-
-// export const OrderFilter: React.FC<OrderFilterProps> = ({ 
-//   onSearch, 
-//   onFilterChange, 
-//   counts = { all: 0, completed: 0, pending: 0, shipped: 0, cancelled: 0 },
-//   activeFilter = "All order",
-//   loading = false
-// }) => {
-//   // Filter tabs configuration
-//   const filterTabs = [
-//     { id: "All order", label: "All order", count: counts.all },
-//     { id: "Completed", label: "Completed", count: counts.completed },
-//     { id: "Pending", label: "Pending", count: counts.pending },
-//     { id: "Cancelled", label: "Cancelled", count: counts.cancelled },
-//   ];
-  
-//   return (
-//     <div className="flex flex-col md:flex-row justify-between mb-5">
-//       <TabFilter
-//         tabs={filterTabs}
-//         activeTab={activeFilter}
-//         onTabChange={onFilterChange}
-//         loading={loading}
-//         containerClassName="bg-aqua-spring w-[540px] h-[40px]"
-//       />
-
-//       <SearchFilter
-//         onSearch={onSearch}
-//         placeholder="Search order report"
-//         showFilterButtons={true}
-//       />
-//     </div>
-//   );
-// };

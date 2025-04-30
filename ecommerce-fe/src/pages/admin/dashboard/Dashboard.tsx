@@ -14,7 +14,7 @@ import NewProductList from "../../../components/admin/dashboard/widgets/NewProdu
 // Services
 import { DashboardService } from "../../../components/admin/dashboard/services/dashboard.service";
 import { TransactionService } from "../../../components/admin/dashboard/services/transaction.service";
-import ProductService from "../../../services/product.service";
+import ProductService from "../../../services/product/product.service";
 
 // Models
 import { DashboardSummary } from "../../../components/admin/dashboard/models/dashboard.model";
@@ -32,7 +32,7 @@ import { IoFilterSharp } from "react-icons/io5";
 import { CiCirclePlus } from "react-icons/ci";
 import { Category } from "@/types/category.model";
 import { TopProductItem } from "@/components/homepage/BestSelling/models/topProducts.model";
-import { CategoryService } from "@/services/product.service";
+import { CategoryService } from "@/services/product/product.service";
 const DashboardAdmin: React.FC = () => {
   const [loading, setLoading] = useState<boolean>(true);
   const [dashboardData, setDashboardData] = useState<DashboardSummary | null>(null);
@@ -88,10 +88,10 @@ const DashboardAdmin: React.FC = () => {
   }
 
   return (
-      <div className="flex bg-neutral-50 ">
+    <div className="flex bg-neutral-50 ">
       {/* <Sidebar isOpen={true} /> */}
       <div className="flex-1 overflow-auto">
-        <AdminHeader title="Dashboard"/>
+        <AdminHeader title="Dashboard" />
         <main className="p-[1rem]">
           {/* Metric Cards */}
           <div className="flex flex-col md:flex-row gap-[18px] mb-6">
@@ -239,7 +239,7 @@ const DashboardAdmin: React.FC = () => {
                   <IoFilterSharp className="w-[18px] h-[18px]"></IoFilterSharp>
                 </button>
               </div>
-            {/* <BestSellingTable bestProducts={bestSellingProducts} /> */}
+              {/* <BestSellingTable bestProducts={bestSellingProducts} /> */}
               <div className="flex justify-end mt-[1rem] items-center mr-[1rem]">
                 <button className="text-sm bg-white text-primary border border-primary rounded-[25px] w-[96px] h-[32px]">
                   Details
@@ -263,10 +263,10 @@ const DashboardAdmin: React.FC = () => {
             </div>
           </div>
 
-         
+
         </main>
       </div>
-    </div>    
+    </div>
   );
 };
 

@@ -5,79 +5,236 @@ import { OrderTable } from "./tables/OrderTable";
 import { OrderFilter } from "./filters/OrderFilter";
 import { FiPlusCircle } from "react-icons/fi";
 
-import {
-  Order,
-  OrderStatus,
-  OrderFilterParams,
-  OrderSummary,
-} from "./models/order.model";
-import { orderService } from "./services/order.service";
+// Import từ services toàn cục
+import { Order, OrderStatus } from '@/services/user/order.service';
+import { adminOrderService, OrderFilterParams, OrderSummary } from '@/services/admin/order.service';
+
 import { AddOrderModal, NewOrderData } from "./modals/AddOrderModal";
-import { toast, useToast } from "@/hooks/use-toast";
+import { useToast } from "@/hooks/use-toast";
 import Pagination from "../../common/Pagination";
 
 export const OrderManagement: React.FC = () => {
   const { toast } = useToast();
+
   // State variables
   const [orders, setOrders] = useState<Order[]>([]);
   const [orderSummary, setOrderSummary] = useState<OrderSummary | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
-  const [filterParams, setFilterParams] = useState<OrderFilterParams>({
-    page: 1,
-    limit: 10,
-  });
-  const [totalOrders, setTotalOrders] = useState<number>(0);
-  const [activeStatus, setActiveStatus] = useState<OrderStatus | "All">("All");
-  const [filterCounts, setFilterCounts] = useState({
+  const [initialLoading, setInitialLoading] = useState<boolean>(true);
+
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState<number>(1);
+  const [itemsPerPage, setItemsPerPage] = useState<number>(10);
+  const [totalItems, setTotalItems] = useState<number>(0);
+
+  // Filter state
+  const [activeFilter, setActiveFilter] = useState<string>("All");
+  const [searchTerm, setSearchTerm] = useState<string>("");
+
+  // Data caching
+  const [allOrders, setAllOrders] = useState<Order[]>([]);
+  const [filteredOrders, setFilteredOrders] = useState<Order[]>([]);
+  const [isAddModalOpen, setIsAddModalOpen] = useState<boolean>(false);
+  const [statusCounts, setStatusCounts] = useState({
     all: 0,
-    completed: 0,
+    paid: 0,
     pending: 0,
     shipped: 0,
     cancelled: 0,
+    processing: 0,
+    delivered: 0,
+    refunded: 0,
   });
-  const [isAddModalOpen, setIsAddModalOpen] = useState<boolean>(false);
 
-  // Caching state variables
-  const [allOrdersCache, setAllOrdersCache] = useState<Order[]>([]);
-  const [displayedOrders, setDisplayedOrders] = useState<Order[]>([]);
-  const [isDataLoaded, setIsDataLoaded] = useState<boolean>(false);
+  // Load all orders from the API once
+  useEffect(() => {
+    const loadAllData = async () => {
+      setInitialLoading(true);
+      try {
+        // Fetch summary data
+        const summaryData = await adminOrderService.fetchOrderSummary();
+        setOrderSummary(summaryData);
 
-  // Fetching functions
-  const fetchOrders = async (params: OrderFilterParams) => {
-    const result = await orderService.fetchOrders(params);
-    return result;
+        // Fetch all orders (we'll filter client-side)
+        const { orders: fetchedOrders, total } = await adminOrderService.fetchOrders({
+          page: 1,
+          limit: 1000, // Get a large batch to handle locally
+        });
+
+        // Filter out invalid orders
+        const validOrders = Array.isArray(fetchedOrders)
+          ? fetchedOrders.filter(order => order && typeof order === 'object' && order.id)
+          : [];
+
+        // Save all orders for client-side filtering
+        setAllOrders(validOrders);
+        setFilteredOrders(validOrders);
+        setTotalItems(validOrders.length);
+
+        // Calculate counts for each status
+        updateStatusCounts(validOrders);
+      } catch (error) {
+        console.error("Failed to load order data:", error);
+        toast({
+          title: "Failed to load order data",
+          description: error instanceof Error ? error.message : "Unknown error",
+          variant: "destructive",
+        });
+      } finally {
+        setInitialLoading(false);
+      }
+    };
+
+    loadAllData();
+  }, []);
+
+  // Calculate counts for each status
+  const updateStatusCounts = (orders: Order[]) => {
+    if (!Array.isArray(orders)) return;
+
+    const counts = {
+      all: orders.length,
+      paid: orders.filter(order => order.status === OrderStatus.Paid).length,
+      pending: orders.filter(order => order.status === OrderStatus.Pending).length,
+      shipped: orders.filter(order => order.status === OrderStatus.Shipped).length,
+      cancelled: orders.filter(order => order.status === OrderStatus.Cancelled).length,
+      processing: orders.filter(order => order.status === OrderStatus.Processing).length,
+      delivered: orders.filter(order => order.status === OrderStatus.Delivered).length,
+      refunded: orders.filter(order => order.status === OrderStatus.Refunded).length,
+    };
+
+    setStatusCounts(counts);
   };
 
-  const fetchOrderSummary = async () => {
-    const summary = await orderService.fetchOrderSummary();
-    return summary;
-  };
+  // Update filtered orders when filter changes
+  useEffect(() => {
+    setLoading(true);
 
-  const updateOrderStatus = async (orderId: string, status: OrderStatus) => {
-    return await orderService.updateOrderStatus(orderId, status);
+    // Apply filters (status and search term)
+    let filtered = [...allOrders];
+
+    // Apply status filter
+    if (activeFilter !== "All") {
+      const statusValue = getStatusFromFilter(activeFilter);
+      if (statusValue) {
+        filtered = filtered.filter(order => order.status === statusValue);
+      }
+    }
+
+    // Apply search filter
+    if (searchTerm) {
+      const search = searchTerm.toLowerCase().trim();
+      filtered = filtered.filter(order => {
+        // Tìm kiếm trong thông tin đơn hàng cơ bản
+        if ((order.id && order.id.toLowerCase().includes(search)) ||
+          (order.orderNumber && order.orderNumber.toLowerCase().includes(search)) ||
+          (order.notes && order.notes.toLowerCase().includes(search)) ||
+          (order.paymentMethod && order.paymentMethod.toLowerCase().includes(search))) {
+          return true;
+        }
+
+        // Tìm kiếm trong thông tin billing
+        if (order.billingInfo) {
+          if ((order.billingInfo.firstName && order.billingInfo.firstName.toLowerCase().includes(search)) ||
+            (order.billingInfo.lastName && order.billingInfo.lastName.toLowerCase().includes(search)) ||
+            (order.billingInfo.email && order.billingInfo.email.toLowerCase().includes(search)) ||
+            (order.billingInfo.phone && order.billingInfo.phone.includes(search)) ||
+            (order.billingInfo.address && order.billingInfo.address.toLowerCase().includes(search)) ||
+            (order.billingInfo.city && order.billingInfo.city.toLowerCase().includes(search)) ||
+            (order.billingInfo.country && order.billingInfo.country.toLowerCase().includes(search))) {
+            return true;
+          }
+        }
+
+        // Tìm kiếm trong thông tin shipping
+        if (order.shippingInfo) {
+          if ((order.shippingInfo.firstName && order.shippingInfo.firstName.toLowerCase().includes(search)) ||
+            (order.shippingInfo.lastName && order.shippingInfo.lastName.toLowerCase().includes(search)) ||
+            (order.shippingInfo.address && order.shippingInfo.address.toLowerCase().includes(search)) ||
+            (order.shippingInfo.city && order.shippingInfo.city.toLowerCase().includes(search)) ||
+            (order.shippingInfo.country && order.shippingInfo.country.toLowerCase().includes(search)) ||
+            (order.shippingInfo.shippingMethod && order.shippingInfo.shippingMethod.toLowerCase().includes(search))) {
+            return true;
+          }
+        }
+
+        // Tìm kiếm trong tên sản phẩm
+        if (order.items && Array.isArray(order.items)) {
+          return order.items.some(item =>
+            (item.name && item.name.toLowerCase().includes(search)) ||
+            (item.productId && item.productId.toLowerCase().includes(search))
+          );
+        }
+
+        return false;
+      });
+    }
+
+    setFilteredOrders(filtered);
+    setTotalItems(filtered.length);
+    setCurrentPage(1); // Reset to first page when filter changes
+    setLoading(false);
+  }, [activeFilter, searchTerm, allOrders]);
+
+  // Update displayed orders when page changes
+  useEffect(() => {
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    const endIndex = Math.min(startIndex + itemsPerPage, filteredOrders.length);
+
+    if (startIndex >= filteredOrders.length) {
+      setOrders([]);
+    } else {
+      setOrders(filteredOrders.slice(startIndex, endIndex));
+    }
+  }, [currentPage, itemsPerPage, filteredOrders]);
+
+  // Convert filter name to OrderStatus
+  const getStatusFromFilter = (filter: string): OrderStatus | undefined => {
+    switch (filter) {
+      case "Paid":
+        return OrderStatus.Paid;
+      case "Pending":
+        return OrderStatus.Pending;
+      case "Processing":
+        return OrderStatus.Processing;
+      case "Shipped":
+        return OrderStatus.Shipped;
+      case "Delivered":
+        return OrderStatus.Delivered;
+      case "Cancelled":
+        return OrderStatus.Cancelled;
+      case "Refunded":
+        return OrderStatus.Refunded;
+      default:
+        return undefined;
+    }
   };
 
   // Handlers
   const handleCreateOrder = async (orderData: NewOrderData) => {
     setLoading(true);
     try {
-      const newOrder = await orderService.createOrder({
+      const newOrder = await adminOrderService.createOrder({
         customerId: orderData.customerId,
         customerName: orderData.customerName,
         products: orderData.products,
         totalAmount: orderData.totalAmount,
-        paymentStatus: orderData.paymentStatus as "Paid" | "Unpaid",
+        paymentStatus: orderData.paymentStatus,
       });
 
-      const updatedOrders = [newOrder, ...allOrdersCache];
-      setAllOrdersCache(updatedOrders);
-      setTotalOrders(totalOrders + 1);
+      // Add the new order to our cached orders
+      const updatedAllOrders = [newOrder, ...allOrders];
+      setAllOrders(updatedAllOrders);
 
-      if (filterParams.page === 1) {
-        const ordersToShow = updatedOrders.slice(0, filterParams.limit);
-        setOrders(ordersToShow);
-        setDisplayedOrders(ordersToShow);
+      // Update filtered orders if the new order matches current filter
+      if (activeFilter === "All" || newOrder.status === getStatusFromFilter(activeFilter)) {
+        const updatedFiltered = [newOrder, ...filteredOrders];
+        setFilteredOrders(updatedFiltered);
+        setTotalItems(updatedFiltered.length);
       }
+
+      // Update status counts
+      updateStatusCounts(updatedAllOrders);
 
       setIsAddModalOpen(false);
       toast({
@@ -88,152 +245,127 @@ export const OrderManagement: React.FC = () => {
       console.error("Error creating order:", error);
       toast({
         title: "Failed to create order",
-        variant: "error",
+        variant: "destructive",
       });
     } finally {
       setLoading(false);
     }
   };
 
-  const handleStatusChange = async (orderId: string, status: OrderStatus) => {
-    const success = await updateOrderStatus(orderId, status);
-    if (success) {
-      const updatedOrders = orders.map((order) =>
-        order.id === orderId ? { ...order, status } : order
-      );
-      setOrders(updatedOrders);
+  const handleStatusChange = async (orderId: string, status: string) => {
+    const statusValue = status as OrderStatus;
+    setLoading(true);
 
-      setAllOrdersCache(
-        allOrdersCache.map((order) =>
-          order.id === orderId ? { ...order, status } : order
-        )
-      );
+    try {
+      const success = await adminOrderService.updateOrderStatus(orderId, statusValue);
+      if (success) {
+        // Update both allOrders and filteredOrders
+        const updatedAllOrders = allOrders.map(order => {
+          if (order.id === orderId) {
+            const updatedOrder = { ...order, status: statusValue };
+
+            // Tự động cập nhật payment status nếu order status là paid
+            if (statusValue === OrderStatus.Paid) {
+              if (!updatedOrder.paymentStatus ||
+                updatedOrder.paymentStatus === 'pending' ||
+                updatedOrder.paymentStatus === 'processing') {
+                updatedOrder.paymentStatus = 'paid';
+              }
+
+              if (updatedOrder.paymentInfo) {
+                updatedOrder.paymentInfo = {
+                  ...updatedOrder.paymentInfo,
+                  status: 'paid'
+                };
+              }
+            }
+
+            return updatedOrder;
+          }
+          return order;
+        });
+
+        setAllOrders(updatedAllOrders);
+
+        // If the order no longer matches the current filter, remove it from filtered orders
+        if (activeFilter !== "All" && getStatusFromFilter(activeFilter) !== statusValue) {
+          const updatedFiltered = filteredOrders.filter(order => order.id !== orderId);
+          setFilteredOrders(updatedFiltered);
+          setTotalItems(updatedFiltered.length);
+        } else {
+          // Otherwise update it in filtered orders
+          const updatedFiltered = filteredOrders.map(order => {
+            if (order.id === orderId) {
+              const updatedOrder = { ...order, status: statusValue };
+
+              // Tự động cập nhật payment status nếu order status là paid
+              if (statusValue === OrderStatus.Paid) {
+                if (!updatedOrder.paymentStatus ||
+                  updatedOrder.paymentStatus === 'pending' ||
+                  updatedOrder.paymentStatus === 'processing') {
+                  updatedOrder.paymentStatus = 'paid';
+                }
+
+                if (updatedOrder.paymentInfo) {
+                  updatedOrder.paymentInfo = {
+                    ...updatedOrder.paymentInfo,
+                    status: 'paid'
+                  };
+                }
+              }
+
+              return updatedOrder;
+            }
+            return order;
+          });
+          setFilteredOrders(updatedFiltered);
+        }
+
+        // Update status counts
+        updateStatusCounts(updatedAllOrders);
+
+        toast({
+          title: "Order status updated",
+          description: `Order status changed to ${status}`,
+          variant: "success",
+        });
+      } else {
+        toast({
+          title: "Failed to update order status",
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      console.error("Error updating order status:", error);
+      toast({
+        title: "Error updating order status",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
     }
   };
 
   const handleViewDetails = (orderId: string) => {
-    console.log(`View details for order: ${orderId}`);
+    const order = orders.find(o => o.id === orderId);
+    const orderIdentifier = order?.orderNumber || orderId.substring(0, 8);
+    console.log(`View details for order: ${orderIdentifier}`);
+    // Implement view details functionality
   };
 
-  const handleSearch = (searchTerm: string) => {
-    setFilterParams({
-      ...filterParams,
-      searchTerm,
-      page: 1,
-    });
-    setIsDataLoaded(false);
+  const handleSearch = (term: string) => {
+    setSearchTerm(term);
   };
 
   const handleFilterChange = (filter: string) => {
-    let status: OrderStatus | undefined;
-
-    switch (filter) {
-      case "Completed":
-        status = "Delivered";
-        break;
-      case "Pending":
-        status = "Pending";
-        break;
-      case "Cancelled":
-        status = "Cancelled";
-        break;
-      default:
-        status = undefined;
-    }
-
-    setActiveStatus(status || "All");
-    setFilterParams({
-      ...filterParams,
-      status,
-      page: 1,
-    });
-    setIsDataLoaded(false);
+    setActiveFilter(filter);
   };
 
   const handlePageChange = (page: number) => {
-    const totalPages = Math.ceil(totalOrders / filterParams.limit);
+    const totalPages = Math.ceil(totalItems / itemsPerPage);
     const validPage = Math.max(1, Math.min(page, totalPages));
-
-    setFilterParams({
-      ...filterParams,
-      page: validPage,
-    });
+    setCurrentPage(validPage);
   };
-
-  // Effects
-  useEffect(() => {
-    const loadData = async () => {
-      setLoading(true);
-      try {
-        const summaryData = await fetchOrderSummary();
-        setOrderSummary(summaryData);
-
-        const { orders: allOrders, total } = await fetchOrders({
-          ...filterParams,
-          page: 1,
-          limit: 1000,
-          status: filterParams.status,
-        });
-
-        setAllOrdersCache(allOrders);
-        setTotalOrders(total);
-        setIsDataLoaded(true);
-
-        const { total: all } = await orderService.fetchOrders({
-          page: 1,
-          limit: 1,
-        });
-        const { total: completed } = await orderService.fetchOrders({
-          status: "Delivered",
-          page: 1,
-          limit: 1,
-        });
-        const { total: pending } = await orderService.fetchOrders({
-          status: "Pending",
-          page: 1,
-          limit: 1,
-        });
-        const { total: shipped } = await orderService.fetchOrders({
-          status: "Shipped",
-          page: 1,
-          limit: 1,
-        });
-        const { total: cancelled } = await orderService.fetchOrders({
-          status: "Cancelled",
-          page: 1,
-          limit: 1,
-        });
-
-        setFilterCounts({
-          all,
-          completed,
-          pending,
-          shipped,
-          cancelled,
-        });
-      } catch (error) {
-        console.error("Failed to load order data:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    if (!isDataLoaded || filterParams.status || filterParams.searchTerm) {
-      loadData();
-    }
-  }, [filterParams.status, filterParams.searchTerm, isDataLoaded]);
-
-  useEffect(() => {
-    if (allOrdersCache.length > 0) {
-      const startIndex = (filterParams.page - 1) * filterParams.limit;
-      const endIndex = startIndex + filterParams.limit;
-
-      const ordersForCurrentPage = allOrdersCache.slice(startIndex, endIndex);
-      setOrders(ordersForCurrentPage);
-      setDisplayedOrders(ordersForCurrentPage);
-    }
-  }, [filterParams.page, filterParams.limit, allOrdersCache]);
-
 
   // Component rendering
   return (
@@ -257,7 +389,7 @@ export const OrderManagement: React.FC = () => {
 
             {/* Order Summary Cards */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6 mt-[3rem]">
-              {orderSummary ? (
+              {orderSummary && !initialLoading ? (
                 <>
                   <OrderSummaryCard
                     title="Total Orders"
@@ -300,18 +432,11 @@ export const OrderManagement: React.FC = () => {
               <OrderFilter
                 onSearch={handleSearch}
                 onFilterChange={handleFilterChange}
-                counts={filterCounts}
-                loading={loading}
+                counts={statusCounts}
+                loading={loading || initialLoading}
               />
-              {/* <OrderFilter
-                onSearch={handleSearch}
-                onFilterChange={handleFilterChange}
-                counts={filterCounts}
-                activeFilter={activeStatus}
-                loading={loading}
-              /> */}
 
-              {loading ? (
+              {loading || initialLoading ? (
                 <div className="flex justify-center py-10">
                   <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-blue-500"></div>
                 </div>
@@ -322,24 +447,13 @@ export const OrderManagement: React.FC = () => {
                     onStatusChange={handleStatusChange}
                     onViewDetails={handleViewDetails}
                   />
-                  {/* <OrderTable
-                    orders={orders}
-                    onStatusChange={handleStatusChange}
-                    onViewDetails={handleViewDetails}
-                    totalItems={totalOrders}
-                    currentPage={filterParams.page}
-                    pageSize={filterParams.limit}
-                    onPageChange={handlePageChange}
-                    loading={loading}
-                  /> */}
                   <div className="mt-[3rem]">
-                    {/* {renderPagination()} */}
                     <Pagination
-                        currentPage={filterParams.page}
-                        totalItems={totalOrders}
-                        pageSize={filterParams.limit}
-                        onPageChange={handlePageChange}
-                      />
+                      currentPage={currentPage}
+                      totalItems={totalItems}
+                      pageSize={itemsPerPage}
+                      onPageChange={handlePageChange}
+                    />
                   </div>
                 </>
               )}
