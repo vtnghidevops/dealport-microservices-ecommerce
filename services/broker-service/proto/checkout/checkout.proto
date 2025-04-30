@@ -1,0 +1,175 @@
+syntax = "proto3";
+
+package checkout;
+
+option go_package = "broker-service/proto/checkout";
+
+// Checkout Service Definition
+service CheckoutService {
+  // Checkout operations
+  rpc CreateOrder(CreateOrderRequest) returns (Order);
+  rpc GetOrder(GetOrderRequest) returns (Order);
+  rpc ListOrders(ListOrdersRequest) returns (ListOrdersResponse);
+  rpc UpdateOrderStatus(UpdateOrderStatusRequest) returns (StatusResponse);
+  rpc ProcessPayment(ProcessPaymentRequest) returns (PaymentResponse);
+  rpc ValidateCheckout(ValidateCheckoutRequest)
+      returns (ValidateCheckoutResponse);
+
+  // Health check
+  rpc GetHealth(HealthRequest) returns (HealthResponse);
+}
+
+// Order object
+message Order {
+  string id = 1;
+  string user_id = 2;
+  string order_number = 3;
+  string status = 4;
+  repeated OrderItem items = 5;
+  BillingInfo billing_info = 6;
+  ShippingInfo shipping_info = 7;
+  PaymentInfo payment_info = 8;
+  OrderTotals totals = 9;
+  string notes = 10;
+  string created_at = 11;
+  string updated_at = 12;
+}
+
+// OrderItem object
+message OrderItem {
+  string id = 1;
+  string product_id = 2;
+  string name = 3;
+  double price = 4;
+  int32 quantity = 5;
+  double subtotal = 6;
+  string image_url = 7;
+}
+
+// BillingInfo object
+message BillingInfo {
+  string first_name = 1;
+  string last_name = 2;
+  string company_name = 3;
+  string address = 4;
+  string country = 5;
+  string region = 6;
+  string city = 7;
+  string zip_code = 8;
+  string email = 9;
+  string phone = 10;
+}
+
+// ShippingInfo object
+message ShippingInfo {
+  bool ship_to_different_address = 1;
+  string first_name = 2;
+  string last_name = 3;
+  string company_name = 4;
+  string address = 5;
+  string country = 6;
+  string region = 7;
+  string city = 8;
+  string zip_code = 9;
+  string shipping_method = 10;
+  double shipping_cost = 11;
+}
+
+// PaymentInfo object
+message PaymentInfo {
+  string payment_method = 1;
+  string transaction_id = 2;
+  string status = 3;
+  double amount = 4;
+  string currency = 5;
+  string payment_date = 6;
+}
+
+// OrderTotals object
+message OrderTotals {
+  double subtotal = 1;
+  double shipping = 2;
+  double discount = 3;
+  double tax = 4;
+  double total = 5;
+}
+
+// Request and Response messages
+message CreateOrderRequest {
+  string user_id = 1;
+  repeated OrderItem items = 2;
+  BillingInfo billing_info = 3;
+  ShippingInfo shipping_info = 4;
+  string payment_method = 5;
+  string coupon_code = 6;
+  string notes = 7;
+}
+
+message GetOrderRequest {
+  string id = 1;
+  string user_id = 2;
+}
+
+message ListOrdersRequest {
+  string user_id = 1;
+  int32 page = 2;
+  int32 page_size = 3;
+}
+
+message ListOrdersResponse {
+  repeated Order orders = 1;
+  int32 total = 2;
+}
+
+message UpdateOrderStatusRequest {
+  string order_id = 1;
+  string status = 2;
+}
+
+message ProcessPaymentRequest {
+  string order_id = 1;
+  string payment_method = 2;
+  double amount = 3;
+  string currency = 4;
+  string return_url = 5;
+}
+
+message PaymentResponse {
+  bool success = 1;
+  string transaction_id = 2;
+  string status = 3;
+  string redirect_url = 4;
+  string message = 5;
+}
+
+message ValidateCheckoutRequest {
+  repeated OrderItem items = 1;
+  BillingInfo billing_info = 2;
+  ShippingInfo shipping_info = 3;
+  string payment_method = 4;
+}
+
+message ValidateCheckoutResponse {
+  bool valid = 1;
+  repeated ValidationError errors = 2;
+}
+
+message ValidationError {
+  string field = 1;
+  string message = 2;
+}
+
+// Status Response
+message StatusResponse {
+  bool success = 1;
+  string message = 2;
+}
+
+// Health Request/Response
+message HealthRequest {}
+
+message HealthResponse {
+  string status = 1;
+  string timestamp = 2;
+  string version = 3;
+}
