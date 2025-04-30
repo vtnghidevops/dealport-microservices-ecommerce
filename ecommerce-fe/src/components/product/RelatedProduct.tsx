@@ -2,7 +2,7 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Product } from '@/types/product.model';
-import ProductService from '@/services/product.service';
+import ProductService from '@/services/product/product.service';
 import ProductCard from './ProductCard';
 import Loading from '@/components/shared/Loading';
 
@@ -10,10 +10,10 @@ interface RelatedProductProps extends Product {
   currentProductId: string;
 }
 
-const RelatedProduct: React.FC<RelatedProductProps> = ({ 
-  categorySlug, 
+const RelatedProduct: React.FC<RelatedProductProps> = ({
+  categorySlug,
   currentProductId,
-  name = "You may also like" 
+  name = "You may also like"
 }) => {
   const [relatedProducts, setRelatedProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
@@ -25,8 +25,8 @@ const RelatedProduct: React.FC<RelatedProductProps> = ({
         // Filter out current product and limit to 4 related products
         const filtered = products.products
           ? products.products
-              .filter((product: Product) => String(product.id) === currentProductId)
-              .slice(0, 4)
+            .filter((product: Product) => String(product.id) === currentProductId)
+            .slice(0, 4)
           : [];
         setRelatedProducts(filtered);
       } catch (error) {
@@ -42,7 +42,7 @@ const RelatedProduct: React.FC<RelatedProductProps> = ({
   }, [categorySlug, currentProductId]);
 
   if (loading) {
-    return <Loading/>;
+    return <Loading />;
   }
 
   if (relatedProducts.length === 0) {
@@ -51,15 +51,15 @@ const RelatedProduct: React.FC<RelatedProductProps> = ({
 
   return (
     <div className="py-10">
- 
+
       <div className="flex gap-16">
         {relatedProducts.map((product) => (
           <Link
-        key={product.id}
-        to={`/${product.categorySlug}/${product.slug}`}
-        className="w-[15rem] min-h-[320px]"
+            key={product.id}
+            to={`/${product.categorySlug}/${product.slug}`}
+            className="w-[15rem] min-h-[320px]"
           >
-        <ProductCard product={product} />
+            <ProductCard product={product} />
           </Link>
         ))}
       </div>

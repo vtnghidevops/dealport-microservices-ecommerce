@@ -34,7 +34,7 @@ export const useWishlist = (): UseWishlistReturn => {
     });
   };
 
-  const removeFromWishlist = (productId: string) => {
+  const removeFromWishlist = (productId: number) => {
     setWishlistItems(prev => {
       const itemToRemove = prev.find(item => item.id === productId);
       const filtered = prev.filter(item => item.id !== productId);
@@ -49,7 +49,7 @@ export const useWishlist = (): UseWishlistReturn => {
     });
   };
 
-  const isInWishlist = (productId: string) => {
+  const isInWishlist = (productId: number) => {
     return wishlistItems.some(item => item.id === productId);
   };
 
@@ -64,8 +64,8 @@ export const useWishlist = (): UseWishlistReturn => {
   return {
     wishlistItems,
     addToWishlist,
-    removeFromWishlist,
-    isInWishlist,
+    removeFromWishlist: (productId: string) => removeFromWishlist(Number(productId)),
+    isInWishlist: (productId: string) => isInWishlist(Number(productId)), 
     clearWishlist
   };
 };

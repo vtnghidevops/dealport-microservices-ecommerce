@@ -8,6 +8,8 @@ import CustomerPage from "../pages/admin/customer";
 import CategoryPage from "../pages/admin/category";
 // import ProductPage from "../pages/admin/product";
 import AdminRolePage from "../pages/admin/role";
+import CouponManagement from "../pages/admin/coupon"; // Import Coupon Management page
+import CouponCreate from "../pages/admin/coupon/create"; // Import Coupon Create page
 
 import MainLayout from "@/components/layouts/MainLayout";
 import ProductList from "../pages/products/ProductList";
@@ -23,6 +25,7 @@ import Wishlist from "@/pages/wishlist/Wishlist";
 import Cart from "@/pages/cart/Cart";
 import Checkout from "@/pages/checkout/Checkout";
 import SuccessfulPayment from "../pages/checkout/SuccessfulPayment";
+import PaymentResult from "../pages/checkout/PaymentResult";
 
 import Profile from "../pages/user/Profile";
 import OrdersHistory from "../pages/user/OrdersHistory";
@@ -30,6 +33,7 @@ import Addresses from "../pages/user/Addresses";
 import SecuritySettings from "../pages/user/SecuritySettings";
 import UserDashboard from "../pages/user/Dashboard";
 import ProductPage from "../pages/admin/product";
+
 const AppRouters: React.FC = () => {
   return (
     <>
@@ -67,6 +71,7 @@ const AppRouters: React.FC = () => {
             <Route path="orders" element={<Cart />} />
             <Route path="checkout" element={<Checkout />} />
             <Route path="checkout/success" element={<SuccessfulPayment />} />
+            <Route path="payment/result" element={<PaymentResult />} />
           </Route>
         </Route>
 
@@ -80,6 +85,10 @@ const AppRouters: React.FC = () => {
           {/* <Route path="products" element={<ProductPage />} /> */}
           <Route path="role" element={<AdminRolePage />} />
           <Route path="add-product" element={<ProductPage />} />
+
+          {/* Coupon Management Routes */}
+          <Route path="coupons" element={<CouponManagement />} />
+          <Route path="coupons/create" element={<CouponCreate />} />
         </Route>
 
         {/* Not found route */}

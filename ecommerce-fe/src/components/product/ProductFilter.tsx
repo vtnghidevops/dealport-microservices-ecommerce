@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Range } from "react-range";
 import { Category } from "@/types/category.model";
-import { CategoryService } from "@/services/product.service";
+import { CategoryService } from "@/services/product/product.service";
 import { FaStar } from "react-icons/fa";
 import { GoChevronDown, GoChevronUp } from "react-icons/go";
 interface ProductFilterProps {
@@ -268,9 +268,8 @@ const ProductFilter: React.FC<ProductFilterProps> = ({
                       className="h-1 bg-orange-500 rounded-full absolute"
                       style={{
                         left: `${(priceRange[0] / 10000) * 100}%`,
-                        width: `${
-                          ((priceRange[1] - priceRange[0]) / 10000) * 100
-                        }%`,
+                        width: `${((priceRange[1] - priceRange[0]) / 10000) * 100
+                          }%`,
                       }}
                     />
                     {children}
@@ -413,11 +412,9 @@ const ProductFilter: React.FC<ProductFilterProps> = ({
                   {Array.from({ length: 5 }).map((_, index) => (
                     <FaStar
                       key={index}
-                      className={`${
-                        index < rating ? "text-yellow-400" : "text-gray-300"
-                      } ${
-                        selectedRating === rating ? "scale-110" : ""
-                      } w-[14px] h-[14px]`}
+                      className={`${index < rating ? "text-yellow-400" : "text-gray-300"
+                        } ${selectedRating === rating ? "scale-110" : ""
+                        } w-[14px] h-[14px]`}
                     />
                   ))}
                   <span className="ml-2 text-sm text-gray-700">
@@ -453,11 +450,10 @@ const ProductFilter: React.FC<ProductFilterProps> = ({
               <button
                 key={tag}
                 onClick={() => onTagFilter(tag)}
-                className={`px-3 py-1 rounded-full text-sm transition-all duration-200 ${
-                  normalizeText(selectedTag || '') === normalizeText(tag)
+                className={`px-3 py-1 rounded-full text-sm transition-all duration-200 ${normalizeText(selectedTag || '') === normalizeText(tag)
                     ? "bg-[#0496FF] text-white"
                     : "bg-gray-100 text-gray-600 hover:bg-gray-200"
-                }`}
+                  }`}
               >
                 {tag}
               </button>

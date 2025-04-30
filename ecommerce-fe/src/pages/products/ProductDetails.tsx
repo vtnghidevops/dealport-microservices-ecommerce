@@ -1,7 +1,7 @@
 import React, { useRef, useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { Product } from '@/types/product.model';
-import ProductService from '@/services/product.service';
+import ProductService from '@/services/product/product.service';
 import NotFound from '../system/NotFound';
 import ProductInformation from '@/components/product/ProductInfomation';
 import RelatedProduct from '@/components/product/RelatedProduct';

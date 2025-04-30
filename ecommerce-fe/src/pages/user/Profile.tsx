@@ -8,7 +8,7 @@ import UserLayout from '../../components/layouts/UserLayout';
 import UserAvatar from '../../components/user/UserAvatar';
 import { FiEdit, FiCheck } from 'react-icons/fi';
 import { User, UserProfile, UserAddress } from '@/types/user.model';
-import userService from '@/services/api/user.service';
+import userService from '@/services/user/user.service';
 
 const Profile: React.FC = () => {
   const { authState, updateProfile } = useAuth();
