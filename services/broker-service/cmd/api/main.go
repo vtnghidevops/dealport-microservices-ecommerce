@@ -7,10 +7,19 @@ import (
 	"net/http"
 	"time"
 
+	// communicate grpc between all service
 	grpcAuthHandler "broker-service/internal/handler/grpc/auth"
+	grpcCartHandler "broker-service/internal/handler/grpc/cart"
+	grpcCheckoutHandler "broker-service/internal/handler/grpc/checkout"
+	grpcPaymentHandler "broker-service/internal/handler/grpc/payment"
 	grpcProductHandler "broker-service/internal/handler/grpc/product"
 	grpcUserHandler "broker-service/internal/handler/grpc/user"
+
+	// handle with http req from fe
 	httpAuthHandler "broker-service/internal/handler/http/auth"
+	httpCartHandler "broker-service/internal/handler/http/cart"
+	httpCheckoutHandler "broker-service/internal/handler/http/checkout"
+	httpPaymentHandler "broker-service/internal/handler/http/payment"
 	httpProductHandler "broker-service/internal/handler/http/product"
 	httpUserHandler "broker-service/internal/handler/http/user"
 	custommiddleware "broker-service/internal/middleware"
@@ -26,10 +35,17 @@ type Config struct {
 	BannerHandler      *grpcProductHandler.BannerGrpcHandler
 	AdsHandler         *grpcProductHandler.AdsGrpcHandler
 
-	// Add auth and user handlers
+	// Auth and user handlers
 	AuthHandler    *httpAuthHandler.Config
 	UserHandler    *httpUserHandler.Config
 	AuthMiddleware *custommiddleware.AuthMiddleware
+
+	// Cart and checkout handlers
+	CartHandler     *httpCartHandler.Config
+	CheckoutHandler *httpCheckoutHandler.Config
+
+	// Payment handler
+	PaymentHandler *httpPaymentHandler.Config
 }
 
 const port string = "8080"
@@ -64,6 +80,27 @@ func main() {
 		// Continue without user service functionality
 	}
 
+	// Connect to cart service
+	cartClient, err := grpcCartHandler.GetCartClient()
+	if err != nil {
+		log.Println("Error connecting to cart service:", err)
+		// Continue without cart service functionality
+	}
+
+	// Connect to checkout service
+	checkoutClient, err := grpcCheckoutHandler.GetCheckoutClient()
+	if err != nil {
+		log.Println("Error connecting to checkout service:", err)
+		// Continue without checkout service functionality
+	}
+
+	// Connect to payment service (uses checkout service underneath)
+	paymentClient, err := grpcPaymentHandler.GetPaymentClient()
+	if err != nil {
+		log.Println("Error connecting to payment service:", err)
+		// Continue without payment service functionality
+	}
+
 	// Initialize HTTP handlers
 	authHttpHandler := &httpAuthHandler.Config{
 		AuthClient: authClient,
@@ -73,9 +110,22 @@ func main() {
 		UserClient: userClient,
 	}
 
+	cartHttpHandler := &httpCartHandler.Config{
+		CartClient: cartClient,
+	}
+
+	checkoutHttpHandler := &httpCheckoutHandler.Config{
+		CheckoutClient: checkoutClient,
+	}
+
 	// Initialize proxy handlers with productClient for image handling via gRPC
 	httpProductHandler := &httpProductHandler.Config{
 		ProductClient: productClient,
+	}
+
+	// Initialize payment handler
+	paymentHttpHandler := &httpPaymentHandler.Config{
+		CheckoutClient: paymentClient,
 	}
 
 	// Initialize auth middleware
@@ -96,9 +146,35 @@ func main() {
 		AuthHandler:    authHttpHandler,
 		UserHandler:    userHttpHandler,
 		AuthMiddleware: authMiddleware,
+
+		// Add cart and checkout handlers to config
+		CartHandler:     cartHttpHandler,
+		CheckoutHandler: checkoutHttpHandler,
+
+		// Add payment handler to config
+		PaymentHandler: paymentHttpHandler,
 	}
 
 	log.Printf("Starting broker service on port %s\n", port)
+	log.Println("Connected services:")
+	if productClient != nil {
+		log.Println("- Product service: Connected")
+	}
+	if authClient != nil {
+		log.Println("- Auth service: Connected")
+	}
+	if userClient != nil {
+		log.Println("- User service: Connected")
+	}
+	if cartClient != nil {
+		log.Println("- Cart service: Connected")
+	}
+	if checkoutClient != nil {
+		log.Println("- Checkout service: Connected")
+	}
+	if paymentClient != nil {
+		log.Println("- Payment service: Connected")
+	}
 
 	// define http server
 	srv := &http.Server{

@@ -13,10 +13,10 @@ func (app *Config) routers() http.Handler {
 
 	// config cors for router
 	mux.Use(cors.Handler(cors.Options{
-		AllowedOrigins:   []string{"https://*", "http://*"},
+		AllowedOrigins:   []string{"https://*", "http://*", "https://test-payment.momo.vn", "*"},
 		AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"},
-		AllowedHeaders:   []string{"Accept", "Authorization", "Content-Type", "X-CSRF-Token"},
-		ExposedHeaders:   []string{"Link"},
+		AllowedHeaders:   []string{"Accept", "Authorization", "Content-Type", "X-CSRF-Token", "*"},
+		ExposedHeaders:   []string{"Link", "Content-Disposition"},
 		AllowCredentials: true, // Allow cookies, session, token to be pass in request
 		MaxAge:           300,  // Maximum value not ignored by any of major browsers
 	}))
@@ -64,6 +64,46 @@ func (app *Config) routers() http.Handler {
 				// TODO: Add admin role check middleware
 				r.Get("/{id}", app.UserHandler.GetUser)
 			})
+		})
+
+		// Cart routes with authentication
+		r.Route("/cart", func(r chi.Router) {
+			r.Group(func(r chi.Router) {
+				r.Use(app.AuthMiddleware.RequireAuth)
+				r.Get("/", app.CartHandler.GetCart)
+				r.Post("/items", app.CartHandler.AddCartItem)
+				r.Put("/items/{item_id}", app.CartHandler.UpdateCartItem)
+				r.Delete("/items/{item_id}", app.CartHandler.RemoveCartItem)
+				r.Delete("/", app.CartHandler.ClearCart)
+				r.Post("/coupon", app.CartHandler.ApplyCoupon)
+				r.Delete("/coupon", app.CartHandler.RemoveCoupon)
+			})
+		})
+
+		// Checkout routes with authentication
+		r.Route("/checkout", func(r chi.Router) {
+			// Validate checkout without auth
+			r.Post("/validate", app.CheckoutHandler.ValidateCheckout)
+
+			// Protected checkout routes
+			r.Group(func(r chi.Router) {
+				r.Use(app.AuthMiddleware.RequireAuth)
+				r.Post("/orders", app.CheckoutHandler.CreateOrder)
+				r.Get("/orders/{id}", app.CheckoutHandler.GetOrder)
+				r.Get("/orders", app.CheckoutHandler.ListOrders)
+				r.Post("/orders/{id}/payment", app.CheckoutHandler.ProcessPayment)
+			})
+		})
+
+		// Payment routes
+		r.Route("/payments", func(r chi.Router) {
+			r.Post("/momo/create", app.PaymentHandler.CreateMomoPayment)
+			r.Post("/momo/verify", app.PaymentHandler.VerifyMomoPayment)
+			// r.Post("/vnpay/create", app.PaymentHandler.CreateVnpayPayment)
+			// r.Post("/vnpay/verify", app.PaymentHandler.VerifyVnpayPayment)
+			// MoMo QuickPay endpoints
+			r.Post("/momo/qr/create", app.PaymentHandler.CreateMomoQRPayment)
+			r.Post("/momo/pos/create", app.PaymentHandler.CreateMomoPosPayment)
 		})
 
 		// Products

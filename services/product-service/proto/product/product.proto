@@ -83,28 +83,28 @@ message Product {
   string description = 4;
   string slug = 5;
   double price = 6;
-  string imageUrl = 7;
-  int32 categoryId = 8;
-  string categorySlug = 9;
-  int32 stockQuantity = 10;
+  string image_url = 7;
+  int32 category_id = 8;
+  string category_slug = 9;
+  int32 stock_quantity = 10;
 
-  double originalPrice = 11;
+  double original_price = 11;
   double discount = 12;
   repeated ProductImage images = 13;
   repeated string categories = 14;
 
   string brand = 15;
   repeated string tags = 16;
-  ProductRating reviewsAvg = 17;
+  ProductRating reviews_avg = 17;
   int32 orders = 18;
-  repeated string imgSlider = 19;
+  repeated string img_slider = 19;
 
   repeated string features = 20;
-  ShippingInfo shippingInfo = 21;
-  string uiMetadata = 22;  // JSON as string
+  ShippingInfo shipping_info = 21;
+  string ui_metadata = 22;  // JSON as string
 
-  string createdAt = 23;
-  string updatedAt = 24;
+  string created_at = 23;
+  string updated_at = 24;
 }
 
 // Category object
@@ -113,12 +113,12 @@ message Category {
   string name = 2;
   string slug = 3;
   string description = 4;
-  string imageUrl = 5;
-  int32 productCount = 6;
-  bool isActive = 7;
-  bool isVisible = 8;
-  string createdAt = 9;
-  string updatedAt = 10;
+  string image_url = 5;
+  int32 product_count = 6;
+  bool is_active = 7;
+  bool is_visible = 8;
+  string created_at = 9;
+  string updated_at = 10;
 }
 
 // Banner object
@@ -128,35 +128,35 @@ message Banner {
   string subtitle = 3;
   string description = 4;
   string discount = 5;
-  string highlightText = 6;
-  string imageUrl = 7;
-  string linkUrl = 8;
-  string actionText = 9;
-  string backgroundColor = 10;
-  string textColor = 11;
-  string animationType = 12;
-  bool isActive = 13;
+  string highlight_text = 6;
+  string image_url = 7;
+  string link_url = 8;
+  string action_text = 9;
+  string background_color = 10;
+  string text_color = 11;
+  string animation_type = 12;
+  bool is_active = 13;
   int32 priority = 14;
   string type = 15;  // hero, promotional, category, seasonal, product
-  int32 productId = 16;
-  int32 categoryId = 17;
-  string createdAt = 18;
-  string updatedAt = 19;
+  int32 product_id = 16;
+  int32 category_id = 17;
+  string created_at = 18;
+  string updated_at = 19;
 }
 
 // AdsPlacement object
 message AdsPlacement {
   int32 id = 1;
   string location = 2;
-  string referenceType = 3;
-  int32 referenceId = 4;
-  int32 displayOrder = 5;
-  string customTitle = 6;
-  string customImageUrl = 7;
-  string uiSettings = 8;  // JSON as string
-  bool isActive = 9;
-  string createdAt = 10;
-  string updatedAt = 11;
+  string reference_type = 3;
+  int32 reference_id = 4;
+  int32 display_order = 5;
+  string custom_title = 6;
+  string custom_image_url = 7;
+  string ui_settings = 8;  // JSON as string
+  bool is_active = 9;
+  string created_at = 10;
+  string updated_at = 11;
 }
 
 // AdsData object
@@ -165,12 +165,12 @@ message AdsData {
   string type = 2;  // "product" or "category"
   string name = 3;
   string slug = 4;
-  string imageUrl = 5;
+  string image_url = 5;
   double price = 6;
-  int32 categoryId = 7;
-  string categorySlug = 8;
-  string customTitle = 9;
-  string uiSettings = 10;  // JSON as string
+  int32 category_id = 7;
+  string category_slug = 8;
+  string custom_title = 9;
+  string ui_settings = 10;  // JSON as string
 }
 
 // ShippingInfo object
@@ -184,11 +184,11 @@ message ShippingInfo {
 // ProductImage object
 message ProductImage {
   int32 id = 1;
-  int32 productId = 2;
+  int32 product_id = 2;
   string url = 3;
-  bool isPrimary = 4;
-  int32 displayOrder = 5;
-  string createdAt = 6;
+  bool is_primary = 4;
+  int32 display_order = 5;
+  string created_at = 6;
 }
 
 // ProductRating object
@@ -200,27 +200,27 @@ message ProductRating {
 // ProductReview object
 message ProductReview {
   int32 id = 1;
-  int32 productId = 2;
-  string userName = 3;
+  int32 product_id = 2;
+  string user_name = 3;
   string email = 4;
   string avatar = 5;
   int32 rating = 6;
-  string reviewDate = 7;
-  string reviewText = 8;
+  string review_date = 7;
+  string review_text = 8;
 }
 
 // Testimonial object
 message Testimonial {
   int32 id = 1;
-  int32 productId = 2;
-  string productName = 3;
-  string productSlug = 4;
-  string productImage = 5;
-  string userName = 6;
+  int32 product_id = 2;
+  string product_name = 3;
+  string product_slug = 4;
+  string product_image = 5;
+  string user_name = 6;
   string avatar = 7;
   int32 rating = 8;
-  string reviewDate = 9;
-  string reviewText = 10;
+  string review_date = 9;
+  string review_text = 10;
 }
 
 // Request and Response messages - Product Service
@@ -253,9 +253,9 @@ message DeleteProductRequest {
 }
 
 message GetProductReviewsRequest {
-  int32 productId = 1;
+  int32 product_id = 1;
   int32 page = 2;
-  int32 pageSize = 3;
+  int32 page_size = 3;
 }
 
 message GetProductReviewsResponse {
@@ -268,7 +268,7 @@ message AddProductReviewResponse {
 }
 
 message GetProductImagesRequest {
-  int32 productId = 1;
+  int32 product_id = 1;
 }
 
 message GetProductImagesResponse {
@@ -276,11 +276,11 @@ message GetProductImagesResponse {
 }
 
 message UploadProductImageRequest {
-  int32 productId = 1;
-  bytes imageData = 2;
+  int32 product_id = 1;
+  bytes image_data = 2;
   string filename = 3;
-  string contentType = 4;
-  bool isPrimary = 5;
+  string content_type = 4;
+  bool is_primary = 5;
 }
 
 message UploadProductImageResponse {
@@ -288,12 +288,12 @@ message UploadProductImageResponse {
 }
 
 message DeleteProductImageRequest {
-  int32 imageId = 1;
+  int32 image_id = 1;
 }
 
 message SetPrimaryProductImageRequest {
-  int32 productId = 1;
-  int32 imageId = 2;
+  int32 product_id = 1;
+  int32 image_id = 2;
 }
 
 message GetTopRatedTestimonialsRequest {
@@ -348,7 +348,7 @@ message GetBannersByTypeResponse {
 
 message ListBannersRequest {
   int32 page = 1;
-  int32 pageSize = 2;
+  int32 page_size = 2;
   map<string, string> filters = 3;
 }
 
@@ -381,7 +381,7 @@ message GetAdsPlacementByIDRequest {
 
 message ListAdsPlacementsRequest {
   int32 page = 1;
-  int32 pageSize = 2;
+  int32 page_size = 2;
 }
 
 message ListAdsPlacementsResponse {
