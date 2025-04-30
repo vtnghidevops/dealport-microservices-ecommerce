@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useCart } from '@/hooks/useCart'
 
 interface MessageState {
@@ -18,7 +18,7 @@ const CouponCode: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const trimmedCode = couponCode.trim();
-    
+
     if (!trimmedCode) {
       setMessage({ text: 'Please enter a coupon code', isError: true });
       return;
@@ -28,10 +28,10 @@ const CouponCode: React.FC = () => {
       setMessage({ text: 'Invalid coupon code format', isError: true });
       return;
     }
-    
+
     setIsSubmitting(true);
     setMessage({ text: '', isError: false });
-    
+
     try {
       const success = await applyCoupon(trimmedCode);
       if (success) {
@@ -42,9 +42,9 @@ const CouponCode: React.FC = () => {
       }
     } catch (error: unknown) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-      setMessage({ 
-        text: `Failed to apply coupon: ${errorMessage}`, 
-        isError: true 
+      setMessage({
+        text: `Failed to apply coupon: ${errorMessage}`,
+        isError: true
       });
     } finally {
       setIsSubmitting(false);
@@ -54,7 +54,7 @@ const CouponCode: React.FC = () => {
   return (
     <div className="bg-white rounded-lg shadow p-5">
       <h2 className="text-lg font-bold mb-4">Coupon Code</h2>
-      
+
       <form onSubmit={handleSubmit}>
         <input
           type="text"
@@ -69,19 +69,19 @@ const CouponCode: React.FC = () => {
           }}
           disabled={isSubmitting}
         />
-        
+
         {message.text && (
           <div className={`text-sm mb-3 ${message.isError ? 'text-error' : 'text-success'}`}>
             {message.text}
           </div>
         )}
-        
+
         <button
           type="submit"
           disabled={isSubmitting || !couponCode.trim()}
           className={`w-1/2 p-3 rounded font-medium transition-all
-            ${isSubmitting || !couponCode.trim() 
-              ? 'bg-gray-400 cursor-not-allowed' 
+            ${isSubmitting || !couponCode.trim()
+              ? 'bg-gray-400 cursor-not-allowed'
               : 'bg-[#0496FF] hover:bg-blue-600'} 
             text-white`}
         >

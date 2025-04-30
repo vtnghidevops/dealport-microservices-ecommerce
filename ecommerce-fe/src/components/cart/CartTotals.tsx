@@ -11,7 +11,7 @@ const CartTotals: React.FC = () => {
       
       <div className="border-b border-gray-200 py-3 flex justify-between">
         <span className="text-gray-600">Sub-total</span>
-        <span className="font-bold">${cartTotals.subtotal}</span>
+        <span className="font-bold">${cartTotals.subtotal.toFixed(0)}</span>
       </div>
       
       <div className="border-b border-gray-200 py-3 flex justify-between">
@@ -21,17 +21,17 @@ const CartTotals: React.FC = () => {
       
       <div className="border-b border-gray-200 py-3 flex justify-between">
         <span className="text-gray-600">Discount</span>
-        <span className="font-bold">${cartTotals.discount}</span>
+        <span className="font-bold">${cartTotals.discount.toFixed(0)}</span>
       </div>
       
       <div className="border-b border-gray-200 py-3 flex justify-between">
         <span className="text-gray-600">Tax</span>
-        <span className="font-bold">${cartTotals.tax.toFixed(2)}</span>
+        <span className="font-bold">${cartTotals.tax.toFixed(0)}</span>
       </div>
       
       <div className="py-3 flex justify-between items-center">
         <span className="text-lg font-medium">Total</span>
-        <span className="text-sans text-lg font-bold">${cartTotals.total.toFixed(2)} USD</span>
+        <span className="text-sans text-lg font-bold">${cartTotals.total.toFixed(0)} USD</span>
       </div>
       
       <button onClick={() => navigate('/user/checkout')} className="text-sans mt-4 w-full bg-[#FA8232] text-white py-3 px-4 rounded flex items-center justify-center font-medium hover:bg-orange-600 transition-colors">
