@@ -1,0 +1,101 @@
+syntax = "proto3";
+
+package cart;
+
+option go_package = "cart-service/proto/cart";
+
+// Cart Service Definition
+service CartService {
+  // Cart operations
+  rpc GetCart(GetCartRequest) returns (Cart);
+  rpc AddCartItem(AddCartItemRequest) returns (Cart);
+  rpc UpdateCartItem(UpdateCartItemRequest) returns (Cart);
+  rpc RemoveCartItem(RemoveCartItemRequest) returns (Cart);
+  rpc ClearCart(ClearCartRequest) returns (StatusResponse);
+  rpc ApplyCoupon(ApplyCouponRequest) returns (Cart);
+  rpc RemoveCoupon(RemoveCouponRequest) returns (Cart);
+
+  // Health check
+  rpc GetHealth(HealthRequest) returns (HealthResponse);
+}
+
+// Cart object
+message Cart {
+  string id = 1;
+  string user_id = 2;
+  repeated CartItem items = 3;
+  CartTotals totals = 4;
+  string coupon_code = 5;
+  double discount_amount = 6;
+  string created_at = 7;
+  string updated_at = 8;
+}
+
+// CartItem object
+message CartItem {
+  string id = 1;
+  string product_id = 2;
+  string name = 3;
+  double price = 4;
+  double original_price = 5;
+  int32 quantity = 6;
+  string image_url = 7;
+}
+
+// CartTotals object
+message CartTotals {
+  double subtotal = 1;
+  string shipping = 2;
+  double discount = 3;
+  double tax = 4;
+  double total = 5;
+}
+
+// Request and Response messages
+message GetCartRequest {
+  string user_id = 1;
+}
+
+message AddCartItemRequest {
+  string user_id = 1;
+  CartItem item = 2;
+}
+
+message UpdateCartItemRequest {
+  string user_id = 1;
+  string item_id = 2;
+  int32 quantity = 3;
+}
+
+message RemoveCartItemRequest {
+  string user_id = 1;
+  string item_id = 2;
+}
+
+message ClearCartRequest {
+  string user_id = 1;
+}
+
+message ApplyCouponRequest {
+  string user_id = 1;
+  string coupon_code = 2;
+}
+
+message RemoveCouponRequest {
+  string user_id = 1;
+}
+
+// Status Response
+message StatusResponse {
+  bool success = 1;
+  string message = 2;
+}
+
+// Health Request/Response
+message HealthRequest {}
+
+message HealthResponse {
+  string status = 1;
+  string timestamp = 2;
+  string version = 3;
+}
