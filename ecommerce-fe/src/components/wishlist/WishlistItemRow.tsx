@@ -4,6 +4,7 @@ import { Product } from '@/types/product.model';
 import { useWishlist } from '@/hooks/useWishList'
 import { useNavigate } from 'react-router-dom';
 import { useCart } from '@/hooks/useCart';
+
 interface WishlistItemRowProps {
   item: Product;
 }
@@ -23,7 +24,7 @@ const WishlistItemRow: React.FC<WishlistItemRowProps> = ({ item }) => {
   //   }
   // };
   const productForCart = {
-    id: item.id.toString(),
+    productId: item.id,
     name: item.name,
     price: item.price,
     originalPrice: item.originalPrice || undefined,

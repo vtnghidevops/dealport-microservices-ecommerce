@@ -32,13 +32,19 @@ export interface StatusResponse {
 // Lấy token xác thực từ localStorage
 const getAuthHeader = () => {
   const token = localStorage.getItem('token');
-  if (!token) return {};
+  if (!token) {
+    throw new Error('You must be logged in to manage your cart');
+  }
   return { Authorization: `Bearer ${token}` };
 };
 
 // Lấy user ID từ localStorage
 const getCurrentUserId = (): string => {
-  return localStorage.getItem('user_id') || '';
+  const userId = localStorage.getItem('user_id');
+  if (!userId) {
+    throw new Error('User ID not found. Please log in again.');
+  }
+  return userId;
 };
 
 // Singleton instance of cart service

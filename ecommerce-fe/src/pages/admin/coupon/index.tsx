@@ -2,25 +2,11 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow
-} from '@/components/ui/table';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger
-} from '@/components/ui/dropdown-menu';
-import { PlusCircle, Search, MoreVertical, Edit, Trash2, Eye } from 'lucide-react';
-import { Badge } from '@/components/ui/badge';
+import { PlusCircle, Search, Edit, Trash2, Eye, Tag } from 'lucide-react';
 import { Pagination } from '@/components/ui/pagination';
-import couponService, { Coupon } from '@/services/user/coupon.service';
+import couponService, { Coupon } from '@/services/admin/coupon.service';
 import { useToast } from '@/hooks/use-toast';
+import AdminHeader from '@/components/admin/layout/AdminHeader';
 
 const CouponManagement: React.FC = () => {
   const navigate = useNavigate();
@@ -32,7 +18,7 @@ const CouponManagement: React.FC = () => {
   const [totalPages, setTotalPages] = useState<number>(1);
   const [apiError, setApiError] = useState<string | null>(null);
 
-  // Lấy danh sách coupon từ API
+  // Fetch coupons from API
   useEffect(() => {
     const fetchCoupons = async () => {
       setIsLoading(true);
@@ -40,71 +26,17 @@ const CouponManagement: React.FC = () => {
 
       try {
         const response = await couponService.getCoupons(currentPage, 10);
+        console.log('Coupon data from service:', response.coupons);
         setCoupons(response.coupons);
         setTotalPages(Math.ceil(response.total / 10));
       } catch (error) {
         console.error('Error fetching coupons:', error);
-        setApiError('Không thể tải danh sách coupon. Vui lòng thử lại sau.');
+        setApiError('Unable to load coupons. Please try again later.');
         toast({
-          title: 'Lỗi',
-          description: 'Không thể tải danh sách coupon',
-          variant: 'destructive'
+          title: 'Error',
+          description: 'Unable to load coupons',
+          variant: 'destructive',
         });
-
-        // Sử dụng dữ liệu giả tạm thời khi API thất bại
-        const mockCoupons: Coupon[] = [
-          {
-            id: '1',
-            code: 'SUMMER2025',
-            discount: 20,
-            discountType: 'percentage',
-            minOrderAmount: 100,
-            maxUsage: 100,
-            usageCount: 45,
-            validFrom: '2025-06-01',
-            validTo: '2025-08-31',
-            isActive: true
-          },
-          {
-            id: '2',
-            code: 'WELCOME10',
-            discount: 10,
-            discountType: 'fixed',
-            minOrderAmount: 50,
-            maxUsage: 1000,
-            usageCount: 789,
-            validFrom: '2025-01-01',
-            validTo: '2025-12-31',
-            isActive: true
-          },
-          {
-            id: '3',
-            code: 'FLASH50',
-            discount: 50,
-            discountType: 'percentage',
-            minOrderAmount: 200,
-            maxUsage: 50,
-            usageCount: 50,
-            validFrom: '2025-04-15',
-            validTo: '2025-04-20',
-            isActive: false
-          },
-          {
-            id: '4',
-            code: 'FREESHIP',
-            discount: 15,
-            discountType: 'fixed',
-            minOrderAmount: 80,
-            maxUsage: 200,
-            usageCount: 120,
-            validFrom: '2025-03-01',
-            validTo: '2025-09-30',
-            isActive: true
-          }
-        ];
-
-        setCoupons(mockCoupons);
-        setTotalPages(Math.ceil(mockCoupons.length / 10));
       } finally {
         setIsLoading(false);
       }
@@ -113,204 +45,292 @@ const CouponManagement: React.FC = () => {
     fetchCoupons();
   }, [currentPage, toast]);
 
-  // Lọc coupon theo term tìm kiếm
+  // Filter coupons by search term
   const filteredCoupons = coupons.filter(coupon =>
     coupon.code.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  // Xử lý xóa coupon
+  // Handle coupon deletion
   const handleDeleteCoupon = async (id: string) => {
-    if (window.confirm('Bạn có chắc chắn muốn xóa coupon này không?')) {
+    if (window.confirm('Are you sure you want to delete this coupon?')) {
       try {
         await couponService.deleteCoupon(id);
         setCoupons(prevCoupons => prevCoupons.filter(coupon => coupon.id !== id));
 
         toast({
-          title: 'Thành công',
-          description: 'Xóa coupon thành công',
+          variant: "success",
+          title: 'Success',
+          description: 'Coupon deleted successfully',
         });
       } catch (error) {
         console.error('Error deleting coupon:', error);
         toast({
-          title: 'Lỗi',
-          description: 'Không thể xóa coupon. Vui lòng thử lại sau.',
+          title: 'Error',
+          description: 'Unable to delete coupon. Please try again later.',
           variant: 'destructive'
         });
       }
     }
   };
 
-  // Xử lý áp dụng coupon
+  // Handle applying a coupon to test it
   const handleTestCoupon = async (code: string) => {
     try {
       await couponService.applyCoupon(code);
       toast({
-        title: 'Thành công',
-        description: `Đã áp dụng coupon ${code} vào giỏ hàng`,
+        variant: "success",
+        title: 'Success',
+        description: `Coupon ${code} applied to cart`,
       });
     } catch (error) {
       toast({
-        title: 'Lỗi',
-        description: error instanceof Error ? error.message : 'Không thể áp dụng coupon',
+        title: 'Error',
+        description: error instanceof Error ? error.message : 'Unable to apply coupon',
         variant: 'destructive'
       });
     }
   };
 
-  // Định dạng ngày
+  // Format date
   const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('vi-VN');
+    if (!dateString) return 'N/A';
+
+    try {
+      // Try to parse the date, handling both ISO format and RFC3339 format
+      let date;
+      if (dateString.includes('T')) {
+        // RFC3339 or ISO format: "2025-05-01T00:00:00Z"
+        date = new Date(dateString);
+      } else {
+        // Simple date format: "2025-05-01"
+        const [year, month, day] = dateString.split('-').map(Number);
+        date = new Date(year, month - 1, day);  // month is 0-based in JS Date
+      }
+
+      // Check if date is valid
+      if (isNaN(date.getTime())) {
+        console.error('Invalid date:', dateString);
+        return 'Invalid Date';
+      }
+
+      return date.toLocaleDateString('en-US', {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric'
+      });
+    } catch (error) {
+      console.error('Error formatting date:', dateString, error);
+      return 'Invalid Date';
+    }
   };
 
-  // Kiểm tra xem coupon đã hết hạn chưa
+  // Check if a coupon is expired
   const isExpired = (validTo: string) => {
-    return new Date(validTo) < new Date();
+    if (!validTo) return false;
+    try {
+      const expiryDate = new Date(validTo);
+      return !isNaN(expiryDate.getTime()) && expiryDate < new Date();
+    } catch (error) {
+      console.error('Error checking expiry:', validTo, error);
+      return false;
+    }
   };
 
-  // Lấy trạng thái coupon
+  // Get coupon status
   const getCouponStatus = (coupon: Coupon) => {
-    if (!coupon.isActive) return 'inactive';
-    if (isExpired(coupon.validTo)) return 'expired';
-    if (coupon.usageCount >= coupon.maxUsage) return 'used';
+    // Debugging
+    console.log('Checking status for coupon:', coupon.code, {
+      isActive: coupon.isActive,
+      validTo: coupon.validTo,
+      validFrom: coupon.validFrom,
+      usageCount: coupon.usageCount,
+      maxUsage: coupon.maxUsage
+    });
+
+    // Check for undefined values and use defaults if needed
+    const isActive = coupon.isActive !== undefined ? coupon.isActive : true;
+    const maxUsage = coupon.maxUsage || 0;
+    const usageCount = coupon.usageCount || 0;
+
+    if (isActive === false) {
+      console.log(`Coupon ${coupon.code} is inactive`);
+      return 'inactive';
+    }
+
+    if (isExpired(coupon.validTo)) {
+      console.log(`Coupon ${coupon.code} is expired`);
+      return 'expired';
+    }
+
+    if (usageCount >= maxUsage && maxUsage > 0) {
+      console.log(`Coupon ${coupon.code} is fully used`);
+      return 'used';
+    }
+
+    console.log(`Coupon ${coupon.code} is active`);
     return 'active';
   };
 
   return (
-    <div className="container mx-auto p-6">
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold">Quản lý Coupon</h1>
-        <Button
-          onClick={() => navigate('/admin/coupons/create')}
-          className="flex items-center gap-2"
-        >
-          <PlusCircle size={16} />
-          Tạo Coupon Mới
-        </Button>
-      </div>
-
-      <div className="bg-white rounded-lg shadow-md p-6">
-        <div className="flex justify-between items-center mb-4">
-          <div className="relative w-64">
-            <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-            <Input
-              placeholder="Tìm kiếm theo mã coupon"
-              className="pl-8"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-            />
-          </div>
-        </div>
-
-        {isLoading ? (
-          <div className="flex justify-center items-center py-8">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
-          </div>
-        ) : apiError ? (
-          <div className="text-center py-8 text-red-500">
-            {apiError}
-          </div>
-        ) : (
-          <>
-            <div className="rounded-md border">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Mã Coupon</TableHead>
-                    <TableHead>Giảm giá</TableHead>
-                    <TableHead>Đơn hàng tối thiểu</TableHead>
-                    <TableHead>Sử dụng</TableHead>
-                    <TableHead>Thời hạn</TableHead>
-                    <TableHead>Trạng thái</TableHead>
-                    <TableHead className="text-right">Thao tác</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filteredCoupons.length === 0 ? (
-                    <TableRow>
-                      <TableCell colSpan={7} className="text-center py-4">
-                        Không tìm thấy coupon nào
-                      </TableCell>
-                    </TableRow>
-                  ) : (
-                    filteredCoupons.map((coupon) => (
-                      <TableRow key={coupon.id}>
-                        <TableCell className="font-medium">{coupon.code}</TableCell>
-                        <TableCell>
-                          {coupon.discountType === 'percentage'
-                            ? `${coupon.discount}%`
-                            : `${coupon.discount.toLocaleString('vi-VN')}đ`
-                          }
-                        </TableCell>
-                        <TableCell>{coupon.minOrderAmount.toLocaleString('vi-VN')}đ</TableCell>
-                        <TableCell>{coupon.usageCount}/{coupon.maxUsage}</TableCell>
-                        <TableCell>
-                          {formatDate(coupon.validFrom)} - {formatDate(coupon.validTo)}
-                        </TableCell>
-                        <TableCell>
-                          <Badge
-                            variant={
-                              getCouponStatus(coupon) === 'active' ? 'default' :
-                                getCouponStatus(coupon) === 'inactive' ? 'outline' :
-                                  getCouponStatus(coupon) === 'expired' ? 'destructive' : 'secondary'
-                            }
-                          >
-                            {getCouponStatus(coupon) === 'active' && 'Hoạt động'}
-                            {getCouponStatus(coupon) === 'inactive' && 'Tạm ngưng'}
-                            {getCouponStatus(coupon) === 'expired' && 'Hết hạn'}
-                            {getCouponStatus(coupon) === 'used' && 'Hết lượt'}
-                          </Badge>
-                        </TableCell>
-                        <TableCell className="text-right">
-                          <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                              <Button variant="ghost" size="icon">
-                                <MoreVertical className="h-4 w-4" />
-                                <span className="sr-only">Mở menu</span>
-                              </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end">
-                              <DropdownMenuItem onClick={() => navigate(`/admin/coupons/${coupon.id}`)}>
-                                <Eye className="mr-2 h-4 w-4" />
-                                <span>Chi tiết</span>
-                              </DropdownMenuItem>
-                              <DropdownMenuItem onClick={() => navigate(`/admin/coupons/${coupon.id}/edit`)}>
-                                <Edit className="mr-2 h-4 w-4" />
-                                <span>Chỉnh sửa</span>
-                              </DropdownMenuItem>
-                              <DropdownMenuItem
-                                onClick={() => handleTestCoupon(coupon.code)}
-                              >
-                                <span>Thử áp dụng</span>
-                              </DropdownMenuItem>
-                              <DropdownMenuItem
-                                className="text-red-600"
-                                onClick={() => handleDeleteCoupon(coupon.id)}
-                              >
-                                <Trash2 className="mr-2 h-4 w-4" />
-                                <span>Xóa</span>
-                              </DropdownMenuItem>
-                            </DropdownMenuContent>
-                          </DropdownMenu>
-                        </TableCell>
-                      </TableRow>
-                    ))
-                  )}
-                </TableBody>
-              </Table>
+    <div className="flex bg-neutral-50">
+      <div className="flex-1 overflow-auto">
+        <AdminHeader title="Coupon Management" />
+        <main className="p-[1rem]">
+          <div className="w-[1116px] mx-auto">
+            {/* Button Row */}
+            <div className="flex justify-end mb-5">
+              <Button
+                onClick={() => navigate('/admin/coupons/create')}
+                className="text-white rounded-lg h-[48px] w-[160px] py-6 px-8 bg-ocean-green hover:bg-green-700 flex items-center justify-center"
+              >
+                <PlusCircle size={16} className="mr-2" />
+                Add New Coupon
+              </Button>
             </div>
 
-            {totalPages > 1 && (
-              <div className="flex justify-center mt-4">
-                <Pagination
-                  currentPage={currentPage}
-                  totalPages={totalPages}
-                  onPageChange={setCurrentPage}
-                />
+            {/* Coupon Table */}
+            <div className="w-[1116px] bg-white rounded-lg shadow p-[1rem] mb-6 mt-[1rem] drop-shadow filter">
+              <div className="mb-5">
+                <h2 className="text-xl font-semibold mb-3">Coupons</h2>
+
+                <div className="relative w-[320px] h-[48px] flex items-center mb-5">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+                  <Input
+                    placeholder="Search by coupon code"
+                    className="pl-10 h-full w-full border border-gray-300 rounded-md"
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                  />
+                </div>
               </div>
-            )}
-          </>
-        )}
+
+              {isLoading ? (
+                <div className="flex justify-center items-center py-8">
+                  <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-blue-500"></div>
+                </div>
+              ) : apiError ? (
+                <div className="text-center py-8 text-red-500">
+                  {apiError}
+                </div>
+              ) : (
+                <>
+                  <div className="overflow-x-auto bg-white rounded-lg shadow">
+                    <table className="min-w-full">
+                      <thead>
+                        <tr className="bg-aqua-spring h-[56px] border-b border-gray-200">
+                          <th className="text-[15px] font-medium px-6 py-3 text-center text-cyprus tracking-wider">
+                            Coupon Code
+                          </th>
+                          <th className="text-[15px] font-medium px-6 py-3 text-center text-cyprus tracking-wider">
+                            Discount
+                          </th>
+                          <th className="text-[15px] font-medium px-6 py-3 text-center text-cyprus tracking-wider">
+                            Min Order
+                          </th>
+                          <th className="text-[15px] font-medium px-6 py-3 text-center text-cyprus tracking-wider">
+                            Usage
+                          </th>
+                          <th className="text-[15px] font-medium px-6 py-3 text-center text-cyprus tracking-wider">
+                            Validity Period
+                          </th>
+                          <th className="text-[15px] font-medium px-6 py-3 text-center text-cyprus tracking-wider">
+                            Status
+                          </th>
+                          <th className="text-[15px] font-medium px-6 py-3 text-center text-cyprus tracking-wider">
+                            Actions
+                          </th>
+                        </tr>
+                      </thead>
+                      <tbody className="bg-white divide-y divide-gray-200">
+                        {filteredCoupons.length === 0 ? (
+                          <tr>
+                            <td colSpan={7} className="text-center py-4">
+                              No coupons found
+                            </td>
+                          </tr>
+                        ) : (
+                          filteredCoupons.map((coupon) => (
+                            <tr
+                              key={coupon.id}
+                              className="hover:bg-gray-50 cursor-pointer h-[64px]"
+                            >
+                              <td className="text-center px-6 py-4 whitespace-nowrap text-[15px] text-black">
+                                {coupon.code}
+                              </td>
+                              <td className="text-center px-6 py-4 whitespace-nowrap text-[15px] text-black">
+                                {coupon.discountType === 'percentage'
+                                  ? `${coupon.discount}%`
+                                  : `$${coupon.discount?.toFixed(2) || '0.00'}`
+                                }
+                              </td>
+                              <td className="text-center px-6 py-4 whitespace-nowrap text-[15px] text-black">
+                                ${coupon.minOrderAmount !== undefined ? coupon.minOrderAmount.toFixed(2) : '0.00'}
+                              </td>
+                              <td className="text-center px-6 py-4 whitespace-nowrap text-[15px] text-black">
+                                {coupon.usageCount !== undefined ? coupon.usageCount : 0}/{coupon.maxUsage || 0}
+                              </td>
+                              <td className="text-center px-6 py-4 whitespace-nowrap text-[15px] text-black">
+                                {formatDate(coupon.validFrom)} - {formatDate(coupon.validTo)}
+                              </td>
+                              <td className="text-center px-6 py-4 whitespace-nowrap">
+                                <span className={`!text-[15px] px-2 inline-flex text-xs leading-5 rounded-full
+                                  ${getCouponStatus(coupon) === 'active' ? 'text-success' : ''} 
+                                  ${getCouponStatus(coupon) === 'inactive' ? 'text-error' : ''}
+                                  ${getCouponStatus(coupon) === 'expired' ? 'text-error' : ''}
+                                  ${getCouponStatus(coupon) === 'used' ? 'text-warning' : ''}`}>
+                                  • {getCouponStatus(coupon) === 'active' && 'Active'}
+                                  {getCouponStatus(coupon) === 'inactive' && 'Inactive'}
+                                  {getCouponStatus(coupon) === 'expired' && 'Expired'}
+                                  {getCouponStatus(coupon) === 'used' && 'Fully Used'}
+                                </span>
+                              </td>
+                              <td className="text-center px-6 py-4 whitespace-nowrap">
+                                <button
+                                  className="text-gray-500 hover:text-gray-700 mr-3"
+                                  onClick={() => navigate(`/admin/coupons/${coupon.id}`)}
+                                >
+                                  <Eye className="h-5 w-5" />
+                                </button>
+                                <button
+                                  className="text-gray-500 hover:text-gray-700 mr-3"
+                                  onClick={() => navigate(`/admin/coupons/${coupon.id}/edit`)}
+                                >
+                                  <Edit className="h-5 w-5" />
+                                </button>
+                                <button
+                                  className="text-gray-500 hover:text-gray-700 mr-3"
+                                  onClick={() => handleTestCoupon(coupon.code)}
+                                >
+                                  <Tag className="h-5 w-5" />
+                                </button>
+                                <button
+                                  className="text-gray-500 hover:text-red-700"
+                                  onClick={() => handleDeleteCoupon(coupon.id)}
+                                >
+                                  <Trash2 className="h-5 w-5" />
+                                </button>
+                              </td>
+                            </tr>
+                          ))
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
+
+                  {totalPages > 1 && (
+                    <div className="flex justify-center mt-[3rem]">
+                      <Pagination
+                        currentPage={currentPage}
+                        totalPages={totalPages}
+                        onPageChange={setCurrentPage}
+                      />
+                    </div>
+                  )}
+                </>
+              )}
+            </div>
+          </div>
+        </main>
       </div>
     </div>
   );

@@ -11,6 +11,7 @@ import (
 	grpcAuthHandler "broker-service/internal/handler/grpc/auth"
 	grpcCartHandler "broker-service/internal/handler/grpc/cart"
 	grpcCheckoutHandler "broker-service/internal/handler/grpc/checkout"
+	grpcCouponHandler "broker-service/internal/handler/grpc/coupon"
 	grpcPaymentHandler "broker-service/internal/handler/grpc/payment"
 	grpcProductHandler "broker-service/internal/handler/grpc/product"
 	grpcUserHandler "broker-service/internal/handler/grpc/user"
@@ -43,6 +44,7 @@ type Config struct {
 	// Cart and checkout handlers
 	CartHandler     *httpCartHandler.Config
 	CheckoutHandler *httpCheckoutHandler.Config
+	CouponHandler   *httpCartHandler.Config
 
 	// Payment handler
 	PaymentHandler *httpPaymentHandler.Config
@@ -101,6 +103,13 @@ func main() {
 		// Continue without payment service functionality
 	}
 
+	// Connect to coupon service (which uses the same endpoint as cart service)
+	couponClient, err := grpcCouponHandler.GetCouponClient()
+	if err != nil {
+		log.Println("Error connecting to coupon service:", err)
+		// Continue without coupon service functionality
+	}
+
 	// Initialize HTTP handlers
 	authHttpHandler := &httpAuthHandler.Config{
 		AuthClient: authClient,
@@ -128,6 +137,9 @@ func main() {
 		CheckoutClient: paymentClient,
 	}
 
+	// Initialize coupon handler
+	couponHttpHandler := httpCartHandler.NewCouponHandler(couponClient)
+
 	// Initialize auth middleware
 	authMiddleware := &custommiddleware.AuthMiddleware{
 		AuthClient: authClient,
@@ -147,9 +159,10 @@ func main() {
 		UserHandler:    userHttpHandler,
 		AuthMiddleware: authMiddleware,
 
-		// Add cart and checkout handlers to config
+		// Add cart, checkout and coupon handlers to config
 		CartHandler:     cartHttpHandler,
 		CheckoutHandler: checkoutHttpHandler,
+		CouponHandler:   couponHttpHandler,
 
 		// Add payment handler to config
 		PaymentHandler: paymentHttpHandler,

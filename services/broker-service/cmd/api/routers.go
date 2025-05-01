@@ -80,6 +80,23 @@ func (app *Config) routers() http.Handler {
 			})
 		})
 
+		// Coupons management routes (most require authentication and admin role)
+		r.Route("/coupons", func(r chi.Router) {
+			// Public endpoints
+			r.Get("/", app.CouponHandler.GetCoupons)
+			r.Get("/{id}", app.CouponHandler.GetCouponByID)
+			r.Get("/code/{code}", app.CouponHandler.GetCouponByCode)
+
+			// Protected endpoints (require authentication and admin role)
+			r.Group(func(r chi.Router) {
+				r.Use(app.AuthMiddleware.RequireAuth)
+				// TODO: Add admin role check middleware
+				r.Post("/", app.CouponHandler.CreateCoupon)
+				r.Put("/{id}", app.CouponHandler.UpdateCoupon)
+				r.Delete("/{id}", app.CouponHandler.DeleteCoupon)
+			})
+		})
+
 		// Checkout routes with authentication
 		r.Route("/checkout", func(r chi.Router) {
 			// Validate checkout without auth

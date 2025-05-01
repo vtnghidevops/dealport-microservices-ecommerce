@@ -3,6 +3,7 @@ package middleware
 import (
 	"context"
 	"errors"
+	"log"
 	"net/http"
 	"strings"
 
@@ -51,6 +52,9 @@ func (m *AuthMiddleware) RequireAuth(next http.Handler) http.Handler {
 		// Add user information to request context
 		ctx := context.WithValue(r.Context(), "user_id", res.UserId)
 		ctx = context.WithValue(ctx, "user_role", res.Claims["role"])
+
+		// Log the user ID for debugging
+		log.Printf("Auth middleware: User ID set in context: %s, Path: %s, Method: %s", res.UserId, r.URL.Path, r.Method)
 
 		// Continue with the next handler with the enriched context
 		next.ServeHTTP(w, r.WithContext(ctx))

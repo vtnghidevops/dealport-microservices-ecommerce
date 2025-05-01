@@ -15,7 +15,7 @@ export interface UseCartReturn {
   removeFromCart: (id: string) => void;
   applyCoupon: (couponCode: string) => Promise<boolean>;
   removeCoupon: () => Promise<boolean>;
-  addToCart: (product: Omit<CartItem, 'quantity'>, quantity?: number) => void;
+  addToCart: (product: Omit<Omit<CartItem, 'quantity'>, 'id'>, quantity?: number) => void;
   clearCart: () => void;
 }
 
@@ -100,7 +100,7 @@ export const useCart = (): UseCartReturn => {
     });
   };
 
-  const addToCart = async (product: Omit<CartItem, 'quantity'>, quantity: number = 1) => {
+  const addToCart = async (product: Omit<Omit<CartItem, 'quantity'>, 'id'>, quantity: number = 1) => {
     try {
       setIsLoading(true);
 
@@ -144,7 +144,9 @@ export const useCart = (): UseCartReturn => {
               variant: 'success'
             });
           } else {
-            newItems = [...prevItems, { ...product, quantity }];
+            // Tạo ID tạm thời cho cart item khi lưu local
+            const tempId = `temp_${Date.now()}_${product.productId}`;
+            newItems = [...prevItems, { ...product, id: tempId, quantity }];
             toast({
               title: `Added ${product.name} to cart`,
               description: 'You can now proceed to checkout',

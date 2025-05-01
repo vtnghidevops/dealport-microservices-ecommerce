@@ -39,16 +39,6 @@ const StarRating: React.FC<StarRatingProps> = ({ rating, maxRating = 5 }) => {
 const ProductCard: React.FC<ProductCardProps> = ({
   product
 }) => {
-  // type for cart item
-  const productForCart = {
-    id: product.id.toString(),
-    name: product.name,
-    price: product.price,
-    originalPrice: product.originalPrice || undefined,
-    imageUrl: product.imageUrl
-  };
-  // console.log("Here: ",product);                    
-
   const rating = product.reviewsAvg?.rating || 0;
   const reviewCount = product.reviewsAvg?.count || 0;
   const { addToCart } = useCart();
@@ -58,16 +48,22 @@ const ProductCard: React.FC<ProductCardProps> = ({
   const handleLikeClick = (e: React.MouseEvent) => {
     e.preventDefault(); // Prevent event bubbling
     e.stopPropagation(); // Stop the event from propagating to parent elements
-    // setLiked(!liked);
     if (isLiked) {
       removeFromWishlist(product.id.toString());
-
     } else {
       addToWishlist(product);
-
     }
   };
 
+  const handleAddToCart = () => {
+    addToCart({
+      productId: Number(product.id),
+      name: product.name,
+      price: product.price,
+      originalPrice: product.originalPrice || undefined,
+      imageUrl: product.imageUrl
+    }, 1);
+  };
 
   return (
     <div className="mx-2 p-[10px] rounded-xl max-w-[272px] min-w-[272px] border border-grep-300 shadow-[0_2px_15px_-3px_rgba(0,0,0,0.1),0_4px_6px_-2px_rgba(0,0,0,0.05)] ">
@@ -118,8 +114,7 @@ const ProductCard: React.FC<ProductCardProps> = ({
           <a href={`/${product.categorySlug}/${product.slug}`} className="text-primary text-sm hover:text-ocean-green transition-all duration-300">
             View Details
           </a>
-          {/* onClick={() => addToCart(productForCart)} */}
-          <button onClick={() => addToCart(productForCart)} className="btn-primary text-sm py-1 h-[39px] w-[120px] border-2 border-transparent hover:bg-green-500 hover:shadow-md transition-all duration-300 ease-out">
+          <button onClick={handleAddToCart} className="btn-primary text-sm py-1 h-[39px] w-[120px] border-2 border-transparent hover:bg-green-500 hover:shadow-md transition-all duration-300 ease-out">
             Add to Cart
           </button>
         </div>

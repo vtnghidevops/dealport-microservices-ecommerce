@@ -2,17 +2,20 @@ package cart
 
 import (
 	"errors"
+	"fmt"
 	"net/http"
 	"strconv"
 
 	"broker-service/internal/util"
 	cartpb "broker-service/proto/cart"
+	couponpb "broker-service/proto/coupon"
 
 	"github.com/go-chi/chi/v5"
 )
 
 type Config struct {
-	CartClient cartpb.CartServiceClient
+	CartClient   cartpb.CartServiceClient
+	CouponClient couponpb.CouponServiceClient
 }
 
 // GetCart retrieves a user's cart
@@ -23,6 +26,9 @@ func (c *Config) GetCart(w http.ResponseWriter, r *http.Request) {
 		util.ErrorJSON(w, errors.New("unauthorized"), http.StatusUnauthorized)
 		return
 	}
+
+	// Debug log for userID
+	fmt.Printf("GetCart handler: User ID from context: '%s'\n", userID)
 
 	// Call cart service via gRPC
 	res, err := c.CartClient.GetCart(r.Context(), &cartpb.GetCartRequest{
@@ -51,6 +57,9 @@ func (c *Config) AddCartItem(w http.ResponseWriter, r *http.Request) {
 		util.ErrorJSON(w, errors.New("unauthorized"), http.StatusUnauthorized)
 		return
 	}
+
+	// Debug log for userID
+	fmt.Printf("AddCartItem handler: User ID from context: '%s'\n", userID)
 
 	var requestPayload struct {
 		ProductID     int64   `json:"productId"`
@@ -84,6 +93,10 @@ func (c *Config) AddCartItem(w http.ResponseWriter, r *http.Request) {
 		util.ErrorJSON(w, err, http.StatusInternalServerError)
 		return
 	}
+
+	// Debug the response from cart service
+	fmt.Printf("AddCartItem: Response cart ID: %s, User ID: %s, Items count: %d\n",
+		res.Id, res.UserId, len(res.Items))
 
 	responseData := util.JsonResponse{
 		Error:   false,
@@ -307,7 +320,7 @@ func formatCartResponse(cart *cartpb.Cart) map[string]interface{} {
 		"total":    cart.Totals.Total,
 	}
 
-	// Create complete cart data structure
+	// Create complete cart data structure with camelCase keys for frontend
 	cartData := map[string]interface{}{
 		"id":             cart.Id,
 		"userId":         cart.UserId,

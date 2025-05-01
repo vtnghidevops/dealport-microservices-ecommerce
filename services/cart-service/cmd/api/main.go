@@ -16,6 +16,7 @@ import (
 	"cart-service/internal/service"
 	transportGrpc "cart-service/internal/transport/grpc"
 	pb "cart-service/proto/cart"
+	couponpb "cart-service/proto/coupon"
 
 	redisClient "github.com/go-redis/redis/v8"
 	"google.golang.org/grpc"
@@ -35,15 +36,16 @@ func main() {
 	redisConn := connectToRedis(cfg.Redis)
 	defer redisConn.Close()
 
-	// Create repository
+	// Create repositories
 	cartRepo := redis.NewCartRepository(redisConn)
+	couponRepo := redis.NewCouponRepository(redisConn)
 
 	// Create services
-	couponService := service.NewCouponService()
+	couponService := service.NewCouponService(couponRepo)
 	cartService := service.NewCartService(cartRepo, couponService)
 
 	// Start gRPC server
-	go startGRPCServer(cartService, cfg.Server.GRPCPort)
+	go startGRPCServer(cartService, couponService, cfg.Server.GRPCPort)
 
 	// Wait for termination signal
 	quit := make(chan os.Signal, 1)
@@ -54,7 +56,7 @@ func main() {
 	time.Sleep(1 * time.Second) // Allow some time for cleanup
 }
 
-func startGRPCServer(cartService domain.CartService, port string) {
+func startGRPCServer(cartService domain.CartService, couponService domain.CouponService, port string) {
 	// Create listener
 	lis, err := net.Listen("tcp", fmt.Sprintf(":%s", port))
 	if err != nil {
@@ -64,9 +66,13 @@ func startGRPCServer(cartService domain.CartService, port string) {
 	// Create gRPC server
 	grpcServer := grpc.NewServer()
 
-	// Register service
+	// Register services
 	cartGrpcServer := transportGrpc.NewServer(cartService)
 	pb.RegisterCartServiceServer(grpcServer, cartGrpcServer)
+
+	// Register coupon service
+	couponGrpcServer := transportGrpc.NewCouponServer(couponService)
+	couponpb.RegisterCouponServiceServer(grpcServer, couponGrpcServer)
 
 	// Register reflection service for gRPC tools and clients
 	reflection.Register(grpcServer)

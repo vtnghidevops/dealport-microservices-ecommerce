@@ -13,17 +13,19 @@ var (
 	ErrCouponInvalid    = errors.New("coupon code is invalid")
 	ErrCouponExpired    = errors.New("coupon code has expired")
 	ErrInsufficientCart = errors.New("cart total is below coupon minimum")
+	ErrCouponExists     = errors.New("coupon with this code already exists")
+	ErrCouponNotFound   = errors.New("coupon not found")
 )
 
 // CartItem represents a single item in a cart
 type CartItem struct {
 	ID            string  `json:"id"`
-	ProductID     string  `json:"product_id"`
+	ProductID     string  `json:"productId"`
 	Name          string  `json:"name"`
 	Price         float64 `json:"price"`
-	OriginalPrice float64 `json:"original_price"`
+	OriginalPrice float64 `json:"originalPrice"`
 	Quantity      int     `json:"quantity"`
-	ImageURL      string  `json:"image_url"`
+	ImageURL      string  `json:"imageUrl"`
 }
 
 // CartTotals represents the calculated totals for a cart
@@ -35,16 +37,33 @@ type CartTotals struct {
 	Total    float64 `json:"total"`
 }
 
+// Coupon represents a discount coupon
+type Coupon struct {
+	ID             string    `json:"id"`
+	Code           string    `json:"code"`
+	Discount       float64   `json:"discount"`
+	DiscountType   string    `json:"discountType"` // percentage or fixed
+	MinOrderAmount float64   `json:"minOrderAmount"`
+	MaxUsage       int       `json:"maxUsage"`
+	UsageCount     int       `json:"usageCount"`
+	ValidFrom      time.Time `json:"validFrom"`
+	ValidTo        time.Time `json:"validTo"`
+	IsActive       bool      `json:"isActive"`
+	Description    string    `json:"description,omitempty"`
+	CreatedAt      time.Time `json:"createdAt"`
+	UpdatedAt      time.Time `json:"updatedAt"`
+}
+
 // Cart represents a shopping cart
 type Cart struct {
 	ID             string     `json:"id"`
 	UserID         string     `json:"user_id"`
 	Items          []CartItem `json:"items"`
 	Totals         CartTotals `json:"totals"`
-	CouponCode     string     `json:"coupon_code"`
-	DiscountAmount float64    `json:"discount_amount"`
-	CreatedAt      time.Time  `json:"created_at"`
-	UpdatedAt      time.Time  `json:"updated_at"`
+	CouponCode     string     `json:"couponCode"`
+	DiscountAmount float64    `json:"discountAmount"`
+	CreatedAt      time.Time  `json:"createdAt"`
+	UpdatedAt      time.Time  `json:"updatedAt"`
 }
 
 // CartRepository defines the interface for cart data persistence
@@ -65,9 +84,27 @@ type CartService interface {
 	RemoveCoupon(ctx context.Context, userID string) (*Cart, error)
 }
 
+// CouponRepository defines the interface for coupon data persistence
+type CouponRepository interface {
+	GetCoupons(ctx context.Context, page int, limit int) ([]Coupon, int, error)
+	GetCouponByID(ctx context.Context, id string) (*Coupon, error)
+	GetCouponByCode(ctx context.Context, code string) (*Coupon, error)
+	CreateCoupon(ctx context.Context, coupon *Coupon) (*Coupon, error)
+	UpdateCoupon(ctx context.Context, coupon *Coupon) (*Coupon, error)
+	DeleteCoupon(ctx context.Context, id string) error
+	IncrementUsage(ctx context.Context, code string) error
+}
+
 // CouponService defines the interface for coupon validation and application
 type CouponService interface {
 	ValidateCoupon(ctx context.Context, code string) (bool, float64, error)
 	ApplyCoupon(ctx context.Context, cart *Cart, code string) (*Cart, error)
-}
 
+	// New methods for coupon management
+	GetCoupons(ctx context.Context, page int, limit int) ([]Coupon, int, error)
+	GetCouponByID(ctx context.Context, id string) (*Coupon, error)
+	GetCouponByCode(ctx context.Context, code string) (*Coupon, error)
+	CreateCoupon(ctx context.Context, coupon *Coupon) (*Coupon, error)
+	UpdateCoupon(ctx context.Context, id string, coupon *Coupon) (*Coupon, error)
+	DeleteCoupon(ctx context.Context, id string) error
+}
