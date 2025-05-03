@@ -89,16 +89,16 @@ services:
     ports:
       - "50051:50051"
     environment:
-      DB_HOST: postgres-auth
-      DB_PORT: 5432
-      DB_USER: postgres
-      DB_PASSWORD: password
-      DB_NAME: auth
-      DB_SSLMODE: disable
-      JWT_ACCESS_SECRET: "your-access-token-secret-key"
-      JWT_REFRESH_SECRET: "your-refresh-token-secret-key"
-      JWT_ACCESS_DURATION: 15
-      JWT_REFRESH_DURATION: 168
+      DB_HOST: ${AUTH_DB_HOST}
+      DB_PORT: ${AUTH_DB_PORT}
+      DB_USER: ${AUTH_DB_USER}
+      DB_PASSWORD: ${AUTH_DB_PASSWORD}
+      DB_NAME: ${AUTH_DB_NAME}
+      DB_SSLMODE: ${AUTH_DB_SSLMODE}
+      JWT_ACCESS_SECRET: ${JWT_ACCESS_SECRET}
+      JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET}
+      JWT_ACCESS_DURATION: ${JWT_ACCESS_DURATION}
+      JWT_REFRESH_DURATION: ${JWT_REFRESH_DURATION}
     depends_on:
       - postgres-auth
     networks:
@@ -113,12 +113,12 @@ services:
     ports:
       - "50052:50052"
     environment:
-      DB_HOST: postgres-users
-      DB_PORT: 5432
-      DB_USER: postgres-users
-      DB_PASSWORD: password
-      DB_NAME: users
-      DB_SSLMODE: disable
+      DB_HOST: ${USER_DB_HOST}
+      DB_PORT: ${USER_DB_PORT}
+      DB_USER: ${USER_DB_USER}
+      DB_PASSWORD: ${USER_DB_PASSWORD}
+      DB_NAME: ${USER_DB_NAME}
+      DB_SSLMODE: ${USER_DB_SSLMODE}
     depends_on:
       - postgres-users
     networks:
@@ -133,7 +133,7 @@ services:
     ports:
       - "8082:8082"
     environment:
-      DSN: "host=postgres-products port=5432 user=postgres-products password=password dbname=products sslmode=disable timezone=UTC connect_timeout=5"
+      DSN: ${PRODUCT_DSN}
     depends_on:
       - postgres-products
     networks:
@@ -155,14 +155,14 @@ services:
       context: ./services/mail-service
     restart: always
     environment:
-      MAIL_DOMAIN: localhost
-      MAIL_HOST: mailhog
-      MAIL_PORT: 1025
-      MAIL_ENCRYPTION: none
-      MAIL_USERNAME: ""
-      MAIL_PASSWORD: ""
-      FROM_NAME: "Livius Vuong"
-      FROM_ADDR: livius.vuong@example.com
+      MAIL_DOMAIN: ${MAIL_DOMAIN}
+      MAIL_HOST: ${MAIL_HOST}
+      MAIL_PORT: ${MAIL_PORT}
+      MAIL_ENCRYPTION: ${MAIL_ENCRYPTION}
+      MAIL_USERNAME: ${MAIL_USERNAME}
+      MAIL_PASSWORD: ${MAIL_PASSWORD}
+      FROM_NAME: ${FROM_NAME}
+      FROM_ADDR: ${FROM_ADDR}
     networks:
       - net
 
@@ -248,20 +248,10 @@ services:
       - "27018:27017"
     environment:
       MONGO_INITDB_DATABASE: logs
-      MONGO_INITDB_ROOT_USERNAME: admin
-      MONGO_INITDB_ROOT_PASSWORD: password
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_USERNAME}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_PASSWORD}
     volumes:
       - ./db-data/mongo/:/data/db
-    networks:
-      - net
-
-  # Testing SMTP Server
-  mailhog:
-    container_name: mailhog
-    image: mailhog/mailhog:latest
-    ports:
-      - "1025:1025"
-      - "8025:8025"
     networks:
       - net
 
