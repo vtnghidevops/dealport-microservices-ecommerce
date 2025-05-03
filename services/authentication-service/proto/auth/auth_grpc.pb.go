@@ -22,14 +22,28 @@ const _ = grpc.SupportPackageIsVersion7
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type AuthServiceClient interface {
-	// Register creates a new user account
+	// Register creates a new user account and sends OTP
 	Register(ctx context.Context, in *RegisterRequest, opts ...grpc.CallOption) (*RegisterResponse, error)
+	// VerifyRegistration verifies the OTP and completes registration
+	VerifyRegistration(ctx context.Context, in *VerifyRegistrationRequest, opts ...grpc.CallOption) (*VerifyRegistrationResponse, error)
 	// Login authenticates a user and returns a JWT token
 	Login(ctx context.Context, in *LoginRequest, opts ...grpc.CallOption) (*LoginResponse, error)
 	// Validate checks if a token is valid
 	Validate(ctx context.Context, in *ValidateRequest, opts ...grpc.CallOption) (*ValidateResponse, error)
 	// RefreshToken refreshes an existing token
 	RefreshToken(ctx context.Context, in *RefreshTokenRequest, opts ...grpc.CallOption) (*RefreshTokenResponse, error)
+	// RequestPasswordReset initiates password reset process and sends OTP
+	RequestPasswordReset(ctx context.Context, in *PasswordResetRequest, opts ...grpc.CallOption) (*PasswordResetResponse, error)
+	// VerifyPasswordReset verifies OTP for password reset
+	VerifyPasswordReset(ctx context.Context, in *VerifyPasswordResetRequest, opts ...grpc.CallOption) (*VerifyPasswordResetResponse, error)
+	// UpdatePassword updates user's password (requires current password)
+	UpdatePassword(ctx context.Context, in *UpdatePasswordRequest, opts ...grpc.CallOption) (*UpdatePasswordResponse, error)
+	// RequestOTP requests a new OTP for a specific purpose
+	RequestOTP(ctx context.Context, in *OTPRequest, opts ...grpc.CallOption) (*OTPResponse, error)
+	// VerifyOTP verifies an OTP code
+	VerifyOTP(ctx context.Context, in *VerifyOTPRequest, opts ...grpc.CallOption) (*VerifyOTPResponse, error)
+	// CheckAccountExists checks if an account exists with the given email
+	CheckAccountExists(ctx context.Context, in *CheckAccountExistsRequest, opts ...grpc.CallOption) (*CheckAccountExistsResponse, error)
 }
 
 type authServiceClient struct {
@@ -43,6 +57,15 @@ func NewAuthServiceClient(cc grpc.ClientConnInterface) AuthServiceClient {
 func (c *authServiceClient) Register(ctx context.Context, in *RegisterRequest, opts ...grpc.CallOption) (*RegisterResponse, error) {
 	out := new(RegisterResponse)
 	err := c.cc.Invoke(ctx, "/auth.AuthService/Register", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *authServiceClient) VerifyRegistration(ctx context.Context, in *VerifyRegistrationRequest, opts ...grpc.CallOption) (*VerifyRegistrationResponse, error) {
+	out := new(VerifyRegistrationResponse)
+	err := c.cc.Invoke(ctx, "/auth.AuthService/VerifyRegistration", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -76,18 +99,86 @@ func (c *authServiceClient) RefreshToken(ctx context.Context, in *RefreshTokenRe
 	return out, nil
 }
 
+func (c *authServiceClient) RequestPasswordReset(ctx context.Context, in *PasswordResetRequest, opts ...grpc.CallOption) (*PasswordResetResponse, error) {
+	out := new(PasswordResetResponse)
+	err := c.cc.Invoke(ctx, "/auth.AuthService/RequestPasswordReset", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *authServiceClient) VerifyPasswordReset(ctx context.Context, in *VerifyPasswordResetRequest, opts ...grpc.CallOption) (*VerifyPasswordResetResponse, error) {
+	out := new(VerifyPasswordResetResponse)
+	err := c.cc.Invoke(ctx, "/auth.AuthService/VerifyPasswordReset", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *authServiceClient) UpdatePassword(ctx context.Context, in *UpdatePasswordRequest, opts ...grpc.CallOption) (*UpdatePasswordResponse, error) {
+	out := new(UpdatePasswordResponse)
+	err := c.cc.Invoke(ctx, "/auth.AuthService/UpdatePassword", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *authServiceClient) RequestOTP(ctx context.Context, in *OTPRequest, opts ...grpc.CallOption) (*OTPResponse, error) {
+	out := new(OTPResponse)
+	err := c.cc.Invoke(ctx, "/auth.AuthService/RequestOTP", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *authServiceClient) VerifyOTP(ctx context.Context, in *VerifyOTPRequest, opts ...grpc.CallOption) (*VerifyOTPResponse, error) {
+	out := new(VerifyOTPResponse)
+	err := c.cc.Invoke(ctx, "/auth.AuthService/VerifyOTP", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *authServiceClient) CheckAccountExists(ctx context.Context, in *CheckAccountExistsRequest, opts ...grpc.CallOption) (*CheckAccountExistsResponse, error) {
+	out := new(CheckAccountExistsResponse)
+	err := c.cc.Invoke(ctx, "/auth.AuthService/CheckAccountExists", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // AuthServiceServer is the server API for AuthService service.
 // All implementations must embed UnimplementedAuthServiceServer
 // for forward compatibility
 type AuthServiceServer interface {
-	// Register creates a new user account
+	// Register creates a new user account and sends OTP
 	Register(context.Context, *RegisterRequest) (*RegisterResponse, error)
+	// VerifyRegistration verifies the OTP and completes registration
+	VerifyRegistration(context.Context, *VerifyRegistrationRequest) (*VerifyRegistrationResponse, error)
 	// Login authenticates a user and returns a JWT token
 	Login(context.Context, *LoginRequest) (*LoginResponse, error)
 	// Validate checks if a token is valid
 	Validate(context.Context, *ValidateRequest) (*ValidateResponse, error)
 	// RefreshToken refreshes an existing token
 	RefreshToken(context.Context, *RefreshTokenRequest) (*RefreshTokenResponse, error)
+	// RequestPasswordReset initiates password reset process and sends OTP
+	RequestPasswordReset(context.Context, *PasswordResetRequest) (*PasswordResetResponse, error)
+	// VerifyPasswordReset verifies OTP for password reset
+	VerifyPasswordReset(context.Context, *VerifyPasswordResetRequest) (*VerifyPasswordResetResponse, error)
+	// UpdatePassword updates user's password (requires current password)
+	UpdatePassword(context.Context, *UpdatePasswordRequest) (*UpdatePasswordResponse, error)
+	// RequestOTP requests a new OTP for a specific purpose
+	RequestOTP(context.Context, *OTPRequest) (*OTPResponse, error)
+	// VerifyOTP verifies an OTP code
+	VerifyOTP(context.Context, *VerifyOTPRequest) (*VerifyOTPResponse, error)
+	// CheckAccountExists checks if an account exists with the given email
+	CheckAccountExists(context.Context, *CheckAccountExistsRequest) (*CheckAccountExistsResponse, error)
 	mustEmbedUnimplementedAuthServiceServer()
 }
 
@@ -98,6 +189,9 @@ type UnimplementedAuthServiceServer struct {
 func (UnimplementedAuthServiceServer) Register(context.Context, *RegisterRequest) (*RegisterResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Register not implemented")
 }
+func (UnimplementedAuthServiceServer) VerifyRegistration(context.Context, *VerifyRegistrationRequest) (*VerifyRegistrationResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method VerifyRegistration not implemented")
+}
 func (UnimplementedAuthServiceServer) Login(context.Context, *LoginRequest) (*LoginResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Login not implemented")
 }
@@ -106,6 +200,24 @@ func (UnimplementedAuthServiceServer) Validate(context.Context, *ValidateRequest
 }
 func (UnimplementedAuthServiceServer) RefreshToken(context.Context, *RefreshTokenRequest) (*RefreshTokenResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method RefreshToken not implemented")
+}
+func (UnimplementedAuthServiceServer) RequestPasswordReset(context.Context, *PasswordResetRequest) (*PasswordResetResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method RequestPasswordReset not implemented")
+}
+func (UnimplementedAuthServiceServer) VerifyPasswordReset(context.Context, *VerifyPasswordResetRequest) (*VerifyPasswordResetResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method VerifyPasswordReset not implemented")
+}
+func (UnimplementedAuthServiceServer) UpdatePassword(context.Context, *UpdatePasswordRequest) (*UpdatePasswordResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method UpdatePassword not implemented")
+}
+func (UnimplementedAuthServiceServer) RequestOTP(context.Context, *OTPRequest) (*OTPResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method RequestOTP not implemented")
+}
+func (UnimplementedAuthServiceServer) VerifyOTP(context.Context, *VerifyOTPRequest) (*VerifyOTPResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method VerifyOTP not implemented")
+}
+func (UnimplementedAuthServiceServer) CheckAccountExists(context.Context, *CheckAccountExistsRequest) (*CheckAccountExistsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method CheckAccountExists not implemented")
 }
 func (UnimplementedAuthServiceServer) mustEmbedUnimplementedAuthServiceServer() {}
 
@@ -134,6 +246,24 @@ func _AuthService_Register_Handler(srv interface{}, ctx context.Context, dec fun
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(AuthServiceServer).Register(ctx, req.(*RegisterRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _AuthService_VerifyRegistration_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(VerifyRegistrationRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AuthServiceServer).VerifyRegistration(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/auth.AuthService/VerifyRegistration",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AuthServiceServer).VerifyRegistration(ctx, req.(*VerifyRegistrationRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -192,6 +322,114 @@ func _AuthService_RefreshToken_Handler(srv interface{}, ctx context.Context, dec
 	return interceptor(ctx, in, info, handler)
 }
 
+func _AuthService_RequestPasswordReset_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(PasswordResetRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AuthServiceServer).RequestPasswordReset(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/auth.AuthService/RequestPasswordReset",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AuthServiceServer).RequestPasswordReset(ctx, req.(*PasswordResetRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _AuthService_VerifyPasswordReset_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(VerifyPasswordResetRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AuthServiceServer).VerifyPasswordReset(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/auth.AuthService/VerifyPasswordReset",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AuthServiceServer).VerifyPasswordReset(ctx, req.(*VerifyPasswordResetRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _AuthService_UpdatePassword_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(UpdatePasswordRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AuthServiceServer).UpdatePassword(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/auth.AuthService/UpdatePassword",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AuthServiceServer).UpdatePassword(ctx, req.(*UpdatePasswordRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _AuthService_RequestOTP_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(OTPRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AuthServiceServer).RequestOTP(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/auth.AuthService/RequestOTP",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AuthServiceServer).RequestOTP(ctx, req.(*OTPRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _AuthService_VerifyOTP_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(VerifyOTPRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AuthServiceServer).VerifyOTP(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/auth.AuthService/VerifyOTP",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AuthServiceServer).VerifyOTP(ctx, req.(*VerifyOTPRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _AuthService_CheckAccountExists_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CheckAccountExistsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AuthServiceServer).CheckAccountExists(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/auth.AuthService/CheckAccountExists",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AuthServiceServer).CheckAccountExists(ctx, req.(*CheckAccountExistsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // AuthService_ServiceDesc is the grpc.ServiceDesc for AuthService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -204,6 +442,10 @@ var AuthService_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _AuthService_Register_Handler,
 		},
 		{
+			MethodName: "VerifyRegistration",
+			Handler:    _AuthService_VerifyRegistration_Handler,
+		},
+		{
 			MethodName: "Login",
 			Handler:    _AuthService_Login_Handler,
 		},
@@ -214,6 +456,30 @@ var AuthService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "RefreshToken",
 			Handler:    _AuthService_RefreshToken_Handler,
+		},
+		{
+			MethodName: "RequestPasswordReset",
+			Handler:    _AuthService_RequestPasswordReset_Handler,
+		},
+		{
+			MethodName: "VerifyPasswordReset",
+			Handler:    _AuthService_VerifyPasswordReset_Handler,
+		},
+		{
+			MethodName: "UpdatePassword",
+			Handler:    _AuthService_UpdatePassword_Handler,
+		},
+		{
+			MethodName: "RequestOTP",
+			Handler:    _AuthService_RequestOTP_Handler,
+		},
+		{
+			MethodName: "VerifyOTP",
+			Handler:    _AuthService_VerifyOTP_Handler,
+		},
+		{
+			MethodName: "CheckAccountExists",
+			Handler:    _AuthService_CheckAccountExists_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

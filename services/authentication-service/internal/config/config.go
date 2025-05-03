@@ -11,9 +11,12 @@ import (
 
 // Config holds all configuration for our application
 type Config struct {
-	Server   ServerConfig
-	Database DatabaseConfig
-	JWT      JWTConfig
+	Server     ServerConfig
+	Database   DatabaseConfig
+	JWT        JWTConfig
+	OTP        OTPConfig
+	MailClient MailClientConfig
+	RabbitMQ   RabbitMQConfig
 }
 
 // ServerConfig holds all server related configuration
@@ -38,6 +41,23 @@ type JWTConfig struct {
 	RefreshSecret   string
 	AccessDuration  time.Duration
 	RefreshDuration time.Duration
+}
+
+// OTPConfig holds all OTP related configuration
+type OTPConfig struct {
+	Length      int
+	Expiry      time.Duration
+	MaxAttempts int
+}
+
+// MailClientConfig holds all mail client related configuration
+type MailClientConfig struct {
+	BaseURL string
+}
+
+// RabbitMQConfig holds all RabbitMQ related configuration
+type RabbitMQConfig struct {
+	URL string
 }
 
 // LoadConfig loads the configuration from environment variables
@@ -69,6 +89,17 @@ func LoadConfig(path string) (*Config, error) {
 			RefreshSecret:   getEnv("JWT_REFRESH_SECRET", "default-refresh-secret-key"),
 			AccessDuration:  time.Duration(getEnvAsInt("JWT_ACCESS_DURATION", 15)) * time.Minute,
 			RefreshDuration: time.Duration(getEnvAsInt("JWT_REFRESH_DURATION", 24*7)) * time.Hour,
+		},
+		OTP: OTPConfig{
+			Length:      getEnvAsInt("OTP_LENGTH", 6),
+			Expiry:      time.Duration(getEnvAsInt("OTP_EXPIRY", 15)) * time.Minute,
+			MaxAttempts: getEnvAsInt("OTP_MAX_ATTEMPTS", 3),
+		},
+		MailClient: MailClientConfig{
+			BaseURL: getEnv("MAIL_SERVICE_URL", "http://localhost:9002"),
+		},
+		RabbitMQ: RabbitMQConfig{
+			URL: getEnv("RABBITMQ_URL", "amqp://guest:guest@localhost:5672"),
 		},
 	}
 

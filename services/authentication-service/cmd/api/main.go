@@ -1,22 +1,29 @@
 package main
 
 import (
+	"context"
+	"encoding/json"
 	"fmt"
 	"log"
 	"net"
 	"os"
 	"os/signal"
 	"syscall"
+	"time"
 
+	"github.com/google/uuid"
 	"github.com/jmoiron/sqlx"
 	_ "github.com/lib/pq"
+	amqp "github.com/rabbitmq/amqp091-go"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/reflection"
 
 	"authentication-service/internal/config"
+	"authentication-service/internal/event"
 	"authentication-service/internal/repository/postgres"
 	"authentication-service/internal/service"
 	grpcHandler "authentication-service/internal/transport/grpc"
+	"authentication-service/internal/util"
 	pb "authentication-service/proto/auth"
 )
 
@@ -44,6 +51,104 @@ func main() {
 		logger.Fatalf("Failed to ping database: %v", err)
 	}
 
+	// Connect to RabbitMQ
+	rabbitConn, err := util.ConnectToRabbitMQ(cfg.RabbitMQ.URL)
+	if err != nil {
+		logger.Fatalf("Failed to connect to RabbitMQ: %v", err)
+	}
+	defer rabbitConn.Close()
+	logger.Println("Connected to RabbitMQ")
+
+	// Initialize event emitter
+	eventEmitter, err := event.NewEmitter(rabbitConn, logger)
+	if err != nil {
+		logger.Fatalf("Failed to create event emitter: %v", err)
+	}
+	logger.Println("Event emitter initialized")
+
+	// Add these debug logs after initializing event emitter (around line 90)
+	log.Printf("DEBUG STARTUP: Event emitter initialized - conn: %v, logger: %v", rabbitConn != nil, logger != nil)
+	// Test event emission during startup
+	log.Printf("DEBUG STARTUP: Testing event emission during startup")
+	time.Sleep(5 * time.Second) // Allow service to fully start
+	go func() {
+		// Create a test event
+		testEvent := event.StandardEvent{
+			ID:          uuid.New().String(),
+			Name:        "test.event",
+			Data:        map[string]string{"message": "Test event from auth service startup"},
+			DataSchema:  "v1",
+			Source:      "authentication-service-startup-test",
+			CreatedAt:   time.Now(),
+			PublishedAt: time.Now(),
+			Version:     "1.0",
+		}
+
+		// Try to publish directly to test connection
+		if ch, err := rabbitConn.Channel(); err == nil {
+			defer ch.Close()
+
+			// Declare exchange
+			err := ch.ExchangeDeclare("logs_topic", "topic", true, false, false, false, nil)
+			if err != nil {
+				log.Printf("ERROR STARTUP: Failed to declare exchange: %v", err)
+				return
+			}
+
+			// Convert to JSON
+			jsonData, err := json.Marshal(testEvent)
+			if err != nil {
+				log.Printf("ERROR STARTUP: Failed to marshal test event: %v", err)
+				return
+			}
+
+			// Try to publish
+			ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+			defer cancel()
+
+			err = ch.PublishWithContext(
+				ctx,
+				"logs_topic", // exchange
+				"test.event", // routing key
+				false,        // mandatory
+				false,        // immediate
+				amqp.Publishing{
+					ContentType: "application/json",
+					Body:        jsonData,
+				},
+			)
+
+			if err != nil {
+				log.Printf("ERROR STARTUP: Failed to publish test event: %v", err)
+			} else {
+				log.Printf("SUCCESS STARTUP: Test event published successfully")
+			}
+		} else {
+			log.Printf("ERROR STARTUP: Failed to create channel for test: %v", err)
+		}
+	}()
+
+	// Initialize OTP manager
+	otpManager := util.NewOTPManager(
+		cfg.OTP.Length,
+		cfg.OTP.Expiry,
+		cfg.OTP.MaxAttempts,
+	)
+	logger.Printf("Initialized OTP manager with expiry: %v", cfg.OTP.Expiry)
+
+	// Initialize mail client
+	mailClient := util.NewMailClient(cfg.MailClient.BaseURL)
+	logger.Printf("Initialized mail client with base URL: %s", cfg.MailClient.BaseURL)
+
+	// Start a periodic cleanup routine for expired OTPs
+	go func() {
+		ticker := time.NewTicker(5 * time.Minute)
+		defer ticker.Stop()
+		for range ticker.C {
+			otpManager.CleanupExpiredOTPs()
+		}
+	}()
+
 	// Initialize repository
 	userRepo := postgres.NewPostgresRepository(db)
 
@@ -54,6 +159,9 @@ func main() {
 		cfg.JWT.RefreshSecret,
 		cfg.JWT.AccessDuration,
 		cfg.JWT.RefreshDuration,
+		otpManager,
+		mailClient,
+		eventEmitter,
 	)
 
 	// Initialize gRPC handler

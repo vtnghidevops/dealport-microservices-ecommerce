@@ -200,7 +200,9 @@ class OrderService {
       console.log('Fetching orders from:', this.baseUrl);
       console.log('Authorization token present:', !!headers.Authorization);
 
-      const response = await axios.get<ApiResponse<BackendOrder[]>>(this.baseUrl, { headers });
+      // Add cache-busting timestamp parameter to prevent browser caching
+      const timestamp = new Date().getTime();
+      const response = await axios.get<ApiResponse<BackendOrder[]>>(`${this.baseUrl}?t=${timestamp}`, { headers });
 
       console.log('API Response received, status:', response.status);
       console.log('Response headers:', response.headers);
@@ -219,88 +221,52 @@ class OrderService {
 
         // Check for data property
         if (response.data.data !== undefined) {
-          // console.log('Data property exists, type:', typeof response.data.data);
+          console.log('Data property exists, type:', typeof response.data.data);
 
           if (Array.isArray(response.data.data)) {
-            // console.log('Data property is an array with', response.data.data.length, 'items');
+            console.log('Data property is an array with', response.data.data.length, 'items');
             backendOrders = response.data.data;
           } else if (typeof response.data.data === 'object' && response.data.data !== null) {
-            // console.log('Data property is an object with keys:', Object.keys(response.data.data));
+            console.log('Data property is an object with keys:', Object.keys(response.data.data));
 
-            // Check for orders array inside data object (handle nested structure)
+            // Check for orders array inside data object (nested structure)
             const dataWrapper = response.data.data as DataWrapper<BackendOrder[]>;
             if (Array.isArray(dataWrapper.orders)) {
-              // console.log('Found orders array inside data object with', dataWrapper.orders.length, 'orders');
+              console.log('Found orders array inside data object with', dataWrapper.orders.length, 'orders');
               backendOrders = dataWrapper.orders;
             }
-          } else {
-            console.log('Data property is NOT an array:', response.data.data);
           }
         }
 
         // Check for orders property directly on response.data
-        if (response.data.orders !== undefined) {
-          console.log('Orders property exists, type:', typeof response.data.orders);
-
-          if (Array.isArray(response.data.orders)) {
-            console.log('Orders property is an array with', response.data.orders.length, 'items');
-            backendOrders = response.data.orders;
-          } else {
-            console.log('Orders property is NOT an array:', response.data.orders);
-          }
-        }
-
-        // If response.data itself contains order properties, it might be a single order
-        if (response.data.id && typeof response.data.id === 'string') {
-          console.log('Found a single order with ID:', response.data.id);
-          console.log('Single order details:', response.data);
-          backendOrders = [response.data as BackendOrder];
+        if (Array.isArray(response.data.orders)) {
+          console.log('Orders property is an array with', response.data.orders.length, 'items');
+          backendOrders = response.data.orders;
         }
       }
 
-      // Try to adapt to unexpected response format as a fallback
-      if (backendOrders.length === 0 && typeof response.data === 'object' && !Array.isArray(response.data)) {
-        const possibleOrdersArray = Object.values(response.data);
-        console.log('Trying to extract orders from object values:', possibleOrdersArray);
+      // If we still don't have orders, check if the entire response might be the orders array
+      if (backendOrders.length === 0 && typeof response.data === 'object' && response.data !== null) {
+        console.log('No orders found in data or orders properties, trying to adapt the entire response');
 
-        for (const value of possibleOrdersArray) {
-          if (Array.isArray(value)) {
-            console.log('Found array in object values with length:', value.length);
-            backendOrders = value as BackendOrder[];
-            break;
-          } else if (typeof value === 'object' && value !== null && 'orders' in value && Array.isArray(value.orders)) {
-            console.log('Found nested orders array in object values with length:', value.orders.length);
-            backendOrders = value.orders as BackendOrder[];
-            break;
-          }
+        // Log the top level data structure for debugging
+        if (typeof response.data.data === 'object') {
+          console.log('Top level data structure:', Object.keys(response.data.data));
         }
       }
 
-      // Convert backend orders to frontend format
-      if (backendOrders.length > 0) {
-        // console.log(`Converting ${backendOrders.length} backend orders to frontend format`);
-        const frontendOrders = backendOrders.map(adaptOrder);
-        //  console.log('Converted orders:', frontendOrders);
-        return frontendOrders;
-      }
+      console.log('Final extracted backend orders count:', backendOrders.length);
 
-      console.warn('Could not extract orders from response - returning empty array');
-      return [];
+      // Convert to frontend format
+      const frontendOrders = backendOrders.map(order => adaptOrder(order));
+      console.log('Final frontend orders count:', frontendOrders.length);
+      console.log('Sample order (if available):', frontendOrders.length > 0 ? frontendOrders[0].id : 'No orders');
+      console.log('----------- END ORDER SERVICE DEBUG -----------');
+
+      return frontendOrders;
     } catch (error) {
-      console.error('----------- ORDER SERVICE ERROR -----------');
       console.error('Error fetching orders:', error);
-
-      if (axios.isAxiosError(error)) {
-        console.error('Axios error details:');
-        console.error('Status:', error.response?.status);
-        console.error('Status text:', error.response?.statusText);
-        console.error('Response data:', error.response?.data);
-        console.error('Request URL:', error.config?.url);
-        console.error('Request method:', error.config?.method);
-        console.error('Request headers:', error.config?.headers);
-      }
-
-      this.handleError('Error fetching orders', error);
+      this.handleError('Failed to fetch orders', error);
       return [];
     }
   }

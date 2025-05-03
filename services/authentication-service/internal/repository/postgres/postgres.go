@@ -35,7 +35,9 @@ func (r *PostgresRepository) CreateUser(ctx context.Context, user *domain.User) 
 	user.ID = uuid.New().String()
 	user.CreatedAt = time.Now()
 	user.UpdatedAt = time.Now()
-	user.Active = true
+
+	// KHÔNG đặt user.Active = true, để sử dụng giá trị do service truyền vào
+	// để giúp flow đăng ký và OTP hoạt động đúng
 
 	// Default role is "user" if not specified
 	if user.Role == "" {
@@ -140,24 +142,83 @@ func (r *PostgresRepository) GetUserByEmail(ctx context.Context, email string) (
 // UpdateUser updates a user's information
 func (r *PostgresRepository) UpdateUser(ctx context.Context, user *domain.User) error {
 	user.UpdatedAt = time.Now()
+	fmt.Printf("DEBUG UpdateUser: Updating user with ID: %s\n", user.ID)
 
-	query := `UPDATE users 
-		SET first_name = $1, last_name = $2, username = $3, active = $4, role = $5, updated_at = $6
-		WHERE id = $7`
+	// Check if password_hash needs to be updated
+	if user.Password != "" {
+		fmt.Printf("DEBUG UpdateUser: Updating password for user ID: %s\n", user.ID)
+		query := `UPDATE users 
+			SET first_name = $1, last_name = $2, username = $3, active = $4, role = $5, updated_at = $6, password_hash = $7
+			WHERE id = $8`
 
-	_, err := r.db.ExecContext(
-		ctx,
-		query,
-		user.FirstName,
-		user.LastName,
-		user.Username,
-		user.Active,
-		user.Role,
-		user.UpdatedAt,
-		user.ID,
-	)
+		result, err := r.db.ExecContext(
+			ctx,
+			query,
+			user.FirstName,
+			user.LastName,
+			user.Username,
+			user.Active,
+			user.Role,
+			user.UpdatedAt,
+			user.Password, // Password field is mapped to password_hash in the DB
+			user.ID,
+		)
 
-	return err
+		if err != nil {
+			fmt.Printf("DEBUG UpdateUser: Error updating user: %v\n", err)
+			return err
+		}
+
+		rowsAffected, err := result.RowsAffected()
+		if err != nil {
+			fmt.Printf("DEBUG UpdateUser: Error getting rows affected: %v\n", err)
+			return err
+		}
+
+		if rowsAffected == 0 {
+			fmt.Printf("DEBUG UpdateUser: No rows affected, user may not exist: %s\n", user.ID)
+			return errors.New("user not found or not updated")
+		}
+
+		fmt.Printf("DEBUG UpdateUser: User updated successfully with new password, rows affected: %d\n", rowsAffected)
+	} else {
+		// If no password update, use the original query
+		query := `UPDATE users 
+			SET first_name = $1, last_name = $2, username = $3, active = $4, role = $5, updated_at = $6
+			WHERE id = $7`
+
+		result, err := r.db.ExecContext(
+			ctx,
+			query,
+			user.FirstName,
+			user.LastName,
+			user.Username,
+			user.Active,
+			user.Role,
+			user.UpdatedAt,
+			user.ID,
+		)
+
+		if err != nil {
+			fmt.Printf("DEBUG UpdateUser: Error updating user without password change: %v\n", err)
+			return err
+		}
+
+		rowsAffected, err := result.RowsAffected()
+		if err != nil {
+			fmt.Printf("DEBUG UpdateUser: Error getting rows affected: %v\n", err)
+			return err
+		}
+
+		if rowsAffected == 0 {
+			fmt.Printf("DEBUG UpdateUser: No rows affected, user may not exist: %s\n", user.ID)
+			return errors.New("user not found or not updated")
+		}
+
+		fmt.Printf("DEBUG UpdateUser: User updated successfully without password change, rows affected: %d\n", rowsAffected)
+	}
+
+	return nil
 }
 
 // UpdateRefreshToken updates a user's refresh token

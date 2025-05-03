@@ -1,6 +1,6 @@
 module authentication-service
 
-go 1.23.0
+go 1.24
 
 toolchain go1.24.1
 
@@ -12,10 +12,11 @@ require (
 	github.com/lib/pq v1.10.9
 	golang.org/x/crypto v0.37.0
 	google.golang.org/grpc v1.72.0
-	google.golang.org/protobuf v1.36.6
+	google.golang.org/protobuf v1.36.5
 )
 
 require (
+	github.com/rabbitmq/amqp091-go v1.10.0
 	golang.org/x/net v0.35.0 // indirect
 	golang.org/x/sys v0.32.0 // indirect
 	golang.org/x/text v0.24.0 // indirect

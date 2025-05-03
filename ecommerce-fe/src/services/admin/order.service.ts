@@ -80,8 +80,8 @@ const adaptOrder = (backendOrder: any): Order => {
 };
 
 class AdminOrderService {
-  private baseUrl = `${API_URL}/admin/orders`;
-  private checkoutUrl = `${API_URL}/checkout/orders`;
+  private baseUrl = `${API_URL}/checkout/admin/orders`;
+  private checkoutUrl = `${API_URL}/checkout`;
 
   /**
    * Fetch orders with filtering and pagination for admin
@@ -106,8 +106,10 @@ class AdminOrderService {
         queryParams.append('end_date', endDate.toISOString());
       }
 
+      console.log('Fetching admin orders from:', `${this.baseUrl}?${queryParams.toString()}`);
+
       const response = await axios.get(
-        `${this.checkoutUrl}?${queryParams.toString()}`,
+        `${this.baseUrl}?${queryParams.toString()}`,
         { headers }
       );
 
@@ -118,11 +120,30 @@ class AdminOrderService {
       }
 
       // Process and adapt orders to frontend format
-      const fetchedOrders = responseData.data?.orders || [];
-      const total = responseData.data?.total || fetchedOrders.length;
+      let fetchedOrders = [];
+      let total = 0;
+
+      // Handle different response structures
+      if (responseData.data) {
+        if (Array.isArray(responseData.data)) {
+          // If data is directly an array of orders
+          fetchedOrders = responseData.data;
+          total = fetchedOrders.length;
+        } else if (responseData.data.orders) {
+          // If data contains nested orders array
+          fetchedOrders = responseData.data.orders;
+          total = responseData.data.total || fetchedOrders.length;
+        }
+      } else if (responseData.orders) {
+        // If orders are directly in the root
+        fetchedOrders = responseData.orders;
+        total = responseData.total || fetchedOrders.length;
+      }
 
       // Adapt each order to the frontend format
       const adaptedOrders = fetchedOrders.map(adaptOrder);
+
+      console.log(`Successfully fetched ${adaptedOrders.length} orders for admin`);
 
       // Return with consistent format
       return {
@@ -130,7 +151,7 @@ class AdminOrderService {
         total
       };
     } catch (error) {
-      console.error('Error fetching orders:', error);
+      console.error('Error fetching admin orders:', error);
       return { orders: [], total: 0 };
     }
   }
@@ -144,7 +165,7 @@ class AdminOrderService {
 
       // Thử gọi API summary
       try {
-        const response = await axios.get(`${this.checkoutUrl}/summary`, { headers });
+        const response = await axios.get(`${this.baseUrl}/summary`, { headers });
 
         if (!response.data.error) {
           return response.data.data;
@@ -234,7 +255,7 @@ class AdminOrderService {
       const headers = getAuthHeader();
 
       const response = await axios.patch(
-        `${this.checkoutUrl}/${orderId}/status`,
+        `${this.checkoutUrl}/orders/${orderId}/status`,
         { status },
         { headers }
       );
