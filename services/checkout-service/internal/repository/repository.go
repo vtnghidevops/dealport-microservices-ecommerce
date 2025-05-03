@@ -2,6 +2,7 @@ package repository
 
 import (
 	"checkout-service/internal/domain"
+	"checkout-service/internal/event"
 	"checkout-service/internal/repository/mongodb"
 	"checkout-service/internal/service"
 	"checkout-service/internal/transport/grpc"
@@ -15,11 +16,11 @@ func NewOrderRepository(db *mongo.Database) domain.OrderRepository {
 }
 
 // NewOrderService creates a new order service
-func NewOrderService(repo domain.OrderRepository) domain.OrderService {
-	return service.NewOrderService(repo)
+func NewOrderService(repo domain.OrderRepository, emitter *event.Emitter) domain.OrderService {
+	return service.NewOrderService(repo, emitter)
 }
 
-// NewCheckoutServiceHandler creates a new checkout service handler
-func NewCheckoutServiceHandler(orderService domain.OrderService) *grpc.CheckoutServiceHandler {
-	return grpc.NewCheckoutServiceHandler(orderService)
+// NewCheckoutHandler creates a new checkout service handler
+func NewCheckoutHandler(orderService domain.OrderService) *grpc.CheckoutHandler {
+	return grpc.NewCheckoutHandler(orderService)
 }

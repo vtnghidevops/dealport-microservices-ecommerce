@@ -150,8 +150,19 @@ func (r *OrderRepository) GetOrderByID(ctx context.Context, orderID string) (*do
 func (r *OrderRepository) ListOrdersByUserID(ctx context.Context, userID string, skip, limit int) ([]*domain.Order, int, error) {
 	log.Printf("OrderRepository.ListOrdersByUserID: Starting fetch for userID=%s, skip=%d, limit=%d", userID, skip, limit)
 
+	// Add detailed user ID logging
+	log.Printf("DEBUG: UserID hex value: %x", []byte(userID))
+	log.Printf("DEBUG: UserID length: %d", len(userID))
+
 	filter := bson.M{"user_id": userID}
 	log.Printf("MongoDB filter: %+v", filter)
+
+	// Check for any orders with this user_id
+	allOrdersFilter := bson.M{}
+	distinctValues, distinctErr := r.collection.Distinct(ctx, "user_id", allOrdersFilter)
+	if distinctErr == nil {
+		log.Printf("DEBUG: All distinct user_ids in database: %v", distinctValues)
+	}
 
 	// Count total orders for this user
 	total, err := r.collection.CountDocuments(ctx, filter)
@@ -188,8 +199,8 @@ func (r *OrderRepository) ListOrdersByUserID(ctx context.Context, userID string,
 	// Debug for the first few orders
 	for i, order := range orders {
 		if i < 3 { // Limit debug output to at most 3 orders
-			log.Printf("Order %d: ID=%s, Total=%v, CreatedAt=%v",
-				i+1, order.ID, order.Totals.Total, order.CreatedAt)
+			log.Printf("Order %d: ID=%s, UserID=%s, Total=%v, CreatedAt=%v",
+				i+1, order.ID, order.UserID, order.Totals.Total, order.CreatedAt)
 		}
 	}
 
@@ -254,4 +265,56 @@ func (r *OrderRepository) GetOrderByPaymentTransactionID(ctx context.Context, tr
 	}
 
 	return &order, nil
+}
+
+// ListAllOrders retrieves all orders with pagination, without user filtering
+// This is used by admin users only
+func (r *OrderRepository) ListAllOrders(ctx context.Context, skip, limit int) ([]*domain.Order, int, error) {
+	log.Printf("OrderRepository.ListAllOrders: Starting fetch for ALL orders, skip=%d, limit=%d", skip, limit)
+
+	// Empty filter to get all orders
+	filter := bson.M{}
+	log.Printf("MongoDB filter for ALL orders: %+v", filter)
+
+	// Count total orders
+	total, err := r.collection.CountDocuments(ctx, filter)
+	if err != nil {
+		log.Printf("ERROR: CountDocuments failed for all orders: %v", err)
+		return nil, 0, errors.Join(domain.ErrDatabaseOperation, err)
+	}
+	log.Printf("Total documents in orders collection: %d", total)
+
+	// Configure options for pagination and sorting
+	findOptions := options.Find().
+		SetSkip(int64(skip)).
+		SetLimit(int64(limit)).
+		SetSort(bson.M{"created_at": -1}) // Most recent first
+
+	// Execute the query
+	log.Printf("Executing Find for ALL orders with options: skip=%d, limit=%d, sort=created_at:-1", skip, limit)
+	cursor, err := r.collection.Find(ctx, filter, findOptions)
+	if err != nil {
+		log.Printf("ERROR: Find operation failed for all orders: %v", err)
+		return nil, 0, errors.Join(domain.ErrDatabaseOperation, err)
+	}
+	defer cursor.Close(ctx)
+
+	// Decode results
+	var orders []*domain.Order
+	log.Printf("Decoding results for ALL orders...")
+	if err := cursor.All(ctx, &orders); err != nil {
+		log.Printf("ERROR: Cursor.All failed during decoding for all orders: %v", err)
+		return nil, 0, errors.Join(domain.ErrDatabaseOperation, err)
+	}
+
+	log.Printf("Successfully decoded %d orders (from all users)", len(orders))
+	// Debug for the first few orders
+	for i, order := range orders {
+		if i < 5 { // Limit debug output to at most 5 orders for admin view
+			log.Printf("Order %d: ID=%s, UserID=%s, OrderNumber=%s, Status=%s, Total=%v, CreatedAt=%v",
+				i+1, order.ID, order.UserID, order.OrderNumber, order.Status, order.Totals.Total, order.CreatedAt)
+		}
+	}
+
+	return orders, int(total), nil
 }

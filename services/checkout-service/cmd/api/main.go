@@ -11,11 +11,14 @@ import (
 	"time"
 
 	"checkout-service/internal/config"
+	"checkout-service/internal/event"
 	"checkout-service/internal/repository"
+	"checkout-service/internal/service"
 	"checkout-service/internal/transport/grpc"
 	pb_checkout "checkout-service/proto/checkout"
 	pb_payment "checkout-service/proto/payment"
 
+	amqp "github.com/rabbitmq/amqp091-go"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 	grpc_server "google.golang.org/grpc"
@@ -23,26 +26,71 @@ import (
 )
 
 func main() {
+	// Set up logger
+	logger := log.New(os.Stdout, "checkout-service ", log.LstdFlags)
+
 	// Load configuration
 	cfg, err := config.LoadConfig("")
 	if err != nil {
-		log.Fatalf("Failed to load configuration: %v", err)
+		logger.Fatalf("Failed to load configuration: %v", err)
 	}
 
 	// Connect to MongoDB
 	mongoClient, err := connectToMongoDB(cfg)
 	if err != nil {
-		log.Fatalf("Failed to connect to MongoDB: %v", err)
+		logger.Fatalf("Failed to connect to MongoDB: %v", err)
 	}
 	defer func() {
 		if err := mongoClient.Disconnect(context.Background()); err != nil {
-			log.Printf("Failed to disconnect from MongoDB: %v", err)
+			logger.Printf("Failed to disconnect from MongoDB: %v", err)
 		}
 	}()
 
-	// Create repository and service
+	// Connect to RabbitMQ synchronously rather than in a goroutine
+	logger.Printf("EVENT-DEBUG: Attempting to connect to RabbitMQ...")
+	rabbitConn, err := connectToRabbitMQ(cfg, logger)
+	if err != nil {
+		logger.Printf("EVENT-ERROR: Failed to connect to RabbitMQ: %v", err)
+		logger.Println("EVENT-WARNING: Continuing without event emitter - order events will not be published")
+		rabbitConn = nil
+	} else {
+		logger.Printf("EVENT-DEBUG: Successfully connected to RabbitMQ!")
+	}
+
+	// Create event emitter if RabbitMQ connection is successful
+	var eventEmitter *event.Emitter
+	if rabbitConn != nil {
+		logger.Printf("EVENT-DEBUG: Creating event emitter...")
+		eventEmitter, err = event.NewEmitter(rabbitConn, logger)
+		if err != nil {
+			logger.Printf("EVENT-ERROR: Failed to create event emitter: %v", err)
+			eventEmitter = nil
+		} else {
+			logger.Printf("EVENT-SUCCESS: Event emitter created successfully")
+		}
+	} else {
+		logger.Printf("EVENT-ERROR: Cannot create event emitter - RabbitMQ connection is nil")
+	}
+
+	// Debug check if eventEmitter is nil
+	if eventEmitter == nil {
+		logger.Printf("EVENT-ERROR: eventEmitter is nil after setup - events will not be published!")
+	} else {
+		logger.Printf("EVENT-DEBUG: eventEmitter is properly initialized")
+	}
+
+	// Create repository
 	orderRepo := repository.NewOrderRepository(mongoClient.Database(cfg.MongoDB.Database))
-	orderService := repository.NewOrderService(orderRepo)
+
+	// Create order service with event emitter
+	orderService := service.NewOrderService(orderRepo, eventEmitter)
+
+	// Debug check
+	if eventEmitter == nil {
+		logger.Printf("EVENT-ERROR: OrderService created with nil event emitter")
+	} else {
+		logger.Printf("EVENT-DEBUG: OrderService created with valid event emitter")
+	}
 
 	// Create gRPC server with recovery middleware
 	opts := []grpc_server.ServerOption{
@@ -51,13 +99,11 @@ func main() {
 	grpcServer := grpc_server.NewServer(opts...)
 
 	// Register checkout service handler
-	checkoutHandler := repository.NewCheckoutServiceHandler(orderService)
+	checkoutHandler := grpc.NewCheckoutHandler(orderService)
 	pb_checkout.RegisterCheckoutServiceServer(grpcServer, checkoutHandler)
 
 	// Register payment service handler
-	// This implementation uses MoMo's captureWallet (ATM/banking) method for payments
-	// and VNPAY's standard payment gateway - QuickPay implementation is commented out
-	paymentHandler := grpc.NewPaymentHandler()
+	paymentHandler := grpc.NewPaymentHandler(orderService)
 	pb_payment.RegisterPaymentServiceServer(grpcServer, paymentHandler)
 
 	// Enable reflection for development tools
@@ -66,20 +112,20 @@ func main() {
 	// Start gRPC server
 	lis, err := net.Listen("tcp", fmt.Sprintf(":%s", cfg.Server.GRPCPort))
 	if err != nil {
-		log.Fatalf("Failed to listen on %s: %v", cfg.Server.GRPCPort, err)
+		logger.Fatalf("Failed to listen on %s: %v", cfg.Server.GRPCPort, err)
 	}
 
-	log.Printf("Checkout Service gRPC server starting on %s", cfg.Server.GRPCPort)
+	logger.Printf("Checkout Service gRPC server starting on %s", cfg.Server.GRPCPort)
 
 	// Start server in a goroutine
 	go func() {
 		if err := grpcServer.Serve(lis); err != nil {
-			log.Fatalf("Failed to serve: %v", err)
+			logger.Fatalf("Failed to serve: %v", err)
 		}
 	}()
 
 	// Graceful shutdown
-	gracefulShutdown(grpcServer)
+	gracefulShutdown(grpcServer, rabbitConn, logger)
 }
 
 // Connect to MongoDB
@@ -104,6 +150,41 @@ func connectToMongoDB(cfg *config.Config) (*mongo.Client, error) {
 	return client, nil
 }
 
+// Connect to RabbitMQ
+func connectToRabbitMQ(cfg *config.Config, logger *log.Logger) (*amqp.Connection, error) {
+	var counts int
+	var conn *amqp.Connection
+	var err error
+
+	// Default RabbitMQ URL if not specified in config
+	rabbitURL := "amqp://guest:guest@localhost:5672"
+	if cfg.RabbitMQ.URL != "" {
+		rabbitURL = cfg.RabbitMQ.URL
+	}
+
+	// Try to connect to RabbitMQ with retry
+	for {
+		conn, err = amqp.Dial(rabbitURL)
+		if err != nil {
+			logger.Printf("RabbitMQ not ready yet: %v", err)
+			counts++
+		} else {
+			logger.Printf("Connected to RabbitMQ at %s", rabbitURL)
+			break
+		}
+
+		if counts > 5 {
+			logger.Printf("Failed to connect to RabbitMQ after %d attempts, giving up", counts)
+			return nil, err
+		}
+
+		logger.Println("Waiting 2 seconds to retry RabbitMQ connection...")
+		time.Sleep(2 * time.Second)
+	}
+
+	return conn, nil
+}
+
 // Recovery interceptor for gRPC
 func recoverInterceptor(ctx context.Context, req interface{}, info *grpc_server.UnaryServerInfo, handler grpc_server.UnaryHandler) (interface{}, error) {
 	defer func() {
@@ -115,13 +196,25 @@ func recoverInterceptor(ctx context.Context, req interface{}, info *grpc_server.
 }
 
 // Graceful shutdown
-func gracefulShutdown(server *grpc_server.Server) {
+func gracefulShutdown(server *grpc_server.Server, rabbitConn *amqp.Connection, logger *log.Logger) {
 	// Wait for interrupt signal
 	shutdown := make(chan os.Signal, 1)
 	signal.Notify(shutdown, os.Interrupt, syscall.SIGTERM)
 	sig := <-shutdown
 
-	log.Printf("Received %s signal, initiating graceful shutdown", sig)
+	logger.Printf("Received %s signal, initiating graceful shutdown", sig)
+
+	// Stop gRPC server
 	server.GracefulStop()
-	log.Println("Checkout Service shutdown complete")
+
+	// Close RabbitMQ connection if it exists
+	if rabbitConn != nil {
+		if err := rabbitConn.Close(); err != nil {
+			logger.Printf("Error closing RabbitMQ connection: %v", err)
+		} else {
+			logger.Println("RabbitMQ connection closed")
+		}
+	}
+
+	logger.Println("Checkout Service shutdown complete")
 }

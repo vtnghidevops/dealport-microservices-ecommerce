@@ -26,6 +26,8 @@ type PaymentServiceClient interface {
 	CreateMomoPayment(ctx context.Context, in *MomoPaymentRequest, opts ...grpc.CallOption) (*MomoPaymentResponse, error)
 	// Verify MoMo payment callback
 	VerifyMomoPayment(ctx context.Context, in *MomoVerifyRequest, opts ...grpc.CallOption) (*PaymentVerifyResponse, error)
+	// Process MoMo payment callback from broker service
+	ProcessMomoCallback(ctx context.Context, in *MomoCallbackRequest, opts ...grpc.CallOption) (*PaymentVerifyResponse, error)
 	// Create payment for VNPAY gateway
 	CreateVnpayPayment(ctx context.Context, in *VnpayPaymentRequest, opts ...grpc.CallOption) (*VnpayPaymentResponse, error)
 	// Verify VNPAY payment callback
@@ -55,6 +57,15 @@ func (c *paymentServiceClient) CreateMomoPayment(ctx context.Context, in *MomoPa
 func (c *paymentServiceClient) VerifyMomoPayment(ctx context.Context, in *MomoVerifyRequest, opts ...grpc.CallOption) (*PaymentVerifyResponse, error) {
 	out := new(PaymentVerifyResponse)
 	err := c.cc.Invoke(ctx, "/payment.PaymentService/VerifyMomoPayment", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *paymentServiceClient) ProcessMomoCallback(ctx context.Context, in *MomoCallbackRequest, opts ...grpc.CallOption) (*PaymentVerifyResponse, error) {
+	out := new(PaymentVerifyResponse)
+	err := c.cc.Invoke(ctx, "/payment.PaymentService/ProcessMomoCallback", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -105,6 +116,8 @@ type PaymentServiceServer interface {
 	CreateMomoPayment(context.Context, *MomoPaymentRequest) (*MomoPaymentResponse, error)
 	// Verify MoMo payment callback
 	VerifyMomoPayment(context.Context, *MomoVerifyRequest) (*PaymentVerifyResponse, error)
+	// Process MoMo payment callback from broker service
+	ProcessMomoCallback(context.Context, *MomoCallbackRequest) (*PaymentVerifyResponse, error)
 	// Create payment for VNPAY gateway
 	CreateVnpayPayment(context.Context, *VnpayPaymentRequest) (*VnpayPaymentResponse, error)
 	// Verify VNPAY payment callback
@@ -124,6 +137,9 @@ func (UnimplementedPaymentServiceServer) CreateMomoPayment(context.Context, *Mom
 }
 func (UnimplementedPaymentServiceServer) VerifyMomoPayment(context.Context, *MomoVerifyRequest) (*PaymentVerifyResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method VerifyMomoPayment not implemented")
+}
+func (UnimplementedPaymentServiceServer) ProcessMomoCallback(context.Context, *MomoCallbackRequest) (*PaymentVerifyResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ProcessMomoCallback not implemented")
 }
 func (UnimplementedPaymentServiceServer) CreateVnpayPayment(context.Context, *VnpayPaymentRequest) (*VnpayPaymentResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method CreateVnpayPayment not implemented")
@@ -182,6 +198,24 @@ func _PaymentService_VerifyMomoPayment_Handler(srv interface{}, ctx context.Cont
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(PaymentServiceServer).VerifyMomoPayment(ctx, req.(*MomoVerifyRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _PaymentService_ProcessMomoCallback_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(MomoCallbackRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(PaymentServiceServer).ProcessMomoCallback(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/payment.PaymentService/ProcessMomoCallback",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(PaymentServiceServer).ProcessMomoCallback(ctx, req.(*MomoCallbackRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -272,6 +306,10 @@ var PaymentService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "VerifyMomoPayment",
 			Handler:    _PaymentService_VerifyMomoPayment_Handler,
+		},
+		{
+			MethodName: "ProcessMomoCallback",
+			Handler:    _PaymentService_ProcessMomoCallback_Handler,
 		},
 		{
 			MethodName: "CreateVnpayPayment",

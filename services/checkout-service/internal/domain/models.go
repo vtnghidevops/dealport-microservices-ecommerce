@@ -137,6 +137,7 @@ type OrderService interface {
 	UpdateOrderStatus(ctx context.Context, orderID string, status string) error
 	ValidateCheckout(ctx context.Context, data CheckoutValidationRequest) (CheckoutValidationResult, error)
 	ProcessPayment(ctx context.Context, paymentReq PaymentRequest) (PaymentResult, error)
+	GetRepository() OrderRepository
 }
 
 // OrderRepository defines the interface for order data persistence
@@ -144,6 +145,7 @@ type OrderRepository interface {
 	CreateOrder(ctx context.Context, order *Order) (*Order, error)
 	GetOrderByID(ctx context.Context, orderID string) (*Order, error)
 	ListOrdersByUserID(ctx context.Context, userID string, skip, limit int) ([]*Order, int, error)
+	ListAllOrders(ctx context.Context, skip, limit int) ([]*Order, int, error)
 	UpdateOrderStatus(ctx context.Context, orderID string, status string) error
 	UpdatePaymentInfo(ctx context.Context, orderID string, paymentInfo PaymentInfo) error
 }

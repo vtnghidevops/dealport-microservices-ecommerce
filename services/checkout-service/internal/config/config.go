@@ -9,8 +9,9 @@ import (
 
 // Config represents the application configuration
 type Config struct {
-	Server  ServerConfig
-	MongoDB MongoDBConfig
+	Server   ServerConfig
+	MongoDB  MongoDBConfig
+	RabbitMQ RabbitMQConfig
 }
 
 // ServerConfig contains server-related settings
@@ -25,6 +26,15 @@ type ServerConfig struct {
 type MongoDBConfig struct {
 	URI      string
 	Database string
+	Host     string
+	Port     string
+	User     string
+	Password string
+}
+
+// RabbitMQConfig contains RabbitMQ connection settings
+type RabbitMQConfig struct {
+	URL      string
 	Host     string
 	Port     string
 	User     string
@@ -46,6 +56,13 @@ func LoadConfig(path string) (*Config, error) {
 			Password: getEnv("MONGO_PASSWORD", ""),
 			Database: getEnv("MONGO_DATABASE", "checkout"),
 			URI:      getEnv("MONGO_URI", "mongodb://localhost:27019/checkout"),
+		},
+		RabbitMQ: RabbitMQConfig{
+			Host:     getEnv("RABBITMQ_HOST", "localhost"),
+			Port:     getEnv("RABBITMQ_PORT", "5672"),
+			User:     getEnv("RABBITMQ_USER", "guest"),
+			Password: getEnv("RABBITMQ_PASSWORD", "guest"),
+			URL:      getEnv("RABBITMQ_URL", "amqp://guest:guest@localhost:5672"),
 		},
 	}
 
@@ -89,6 +106,21 @@ func LoadConfig(path string) (*Config, error) {
 		}
 		if viper.IsSet("mongodb.password") {
 			config.MongoDB.Password = viper.GetString("mongodb.password")
+		}
+		if viper.IsSet("rabbitmq.url") {
+			config.RabbitMQ.URL = viper.GetString("rabbitmq.url")
+		}
+		if viper.IsSet("rabbitmq.host") {
+			config.RabbitMQ.Host = viper.GetString("rabbitmq.host")
+		}
+		if viper.IsSet("rabbitmq.port") {
+			config.RabbitMQ.Port = viper.GetString("rabbitmq.port")
+		}
+		if viper.IsSet("rabbitmq.user") {
+			config.RabbitMQ.User = viper.GetString("rabbitmq.user")
+		}
+		if viper.IsSet("rabbitmq.password") {
+			config.RabbitMQ.Password = viper.GetString("rabbitmq.password")
 		}
 	}
 

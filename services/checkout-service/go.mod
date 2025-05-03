@@ -15,7 +15,10 @@ require (
 	google.golang.org/protobuf v1.36.6
 )
 
-require github.com/sony/sonyflake v1.2.0 // indirect
+require (
+	github.com/rabbitmq/amqp091-go v1.10.0 // indirect
+	github.com/sony/sonyflake v1.2.0 // indirect
+)
 
 require (
 	github.com/fsnotify/fsnotify v1.8.0 // indirect
