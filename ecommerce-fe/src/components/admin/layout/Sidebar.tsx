@@ -52,11 +52,11 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen = true, onToggle }) => {
           icon: <HiOutlineDuplicate />,
           link: "/admin/categories",
         },
-        {
-          name: "Transaction",
-          icon: <SlCreditCard />,
-          link: "/admin/transactions",
-        },
+        // {
+        //   name: "Transaction",
+        //   icon: <SlCreditCard />,
+        //   link: "/admin/transactions",
+        // },
         { name: "Brand", icon: <HiOutlineStar />, link: "/admin/brands" },
       ],
     },
@@ -68,11 +68,11 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen = true, onToggle }) => {
           icon: <IoIosAddCircleOutline />,
           link: "/admin/products/add",
         },
-        {
-          name: "Product Media",
-          icon: <IoImageOutline />,
-          link: "/admin/products/media",
-        },
+        // {
+        //   name: "Product Media",
+        //   icon: <IoImageOutline />,
+        //   link: "/admin/products/media",
+        // },
         {
           name: "Product List",
           icon: <GrStorage />,
@@ -91,12 +91,12 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen = true, onToggle }) => {
         {
           name: "Admin role",
           icon: <RiUser6Line />,
-          link: "/admin/admins/roles",
+          link: "/admin/role",
         },
         {
           name: "Control Authority",
           icon: <TbSettings />,
-          link: "/admin/admins/authority",
+          link: "/admin/authority",
         },
       ],
     },

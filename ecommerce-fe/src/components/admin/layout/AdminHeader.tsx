@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { FiSearch, FiBell } from "react-icons/fi";
+import { useNavigate } from "react-router-dom";
 
 interface AdminHeaderProps {
   userName?: string;
@@ -13,13 +14,18 @@ const AdminHeader: React.FC<AdminHeaderProps> = ({
   title = "Dashboard",
 }) => {
   const [searchQuery, setSearchQuery] = useState("");
+  const navigate = useNavigate();
+
+  const handleAvatarClick = () => {
+    navigate('/admin/role');
+  };
 
   return (
     <header className="bg-white h-[96px] px-[1rem] shadow-sm border-b border-gray-200 py-3 flex items-center justify-between border-t">
       {/* Left section */}
       <div className="flex items-center gap-4">
         <h1 className="font-bold text-[22px] text-gray-800 hidden md:block px-[1rem]">
-            {title}
+          {title}
         </h1>
       </div>
 
@@ -69,11 +75,13 @@ const AdminHeader: React.FC<AdminHeaderProps> = ({
             {/* User avatar */}
             <div className="relative ml-2">
               <button
-                className="flex items-center focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 rounded-full"
-                aria-label="User menu"
+                onClick={handleAvatarClick}
+                className="flex items-center focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 rounded-full transition-all duration-300 hover:border-blue-400 cursor-pointer"
+                aria-label="User profile"
+                title="Go to profile"
               >
                 <img
-                  className="h-[2rem] w-[2rem] rounded-full border-2 border-gray-200"
+                  className="h-[2rem] w-[2rem] rounded-full border-2 border-gray-200 hover:border-blue-400"
                   src={userAvatar}
                   alt={userName}
                 />

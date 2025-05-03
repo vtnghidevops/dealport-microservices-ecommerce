@@ -1,22 +1,62 @@
 import { useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
+import { requestOTP } from "@/services/auth/auth.service";
+import { useToast } from "@/hooks/use-toast";
 
 const ForgotPassword: React.FC = () => {
   const [email, setEmail] = useState("");
+  const [loading, setLoading] = useState(false);
+  const navigate = useNavigate();
+  const { toast } = useToast();
 
-  const handleSendCode = () => {
-    console.log("Sending reset code to", email);
-    // TODO: Gửi mã đến email
+  const handleSendCode = async () => {
+    if (!email) {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Please enter your email address"
+      });
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const response = await requestOTP(email, "password_reset");
+
+      // Navigate to OTP verification page with the email and purpose
+      navigate("/verify-otp", {
+        state: {
+          email,
+          purpose: "password_reset",
+          expiresIn: response.expiresIn || 10
+        }
+      });
+
+      toast({
+        variant: "success",
+        title: "OTP Sent",
+        description: "A verification code has been sent to your email"
+      });
+    } catch (error: any) {
+      // console.error("Failed to send reset code", error);
+      toast({
+        variant: "destructive",
+        title: "Account not found",
+        description: error.response?.data?.message || "Please try again later."
+      });
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
     <div className="my-[2rem] max-w-sm mx-auto p-[2rem] shadow-lg rounded-xl border w-[424px]">
       <h2 className="text-[22px] font-semibold mb-4">Forgot Password</h2>
-      
+
       <p className="text-sm text-gray-600 mb-[1rem]">
-        Enter the email address associated with your Dealport account.
+        Enter the email address associated with your account.
       </p>
 
       <div className="space-y-4">
@@ -28,22 +68,23 @@ const ForgotPassword: React.FC = () => {
           className="mb-3 h-[44px] focus:border-2 focus:border-blue-400"
         />
 
-        <Button 
-          onClick={handleSendCode} 
+        <Button
+          onClick={handleSendCode}
           className="!mb-3 w-full bg-orange-500 text-white hover:bg-orange-600 h-[44px] font-sans"
+          disabled={loading}
         >
-          SEND CODE
+          {loading ? "SENDING..." : "SEND CODE"}
         </Button>
 
         <div className="flex justify-between items-center pt-4">
-          <Link 
-            to="/login" 
+          <Link
+            to="/login"
             className="text-blue-500 hover:text-blue-700 text-sm"
           >
             Back to Sign In
           </Link>
-          <Link 
-            to="/register" 
+          <Link
+            to="/register"
             className="text-blue-500 hover:text-blue-700 text-sm"
           >
             Create Account

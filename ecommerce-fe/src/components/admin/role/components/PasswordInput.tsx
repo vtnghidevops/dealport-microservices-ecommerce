@@ -1,13 +1,14 @@
 // components/admin/role/components/PasswordInput.tsx
 import React from 'react';
-import { FaRegEye, FaRegEyeSlash  } from "react-icons/fa";
-interface PasswordInputProps {
+import { FaRegEye, FaRegEyeSlash } from "react-icons/fa";
+export interface PasswordInputProps {
   type: string;
   placeholder: string;
   value: string;
   onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
   showPassword: boolean;
   toggleShow: () => void;
+  disabled?: boolean;
 }
 
 export const PasswordInput: React.FC<PasswordInputProps> = ({
@@ -16,7 +17,8 @@ export const PasswordInput: React.FC<PasswordInputProps> = ({
   value,
   onChange,
   showPassword,
-  toggleShow
+  toggleShow,
+  disabled = false
 }) => {
   return (
     <div className="relative">
@@ -26,17 +28,19 @@ export const PasswordInput: React.FC<PasswordInputProps> = ({
         placeholder={placeholder}
         value={value}
         onChange={onChange}
+        disabled={disabled}
       />
-      <button 
+      <button
         type="button"
         className="absolute inset-y-0 right-0 pr-3 flex items-center"
         onClick={toggleShow}
+        disabled={disabled}
       >
-          {showPassword ? (
-            <FaRegEye></FaRegEye>
-          ) : (
-            <FaRegEyeSlash></FaRegEyeSlash>
-          )}
+        {showPassword ? (
+          <FaRegEye></FaRegEye>
+        ) : (
+          <FaRegEyeSlash></FaRegEyeSlash>
+        )}
       </button>
     </div>
   );

@@ -82,12 +82,18 @@ const Register: React.FC = () => {
       if (success) {
         toast({
           variant: "success",
-          title: "Registration Successful!",
-          description: "Your account has been created. Please log in to continue."
+          title: "Registration Submitted",
+          description: "Please verify your email with the OTP code sent to your inbox."
         });
 
-        // Chuyển hướng đến trang đăng nhập thay vì trang chủ
-        navigate("/login");
+        // Redirect to OTP verification page instead of login
+        navigate("/verify-otp", {
+          state: {
+            email: formData.email,
+            purpose: "registration",
+            expiresIn: 10 // 10 minutes
+          }
+        });
       } else if (authState.error) {
         toast({
           variant: "destructive",

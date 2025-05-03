@@ -1,13 +1,13 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import AdminHeader from "../layout/AdminHeader";
 import { OrderSummaryCard } from "./cards/OrderSummaryCard";
 import { OrderTable } from "./tables/OrderTable";
 import { OrderFilter } from "./filters/OrderFilter";
 import { FiPlusCircle } from "react-icons/fi";
 
-// Import từ services toàn cục
+// Import from services
 import { Order, OrderStatus } from '@/services/user/order.service';
-import { adminOrderService, OrderFilterParams, OrderSummary } from '@/services/admin/order.service';
+import { adminOrderService, OrderSummary } from '@/services/admin/order.service';
 
 import { AddOrderModal, NewOrderData } from "./modals/AddOrderModal";
 import { useToast } from "@/hooks/use-toast";
@@ -18,8 +18,9 @@ export const OrderManagement: React.FC = () => {
 
   // State variables
   const [orders, setOrders] = useState<Order[]>([]);
+  const [allOrders, setAllOrders] = useState<Order[]>([]);
   const [orderSummary, setOrderSummary] = useState<OrderSummary | null>(null);
-  const [loading, setLoading] = useState<boolean>(true);
+  const [loading, setLoading] = useState<boolean>(false);
   const [initialLoading, setInitialLoading] = useState<boolean>(true);
 
   // Pagination state
@@ -31,8 +32,7 @@ export const OrderManagement: React.FC = () => {
   const [activeFilter, setActiveFilter] = useState<string>("All");
   const [searchTerm, setSearchTerm] = useState<string>("");
 
-  // Data caching
-  const [allOrders, setAllOrders] = useState<Order[]>([]);
+  // Filter results
   const [filteredOrders, setFilteredOrders] = useState<Order[]>([]);
   const [isAddModalOpen, setIsAddModalOpen] = useState<boolean>(false);
   const [statusCounts, setStatusCounts] = useState({
@@ -46,50 +46,11 @@ export const OrderManagement: React.FC = () => {
     refunded: 0,
   });
 
-  // Load all orders from the API once
-  useEffect(() => {
-    const loadAllData = async () => {
-      setInitialLoading(true);
-      try {
-        // Fetch summary data
-        const summaryData = await adminOrderService.fetchOrderSummary();
-        setOrderSummary(summaryData);
+  // Use ref to track if data has been loaded
+  const dataHasBeenLoaded = useRef(false);
 
-        // Fetch all orders (we'll filter client-side)
-        const { orders: fetchedOrders, total } = await adminOrderService.fetchOrders({
-          page: 1,
-          limit: 1000, // Get a large batch to handle locally
-        });
-
-        // Filter out invalid orders
-        const validOrders = Array.isArray(fetchedOrders)
-          ? fetchedOrders.filter(order => order && typeof order === 'object' && order.id)
-          : [];
-
-        // Save all orders for client-side filtering
-        setAllOrders(validOrders);
-        setFilteredOrders(validOrders);
-        setTotalItems(validOrders.length);
-
-        // Calculate counts for each status
-        updateStatusCounts(validOrders);
-      } catch (error) {
-        console.error("Failed to load order data:", error);
-        toast({
-          title: "Failed to load order data",
-          description: error instanceof Error ? error.message : "Unknown error",
-          variant: "destructive",
-        });
-      } finally {
-        setInitialLoading(false);
-      }
-    };
-
-    loadAllData();
-  }, []);
-
-  // Calculate counts for each status
-  const updateStatusCounts = (orders: Order[]) => {
+  // Calculate counts for each status - memoized
+  const updateStatusCounts = useCallback((orders: Order[]) => {
     if (!Array.isArray(orders)) return;
 
     const counts = {
@@ -104,10 +65,105 @@ export const OrderManagement: React.FC = () => {
     };
 
     setStatusCounts(counts);
+  }, []);
+
+  // Fetch orders - not memoized to avoid dependencies in useEffect
+  const fetchOrders = async () => {
+    console.log("Fetching admin orders...");
+    try {
+      // Fetch all orders (we'll filter client-side)
+      const { orders: fetchedOrders } = await adminOrderService.fetchOrders({
+        page: 1,
+        limit: 1000 // Get a large batch to handle locally
+      });
+
+      // Filter out invalid orders
+      const validOrders = Array.isArray(fetchedOrders)
+        ? fetchedOrders.filter(order => order && typeof order === 'object' && order.id)
+        : [];
+
+      console.log(`Fetched ${validOrders.length} valid orders`);
+
+      // Save all orders for client-side filtering
+      setAllOrders(validOrders);
+      setFilteredOrders(validOrders);
+      setTotalItems(validOrders.length);
+
+      // Calculate counts for each status
+      updateStatusCounts(validOrders);
+
+      return validOrders;
+    } catch (error) {
+      console.error("Failed to load order data:", error);
+      toast({
+        title: "Failed to load order data",
+        description: error instanceof Error ? error.message : "Unknown error",
+        variant: "destructive",
+      });
+      return [];
+    }
   };
 
-  // Update filtered orders when filter changes
+  // Load order summary data
+  const fetchOrderSummary = async () => {
+    try {
+      console.log("Fetching order summary...");
+      const summaryData = await adminOrderService.fetchOrderSummary();
+      setOrderSummary(summaryData);
+      return summaryData;
+    } catch (error) {
+      console.error("Failed to load order summary:", error);
+      toast({
+        title: "Failed to load order summary",
+        description: error instanceof Error ? error.message : "Unknown error",
+        variant: "destructive",
+      });
+      return null;
+    }
+  };
+
+  // Load all orders and summary on component mount ONLY
   useEffect(() => {
+    const loadAllData = async () => {
+      if (dataHasBeenLoaded.current) {
+        console.log("Data already loaded, skipping fetch");
+        setInitialLoading(false);
+        return;
+      }
+
+      console.log("Loading order data for the first time");
+      setInitialLoading(true);
+
+      try {
+        dataHasBeenLoaded.current = true;
+
+        // Parallel loading of summary and orders
+        await Promise.all([
+          fetchOrderSummary(),
+          fetchOrders()
+        ]);
+      } catch (error) {
+        console.error("Failed to load order data:", error);
+        toast({
+          title: "Failed to load order data",
+          description: error instanceof Error ? error.message : "Unknown error",
+          variant: "destructive",
+        });
+      } finally {
+        setInitialLoading(false);
+      }
+    };
+
+    loadAllData();
+    // No dependencies to avoid re-execution
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Update filtered orders when filter changes - only run when allOrders or filters change
+  useEffect(() => {
+    if (!allOrders.length) return; // Skip if no orders loaded
+
+    console.log("Applying filters to orders");
     setLoading(true);
 
     // Apply filters (status and search term)
@@ -125,7 +181,7 @@ export const OrderManagement: React.FC = () => {
     if (searchTerm) {
       const search = searchTerm.toLowerCase().trim();
       filtered = filtered.filter(order => {
-        // Tìm kiếm trong thông tin đơn hàng cơ bản
+        // Search in basic order information
         if ((order.id && order.id.toLowerCase().includes(search)) ||
           (order.orderNumber && order.orderNumber.toLowerCase().includes(search)) ||
           (order.notes && order.notes.toLowerCase().includes(search)) ||
@@ -133,7 +189,7 @@ export const OrderManagement: React.FC = () => {
           return true;
         }
 
-        // Tìm kiếm trong thông tin billing
+        // Search in billing info
         if (order.billingInfo) {
           if ((order.billingInfo.firstName && order.billingInfo.firstName.toLowerCase().includes(search)) ||
             (order.billingInfo.lastName && order.billingInfo.lastName.toLowerCase().includes(search)) ||
@@ -146,7 +202,7 @@ export const OrderManagement: React.FC = () => {
           }
         }
 
-        // Tìm kiếm trong thông tin shipping
+        // Search in shipping info
         if (order.shippingInfo) {
           if ((order.shippingInfo.firstName && order.shippingInfo.firstName.toLowerCase().includes(search)) ||
             (order.shippingInfo.lastName && order.shippingInfo.lastName.toLowerCase().includes(search)) ||
@@ -158,9 +214,9 @@ export const OrderManagement: React.FC = () => {
           }
         }
 
-        // Tìm kiếm trong tên sản phẩm
+        // Search in product names
         if (order.items && Array.isArray(order.items)) {
-          return order.items.some(item =>
+          return order.items.some((item: any) =>
             (item.name && item.name.toLowerCase().includes(search)) ||
             (item.productId && item.productId.toLowerCase().includes(search))
           );
@@ -170,6 +226,7 @@ export const OrderManagement: React.FC = () => {
       });
     }
 
+    console.log(`Filter applied: ${filtered.length} orders match criteria`);
     setFilteredOrders(filtered);
     setTotalItems(filtered.length);
     setCurrentPage(1); // Reset to first page when filter changes
@@ -178,13 +235,17 @@ export const OrderManagement: React.FC = () => {
 
   // Update displayed orders when page changes
   useEffect(() => {
+    if (!filteredOrders.length) return;
+
     const startIndex = (currentPage - 1) * itemsPerPage;
     const endIndex = Math.min(startIndex + itemsPerPage, filteredOrders.length);
 
     if (startIndex >= filteredOrders.length) {
       setOrders([]);
     } else {
-      setOrders(filteredOrders.slice(startIndex, endIndex));
+      const paginatedOrders = filteredOrders.slice(startIndex, endIndex);
+      console.log(`Displaying orders ${startIndex + 1}-${endIndex} of ${filteredOrders.length}`);
+      setOrders(paginatedOrders);
     }
   }, [currentPage, itemsPerPage, filteredOrders]);
 
@@ -210,7 +271,7 @@ export const OrderManagement: React.FC = () => {
     }
   };
 
-  // Handlers
+  // Handler for creating order
   const handleCreateOrder = async (orderData: NewOrderData) => {
     setLoading(true);
     try {
@@ -222,19 +283,14 @@ export const OrderManagement: React.FC = () => {
         paymentStatus: orderData.paymentStatus,
       });
 
-      // Add the new order to our cached orders
-      const updatedAllOrders = [newOrder, ...allOrders];
-      setAllOrders(updatedAllOrders);
+      console.log("New order created:", newOrder.id);
 
-      // Update filtered orders if the new order matches current filter
-      if (activeFilter === "All" || newOrder.status === getStatusFromFilter(activeFilter)) {
-        const updatedFiltered = [newOrder, ...filteredOrders];
-        setFilteredOrders(updatedFiltered);
-        setTotalItems(updatedFiltered.length);
-      }
+      // Add the new order to our data
+      const updatedOrders = [newOrder, ...allOrders];
+      setAllOrders(updatedOrders);
 
-      // Update status counts
-      updateStatusCounts(updatedAllOrders);
+      // Update counts
+      updateStatusCounts(updatedOrders);
 
       setIsAddModalOpen(false);
       toast({
@@ -252,6 +308,7 @@ export const OrderManagement: React.FC = () => {
     }
   };
 
+  // Handlers
   const handleStatusChange = async (orderId: string, status: string) => {
     const statusValue = status as OrderStatus;
     setLoading(true);
@@ -260,11 +317,11 @@ export const OrderManagement: React.FC = () => {
       const success = await adminOrderService.updateOrderStatus(orderId, statusValue);
       if (success) {
         // Update both allOrders and filteredOrders
-        const updatedAllOrders = allOrders.map(order => {
+        const updatedAllOrders = allOrders.map((order: Order) => {
           if (order.id === orderId) {
             const updatedOrder = { ...order, status: statusValue };
 
-            // Tự động cập nhật payment status nếu order status là paid
+            // Automatically update payment status if order status is paid
             if (statusValue === OrderStatus.Paid) {
               if (!updatedOrder.paymentStatus ||
                 updatedOrder.paymentStatus === 'pending' ||
@@ -285,41 +342,8 @@ export const OrderManagement: React.FC = () => {
           return order;
         });
 
-        setAllOrders(updatedAllOrders);
-
-        // If the order no longer matches the current filter, remove it from filtered orders
-        if (activeFilter !== "All" && getStatusFromFilter(activeFilter) !== statusValue) {
-          const updatedFiltered = filteredOrders.filter(order => order.id !== orderId);
-          setFilteredOrders(updatedFiltered);
-          setTotalItems(updatedFiltered.length);
-        } else {
-          // Otherwise update it in filtered orders
-          const updatedFiltered = filteredOrders.map(order => {
-            if (order.id === orderId) {
-              const updatedOrder = { ...order, status: statusValue };
-
-              // Tự động cập nhật payment status nếu order status là paid
-              if (statusValue === OrderStatus.Paid) {
-                if (!updatedOrder.paymentStatus ||
-                  updatedOrder.paymentStatus === 'pending' ||
-                  updatedOrder.paymentStatus === 'processing') {
-                  updatedOrder.paymentStatus = 'paid';
-                }
-
-                if (updatedOrder.paymentInfo) {
-                  updatedOrder.paymentInfo = {
-                    ...updatedOrder.paymentInfo,
-                    status: 'paid'
-                  };
-                }
-              }
-
-              return updatedOrder;
-            }
-            return order;
-          });
-          setFilteredOrders(updatedFiltered);
-        }
+        // Refresh the orders list
+        fetchOrders();
 
         // Update status counts
         updateStatusCounts(updatedAllOrders);

@@ -13,7 +13,7 @@ import {
   CustomerChartData,
 } from "./models/customer.model";
 import { CustomerService } from "./services/customer.service";
-
+import { useToast } from "@/hooks/use-toast";
 
 const CustomerManagement: React.FC = () => {
   // State variables
@@ -35,11 +35,7 @@ const CustomerManagement: React.FC = () => {
   });
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
   const [showSidebar, setShowSidebar] = useState<boolean>(false);
-
-  // Caching state variables
-  const [allCustomersCache, setAllCustomersCache] = useState<Customer[]>([]);
-  const [displayedCustomers, setDisplayedCustomers] = useState<Customer[]>([]);
-  const [isDataLoaded, setIsDataLoaded] = useState<boolean>(false);
+  const { toast } = useToast();
 
   // Handlers
   const handleViewCustomer = (customer: Customer) => {
@@ -59,7 +55,6 @@ const CustomerManagement: React.FC = () => {
       searchTerm,
       page: 1,
     });
-    setIsDataLoaded(false);
   };
 
   const handleFilterChange = (filter: string) => {
@@ -85,7 +80,6 @@ const CustomerManagement: React.FC = () => {
       status,
       page: 1,
     });
-    setIsDataLoaded(false);
   };
 
   const handlePageChange = (page: number) => {
@@ -96,6 +90,129 @@ const CustomerManagement: React.FC = () => {
       ...filterParams,
       page: validPage,
     });
+  };
+
+  const handleStatusChange = async (customerId: string, newStatus: CustomerStatus) => {
+    try {
+      const success = await CustomerService.updateCustomerStatus(customerId, newStatus);
+
+      if (success) {
+        // Update the customer in the local state
+        setCustomers(prevCustomers =>
+          prevCustomers.map(customer =>
+            customer.id === customerId
+              ? { ...customer, status: newStatus }
+              : customer
+          )
+        );
+
+        // If we're updating the status of the selected customer, update that too
+        if (selectedCustomer && selectedCustomer.id === customerId) {
+          setSelectedCustomer({
+            ...selectedCustomer,
+            status: newStatus
+          });
+        }
+
+        toast({
+          variant: "success",
+          title: "Status Updated",
+          description: `Customer status has been updated to ${newStatus}`
+        });
+
+        // Refresh the filter counts
+        refreshFilterCounts();
+      } else {
+        toast({
+          variant: "destructive",
+          title: "Update Failed",
+          description: "Could not update customer status"
+        });
+      }
+    } catch (error) {
+      console.error("Error updating customer status:", error);
+      toast({
+        variant: "destructive",
+        title: "Update Failed",
+        description: "An error occurred while updating customer status"
+      });
+    }
+  };
+
+  const handleDeleteCustomer = async (customerId: string) => {
+    try {
+      const success = await CustomerService.deleteCustomer(customerId);
+
+      if (success) {
+        // Remove the customer from the local state
+        setCustomers(prevCustomers => prevCustomers.filter(customer => customer.id !== customerId));
+
+        // If the deleted customer was selected, hide the sidebar
+        if (selectedCustomer && selectedCustomer.id === customerId) {
+          setSelectedCustomer(null);
+          setShowSidebar(false);
+        }
+
+        // Decrease the total count
+        setTotalCustomers(prevTotal => Math.max(0, prevTotal - 1));
+
+        toast({
+          variant: "success",
+          title: "Customer Deleted",
+          description: "Customer has been successfully deleted"
+        });
+
+        // Refresh the filter counts
+        refreshFilterCounts();
+      } else {
+        toast({
+          variant: "destructive",
+          title: "Delete Failed",
+          description: "Could not delete the customer"
+        });
+      }
+    } catch (error) {
+      console.error("Error deleting customer:", error);
+      toast({
+        variant: "destructive",
+        title: "Delete Failed",
+        description: "An error occurred while deleting the customer"
+      });
+    }
+  };
+
+  // Helper function to refresh filter counts
+  const refreshFilterCounts = async () => {
+    try {
+      const { total: all } = await CustomerService.getCustomers({
+        page: 1,
+        limit: 1,
+      });
+      const { total: active } = await CustomerService.getCustomers({
+        status: CustomerStatus.ACTIVE,
+        page: 1,
+        limit: 1,
+      });
+      const { total: inactive } = await CustomerService.getCustomers({
+        status: CustomerStatus.INACTIVE,
+        page: 1,
+        limit: 1,
+      });
+      const { total: vip } = await CustomerService.getCustomers({
+        status: CustomerStatus.VIP,
+        page: 1,
+        limit: 1,
+      });
+
+      setFilterCounts({
+        all,
+        active,
+        inactive,
+        vip,
+      });
+    } catch (error) {
+      console.error("Error fetching filter counts:", error);
+    }
   };
 
   // Effects
@@ -111,67 +228,28 @@ const CustomerManagement: React.FC = () => {
         const chartData = await CustomerService.getCustomerChartData();
         setChartData(chartData);
 
-        // Fetch all customers for caching
-        const { customers: allCustomers, total } = await CustomerService.getCustomers({
-          ...filterParams,
-          page: 1,
-          limit: 1000,
-          status: filterParams.status,
-        });
+        // Fetch customers with filters
+        const { customers, total } = await CustomerService.getCustomers(filterParams);
 
-        setAllCustomersCache(allCustomers);
+        setCustomers(customers);
         setTotalCustomers(total);
-        setIsDataLoaded(true);
 
         // Get counts for each status filter
-        const { total: all } = await CustomerService.getCustomers({
-          page: 1,
-          limit: 1,
-        });
-        const { total: active } = await CustomerService.getCustomers({
-          status: CustomerStatus.ACTIVE,
-          page: 1,
-          limit: 1,
-        });
-        const { total: inactive } = await CustomerService.getCustomers({
-          status: CustomerStatus.INACTIVE,
-          page: 1,
-          limit: 1,
-        });
-        const { total: vip } = await CustomerService.getCustomers({
-          status: CustomerStatus.VIP,
-          page: 1,
-          limit: 1,
-        });
-
-        setFilterCounts({
-          all,
-          active,
-          inactive,
-          vip,
-        });
+        await refreshFilterCounts();
       } catch (error) {
         console.error("Failed to load customer data:", error);
+        toast({
+          variant: "destructive",
+          title: "Data Loading Error",
+          description: "Failed to load customer data. Please try again later."
+        });
       } finally {
         setLoading(false);
       }
     };
 
-    if (!isDataLoaded || filterParams.status || filterParams.searchTerm) {
-      loadData();
-    }
-  }, [filterParams.status, filterParams.searchTerm, isDataLoaded]);
-
-  useEffect(() => {
-    if (allCustomersCache.length > 0) {
-      const startIndex = (filterParams.page - 1) * filterParams.limit;
-      const endIndex = startIndex + filterParams.limit;
-
-      const customersForCurrentPage = allCustomersCache.slice(startIndex, endIndex);
-      setCustomers(customersForCurrentPage);
-      setDisplayedCustomers(customersForCurrentPage);
-    }
-  }, [filterParams.page, filterParams.limit, allCustomersCache]);
+    loadData();
+  }, [filterParams, toast]);
 
   // Component rendering
   return (
@@ -237,9 +315,8 @@ const CustomerManagement: React.FC = () => {
             <div className="w-[1116px] bg-white rounded-lg shadow p-[1rem] mb-6 mt-[1rem] drop-shadow filter">
               <div className="flex ">
                 <div
-                  className={`transition-all duration-500 ease-in-out ${
-                    showSidebar ? "w-[788px] mr-5" : "w-full"
-                  }`}
+                  className={`transition-all duration-500 ease-in-out ${showSidebar ? "w-[788px] mr-5" : "w-full"
+                    }`}
                 >
                   {loading ? (
                     <div className="flex justify-center py-10">
@@ -247,14 +324,20 @@ const CustomerManagement: React.FC = () => {
                     </div>
                   ) : (
                     <CustomerTable
-                      customers={displayedCustomers}
+                      customers={customers}
                       onViewCustomer={handleViewCustomer}
                       selectedCustomerId={selectedCustomer?.id}
+                      onStatusChange={handleStatusChange}
+                      onDeleteCustomer={handleDeleteCustomer}
+                      onSearch={handleSearch}
+                      onFilterChange={handleFilterChange}
+                      counts={filterCounts}
+                      activeFilter={activeStatus}
+                      loading={loading}
                     />
                   )}
                   {!loading && (
                     <div className="mt-[3rem]">
-                      {/* {renderPagination()} */}
                       <Pagination
                         currentPage={filterParams.page}
                         totalItems={totalCustomers}

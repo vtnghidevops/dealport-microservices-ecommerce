@@ -1,134 +1,169 @@
 // pages/user/Orders.tsx
-import React, { useState, useEffect } from 'react';
-import { useAuth } from '../../hooks/useAuth';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import UserLayout from '../../components/layouts/UserLayout';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../components/ui/tabs';
 import OrderCard from '../../components/user/OrderCard';
 import { Button } from '../../components/ui/button';
 import { useNavigate } from 'react-router-dom';
 import Loading from '@/components/shared/Loading';
-import orderService, { Order } from '@/services/user/order.service';
-import { useToast } from '@/hooks/use-toast';
+import { useCheckout } from '@/hooks/useCheckout';
+import { CheckoutOrder } from '@/types/checkout.model';
+import { Order, OrderStatus, OrderItem, BillingInfo as OrderBillingInfo, ShippingInfo as OrderShippingInfo, PaymentInfo as OrderPaymentInfo } from '@/services/user/order.service';
 
-// Define a possible response type that includes a data property
-interface OrdersResponse {
-  data?: Order[];
-  [key: string]: any;
-}
+// Adapter function to convert CheckoutOrder to Order
+const adaptCheckoutOrderToOrder = (checkoutOrder: CheckoutOrder): Order => {
+  // Convert cart items to order items
+  const orderItems: OrderItem[] = (checkoutOrder.items || []).map(item => ({
+    id: typeof item.id === 'string' ? item.id : '',
+    productId: typeof item.productId === 'number' ? String(item.productId) : '',
+    name: item.name || '',
+    price: item.price || 0,
+    quantity: item.quantity || 1,
+    imageUrl: item.imageUrl
+  }));
+
+  // Convert billing info - note: some fields might be missing depending on the API format
+  const billingInfo: OrderBillingInfo = {
+    address: checkoutOrder.billingInfo?.address || '',
+    city: checkoutOrder.billingInfo?.city || '',
+    country: checkoutOrder.billingInfo?.country || '',
+    email: checkoutOrder.billingInfo?.email || '',
+    firstName: checkoutOrder.billingInfo?.firstName || '',
+    lastName: checkoutOrder.billingInfo?.lastName || '',
+    phone: checkoutOrder.billingInfo?.phone || '',
+    region: checkoutOrder.billingInfo?.state || '',
+    zipCode: checkoutOrder.billingInfo?.zipCode || '',
+    companyName: ''  // This field might be missing in some API responses
+  };
+
+  // Convert shipping info
+  const shippingInfo: OrderShippingInfo = {
+    address: checkoutOrder.shippingInfo?.address || '',
+    city: checkoutOrder.shippingInfo?.city || '',
+    companyName: checkoutOrder.shippingInfo?.companyName || '',
+    country: checkoutOrder.shippingInfo?.country || '',
+    firstName: checkoutOrder.shippingInfo?.firstName || '',
+    lastName: checkoutOrder.shippingInfo?.lastName || '',
+    region: checkoutOrder.shippingInfo?.region || '',
+    shipToDifferentAddress: checkoutOrder.shippingInfo?.shipToDifferentAddress || false,
+    shippingCost: typeof checkoutOrder.shippingInfo?.shippingCost === 'number' ? checkoutOrder.shippingInfo.shippingCost : 0,
+    shippingMethod: checkoutOrder.shippingInfo?.shippingMethod || '',
+    zipCode: checkoutOrder.shippingInfo?.zipCode || ''
+  };
+
+  // Convert payment info
+  const paymentInfo: OrderPaymentInfo = {
+    amount: checkoutOrder.paymentInfo?.amount || 0,
+    currency: checkoutOrder.paymentInfo?.currency || 'USD',
+    paymentDate: checkoutOrder.paymentInfo?.paymentDate || new Date().toISOString(),
+    paymentMethod: checkoutOrder.paymentInfo?.paymentMethod || '',
+    status: checkoutOrder.paymentInfo?.status || 'pending',
+    transactionId: checkoutOrder.paymentInfo?.transactionId || ''
+  };
+
+  // Convert shipping from string to number if needed
+  let shipping: number | string = 0;
+  if (checkoutOrder.totals?.shipping !== undefined) {
+    if (typeof checkoutOrder.totals.shipping === 'number') {
+      shipping = checkoutOrder.totals.shipping;
+    } else if (typeof checkoutOrder.totals.shipping === 'string') {
+      if (checkoutOrder.totals.shipping.toLowerCase() === 'free') {
+        shipping = 'Free';
+      } else {
+        const numValue = parseFloat(checkoutOrder.totals.shipping);
+        shipping = isNaN(numValue) ? 0 : numValue;
+      }
+    }
+  }
+
+  return {
+    id: checkoutOrder.id,
+    userId: checkoutOrder.userId,
+    status: checkoutOrder.status as OrderStatus,
+    items: orderItems,
+    total: checkoutOrder.totals?.total || 0,
+    subtotal: checkoutOrder.totals?.subtotal || 0,
+    tax: checkoutOrder.totals?.tax || 0,
+    shipping: shipping,
+    discount: checkoutOrder.totals?.discount || 0,
+    createdAt: checkoutOrder.createdAt,
+    updatedAt: checkoutOrder.updatedAt,
+    paymentMethod: checkoutOrder.paymentInfo?.paymentMethod || '',
+    paymentStatus: checkoutOrder.paymentInfo?.status || 'pending',
+    transactionId: checkoutOrder.paymentInfo?.transactionId,
+    orderNumber: checkoutOrder.orderNumber,
+    billingInfo: billingInfo,
+    shippingInfo: shippingInfo,
+    paymentInfo: paymentInfo,
+    notes: checkoutOrder.notes
+  };
+};
 
 const OrdersHistory: React.FC = () => {
-  const { authState } = useAuth();
-  const [orders, setOrders] = useState<Order[]>([]);
+  const [checkoutOrders, setCheckoutOrders] = useState<CheckoutOrder[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const navigate = useNavigate();
-  const { toast } = useToast();
+  const { listOrders } = useCheckout();
 
+  // Use ref to track if orders have been fetched already
+  const hasOrdersBeenFetched = useRef(false);
+
+  // Fetch orders function
+  const fetchOrders = async () => {
+    try {
+      console.log('Fetching orders...');
+      setIsLoading(true);
+      const result = await listOrders();
+      console.log('Orders fetched:', result.orders.length);
+      setCheckoutOrders(result.orders);
+    } catch (error) {
+      console.error('Error fetching orders:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Fetch orders on component mount ONLY
   useEffect(() => {
-    // Fetch orders from the backend API
-    const fetchOrders = async () => {
-      if (!authState.isAuthenticated) {
-        // console.log("OrdersHistory: User not authenticated, skipping order fetch");
-        setIsLoading(false);
-        return;
-      }
-
-      // console.log("OrdersHistory: Starting to fetch orders for authenticated user");
-      try {
-        setIsLoading(true);
-        // console.log("OrdersHistory: Calling orderService.getOrders()");
-        const fetchedOrders = await orderService.getOrders();
-        // console.log("OrdersHistory: Received response from orderService.getOrders()");
-        // console.log("OrdersHistory: Response type:", typeof fetchedOrders);
-        // console.log("OrdersHistory: Is array?", Array.isArray(fetchedOrders));
-        // console.log("OrdersHistory: Response value:", fetchedOrders);
-
-        // Ensure fetchedOrders is always an array
-        if (Array.isArray(fetchedOrders)) {
-          // console.log(`OrdersHistory: Setting ${fetchedOrders.length} orders to state`);
-          setOrders(fetchedOrders);
-        } else {
-          // console.error('OrdersHistory: Expected orders array but got:', fetchedOrders);
-          // If it's an object with a data property that's an array, use that instead
-          const ordersResponse = fetchedOrders as OrdersResponse;
-          if (ordersResponse && typeof ordersResponse === 'object' && Array.isArray(ordersResponse.data)) {
-            // console.log(`OrdersHistory: Found orders in data property, setting ${ordersResponse.data.length} orders to state`);
-            setOrders(ordersResponse.data);
-          } else {
-            // Otherwise, set to empty array
-            // console.error('OrdersHistory: Could not extract orders from response, setting empty array');
-            setOrders([]);
-            toast({
-              title: 'Error loading orders',
-              description: 'The orders data format was invalid',
-              variant: 'destructive'
-            });
-          }
-        }
-      } catch (error) {
-        // console.error('OrdersHistory: Error fetching orders:', error);
-        setOrders([]);
-        toast({
-          title: 'Error fetching orders',
-          description: error instanceof Error ? error.message : 'An unknown error occurred',
-          variant: 'destructive'
-        });
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchOrders();
-  }, [authState.isAuthenticated, toast]);
+    // Only fetch if we haven't fetched before
+    if (!hasOrdersBeenFetched.current) {
+      console.log('Initiating first order fetch');
+      hasOrdersBeenFetched.current = true;
+      fetchOrders();
+    } else {
+      console.log('Orders already fetched, skipping fetch');
+      setIsLoading(false);
+    }
+    // No dependencies to prevent re-fetch
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Function to handle retrying a payment
   const handleRetryPayment = (orderId: string) => {
-    // console.log(`OrdersHistory: Retrying payment for order ${orderId}`);
-
     // Find the order to get payment details
-    const order = orders.find(o => o.id === orderId);
+    const order = checkoutOrders.find(o => o.id === orderId);
     if (!order) {
-      toast({
-        title: 'Error',
-        description: 'Order not found',
-        variant: 'destructive'
-      });
       return;
     }
 
-    // Navigate to payment page with order details
     navigate(`/checkout/payment/${orderId}`, {
       state: {
         orderId: orderId,
-        amount: order.total,
-        paymentMethod: order.paymentMethod
+        amount: order.totals?.total || 0,
+        paymentMethod: order.paymentInfo?.paymentMethod
       }
     });
   };
 
-  // Function to safely filter orders
-  const filterOrders = (status: string) => {
-    // Debug filter operations
-    // console.log(`OrdersHistory: Filtering orders for status "${status}"`);
-    // console.log("OrdersHistory: Current orders:", orders);
-    // console.log("OrdersHistory: Orders is array?", Array.isArray(orders));
-
-    // Ensure orders is an array before filtering
-    if (!Array.isArray(orders)) {
-      // console.error('OrdersHistory: Orders is not an array:', orders);
-      return [];
-    }
-
+  // Filter orders by status
+  const filterOrdersByStatus = (status: string) => {
     // Special case for completed tab - show both delivered and paid orders
     if (status === 'completed') {
-      const filtered = orders.filter((o) => o.status === 'delivered' || o.status === 'paid');
-      // console.log(`OrdersHistory: Found ${filtered.length} completed orders (delivered/paid)`);
-      return filtered;
+      return checkoutOrders.filter(o => o.status === 'delivered' || o.status === 'paid');
     }
 
     // Normal filter by status
-    const filtered = orders.filter((o) => o.status === status);
-    // console.log(`OrdersHistory: Found ${filtered.length} orders with status "${status}"`);
-    return filtered;
+    return checkoutOrders.filter(o => o.status === status);
   };
 
   if (isLoading) {
@@ -138,11 +173,6 @@ const OrdersHistory: React.FC = () => {
       </UserLayout>
     );
   }
-
-  // Debug orders before rendering
-  // console.log("OrdersHistory: About to render with orders:", orders);
-  // console.log("OrdersHistory: Orders is array?", Array.isArray(orders));
-  // console.log("OrdersHistory: Orders length:", orders?.length);
 
   return (
     <UserLayout>
@@ -184,19 +214,19 @@ const OrdersHistory: React.FC = () => {
           </TabsList>
 
           <TabsContent value="all" className="space-y-4">
-            {orders.length > 0 ? (
-              orders.map((order) => (
+            {checkoutOrders.length > 0 ? (
+              checkoutOrders.map((checkoutOrder) => (
                 <OrderCard
-                  key={order.id}
-                  order={order}
+                  key={checkoutOrder.id}
+                  order={adaptCheckoutOrderToOrder(checkoutOrder)}
                   onRetryPayment={handleRetryPayment}
                 />
               ))
             ) : (
-              <div className="text-center p-8 bg-white rounded-lg shadow-sm">
+              <div className="mt-5 text-center p-8 bg-white rounded-lg shadow-sm">
                 <h3 className="text-lg font-medium mb-2">No orders yet</h3>
                 <p className="text-gray-500 mb-4">You haven't placed any orders with us yet.</p>
-                <Button onClick={() => navigate('/products')}>
+                <Button className="mt-4 bg-[#0496FF] text-white p-5 text-sm hover:bg-blue-500" onClick={() => navigate('/category/products')}>
                   Start Shopping
                 </Button>
               </div>
@@ -204,11 +234,11 @@ const OrdersHistory: React.FC = () => {
           </TabsContent>
 
           <TabsContent value="processing" className="space-y-4">
-            {filterOrders('processing').length > 0 ? (
-              filterOrders('processing').map((order) => (
+            {filterOrdersByStatus('processing').length > 0 ? (
+              filterOrdersByStatus('processing').map((checkoutOrder) => (
                 <OrderCard
-                  key={order.id}
-                  order={order}
+                  key={checkoutOrder.id}
+                  order={adaptCheckoutOrderToOrder(checkoutOrder)}
                   onRetryPayment={handleRetryPayment}
                 />
               ))
@@ -220,11 +250,11 @@ const OrdersHistory: React.FC = () => {
           </TabsContent>
 
           <TabsContent value="shipped" className="space-y-4">
-            {filterOrders('shipped').length > 0 ? (
-              filterOrders('shipped').map((order) => (
+            {filterOrdersByStatus('shipped').length > 0 ? (
+              filterOrdersByStatus('shipped').map((checkoutOrder) => (
                 <OrderCard
-                  key={order.id}
-                  order={order}
+                  key={checkoutOrder.id}
+                  order={adaptCheckoutOrderToOrder(checkoutOrder)}
                   onRetryPayment={handleRetryPayment}
                 />
               ))
@@ -236,11 +266,11 @@ const OrdersHistory: React.FC = () => {
           </TabsContent>
 
           <TabsContent value="completed" className="space-y-4">
-            {(filterOrders('completed').length > 0) ? (
-              filterOrders('completed').map((order) => (
+            {(filterOrdersByStatus('completed').length > 0) ? (
+              filterOrdersByStatus('completed').map((checkoutOrder) => (
                 <OrderCard
-                  key={order.id}
-                  order={order}
+                  key={checkoutOrder.id}
+                  order={adaptCheckoutOrderToOrder(checkoutOrder)}
                   onRetryPayment={handleRetryPayment}
                 />
               ))
@@ -252,11 +282,11 @@ const OrdersHistory: React.FC = () => {
           </TabsContent>
 
           <TabsContent value="pending" className="space-y-4">
-            {filterOrders('pending').length > 0 ? (
-              filterOrders('pending').map((order) => (
+            {filterOrdersByStatus('pending').length > 0 ? (
+              filterOrdersByStatus('pending').map((checkoutOrder) => (
                 <OrderCard
-                  key={order.id}
-                  order={order}
+                  key={checkoutOrder.id}
+                  order={adaptCheckoutOrderToOrder(checkoutOrder)}
                   onRetryPayment={handleRetryPayment}
                 />
               ))

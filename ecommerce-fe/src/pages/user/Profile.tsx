@@ -9,6 +9,7 @@ import UserAvatar from '../../components/user/UserAvatar';
 import { FiEdit, FiCheck } from 'react-icons/fi';
 import { User, UserProfile, UserAddress } from '@/types/user.model';
 import userService from '@/services/user/user.service';
+import { updateProfile, changePassword } from '@/services/auth/auth.service';
 
 const Profile: React.FC = () => {
   const { authState, updateProfile } = useAuth();
@@ -33,6 +34,14 @@ const Profile: React.FC = () => {
     zipCode: '',
     addressId: '',
   });
+
+  const [passwordForm, setPasswordForm] = useState({
+    currentPassword: '',
+    newPassword: '',
+    confirmPassword: ''
+  });
+  const [passwordLoading, setPasswordLoading] = useState(false);
+  const [passwordError, setPasswordError] = useState<string | null>(null);
 
   // Update formData when authState.user changes
   useEffect(() => {
@@ -234,6 +243,69 @@ const Profile: React.FC = () => {
       description: 'Your profile picture has been updated successfully',
       variant: 'success',
     });
+  };
+
+  const handlePasswordChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setPasswordForm(prev => ({ ...prev, [name]: value }));
+    // Reset error when user types
+    setPasswordError(null);
+  };
+
+  const handleChangePassword = async () => {
+    // Basic validation
+    if (!passwordForm.currentPassword) {
+      setPasswordError('Current password is required');
+      return;
+    }
+
+    if (!passwordForm.newPassword) {
+      setPasswordError('New password is required');
+      return;
+    }
+
+    if (passwordForm.newPassword.length < 8) {
+      setPasswordError('New password must be at least 8 characters long');
+      return;
+    }
+
+    if (passwordForm.newPassword !== passwordForm.confirmPassword) {
+      setPasswordError('New passwords do not match');
+      return;
+    }
+
+    setPasswordLoading(true);
+    setPasswordError(null);
+
+    try {
+      await changePassword(passwordForm.currentPassword, passwordForm.newPassword);
+
+      // Reset form after successful password change
+      setPasswordForm({
+        currentPassword: '',
+        newPassword: '',
+        confirmPassword: ''
+      });
+
+      toast({
+        title: 'Password Updated',
+        description: 'Your password has been changed successfully',
+        variant: 'success',
+      });
+    } catch (error: any) {
+      console.error('Password change error:', error);
+      // Display the exact error message from the server if available
+      const errorMessage = error.message || 'Failed to change password. Please try again.';
+      setPasswordError(errorMessage);
+
+      toast({
+        title: 'Password Update Failed',
+        description: errorMessage,
+        variant: 'destructive',
+      });
+    } finally {
+      setPasswordLoading(false);
+    }
   };
 
   return (
@@ -610,14 +682,21 @@ const Profile: React.FC = () => {
         <div className="bg-white rounded-lg shadow-sm p-6">
           <h2 className="text-[18px] font-sans font-medium mb-4">CHANGE PASSWORD</h2>
           <div className="space-y-4">
+            {passwordError && (
+              <div className="p-3 bg-red-50 border border-red-200 text-red-600 rounded-md">
+                {passwordError}
+              </div>
+            )}
             <div className="mb-5">
               <label className="block text-[15px] font-sans font-medium text-gray-700 mb-1">
                 Current Password
               </label>
               <Input
                 type="password"
+                name="currentPassword"
+                value={passwordForm.currentPassword}
+                onChange={handlePasswordChange}
                 placeholder="Enter current password"
-                className="bg-gray-50 text-neutral-500"
               />
             </div>
             <div className="!mb-5">
@@ -626,8 +705,10 @@ const Profile: React.FC = () => {
               </label>
               <Input
                 type="password"
+                name="newPassword"
+                value={passwordForm.newPassword}
+                onChange={handlePasswordChange}
                 placeholder="Min. 8 characters"
-                className="bg-gray-50 text-neutral-500"
               />
             </div>
             <div className="!mb-5">
@@ -636,12 +717,18 @@ const Profile: React.FC = () => {
               </label>
               <Input
                 type="password"
+                name="confirmPassword"
+                value={passwordForm.confirmPassword}
+                onChange={handlePasswordChange}
                 placeholder="Confirm new password"
-                className="bg-gray-50 text-neutral-500"
               />
             </div>
-            <Button className="bg-orange-500 hover:bg-orange-600 text-[15px] font-sans font-medium text-white w-[150px] h-[50px] !p-5">
-              Change Password
+            <Button
+              className="bg-orange-500 hover:bg-orange-600 text-[15px] font-sans font-medium text-white h-[50px] !p-5"
+              onClick={handleChangePassword}
+              disabled={passwordLoading}
+            >
+              {passwordLoading ? "Updating..." : "Change Password"}
             </Button>
           </div>
         </div>

@@ -10,12 +10,12 @@ import {
 } from "./models/category.model";
 import {
   CategoryService,
-  discoverCategories,
 } from "./services/category.service";
 import AdminHeader from "../layout/AdminHeader";
 import { LuCirclePlus } from "react-icons/lu";
 import { BsThreeDotsVertical } from "react-icons/bs";
 import { IoIosArrowForward } from "react-icons/io";
+import { useToast } from "@/hooks/use-toast";
 /**
  * Main component for category management
  * Contains all functionality for managing product categories
@@ -23,7 +23,9 @@ import { IoIosArrowForward } from "react-icons/io";
 export const CategoryManagement: React.FC = () => {
   // State for categories and filter
   const [categories, setCategories] = useState<Category[]>([]);
+  const [discoverCategories, setDiscoverCategories] = useState<Array<{ name: string, imageUrl: string }>>([]);
   const [loading, setLoading] = useState(true);
+  const [loadingDiscover, setLoadingDiscover] = useState(true);
   const [filter, setFilter] = useState<FilterType>({
     search: "",
     status: "all",
@@ -40,6 +42,7 @@ export const CategoryManagement: React.FC = () => {
     onSale: 0,
     outOfStock: 0,
   });
+  const { toast } = useToast();
 
   // Fetch filter counts on component mount
   useEffect(() => {
@@ -55,6 +58,62 @@ export const CategoryManagement: React.FC = () => {
     fetchFilterCounts();
   }, []);
 
+  // Load discover categories from real API data
+  useEffect(() => {
+    const fetchDiscoverCategories = async () => {
+      setLoadingDiscover(true);
+      try {
+        // Get all categories for discover section (no pagination)
+        const response = await CategoryService.getCategories({
+          search: "",
+          status: "active",
+          limit: 8 // Limit to 8 categories for the discover section
+        });
+
+        // Map to the format needed for CategoryCard component
+        const mappedCategories = response.categories.map(cat => ({
+          name: cat.name,
+          imageUrl: cat.imageUrl && cat.imageUrl.startsWith('http')
+            ? cat.imageUrl
+            : getDefaultCategoryImage(cat.name)
+        }));
+
+        setDiscoverCategories(mappedCategories);
+      } catch (error) {
+        console.error("Error fetching discover categories:", error);
+        toast({
+          variant: "destructive",
+          title: "Error",
+          description: "Failed to load discover categories."
+        });
+
+        // Fallback to default categories if API fails
+        setDiscoverCategories([
+          { name: 'Electronics', imageUrl: '/images/exploring/electronic.png' },
+          { name: 'Fashion', imageUrl: '/images/exploring/fashion.png' },
+          { name: 'Home & Kitchen', imageUrl: '/images/exploring/home.png' },
+          { name: 'Sports', imageUrl: '/images/exploring/grocery.png' },
+        ]);
+      } finally {
+        setLoadingDiscover(false);
+      }
+    };
+
+    fetchDiscoverCategories();
+  }, [toast]);
+
+  // Helper function to get default image based on category name
+  const getDefaultCategoryImage = (name: string): string => {
+    const nameLower = name.toLowerCase();
+    if (nameLower.includes('electronic')) return '/images/exploring/electronic.png';
+    if (nameLower.includes('fashion') || nameLower.includes('cloth')) return '/images/exploring/fashion.png';
+    if (nameLower.includes('home') || nameLower.includes('kitchen')) return '/images/exploring/home.png';
+    if (nameLower.includes('sport')) return '/images/exploring/grocery.png';
+    if (nameLower.includes('toy') || nameLower.includes('game')) return '/images/exploring/toys.png';
+    if (nameLower.includes('book')) return '/images/exploring/books.png';
+    return '/images/exploring/category.png'; // Default image
+  };
+
   // Fetch categories on component mount and when filter changes
   useEffect(() => {
     const fetchCategories = async () => {
@@ -69,13 +128,18 @@ export const CategoryManagement: React.FC = () => {
         setTotalItems(response.total);
       } catch (error) {
         console.error("Error fetching categories:", error);
+        toast({
+          variant: "destructive",
+          title: "Error",
+          description: "Failed to load categories. Please try again."
+        });
       } finally {
         setLoading(false);
       }
     };
 
     fetchCategories();
-  }, [filter, activeFilterTab]);
+  }, [filter, activeFilterTab, toast]);
 
   // Handle editing a category
   const handleEditCategory = (category: Category) => {
@@ -84,9 +148,37 @@ export const CategoryManagement: React.FC = () => {
   };
 
   // Handle deleting a category
-  const handleDeleteCategory = (id: number) => {
-    console.log("Delete category with ID:", id);
-    // Implement delete functionality here
+  const handleDeleteCategory = async (id: string) => {
+    try {
+      setLoading(true);
+      const success = await CategoryService.deleteCategory(id);
+
+      if (success) {
+        // Remove the deleted category from the state
+        setCategories(categories.filter(category => category.id !== id));
+
+        toast({
+          variant: "success",
+          title: "Success",
+          description: "Category deleted successfully"
+        });
+      } else {
+        toast({
+          variant: "destructive",
+          title: "Error",
+          description: "Failed to delete category"
+        });
+      }
+    } catch (error) {
+      console.error("Error deleting category:", error);
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Failed to delete category. Please try again."
+      });
+    } finally {
+      setLoading(false);
+    }
   };
 
   // Handle adding a product
@@ -94,11 +186,6 @@ export const CategoryManagement: React.FC = () => {
     console.log("Add product clicked");
     // Implement add product functionality
   };
-
-  // Handle filter changes
-  // const handleFilterChange = (newFilter: FilterType) => {
-  //   setFilter(newFilter);
-  // };
 
   // Handle page change
   const handlePageChange = (page: number) => {
@@ -148,13 +235,27 @@ export const CategoryManagement: React.FC = () => {
 
               {/* Category Cards Grid */}
               <div className="flex flex-wrap gap-16 mb-8 relative">
-                {discoverCategories.map((category, index) => (
-                  <CategoryCard
-                    key={index}
-                    name={category.name}
-                    imageUrl={category.imageUrl}
-                  />
-                ))}
+                {loadingDiscover ? (
+                  // Loading skeleton for discover categories
+                  <>
+                    {[1, 2, 3, 4].map((index) => (
+                      <div key={index} className="animate-pulse">
+                        <div className="bg-gray-200 rounded-lg w-[120px] h-[120px] mb-2"></div>
+                        <div className="bg-gray-200 h-5 w-24 rounded"></div>
+                      </div>
+                    ))}
+                  </>
+                ) : (
+                  // Actual discover categories from API
+                  discoverCategories.map((category, index) => (
+                    <CategoryCard
+                      key={index}
+                      name={category.name}
+                      imageUrl={category.imageUrl}
+                    />
+                  ))
+                )}
+
                 <div className="absolute right-[2%] top-1/2 -translate-y-1/2 ">
                   <button className="hover:bg-neutral-50 w-[48px] h-[48px] rounded-full bg-white flex justify-center items-center drop-shadow-md">
                     <IoIosArrowForward />
@@ -164,13 +265,6 @@ export const CategoryManagement: React.FC = () => {
             </div>
 
             {/* Category Filter and Table */}
-            {/* <div className="w-[1116px] h-[979px] bg-white rounded-lg shadow p-[1rem] mb-6 mt-[1rem] drop-shadow filter">
-                  <OrderFilter
-                    onSearch={handleSearch}
-                    onFilterChange={handleFilterChange}
-                    counts={filterCounts}
-                    loading={loading}
-                  /> */}
             <div className="w-[1116px] h-[979px] bg-white rounded-lg shadow p-[1rem] mb-6 mt-[1rem] drop-shadow filter">
               {/* Product Filter Tabs */}
               <CategoryFilter
@@ -199,14 +293,8 @@ export const CategoryManagement: React.FC = () => {
                   onEdit={handleEditCategory}
                   onDelete={handleDeleteCategory}
                 />
-                // <CategoryTable
-                //   orders={orders}
-                //   onStatusChange={handleStatusChange}
-                //  onViewDetails={handleViewDetails}
-                //                   />
               )}
               <div className="mt-[3rem]">
-                {/* {renderPagination()} */}
                 <Pagination
                   currentPage={filter.page || 1}
                   totalItems={totalItems}
