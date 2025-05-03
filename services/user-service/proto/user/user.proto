@@ -21,6 +21,10 @@ service UserService {
 
   // SearchUsers searches for users based on criteria
   rpc SearchUsers(SearchUsersRequest) returns (GetUsersResponse) {}
+
+  // ProcessEvent handles events from other services (like user registration,
+  // password changes)
+  rpc ProcessEvent(EventRequest) returns (EventResponse) {}
 }
 
 // User represents a user entity
@@ -125,4 +129,19 @@ message SearchUsersRequest {
   string field = 2;
   int32 page = 3;
   int32 limit = 4;
+}
+
+// EventRequest contains event data from other services
+message EventRequest {
+  string event_id = 1;
+  string event_name = 2;
+  string event_data = 3;
+  string source = 4;
+  string created_at = 5;
+}
+
+// EventResponse is the response for event processing
+message EventResponse {
+  bool success = 1;
+  string message = 2;
 }

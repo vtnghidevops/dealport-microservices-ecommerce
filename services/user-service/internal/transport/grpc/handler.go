@@ -2,6 +2,9 @@ package grpc
 
 import (
 	"context"
+	"encoding/json"
+	"fmt"
+	"log"
 	"time"
 
 	"google.golang.org/grpc/codes"
@@ -17,12 +20,14 @@ import (
 type UserHandler struct {
 	pb.UnimplementedUserServiceServer
 	userService service.UserService
+	logger      *log.Logger
 }
 
 // NewUserHandler creates a new UserHandler
-func NewUserHandler(userService service.UserService) *UserHandler {
+func NewUserHandler(userService service.UserService, logger *log.Logger) *UserHandler {
 	return &UserHandler{
 		userService: userService,
+		logger:      logger,
 	}
 }
 
@@ -178,6 +183,206 @@ func (h *UserHandler) SearchUsers(ctx context.Context, req *pb.SearchUsersReques
 		Page:    int32(params.Page),
 		Limit:   int32(params.Limit),
 		Message: "Users found successfully",
+	}, nil
+}
+
+// ProcessEvent handles events from other services
+func (h *UserHandler) ProcessEvent(ctx context.Context, req *pb.EventRequest) (*pb.EventResponse, error) {
+	h.logger.Printf("Received event: %s from %s", req.EventName, req.Source)
+
+	switch req.EventName {
+	case "user.registered":
+		return h.handleUserRegisteredEvent(ctx, req)
+	case "user.password_changed":
+		return h.handlePasswordChangedEvent(ctx, req)
+	default:
+		h.logger.Printf("Unknown event type: %s", req.EventName)
+		return &pb.EventResponse{
+			Success: false,
+			Message: "Unknown event type",
+		}, nil
+	}
+}
+
+// handleUserRegisteredEvent processes user.registered events
+func (h *UserHandler) handleUserRegisteredEvent(ctx context.Context, req *pb.EventRequest) (*pb.EventResponse, error) {
+	// Log the event data for debugging
+	h.logger.Printf("DEBUG USER-SERVICE: Processing user.registered event from %s. Event ID: %s", req.Source, req.EventId)
+	h.logger.Printf("DEBUG USER-SERVICE: User registration event data: %s", req.EventData)
+
+	// Parse the complete event data using a struct that matches the UserRegisteredData from auth service
+	var userData struct {
+		ID           string    `json:"id"`
+		Email        string    `json:"email"`
+		Username     string    `json:"username"`
+		FirstName    string    `json:"first_name"`
+		LastName     string    `json:"last_name"`
+		DisplayName  string    `json:"display_name,omitempty"`
+		Phone        string    `json:"phone,omitempty"`
+		ProfileImage string    `json:"profile_image,omitempty"`
+		Role         string    `json:"role"`
+		Status       string    `json:"status"`
+		Active       bool      `json:"active"`
+		CreatedAt    time.Time `json:"created_at"`
+		UpdatedAt    time.Time `json:"updated_at"`
+		Gender       string    `json:"gender,omitempty"`
+	}
+
+	if err := json.Unmarshal([]byte(req.EventData), &userData); err != nil {
+		h.logger.Printf("ERROR USER-SERVICE: Failed to parse user registration data: %v. Raw data: %s", err, req.EventData)
+
+		// Try alternative approach with a generic map
+		var dataMap map[string]interface{}
+		if mapErr := json.Unmarshal([]byte(req.EventData), &dataMap); mapErr == nil {
+			h.logger.Printf("DEBUG USER-SERVICE: Parsed as generic map: %+v", dataMap)
+			// Try to extract essential fields from the map
+			if id, ok := dataMap["id"].(string); ok {
+				h.logger.Printf("DEBUG USER-SERVICE: Found ID in map: %s", id)
+			}
+			if email, ok := dataMap["email"].(string); ok {
+				h.logger.Printf("DEBUG USER-SERVICE: Found Email in map: %s", email)
+			}
+		} else {
+			h.logger.Printf("ERROR USER-SERVICE: Even generic map parsing failed: %v", mapErr)
+		}
+
+		return &pb.EventResponse{
+			Success: false,
+			Message: fmt.Sprintf("Error parsing user data: %v", err),
+		}, nil
+	}
+
+	// Print parsed user data for debugging
+	h.logger.Printf("DEBUG USER-SERVICE: Successfully parsed user data: ID=%s, Email=%s, Name=%s %s, Username=%s, Role=%s, Status=%s, Active=%v",
+		userData.ID, userData.Email, userData.FirstName, userData.LastName, userData.Username, userData.Role, userData.Status, userData.Active)
+
+	// Check if user already exists (to handle potential duplicate events)
+	existingUser, err := h.userService.GetUserByID(ctx, userData.ID)
+	if err == nil {
+		h.logger.Printf("DEBUG USER-SERVICE: User %s already exists in database, updating instead of creating", userData.ID)
+
+		// Update the existing user with new data
+		updateUserReq := &domain.UpdateUserRequest{
+			ID:           existingUser.ID,
+			Email:        userData.Email,
+			FirstName:    userData.FirstName,
+			LastName:     userData.LastName,
+			Username:     userData.Username,
+			DisplayName:  userData.DisplayName,
+			Phone:        userData.Phone,
+			ProfileImage: userData.ProfileImage,
+			Role:         userData.Role,
+			Status:       userData.Status,
+			Active:       userData.Active,
+		}
+
+		h.logger.Printf("DEBUG USER-SERVICE: Updating existing user with request: %+v", updateUserReq)
+
+		// Update the user
+		user, err := h.userService.UpdateUser(ctx, updateUserReq)
+		if err != nil {
+			h.logger.Printf("ERROR USER-SERVICE: Failed to update existing user: %v", err)
+			return &pb.EventResponse{
+				Success: false,
+				Message: fmt.Sprintf("Failed to update existing user: %v", err),
+			}, nil
+		}
+
+		h.logger.Printf("DEBUG USER-SERVICE: User %s updated successfully", user.ID)
+		return &pb.EventResponse{
+			Success: true,
+			Message: "User profile updated successfully",
+		}, nil
+	} else {
+		h.logger.Printf("DEBUG USER-SERVICE: User %s not found in database, creating new user profile", userData.ID)
+	}
+
+	// Create user profile in user service
+	createUserReq := &domain.CreateUserRequest{
+		ID:           userData.ID,
+		Email:        userData.Email,
+		FirstName:    userData.FirstName,
+		LastName:     userData.LastName,
+		Username:     userData.Username,
+		DisplayName:  userData.DisplayName,
+		Phone:        userData.Phone,
+		ProfileImage: userData.ProfileImage,
+		Role:         userData.Role,
+		// Note: Password is not included as auth is handled by auth service
+		// Status and Active are not part of CreateUserRequest, they'll be set during service creation
+	}
+
+	h.logger.Printf("DEBUG USER-SERVICE: Creating new user with request: %+v", createUserReq)
+
+	// Create the user
+	user, err := h.userService.CreateUser(ctx, createUserReq)
+	if err != nil {
+		h.logger.Printf("ERROR USER-SERVICE: Failed to create user profile: %v", err)
+		return &pb.EventResponse{
+			Success: false,
+			Message: fmt.Sprintf("Failed to create user profile: %v", err),
+		}, nil
+	}
+
+	h.logger.Printf("DEBUG USER-SERVICE: User profile created successfully - ID: %s, Email: %s", user.ID, user.Email)
+	return &pb.EventResponse{
+		Success: true,
+		Message: "User profile created successfully",
+	}, nil
+}
+
+// handlePasswordChangedEvent processes user.password_changed events
+func (h *UserHandler) handlePasswordChangedEvent(ctx context.Context, req *pb.EventRequest) (*pb.EventResponse, error) {
+	// Parse the password changed data
+	var passwordData struct {
+		Email     string `json:"email"`
+		ChangedAt string `json:"changed_at"`
+	}
+
+	if err := json.Unmarshal([]byte(req.EventData), &passwordData); err != nil {
+		h.logger.Printf("Error parsing password data: %v", err)
+		return &pb.EventResponse{
+			Success: false,
+			Message: fmt.Sprintf("Error parsing password data: %v", err),
+		}, nil
+	}
+
+	// Get user by email
+	user, err := h.userService.GetUserByEmail(ctx, passwordData.Email)
+	if err != nil {
+		h.logger.Printf("Failed to get user by email: %v", err)
+		return &pb.EventResponse{
+			Success: false,
+			Message: fmt.Sprintf("Failed to get user by email: %v", err),
+		}, nil
+	}
+
+	// Create update request
+	updateUserReq := &domain.UpdateUserRequest{
+		ID:        user.ID,
+		Email:     user.Email,
+		FirstName: user.FirstName,
+		LastName:  user.LastName,
+		Username:  user.Username,
+		Role:      user.Role,
+		Status:    user.Status,
+		Active:    user.Active,
+	}
+
+	// Update user
+	_, err = h.userService.UpdateUser(ctx, updateUserReq)
+	if err != nil {
+		h.logger.Printf("Failed to update user: %v", err)
+		return &pb.EventResponse{
+			Success: false,
+			Message: fmt.Sprintf("Failed to update user: %v", err),
+		}, nil
+	}
+
+	h.logger.Printf("Password changed timestamp updated for user %s", user.ID)
+	return &pb.EventResponse{
+		Success: true,
+		Message: "Password changed timestamp updated",
 	}, nil
 }
 

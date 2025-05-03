@@ -117,14 +117,24 @@ func (s *userService) CreateUser(ctx context.Context, req *domain.CreateUserRequ
 		return nil, errors.New("user with this email already exists")
 	}
 
-	// Hash password
-	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
-	if err != nil {
-		return nil, fmt.Errorf("failed to hash password: %w", err)
+	// Hash password if provided
+	var hashedPassword string
+	if req.Password != "" {
+		hashed, err := bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
+		if err != nil {
+			return nil, fmt.Errorf("failed to hash password: %w", err)
+		}
+		hashedPassword = string(hashed)
 	}
 
 	// Set default values
 	id := uuid.New().String()
+
+	// If ID is provided in request (e.g., from auth service), use it
+	if req.ID != "" {
+		id = req.ID
+	}
+
 	now := time.Now()
 
 	if req.DisplayName == "" {
@@ -145,10 +155,11 @@ func (s *userService) CreateUser(ctx context.Context, req *domain.CreateUserRequ
 	user := &domain.User{
 		ID:           id,
 		Email:        req.Email,
-		PasswordHash: string(hashedPassword),
+		PasswordHash: hashedPassword,
 		FirstName:    req.FirstName,
 		LastName:     req.LastName,
 		Username:     req.Username,
+		DisplayName:  req.DisplayName,
 		Addresses:    req.Addresses,
 		Role:         req.Role,
 		Status:       "active",

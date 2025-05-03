@@ -51,7 +51,7 @@ func main() {
 	userService := service.NewUserService(userRepo)
 
 	// Initialize gRPC handler
-	userHandler := grpcHandler.NewUserHandler(userService)
+	userHandler := grpcHandler.NewUserHandler(userService, logger)
 
 	// Create gRPC server
 	grpcServer := grpc.NewServer()
@@ -60,7 +60,7 @@ func main() {
 	// Register reflection service on gRPC server
 	reflection.Register(grpcServer)
 
-	// Start listening
+	// Start listening for gRPC
 	lis, err := net.Listen("tcp", fmt.Sprintf(":%s", cfg.Server.Port))
 	if err != nil {
 		logger.Fatalf("Failed to listen: %v", err)

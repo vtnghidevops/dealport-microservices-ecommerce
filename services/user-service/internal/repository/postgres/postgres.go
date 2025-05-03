@@ -46,13 +46,13 @@ func (r *PostgresRepository) CreateUser(ctx context.Context, user *domain.User) 
 
 	// Set default role if not specified
 	if user.Role == "" {
-		user.Role = "customer"
+		user.Role = "user"
 	}
 
 	query := `
 		INSERT INTO users (
-			id, email, password_hash, first_name, last_name, display_name, 
-			phone, profile_image, role, active, created_at, updated_at
+			id, email, first_name, last_name, display_name, 
+			phone, profile_image, role, active, created_at, updated_at, username
 		) 
 		VALUES (
 			$1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12
@@ -64,7 +64,6 @@ func (r *PostgresRepository) CreateUser(ctx context.Context, user *domain.User) 
 		query,
 		user.ID,
 		user.Email,
-		user.PasswordHash,
 		user.FirstName,
 		user.LastName,
 		user.DisplayName,
@@ -74,6 +73,7 @@ func (r *PostgresRepository) CreateUser(ctx context.Context, user *domain.User) 
 		user.Active,
 		user.CreatedAt,
 		user.UpdatedAt,
+		user.Username,
 	)
 
 	if err != nil {
@@ -106,7 +106,7 @@ func (r *PostgresRepository) GetUserByID(ctx context.Context, id string) (*domai
 
 	query := `
 		SELECT id, email, first_name, last_name, display_name, phone, 
-		profile_image, role, active, created_at, updated_at, deleted_at
+		profile_image, role, active, created_at, updated_at, deleted_at, username
 		FROM users 
 		WHERE id = $1 AND deleted_at IS NULL
 	`
@@ -140,7 +140,7 @@ func (r *PostgresRepository) GetUserByEmail(ctx context.Context, email string) (
 
 	query := `
 		SELECT id, email, first_name, last_name, display_name, phone, 
-		profile_image, role, active, created_at, updated_at, deleted_at
+		profile_image, role, active, created_at, updated_at, deleted_at, username
 		FROM users 
 		WHERE email = $1 AND deleted_at IS NULL
 	`
@@ -190,7 +190,7 @@ func (r *PostgresRepository) GetUsers(ctx context.Context, filter *domain.UserFi
 	// Base query
 	query := `
 		SELECT id, email, first_name, last_name, display_name, phone, 
-		profile_image, role, active, created_at, updated_at, deleted_at
+		profile_image, role, active, created_at, updated_at, deleted_at, username
 		FROM users 
 		WHERE deleted_at IS NULL
 	`
@@ -262,7 +262,7 @@ func (r *PostgresRepository) UpdateUser(ctx context.Context, user *domain.User) 
 	query := `
 		UPDATE users 
 		SET email = $1, first_name = $2, last_name = $3, display_name = $4, 
-		phone = $5, profile_image = $6, role = $7, active = $8, updated_at = $9
+		phone = $5, profile_image = $6, role = $7, active = $8, updated_at = $9, username = $11
 		WHERE id = $10 AND deleted_at IS NULL
 	`
 
@@ -279,6 +279,7 @@ func (r *PostgresRepository) UpdateUser(ctx context.Context, user *domain.User) 
 		user.Active,
 		user.UpdatedAt,
 		user.ID,
+		user.Username,
 	)
 
 	if err != nil {
@@ -390,7 +391,7 @@ func (r *PostgresRepository) SearchUsers(ctx context.Context, params *domain.Sea
 	// Base query - removed password_hash from the SELECT list
 	query := `
 		SELECT id, email, first_name, last_name, display_name, phone, 
-		profile_image, role, active, created_at, updated_at, deleted_at
+		profile_image, role, active, created_at, updated_at, deleted_at, username
 		FROM users 
 		WHERE deleted_at IS NULL
 		AND (
@@ -399,6 +400,7 @@ func (r *PostgresRepository) SearchUsers(ctx context.Context, params *domain.Sea
 			OR last_name ILIKE $1
 			OR display_name ILIKE $1
 			OR phone ILIKE $1
+			OR username ILIKE $1
 		)
 	`
 
@@ -413,6 +415,7 @@ func (r *PostgresRepository) SearchUsers(ctx context.Context, params *domain.Sea
 			OR last_name ILIKE $1
 			OR display_name ILIKE $1
 			OR phone ILIKE $1
+			OR username ILIKE $1
 		)
 	`
 
@@ -420,7 +423,7 @@ func (r *PostgresRepository) SearchUsers(ctx context.Context, params *domain.Sea
 	if params.Field != "" {
 		query = fmt.Sprintf(`
 			SELECT id, email, first_name, last_name, display_name, phone, 
-			profile_image, role, active, created_at, updated_at, deleted_at
+			profile_image, role, active, created_at, updated_at, deleted_at, username
 			FROM users 
 			WHERE deleted_at IS NULL
 			AND %s ILIKE $1

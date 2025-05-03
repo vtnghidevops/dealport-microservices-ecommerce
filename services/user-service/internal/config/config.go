@@ -18,6 +18,7 @@ type Config struct {
 // ServerConfig holds all server related configuration
 type ServerConfig struct {
 	Port        string
+	HTTPPort    string
 	Environment string
 }
 
@@ -50,6 +51,7 @@ func LoadConfig(path string) (*Config, error) {
 	cfg := &Config{
 		Server: ServerConfig{
 			Port:        getEnv("PORT", "50052"),
+			HTTPPort:    getEnv("HTTP_PORT", "9001"),
 			Environment: getEnv("ENVIRONMENT", "development"),
 		},
 		Database: DatabaseConfig{
