@@ -7,7 +7,7 @@ import (
 func declareExchange(ch *amqp.Channel) error {
 	return ch.ExchangeDeclare(
 		"logs_topic", // name
-		"topic",       // type
+		"topic",      // type
 		true,         // durable?
 		false,        // auto-deleted?
 		false,        // internal?
@@ -18,11 +18,11 @@ func declareExchange(ch *amqp.Channel) error {
 
 func declareRandomQueue(ch *amqp.Channel) (amqp.Queue, error) {
 	return ch.QueueDeclare(
-		"",        // name?
-		false,     // durable?
-		false,     // delete when unused?
-		true,      // exclusive?
-		false,     // no-wait?
-		nil,       // arguments?
+		"",    // name?
+		false, // durable?
+		false, // delete when unused?
+		true,  // exclusive?
+		false, // no-wait?
+		nil,   // arguments?
 	)
 }

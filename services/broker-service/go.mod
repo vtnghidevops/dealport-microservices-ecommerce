@@ -8,6 +8,7 @@ require (
 )
 
 require (
+	github.com/go-chi/chi v1.5.5 // indirect
 	github.com/rabbitmq/amqp091-go v1.10.0 // indirect
 	golang.org/x/net v0.34.0 // indirect
 	golang.org/x/sys v0.29.0 // indirect

@@ -23,12 +23,6 @@ func (app *Config) routers() http.Handler {
 
 	mux.Use(chimiddleware.Heartbeat("/ping")) // Check if server is alive
 
-	// [POST] /broker
-	// mux.Post("/broker", app.Broker)
-
-	// // [POST] /handle => authentication-service
-	// mux.Post("/handle", app.HandleSubmission)
-
 	// [POST] /logs/gRPC
 	// mux.Post("/log-grpc", app.LogViaGRPC)
 
@@ -37,9 +31,16 @@ func (app *Config) routers() http.Handler {
 		// Authentication routes
 		r.Route("/auth", func(r chi.Router) {
 			r.Post("/register", app.AuthHandler.Register)
+			r.Post("/verify-registration", app.AuthHandler.VerifyRegistration)
 			r.Post("/login", app.AuthHandler.Login)
 			r.Post("/refresh", app.AuthHandler.RefreshToken)
 			r.Get("/validate", app.AuthHandler.ValidateToken)
+			r.Post("/password-reset", app.AuthHandler.RequestPasswordReset)
+			r.Post("/verify-password-reset", app.AuthHandler.VerifyPasswordReset)
+			r.Post("/password-update", app.AuthHandler.UpdatePassword)
+			r.Post("/request-otp", app.AuthHandler.RequestOTP)
+			// r.Post("/verify-otp", app.AuthHandler.VerifyOTP)
+			r.Post("/check-account", app.AuthHandler.CheckAccountExists)
 		})
 
 		// User routes with authentication
@@ -102,13 +103,28 @@ func (app *Config) routers() http.Handler {
 			// Validate checkout without auth
 			r.Post("/validate", app.CheckoutHandler.ValidateCheckout)
 
-			// Protected checkout routes
+			// Protected checkout routes for regular users
 			r.Group(func(r chi.Router) {
 				r.Use(app.AuthMiddleware.RequireAuth)
 				r.Post("/orders", app.CheckoutHandler.CreateOrder)
 				r.Get("/orders/{id}", app.CheckoutHandler.GetOrder)
+
+				// Regular users - only see their own orders
 				r.Get("/orders", app.CheckoutHandler.ListOrders)
+
 				r.Post("/orders/{id}/payment", app.CheckoutHandler.ProcessPayment)
+			})
+
+			// Admin-only checkout routes
+			r.Group(func(r chi.Router) {
+				r.Use(app.AuthMiddleware.RequireAuth)
+				r.Use(app.AuthMiddleware.RequireAdmin)
+
+				// Admin-specific endpoint for seeing all orders
+				r.Get("/admin/orders", app.CheckoutHandler.ListOrders)
+
+				// Admin endpoints for managing orders
+				r.Patch("/orders/{id}/status", app.CheckoutHandler.UpdateOrderStatus)
 			})
 		})
 
@@ -116,6 +132,7 @@ func (app *Config) routers() http.Handler {
 		r.Route("/payments", func(r chi.Router) {
 			r.Post("/momo/create", app.PaymentHandler.CreateMomoPayment)
 			r.Post("/momo/verify", app.PaymentHandler.VerifyMomoPayment)
+			r.Post("/momo/callback", app.PaymentHandler.HandleMomoCallback)
 			// r.Post("/vnpay/create", app.PaymentHandler.CreateVnpayPayment)
 			// r.Post("/vnpay/verify", app.PaymentHandler.VerifyVnpayPayment)
 			// MoMo QuickPay endpoints

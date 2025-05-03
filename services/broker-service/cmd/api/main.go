@@ -5,30 +5,37 @@ import (
 	"log"
 	"math"
 	"net/http"
+	"os"
 	"time"
 
 	// communicate grpc between all service
-	grpcAuthHandler "broker-service/internal/handler/grpc/auth"
-	grpcCartHandler "broker-service/internal/handler/grpc/cart"
-	grpcCheckoutHandler "broker-service/internal/handler/grpc/checkout"
-	grpcCouponHandler "broker-service/internal/handler/grpc/coupon"
-	grpcPaymentHandler "broker-service/internal/handler/grpc/payment"
-	grpcProductHandler "broker-service/internal/handler/grpc/product"
-	grpcUserHandler "broker-service/internal/handler/grpc/user"
+	grpcAuthHandler "broker-service/internal/handlers/grpc/auth"
+	grpcCartHandler "broker-service/internal/handlers/grpc/cart"
+	grpcCheckoutHandler "broker-service/internal/handlers/grpc/checkout"
+	grpcCouponHandler "broker-service/internal/handlers/grpc/coupon"
+	grpcPaymentHandler "broker-service/internal/handlers/grpc/payment"
+	grpcProductHandler "broker-service/internal/handlers/grpc/product"
+	grpcUserHandler "broker-service/internal/handlers/grpc/user"
 
 	// handle with http req from fe
-	httpAuthHandler "broker-service/internal/handler/http/auth"
-	httpCartHandler "broker-service/internal/handler/http/cart"
-	httpCheckoutHandler "broker-service/internal/handler/http/checkout"
-	httpPaymentHandler "broker-service/internal/handler/http/payment"
-	httpProductHandler "broker-service/internal/handler/http/product"
-	httpUserHandler "broker-service/internal/handler/http/user"
+	httpAuthHandler "broker-service/internal/handlers/http/auth"
+	httpCartHandler "broker-service/internal/handlers/http/cart"
+	httpCheckoutHandler "broker-service/internal/handlers/http/checkout"
+	httpPaymentHandler "broker-service/internal/handlers/http/payment"
+	httpProductHandler "broker-service/internal/handlers/http/product"
+	httpUserHandler "broker-service/internal/handlers/http/user"
 	custommiddleware "broker-service/internal/middleware"
 
+	"broker-service/internal/event"
+
+	"github.com/go-chi/chi/v5"
 	amqp "github.com/rabbitmq/amqp091-go"
 )
 
+// Config is the application configuration
 type Config struct {
+	router             *chi.Mux
+	eventEmitter       *event.Emitter
 	Rabbit             *amqp.Connection
 	httpProductHandler *httpProductHandler.Config
 	ProductHandler     *grpcProductHandler.ProductHandler
@@ -50,16 +57,29 @@ type Config struct {
 	PaymentHandler *httpPaymentHandler.Config
 }
 
-const port string = "8080"
-
 func main() {
-	// try to connect to rabbitmq
-	// rabbitConn, err := connect()
-	// if err != nil {
-	// 	log.Println(err)
-	// 	os.Exit(1)
-	// }
-	// defer rabbitConn.Close()
+	// Create a new logger
+	logger := log.New(os.Stdout, "[BROKER] ", log.LstdFlags)
+	logger.Println("Starting broker service")
+
+	// Get port from environment variables or use default
+	port := os.Getenv("PORT")
+	if port == "" {
+		port = "8080"
+	}
+
+	// Connect to RabbitMQ
+	rabbitConn, err := connectToRabbitMQ()
+	if err != nil {
+		logger.Fatalf("Cannot connect to RabbitMQ: %v", err)
+	}
+	defer rabbitConn.Close()
+
+	// Create an event emitter
+	emitter, err := event.NewEventEmitter(rabbitConn)
+	if err != nil {
+		logger.Fatalf("Cannot create event emitter: %v", err)
+	}
 
 	// Initialize the gRPC clients
 	productClient, err := grpcProductHandler.GetProductClient()
@@ -145,9 +165,11 @@ func main() {
 		AuthClient: authClient,
 	}
 
-	// Initialize the application config
+	// Create the application config
 	app := Config{
-		// Rabbit:      rabbitConn,
+		router:             chi.NewRouter(),
+		eventEmitter:       emitter,
+		Rabbit:             rabbitConn,
 		httpProductHandler: httpProductHandler,
 		ProductHandler:     grpcProductHandler.NewProductHandler(productClient),
 		CategoryHandler:    grpcProductHandler.NewCategoryGrpcHandler(productClient),
@@ -168,48 +190,34 @@ func main() {
 		PaymentHandler: paymentHttpHandler,
 	}
 
-	log.Printf("Starting broker service on port %s\n", port)
-	log.Println("Connected services:")
-	if productClient != nil {
-		log.Println("- Product service: Connected")
-	}
-	if authClient != nil {
-		log.Println("- Auth service: Connected")
-	}
-	if userClient != nil {
-		log.Println("- User service: Connected")
-	}
-	if cartClient != nil {
-		log.Println("- Cart service: Connected")
-	}
-	if checkoutClient != nil {
-		log.Println("- Checkout service: Connected")
-	}
-	if paymentClient != nil {
-		log.Println("- Payment service: Connected")
-	}
+	// Set up the routes
+	app.routers()
 
-	// define http server
+	// Start the server
 	srv := &http.Server{
-		Addr:    fmt.Sprintf(":%s", port),
-		Handler: app.routers(),
+		Addr:         fmt.Sprintf(":%s", port),
+		Handler:      app.routers(),
+		ReadTimeout:  10 * time.Second,
+		WriteTimeout: 30 * time.Second,
+		IdleTimeout:  120 * time.Second,
 	}
 
-	// start http server
-	if err := srv.ListenAndServe(); err != nil {
-		log.Panic(err)
-	}
+	logger.Printf("Starting broker service on port %s\n", port)
 
+	err = srv.ListenAndServe()
+	if err != nil {
+		logger.Println(err)
+	}
 }
 
-func connect() (*amqp.Connection, error) {
+func connectToRabbitMQ() (*amqp.Connection, error) {
 	var counts int64
 	var backOff = 1 * time.Second
 	var connection *amqp.Connection
 
 	// don't continue until rabbit is ready
 	for {
-		c, err := amqp.Dial("amqp://guest:guest@rabbitmq")
+		c, err := amqp.Dial("amqp://guest:guest@localhost:5672")
 		if err != nil {
 			fmt.Println("RabbitMQ not yet ready...")
 			counts++

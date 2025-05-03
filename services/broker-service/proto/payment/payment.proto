@@ -11,6 +11,10 @@ service PaymentService {
   // Verify MoMo payment callback
   rpc VerifyMomoPayment(MomoVerifyRequest) returns (PaymentVerifyResponse) {}
 
+  // Process MoMo payment callback from broker service
+  rpc ProcessMomoCallback(MomoCallbackRequest) returns (PaymentVerifyResponse) {
+  }
+
   // Create payment for VNPAY gateway
   rpc CreateVnpayPayment(VnpayPaymentRequest) returns (VnpayPaymentResponse) {}
 
@@ -47,6 +51,11 @@ message MomoPaymentResponse {
 }
 
 message MomoVerifyRequest {
+  map<string, string> params = 1;  // All callback parameters from MoMo
+}
+
+// MoMo callback request from broker service
+message MomoCallbackRequest {
   map<string, string> params = 1;  // All callback parameters from MoMo
 }
 
