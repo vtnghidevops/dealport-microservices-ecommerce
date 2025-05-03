@@ -1,295 +1,314 @@
 import { Category, CategoryFilter, CategoryResponse, CategoryFilterCounts } from '../models/category.model';
 import { CategorySummaryData } from '../cards/models/card.model';
+import { CategoryService as GlobalCategoryService } from "@/services/product/product.service";
+import { Category as GlobalCategory } from '@/types/category.model';
+import axios from 'axios';
+
+// Base URL for product service API from environment variables
+const API_BASE_URL = import.meta.env.VITE_PUBLIC_PRODUCT_API_URL || "http://localhost:8082/api/v1";
 
 /**
- * Mock data for categories
- * In a real application, this would be fetched from an API
+ * Helper function to convert a global category to admin category format
  */
-const mockCategories: Category[] = [
-  {
-    id: '1',
-    name: 'Wireless Bluetooth Headphones',
-    slug: 'wireless-bluetooth-headphones',
-    imageUrl: 'headphones',
-    productCount: 25,
-    createdAt: new Date('2025-01-01'),
-    updatedAt: new Date('2025-01-01'),
-    isActive: true,
-  },
-  {
-    id: '2',
-    name: 'Men\'s T-Shirt',
-    slug: 'mens-t-shirt',
-    imageUrl: 'tshirt',
-    productCount: 20,
-    createdAt: new Date('2025-01-01'),
-    updatedAt: new Date('2025-01-01'),
-    isActive: true,
-  },
-  {
-    id: '3',
-    name: 'Men\'s Leather Wallet',
-    slug: 'mens-leather-wallet',
-    imageUrl: 'wallet',
-    productCount: 35,
-    createdAt: new Date('2025-01-01'),
-    updatedAt: new Date('2025-01-01'),
-    isActive: true,
-  },
-  {
-    id: '4',
-    name: 'Memory Foam Pillow',
-    slug: 'memory-foam-pillow',
-    imageUrl: 'pillow',
-    productCount: 40,
-    createdAt: new Date('2025-01-01'),
-    updatedAt: new Date('2025-01-01'),
-    isActive: true,
-  },
-  {
-    id: '5',
-    name: 'Coffee Maker',
-    slug: 'coffee-maker',
-    imageUrl: 'coffee',
-    productCount: 45,
-    createdAt: new Date('2025-01-01'),
-    updatedAt: new Date('2025-01-01'),
-    isActive: true,
-  },
-  {
-    id: '6',
-    name: 'Casual Baseball Cap',
-    slug: 'casual-baseball-cap',
-    imageUrl: 'cap',
-    productCount: 55,
-    createdAt: new Date('2025-01-01'),
-    updatedAt: new Date('2025-01-01'),
-    isActive: true,
-  },
-  {
-    id: '7',
-    name: 'Full HD Webcam',
-    slug: 'full-hd-webcam',
-    imageUrl: 'webcam',
-    productCount: 20,
-    createdAt: new Date('2025-01-01'),
-    updatedAt: new Date('2025-01-01'),
-    isActive: true,
-  },
-  {
-    id: '8',
-    name: 'Smart LED Color Bulb',
-    slug: 'smart-led-color-bulb',
-    imageUrl: 'bulb',
-    productCount: 16,
-    createdAt: new Date('2025-01-01'),
-    updatedAt: new Date('2025-01-01'),
-    isActive: true,
-  },
-  {
-    id: '9',
-    name: 'Men\'s T-Shirt',
-    slug: 'mens-t-shirt-2',
-    imageUrl: 'tshirt',
-    productCount: 10,
-    createdAt: new Date('2025-01-01'),
-    updatedAt: new Date('2025-01-01'),
-    isActive: true,
-  },
-  {
-    id: '10',
-    name: 'Men\'s Leather Wallet',
-    slug: 'mens-leather-wallet-2',
-    imageUrl: 'wallet',
-    productCount: 35,
-    createdAt: new Date('2025-01-01'),
-    updatedAt: new Date('2025-01-01'),
-    isActive: true,
-  },
-];
+const convertToAdminCategory = (globalCategory: GlobalCategory): Category => {
+  return {
+    ...globalCategory,
+    id: String(globalCategory.id), // Convert ID to string
+    createdAt: new Date(), // Add createdAt if missing
+    updatedAt: new Date(), // Add updatedAt if missing
+  };
+};
 
 /**
- * Mock discover categories for the UI
+ * Helper function to convert an admin category to global category format
  */
-export const discoverCategories = [
-  { name: 'Electronics', imageUrl: '/images/exploring/electronic.png' },
-  { name: 'Fashion', imageUrl: '/images/exploring/fashion.png' },
-  { name: 'Accessories', imageUrl: '/images/exploring/fashion.png' },
-  { name: 'Home & Kitchen', imageUrl: '/images/exploring/home.png' },
-  { name: 'Sports & Outdoors', imageUrl: '/images/exploring/grocery.png' },
-  { name: 'Toys & Games', imageUrl: '/images/exploring/toys.png' },
-  { name: 'Health & Fitness', imageUrl: '/images/exploring/toys.png' },
-  { name: 'Books', imageUrl: '/images/exploring/toys.png' },
-];
+const convertToGlobalCategory = (adminCategory: Category): GlobalCategory => {
+  return {
+    ...adminCategory,
+    id: Number(adminCategory.id), // Convert ID to number
+  };
+};
 
 /**
  * CategoryService class containing all category-related API calls
- * This mock service simulates API calls with Promises
+ * Uses the global CategoryService for real API integration
  */
 export class CategoryService {
   /**
    * Get all categories with optional filtering and pagination
    */
   static getCategories = async (filter: CategoryFilter): Promise<CategoryResponse> => {
-    let filteredCategories = [...mockCategories];
+    try {
+      // Create API filter parameters
+      const apiFilters: Record<string, string> = {};
 
-    if (filter.search) {
-      const searchTerm = filter.search.toLowerCase();
-      filteredCategories = filteredCategories.filter(category =>
-        category.name.toLowerCase().includes(searchTerm)
-      );
-    }
-
-    if (filter.status !== 'all') {
-      filteredCategories = filteredCategories.filter(category =>
-        filter.status === 'active' ? category.isActive : !category.isActive
-      );
-    }
-
-    // Apply product filter if specified
-    if (filter.productFilter) {
-      switch (filter.productFilter) {
-        case 'featured':
-          // Filter for categories with more than 30 products (mock featured)
-          filteredCategories = filteredCategories.filter(
-            category => (category.productCount || 0) > 30
-          );
-          break;
-        case 'onSale':
-          // Filter for categories with products between 20 and 40 (mock on sale)
-          filteredCategories = filteredCategories.filter(
-            category => {
-              const count = category.productCount || 0;
-              return count >= 20 && count <= 40;
-            }
-          );
-          break;
-        case 'outOfStock':
-          // Filter for categories with less than 15 products (mock out of stock)
-          filteredCategories = filteredCategories.filter(
-            category => (category.productCount || 0) < 15
-          );
-          break;
-        // 'all' case doesn't need filtering
+      if (filter.search) {
+        apiFilters.name = filter.search;
       }
+
+      if (filter.status !== 'all') {
+        apiFilters.is_active = filter.status === 'active' ? 'true' : 'false';
+      }
+
+      // Get categories from API
+      const globalCategories = await GlobalCategoryService.getAllCategories(apiFilters);
+
+      // Convert global categories to admin categories
+      const categories: Category[] = globalCategories.map(convertToAdminCategory);
+
+      // Apply additional product filters not handled by the API
+      let filteredCategories = [...categories];
+
+      if (filter.productFilter && filter.productFilter !== 'all') {
+        switch (filter.productFilter) {
+          case 'featured':
+            // Filter for categories with more products
+            filteredCategories = filteredCategories.filter(
+              category => (category.productCount || 0) > 20
+            );
+            break;
+          case 'onSale':
+            // Filter for categories that might have products on sale
+            filteredCategories = filteredCategories.filter(
+              category => {
+                const count = category.productCount || 0;
+                return count >= 10 && count <= 30;
+              }
+            );
+            break;
+          case 'outOfStock':
+            // Filter for categories with few products
+            filteredCategories = filteredCategories.filter(
+              category => (category.productCount || 0) < 10
+            );
+            break;
+        }
+      }
+
+      // Get total count before pagination
+      const total = filteredCategories.length;
+
+      // Manual pagination
+      const page = filter.page || 1;
+      const limit = filter.limit || 10;
+      const start = (page - 1) * limit;
+      const paginatedCategories = filteredCategories.slice(start, start + limit);
+
+      return {
+        categories: paginatedCategories,
+        total
+      };
+    } catch (error) {
+      console.error("Error fetching categories:", error);
+      return {
+        categories: [],
+        total: 0
+      };
     }
-
-    // Get total count before pagination
-    const total = filteredCategories.length;
-
-    // Pagination
-    const page = filter.page || 1;
-    const limit = filter.limit || 10;
-    const start = (page - 1) * limit;
-    const paginatedCategories = filteredCategories.slice(start, start + limit);
-
-    return Promise.resolve({
-      categories: paginatedCategories,
-      total
-    });
   };
 
   /**
    * Get category summary data for dashboard cards
    */
   static getCategorySummary = async (): Promise<CategorySummaryData> => {
-    const totalCategories = mockCategories.length;
-    const activeCategories = mockCategories.filter(
-      (cat) => cat.isActive
-    ).length;
-    const featuredCategories = Math.floor(totalCategories * 0.4); // 40% of categories are featured (mock)
+    try {
+      const globalCategories = await GlobalCategoryService.getAllCategories();
 
-    // Find most popular category based on product count
-    const popularCategory = mockCategories.reduce((prev, current) =>
-      (prev.productCount || 0) > (current.productCount || 0) ? prev : current
-    );
+      // Convert global categories to admin categories
+      const categories: Category[] = globalCategories.map(convertToAdminCategory);
 
-    return Promise.resolve({
-      totalCategories,
-      activeCategories,
-      featuredCategories,
-      popularCategory: {
-        name: popularCategory.name,
-        productCount: popularCategory.productCount || 0,
-      },
-    });
+      const totalCategories = categories.length;
+      const activeCategories = categories.filter(cat => cat.isActive).length;
+      const featuredCategories = Math.floor(totalCategories * 0.4); // Estimate 40% as featured
+
+      // Find most popular category based on product count
+      let popularCategory: Category = {
+        id: '0',
+        name: 'Unknown',
+        slug: '',
+        description: '',
+        imageUrl: '',
+        productCount: 0,
+        isActive: false,
+        isVisible: false,
+        createdAt: new Date(),
+        updatedAt: new Date()
+      };
+
+      if (categories.length > 0) {
+        popularCategory = categories.reduce((prev, current) =>
+          (prev.productCount || 0) > (current.productCount || 0) ? prev : current
+        );
+      }
+
+      return {
+        totalCategories,
+        activeCategories,
+        featuredCategories,
+        popularCategory: {
+          name: popularCategory.name,
+          productCount: popularCategory.productCount || 0,
+        },
+      };
+    } catch (error) {
+      console.error("Error fetching category summary:", error);
+      return {
+        totalCategories: 0,
+        activeCategories: 0,
+        featuredCategories: 0,
+        popularCategory: {
+          name: 'Unknown',
+          productCount: 0,
+        },
+      };
+    }
   };
 
   /**
    * Get category by ID
    */
-  static getCategoryById = async (
-    id: string
-  ): Promise<Category | undefined> => {
-    const category = mockCategories.find((cat) => cat.id === id);
-    return Promise.resolve(category);
+  static getCategoryById = async (id: string): Promise<Category | undefined> => {
+    try {
+      const globalCategory = await GlobalCategoryService.getCategoryById(id);
+      if (globalCategory) {
+        return convertToAdminCategory(globalCategory);
+      }
+      return undefined;
+    } catch (error) {
+      console.error(`Error fetching category with ID ${id}:`, error);
+      return undefined;
+    }
   };
 
   /**
    * Create a new category
    */
-  static createCategory = async (
-    category: Omit<Category, "id">
-  ): Promise<Category> => {
-    const newCategory = {
-      ...category,
-      id: String(Math.max(...mockCategories.map((c) => parseInt(c.id))) + 1),
-    };
-    mockCategories.push(newCategory as Category);
-    return Promise.resolve(newCategory as Category);
+  static createCategory = async (category: Omit<Category, "id">): Promise<Category> => {
+    try {
+      // Use the API to create a category
+      const token = localStorage.getItem('token');
+      if (!token) {
+        throw new Error('Authentication token is missing');
+      }
+
+      const response = await axios.post(
+        `${API_BASE_URL}/categories`,
+        category,
+        {
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          }
+        }
+      );
+
+      const createdCategory = response.data.data;
+      return convertToAdminCategory(createdCategory);
+    } catch (error) {
+      console.error("Error creating category:", error);
+      throw error;
+    }
   };
 
   /**
    * Update an existing category
    */
   static updateCategory = async (category: Category): Promise<Category> => {
-    const index = mockCategories.findIndex((c) => c.id === category.id);
-    if (index !== -1) {
-      mockCategories[index] = category;
+    try {
+      // Use the API to update a category
+      const token = localStorage.getItem('token');
+      if (!token) {
+        throw new Error('Authentication token is missing');
+      }
+
+      // Convert to global category format for API
+      const globalCategory = convertToGlobalCategory(category);
+
+      const response = await axios.put(
+        `${API_BASE_URL}/categories/${globalCategory.id}`,
+        globalCategory,
+        {
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          }
+        }
+      );
+
+      const updatedCategory = response.data.data;
+      return convertToAdminCategory(updatedCategory);
+    } catch (error) {
+      console.error("Error updating category:", error);
+      throw error;
     }
-    return Promise.resolve(category);
   };
 
   /**
-   * Delete a category
+   * Delete a category by ID
    */
   static deleteCategory = async (id: string): Promise<boolean> => {
-    const index = mockCategories.findIndex((c) => c.id === id);
-    if (index !== -1) {
-      mockCategories.splice(index, 1);
-      return Promise.resolve(true);
+    try {
+      // Use the API to delete a category
+      const token = localStorage.getItem('token');
+      if (!token) {
+        throw new Error('Authentication token is missing');
+      }
+
+      await axios.delete(
+        `${API_BASE_URL}/categories/${id}`,
+        {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        }
+      );
+
+      return true;
+    } catch (error) {
+      console.error(`Error deleting category with ID ${id}:`, error);
+      return false;
     }
-    return Promise.resolve(false);
   };
 
   /**
-   * Get counts for different product filters
-   * In a real implementation, this would fetch from an API
+   * Get counts for each filter type
    */
   static getCategoryFilterCounts = async (): Promise<CategoryFilterCounts> => {
-    // Calculate total products
-    const totalProducts = mockCategories.reduce(
-      (sum, cat) => sum + (cat.productCount || 0),
-      0
-    );
+    try {
+      const globalCategories = await GlobalCategoryService.getAllCategories();
 
-    // Mock featured products (about 30% of total)
-    const featured = Math.floor(totalProducts * 0.3);
+      // Convert global categories to admin categories
+      const categories: Category[] = globalCategories.map(convertToAdminCategory);
 
-    // Mock on sale products (about 20% of total)
-    const onSale = Math.floor(totalProducts * 0.2);
+      // Count for all categories
+      const all = categories.length;
 
-    // Mock out of stock products (about 10% of total)
-    const outOfStock = Math.floor(totalProducts * 0.1);
+      // Count for categories with more products (featured)
+      const featured = categories.filter(cat => (cat.productCount || 0) > 20).length;
 
-    return Promise.resolve({
-      all: totalProducts,
-      featured,
-      onSale,
-      outOfStock,
-    });
+      // Count for categories with medium products (on sale)
+      const onSale = categories.filter(cat => {
+        const count = cat.productCount || 0;
+        return count >= 10 && count <= 30;
+      }).length;
+
+      // Count for categories with low products (out of stock)
+      const outOfStock = categories.filter(cat => (cat.productCount || 0) < 10).length;
+
+      return {
+        all,
+        featured,
+        onSale,
+        outOfStock
+      };
+    } catch (error) {
+      console.error("Error fetching filter counts:", error);
+      return {
+        all: 0,
+        featured: 0,
+        onSale: 0,
+        outOfStock: 0
+      };
+    }
   };
 }
-
-// Export a singleton instance
-export const categoryService = new CategoryService();

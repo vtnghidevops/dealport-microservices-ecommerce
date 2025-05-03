@@ -239,7 +239,8 @@ class AuthService {
         password: userData.password,
         first_name: userData.firstName,
         last_name: userData.lastName,
-        username: userData.username // Use the provided username directly
+        username: userData.username, // Use the provided username directly
+        phone: userData.phone ? userData.phone : null
       };
 
       // Log registration data for debugging (without password)
@@ -616,4 +617,232 @@ class AuthService {
   }
 }
 
-export default new AuthService(); 
+// Create and export instance
+const authService = new AuthService();
+
+// Export service instance and direct API functions
+export default authService;
+
+// Legacy functions to support direct import
+export const login = async (data: UserLoginCredentials) => {
+  return authService.login(data);
+};
+
+export const register = async (data: UserRegistrationData) => {
+  return authService.register(data);
+};
+
+// Define a UserProfileData interface for the updateProfile function
+interface UserProfileData {
+  firstName?: string;
+  lastName?: string;
+  email?: string;
+  [key: string]: any;
+}
+
+export const getProfile = async () => {
+  try {
+    const response = await apiClient.get("/user/profile");
+    return response.data;
+  } catch (error: any) {
+    console.error('Error getting profile:', error);
+    throw error;
+  }
+};
+
+export const updateProfile = async (data: UserProfileData) => {
+  try {
+    const response = await apiClient.put("/user/profile", data);
+    return response.data;
+  } catch (error: any) {
+    console.error('Error updating profile:', error);
+    throw error;
+  }
+};
+
+export const logout = async () => {
+  return authService.logout();
+};
+
+export const forgotPassword = async (email: string) => {
+  try {
+    // Kiểm tra tài khoản tồn tại trước khi yêu cầu đặt lại mật khẩu
+    await checkAccountExists(email);
+
+    // Yêu cầu password reset thông qua API password-reset của broker
+    const response = await apiClient.post("auth/password-reset", { email });
+    console.log("Password reset response:", response.data);
+    return response.data;
+  } catch (error: any) {
+    console.error('Error initiating password reset:', error);
+    throw error;
+  }
+};
+
+export const resetPassword = async (email: string, password: string, token: string) => {
+  try {
+    // Normalize email to lowercase to ensure consistency with the backend
+    const normalizedEmail = email.toLowerCase().trim();
+
+    // Kiểm tra tài khoản tồn tại trước khi cập nhật mật khẩu
+    await checkAccountExists(normalizedEmail);
+
+    // Log debug info about token without revealing sensitive details
+    console.log(`Token provided (length: ${token.length})`);
+
+    // Prepare the request payload
+    const payload = {
+      token,  // Send the token as-is, without any modifications
+      password,
+      email: normalizedEmail // Use normalized email
+    };
+
+    console.log("Sending password update request with payload:",
+      { ...payload, password: "[MASKED]", token: `${token.substring(0, 10)}...` });
+
+    // Sử dụng API password-update để cập nhật mật khẩu
+    const response = await apiClient.post("/auth/password-update", payload);
+    console.log("Password update response:", response.data);
+
+    // Ensure we return a consistent response format
+    return {
+      success: response.data.success || response.data.data?.success || !response.data.error,
+      message: response.data.message || response.data.data?.message || "Password updated successfully",
+      data: response.data.data || response.data
+    };
+  } catch (error: any) {
+    console.error('Error resetting password:', error);
+    throw new Error(error.response?.data?.message || error.message || "Failed to update password");
+  }
+};
+
+// OTP related functions
+export const requestOTP = async (email: string, purpose: string) => {
+  try {
+    // Kiểm tra tài khoản tồn tại trước khi gửi OTP
+    await checkAccountExists(email);
+
+    // Sử dụng API request-otp để yêu cầu OTP mới
+    const response = await apiClient.post("/auth/request-otp", {
+      email,
+      purpose
+    });
+    console.log("Request OTP response:", response.data);
+    return response.data;
+  } catch (error: any) {
+    console.error('Error requesting OTP:', error);
+    throw error;
+  }
+};
+
+export const verifyOTP = async (email: string, otp: string, purpose: string) => {
+  try {
+    // Kiểm tra tài khoản tồn tại trước khi xác thực OTP
+    await checkAccountExists(email);
+
+    if (purpose === 'password_reset') {
+      // Sử dụng API verify-password-reset để xác minh OTP cho đặt lại mật khẩu
+      const response = await apiClient.post("/auth/verify-password-reset", {
+        email,
+        otp,
+        purpose
+      });
+      console.log("Verify password reset OTP response:", response.data);
+      return response.data;
+    } else {
+      // Sử dụng API verify-registration để xác minh OTP cho đăng ký
+      const response = await apiClient.post("/auth/verify-registration", {
+        email,
+        otp,
+        purpose
+      });
+      console.log("Verify registration OTP response:", response.data);
+      return response.data;
+    }
+  } catch (error: any) {
+    console.error('Error verifying OTP:', error);
+    throw error;
+  }
+};
+
+export const resendOTP = async (email: string, purpose: string) => {
+  try {
+    // Kiểm tra tài khoản tồn tại trước khi gửi lại OTP
+    await checkAccountExists(email);
+
+    // Gửi lại OTP bằng cách dùng lại endpoint request-otp
+    const response = await apiClient.post("/auth/request-otp", {
+      email,
+      purpose
+    });
+    console.log("Resend OTP response:", response.data);
+    return response.data;
+  } catch (error: any) {
+    console.error('Error resending OTP:', error);
+    throw error;
+  }
+};
+
+// Thêm phương thức kiểm tra tài khoản tồn tại
+export const checkAccountExists = async (email: string): Promise<boolean> => {
+  try {
+    // Gọi API kiểm tra tài khoản
+    const response = await apiClient.post("/auth/check-account", { email });
+    console.log("Check account response:", response.data);
+
+    const exists = response.data.exists || response.data.data?.exists || false;
+
+    if (!exists) {
+      throw new Error("Account not found. Please check your email or create a new account.");
+    }
+
+    return exists;
+  } catch (error: any) {
+    // Nếu lỗi do API (như 404 Not Found), có nghĩa là tài khoản không tồn tại
+    if (error.response && error.response.status === 404) {
+      throw new Error("Account not found. Please check your email or create a new account.");
+    }
+
+    // Nếu lỗi từ phản hồi API
+    if (error.response && error.response.data) {
+      throw new Error(error.response.data.message || error.response.data.error || "Failed to verify account");
+    }
+
+    // Nếu là lỗi tự tạo, ném lại
+    if (error instanceof Error) {
+      throw error;
+    }
+
+    // Lỗi không xác định
+    throw new Error("Failed to check if account exists");
+  }
+};
+
+export const changePassword = async (currentPassword: string, newPassword: string) => {
+  try {
+    // Get token from localStorage
+    const token = localStorage.getItem('token');
+    if (!token) {
+      throw new Error("You are not logged in. Please log in to change your password.");
+    }
+
+    // Sử dụng endpoint password-update với current_password để cập nhật mật khẩu
+    const response = await apiClient.post("/auth/password-update", {
+      current_password: currentPassword,
+      password: newPassword,
+      token: token  // Send the token explicitly in the request body
+    });
+
+    console.log("Change password response:", response.data);
+    return response.data;
+  } catch (error: any) {
+    console.error('Error changing password:', error);
+
+    // Handle specific error messages from backend
+    if (error.response && error.response.data) {
+      throw new Error(error.response.data.message || error.response.data.error || "Failed to change password");
+    }
+
+    throw error;
+  }
+}; 

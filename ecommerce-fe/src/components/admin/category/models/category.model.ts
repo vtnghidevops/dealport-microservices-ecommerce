@@ -1,13 +1,11 @@
 // Category model definition for the application
-export interface Category {
-  id: string;
-  name: string;
-  slug: string;
-  imageUrl: string; // Path or name of icon
-  productCount: number; // Optional count of products in this category
+import { Category as GlobalCategory } from '@/types/category.model';
+
+// Extend the global category model to make it compatible with the admin category model
+export interface Category extends Omit<GlobalCategory, 'id'> {
+  id: string; // ID as string in admin module
   createdAt: Date;
   updatedAt: Date;
-  isActive: boolean;
 }
 
 // Category filter options
