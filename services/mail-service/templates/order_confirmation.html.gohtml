@@ -1,0 +1,282 @@
+{{define "body"}}
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Order Confirmation</title>
+  <style>
+    body {
+      font-family: Arial, Helvetica, sans-serif;
+      line-height: 1.6;
+      color: #333;
+      margin: 0;
+      padding: 0;
+      max-width: 600px;
+      margin: 0 auto;
+    }
+
+    .header {
+      background-color: #F15A29;
+      padding: 20px;
+      text-align: center;
+    }
+
+    .header img {
+      max-width: 120px;
+    }
+
+    .content {
+      padding: 20px;
+    }
+
+    .order-title {
+      text-align: center;
+      font-size: 24px;
+      font-weight: bold;
+      margin: 20px 0;
+    }
+
+    .divider {
+      border-top: 1px solid #ddd;
+      margin: 20px 0;
+    }
+
+    .order-number {
+      font-weight: bold;
+      margin-bottom: 5px;
+    }
+
+    .order-date {
+      color: #666;
+      font-size: 14px;
+      margin-bottom: 20px;
+    }
+
+    .personal-greeting {
+      margin-bottom: 15px;
+    }
+
+    .order-message {
+      margin-bottom: 25px;
+    }
+
+    .items-title {
+      font-weight: bold;
+      text-transform: uppercase;
+      margin-bottom: 15px;
+    }
+
+    .item {
+      display: flex;
+      margin-bottom: 25px;
+    }
+
+    .item-image {
+      width: 80px;
+      margin-right: 15px;
+    }
+
+    .item-image img {
+      max-width: 100%;
+    }
+
+    .item-details {
+      flex-grow: 1;
+    }
+
+    .item-name {
+      font-weight: bold;
+      margin-bottom: 5px;
+    }
+
+    .item-variant {
+      color: #666;
+      font-size: 14px;
+      margin-bottom: 5px;
+    }
+
+    .item-expected {
+      color: #F15A29;
+      font-size: 14px;
+    }
+
+    .price-summary {
+      margin-top: 10px;
+    }
+
+    .price-row {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 10px;
+    }
+
+    .price-label {
+      flex-grow: 1;
+    }
+
+    .price-value {
+      text-align: right;
+    }
+
+    .total {
+      font-weight: bold;
+      font-size: 16px;
+    }
+
+    .payment-info {
+      margin-top: 30px;
+      margin-bottom: 15px;
+    }
+
+    .payment-title {
+      font-weight: bold;
+      margin-bottom: 5px;
+    }
+
+    .payment-method {
+      display: flex;
+      align-items: center;
+    }
+
+    .card-icon {
+      margin-right: 10px;
+    }
+
+    .address-container {
+      display: flex;
+      justify-content: space-between;
+      margin-top: 25px;
+    }
+
+    .address-block {
+      width: 48%;
+    }
+
+    .address-title {
+      font-weight: bold;
+      margin-bottom: 5px;
+    }
+
+    .address-content {
+      font-size: 14px;
+      line-height: 1.4;
+    }
+
+    .order-status-btn {
+      display: block;
+      background-color: #222;
+      color: white;
+      text-align: center;
+      padding: 12px;
+      text-decoration: none;
+      font-weight: bold;
+      margin: 30px auto;
+      max-width: 250px;
+    }
+
+    .contact-info {
+      text-align: center;
+      font-size: 14px;
+      color: #F15A29;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="header">
+    <img src="https://vntech.com/images/logo-white.png" alt="VNTECH"
+      onerror="this.src='https://placehold.co/200x50/F15A29/FFFFFF?text=VNTECH'">
+  </div>
+
+  <div class="content">
+    <div class="order-title">ORDER CONFIRMATION</div>
+
+    <div class="divider"></div>
+
+    <div class="order-number">ORDER #{{ .order_number }}</div>
+    <div class="order-date">{{ .order_date }}</div>
+
+    <div class="personal-greeting">Hi {{ .customer_name }},</div>
+
+    <div class="order-message">Thank you for your purchase, this email confirms your order. We will send you another
+      email as soon as it ships.</div>
+
+    <div class="items-title">ITEMS ORDERED</div>
+
+    {{ if .items }}
+    <div class="item">
+      <div class="item-image">
+        <img src="https://placehold.co/80x80/f0f0f0/999999?text=Product" alt="Product">
+      </div>
+      <div class="item-details">
+        <div class="item-name">{{ .items }}</div>
+      </div>
+    </div>
+    {{ end }}
+
+    <div class="price-summary">
+      <div class="price-row">
+        <div class="price-label">Subtotal</div>
+        <div class="price-label">: </div>
+        <div class="price-value ml-3">${{ .total }}</div>
+      </div>
+      <div class="price-row">
+        <div class="price-label">Economy Shipping</div>
+        <div class="price-label">:</div>
+        <div class="price-value ml-3">$0.00</div>
+      </div>
+      <div class="price-row total">
+        <div class="price-label">Total</div>
+        <div class="price-label">: </div>
+        <div class="price-value ml-3">${{ .total }}</div>
+      </div>
+    </div>
+
+    <div class="payment-info">
+      <div class="payment-title">Payment Info</div>
+      <div class="payment-method">
+        <div class="card-icon">
+          {{ if eq .payment_method "Credit/Debit Card" }}
+          <span style="font-family: monospace; font-weight: bold;">VISA</span>
+          {{ else }}
+          <span style="font-weight: bold;">{{ .payment_method }}</span>
+          {{ end }}
+        </div>
+        <div>${{ .total }}</div>
+      </div>
+    </div>
+
+    <div class="address-container">
+      <div class="address-block">
+        <div class="address-title">Shipping Address</div>
+        <div class="address-content">
+          {{ .customer_name }}<br>
+          {{ if .shipping_address }}{{ .shipping_address }}{{ else }}Address not available{{ end }}<br>
+          {{ if .shipping_phone }}Tel. {{ .shipping_phone }}{{ end }}
+        </div>
+      </div>
+
+      <div class="address-block">
+        <div class="address-title">Customer</div>
+        <div class="address-content">
+          {{ .customer_name }}<br>
+          {{ if .shipping_address }}{{ .shipping_address }}{{ else }}Address not available{{ end }}<br>
+          {{ if .shipping_phone }}Tel. {{ .shipping_phone }}{{ else }}{{ end }}<br>
+          {{ .user_email }}
+        </div>
+      </div>
+    </div>
+
+    <a href="{{ .order_url }}" class="order-status-btn">VIEW ORDER STATUS</a>
+
+    <div class="contact-info">
+      If you have any questions, please contact us at<br>
+      support@vntech.com or (+84) 123-456-789
+    </div>
+  </div>
+</body>
+
+</html>
+{{end}}

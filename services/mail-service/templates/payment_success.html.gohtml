@@ -1,0 +1,308 @@
+{{define "body"}}
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Payment Confirmation</title>
+  <style>
+    :root {
+      --primary-color: #4b6cb7;
+      --secondary-color: #182848;
+      --accent-color: #FF9800;
+      --success-color: #4CAF50;
+      --text-color: #333;
+      --light-text: #777;
+      --bg-color: #f9f9f9;
+      --border-color: #ddd;
+    }
+
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      line-height: 1.6;
+      color: var(--text-color);
+      background-color: #f5f5f5;
+      margin: 0;
+      padding: 0;
+    }
+
+    .container {
+      max-width: 600px;
+      margin: 0 auto;
+      background-color: #fff;
+      border-radius: 8px;
+      overflow: hidden;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+
+    .header {
+      background: linear-gradient(135deg, var(--success-color) 0%, #2E7D32 100%);
+      color: white;
+      padding: 30px 20px;
+      text-align: center;
+    }
+
+    .header h1 {
+      margin: 0;
+      font-size: 28px;
+      font-weight: 600;
+    }
+
+    .header p {
+      margin: 5px 0 0;
+      opacity: 0.9;
+      font-size: 16px;
+    }
+
+    .content {
+      padding: 30px 25px;
+      background-color: #fff;
+    }
+
+    .payment-success {
+      background-color: #e8f5e9;
+      border-left: 4px solid var(--success-color);
+      padding: 20px;
+      margin-bottom: 25px;
+      border-radius: 4px;
+      text-align: center;
+    }
+
+    .payment-success-icon {
+      font-size: 48px;
+      color: var(--success-color);
+      margin-bottom: 10px;
+    }
+
+    .payment-success h2 {
+      margin: 0 0 10px;
+      color: var(--success-color);
+      font-size: 22px;
+    }
+
+    .payment-success p {
+      margin: 0;
+      font-size: 16px;
+    }
+
+    .payment-details {
+      margin-top: 25px;
+      padding: 20px;
+      background-color: var(--bg-color);
+      border-radius: 8px;
+      border: 1px solid var(--border-color);
+    }
+
+    .payment-details h2 {
+      margin-top: 0;
+      color: var(--secondary-color);
+      font-size: 20px;
+      border-bottom: 1px solid var(--border-color);
+      padding-bottom: 10px;
+    }
+
+    .payment-info {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 15px;
+      margin-bottom: 20px;
+    }
+
+    .payment-info-item {
+      flex: 1;
+      min-width: 150px;
+    }
+
+    .payment-info-item p {
+      margin: 5px 0;
+    }
+
+    .payment-info-label {
+      font-weight: bold;
+      color: var(--secondary-color);
+      font-size: 14px;
+    }
+
+    .payment-info-value {
+      font-size: 15px;
+    }
+
+    .order-summary {
+      margin-top: 25px;
+      padding: 20px;
+      background-color: var(--bg-color);
+      border-radius: 8px;
+      border: 1px solid var(--border-color);
+    }
+
+    .order-summary h2 {
+      margin-top: 0;
+      color: var(--secondary-color);
+      font-size: 20px;
+      border-bottom: 1px solid var(--border-color);
+      padding-bottom: 10px;
+    }
+
+    .order-summary-row {
+      display: flex;
+      justify-content: space-between;
+      padding: 8px 0;
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    .order-summary-row:last-child {
+      border-bottom: none;
+    }
+
+    .order-summary-label {
+      font-weight: bold;
+    }
+
+    .order-total {
+      font-size: 18px;
+      color: var(--primary-color);
+      font-weight: bold;
+    }
+
+    .btn {
+      display: inline-block;
+      background-color: var(--primary-color);
+      color: white;
+      padding: 12px 25px;
+      text-decoration: none;
+      border-radius: 4px;
+      font-weight: 500;
+      margin-top: 15px;
+      text-align: center;
+    }
+
+    .help-section {
+      margin-top: 30px;
+      padding: 20px;
+      background-color: #fff;
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+    }
+
+    .help-section h3 {
+      margin-top: 0;
+      color: var(--secondary-color);
+      font-size: 18px;
+    }
+
+    .footer {
+      text-align: center;
+      padding: 25px 15px;
+      background-color: var(--bg-color);
+      color: var(--light-text);
+      font-size: 13px;
+      border-top: 1px solid var(--border-color);
+    }
+
+    .social-links {
+      margin: 15px 0;
+    }
+
+    .social-link {
+      display: inline-block;
+      margin: 0 5px;
+      color: var(--primary-color);
+      text-decoration: none;
+    }
+
+    @media only screen and (max-width: 600px) {
+      .payment-info-item {
+        flex: 100%;
+      }
+
+      .header h1 {
+        font-size: 24px;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>Payment Successful</h1>
+      <p>Thank you for your payment!</p>
+    </div>
+
+    <div class="content">
+      <p>Dear Customer,</p>
+
+      <p>We're pleased to confirm that your payment for order #{{ .order_number }} has been successfully processed.</p>
+
+      <div class="payment-success">
+        <div class="payment-success-icon">✓</div>
+        <h2>Payment Confirmed</h2>
+        <p>Your transaction has been completed successfully.</p>
+      </div>
+
+      <div class="payment-details">
+        <h2>Payment Details</h2>
+
+        <div class="payment-info">
+          <div class="payment-info-item">
+            <p class="payment-info-label">Transaction ID:</p>
+            <p class="payment-info-value">{{ .transaction_id }}</p>
+          </div>
+
+          <div class="payment-info-item">
+            <p class="payment-info-label">Payment Date:</p>
+            <p class="payment-info-value">{{ .payment_date }}</p>
+          </div>
+
+          <div class="payment-info-item">
+            <p class="payment-info-label">Payment Method:</p>
+            <p class="payment-info-value">{{ .payment_method }}</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="order-summary">
+        <h2>Order Summary</h2>
+
+        <div class="order-summary-row">
+          <span class="order-summary-label">Order Number:</span>
+          <span>{{ .order_number }}</span>
+        </div>
+
+        <div class="order-summary-row">
+          <span class="order-summary-label">Currency:</span>
+          <span>{{ .currency }}</span>
+        </div>
+
+        <div class="order-summary-row">
+          <span class="order-summary-label">Amount:</span>
+          <span class="order-total">${{ .amount }}</span>
+        </div>
+      </div>
+
+      <div style="text-align: center; margin-top: 30px;">
+        <a href="https://vntech.com/orders/{{ .order_id }}" class="btn">View Order Details</a>
+      </div>
+
+      <div class="help-section">
+        <h3>Need Help?</h3>
+        <p>If you have any questions about your payment or order, please contact our customer support team:</p>
+        <p>Email: support@vntech.com | Phone: +84 123 456 789</p>
+      </div>
+    </div>
+
+    <div class="footer">
+      <p>Thank you for shopping with VNTech!</p>
+      <div class="social-links">
+        <a href="#" class="social-link">Facebook</a> |
+        <a href="#" class="social-link">Instagram</a> |
+        <a href="#" class="social-link">Twitter</a>
+      </div>
+      <p>&copy; {{ .year }} VNTech. All rights reserved.</p>
+    </div>
+  </div>
+</body>
+
+</html>
+{{end}}

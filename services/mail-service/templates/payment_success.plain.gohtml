@@ -1,0 +1,34 @@
+{{define "body"}}
+PAYMENT SUCCESSFUL
+=================
+
+Dear Customer,
+
+We're pleased to confirm that your payment for order #{{ .order_number }} has been successfully processed.
+
+PAYMENT CONFIRMED
+Your transaction has been completed successfully.
+
+PAYMENT DETAILS:
+-------------
+Transaction ID: {{ .transaction_id }}
+Payment Date: {{ .payment_date }}
+Payment Method: {{ .payment_method }}
+
+ORDER SUMMARY:
+-----------
+Order Number: {{ .order_number }}
+Currency: {{ .currency }}
+Amount: ${{ .amount }}
+
+View your order details: https://vntech.com/orders/{{ .order_id }}
+
+NEED HELP?
+---------
+If you have any questions about your payment or order, please contact our customer support team:
+Email: support@vntech.com | Phone: +84 123 456 789
+
+Thank you for shopping with VNTech!
+
+© {{ .year }} VNTech. All rights reserved.
+{{end}}

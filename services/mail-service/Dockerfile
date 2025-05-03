@@ -1,23 +1,24 @@
 # base image
-FROM golang:1.18-alpine AS builder
-
-RUN mkdir /app
-
-COPY . /app
+FROM golang:1.24-alpine AS builder
 
 WORKDIR /app
 
-RUN CGO_ENABLE=0 go build -o mail-service ./cmd/api
+COPY . .
 
-RUN chmod +x /app/mail-service
+RUN CGO_ENABLED=0 go build -o mailApp ./cmd/api
 
-# final stage with tiny img
+# Lightweight runtime image
 FROM alpine:latest
 
-RUN mkdir /app
-COPY --from=builder /app/mail-service /app
+WORKDIR /app
+
+COPY --from=builder /app/mailApp .
 COPY --from=builder /app/templates /app/templates
+COPY --from=builder /app/.env .
 
+# Expose mail service port
+EXPOSE 9002
 
-CMD ["/app/mail-service"]
+# Entry point for the application
+CMD ["/app/mailApp"]
 

@@ -1,0 +1,24 @@
+{{define "body"}}
+OTP VERIFICATION CODE
+
+Hello,
+
+{{.message}}
+
+Your OTP verification code is: {{.otp}}
+
+Please enter this code to complete your {{.action}}.
+
+Please note:
+- This code will expire in {{.expires_in}} minutes
+- If you did not request this code, please ignore this email
+
+If you need any assistance, please contact our support team at support@ourplatform.com.
+
+Best regards,
+The Team
+
+---
+© {{.year}} Our Platform. All rights reserved.
+This email was sent to {{.email}}. If you received this by mistake, please ignore this email.
+{{end}}

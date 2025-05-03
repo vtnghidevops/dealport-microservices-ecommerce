@@ -1,0 +1,105 @@
+{{define "body"}}
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>OTP Verification</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      line-height: 1.6;
+      color: #333;
+      max-width: 600px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+
+    .header {
+      background-color: #4CAF50;
+      color: white;
+      padding: 20px;
+      text-align: center;
+      border-radius: 5px 5px 0 0;
+    }
+
+    .content {
+      padding: 20px;
+      background-color: #f9f9f9;
+      border: 1px solid #ddd;
+      border-top: none;
+      border-radius: 0 0 5px 5px;
+    }
+
+    .footer {
+      text-align: center;
+      margin-top: 20px;
+      font-size: 12px;
+      color: #666;
+    }
+
+    .otp-container {
+      margin: 20px 0;
+      text-align: center;
+    }
+
+    .otp-code {
+      font-size: 32px;
+      font-weight: bold;
+      letter-spacing: 5px;
+      color: #4CAF50;
+      padding: 15px;
+      background-color: #f0f0f0;
+      border-radius: 5px;
+      display: inline-block;
+    }
+
+    .warning {
+      color: #777;
+      font-size: 12px;
+      margin-top: 20px;
+      padding: 10px;
+      background-color: #f7f7f7;
+      border-left: 3px solid #4CAF50;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="header">
+    <h1>OTP Verification Code</h1>
+  </div>
+  <div class="content">
+    <p>Hello,</p>
+
+    <p>{{.message}}</p>
+
+    <p>Your OTP verification code is:</p>
+
+    <div class="otp-container">
+      <div class="otp-code">{{.otp}}</div>
+    </div>
+
+    <p>Please enter this code to complete your {{.action}}.</p>
+
+    <div class="warning">
+      <p>Please note:</p>
+      <ul>
+        <li>This code will expire in {{.expires_in}} minutes</li>
+        <li>If you did not request this code, please ignore this email</li>
+      </ul>
+    </div>
+
+    <p>If you need any assistance, please contact our support team at support@ourplatform.com.</p>
+
+    <p>Best regards,<br>The Team</p>
+  </div>
+  <div class="footer">
+    <p>&copy; {{.year}} Our Platform. All rights reserved.</p>
+    <p>This email was sent to {{.email}}. If you received this by mistake, please ignore this email.</p>
+  </div>
+</body>
+
+</html>
+{{end}}
