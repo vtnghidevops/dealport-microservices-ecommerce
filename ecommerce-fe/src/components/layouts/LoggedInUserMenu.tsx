@@ -4,13 +4,14 @@ import { IoCartOutline } from "react-icons/io5";
 import { IoIosLogOut } from "react-icons/io";
 import { TbSettings } from "react-icons/tb";
 import { MdOutlineArrowDropDown } from "react-icons/md";
+import { FiLogOut } from "react-icons/fi";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
 import { HeaderContext } from './Header';
 
 const LoggedInUserMenu: React.FC = () => {
-  const { authState, logout } = useAuth();
+  const { authState, logout, logoutFromAllDevices } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
   const [showMenu, setShowMenu] = useState(false);
@@ -51,11 +52,32 @@ const LoggedInUserMenu: React.FC = () => {
   }, []);
 
   const handleLogout = () => {
+    console.log("LoggedInUserMenu: handleLogout called");
     logout();
+    console.log("LoggedInUserMenu: logout function completed");
     toast({
       variant: "success",
       title: "Success",
-      description: "Logged out successfully"
+      description: "Logged out successfully from current session"
+    });
+    setShowMenu(false);
+
+    // Update header state on logout
+    if (headerContext) {
+      headerContext.setForceRerender(headerContext.forceRerender + 1);
+    }
+
+    navigate('/');
+  };
+
+  const handleLogoutAllDevices = () => {
+    console.log("LoggedInUserMenu: handleLogoutAllDevices called");
+    logoutFromAllDevices();
+    console.log("LoggedInUserMenu: logoutFromAllDevices function completed");
+    toast({
+      variant: "success",
+      title: "Success",
+      description: "Logged out successfully from all devices"
     });
     setShowMenu(false);
 
@@ -99,7 +121,7 @@ const LoggedInUserMenu: React.FC = () => {
       {showMenu && (
         <div
           ref={menuRef}
-          className="absolute -right-[70px] mt-[25px] w-[200px] bg-white rounded-md shadow-lg z-50 border border-gray-200 flex flex-col items-center justify-center transition-all duration-200"
+          className="absolute -right-[70px] mt-[25px] w-[250px] bg-white rounded-md shadow-lg z-50 border border-gray-200 flex flex-col items-center justify-center transition-all duration-200"
           onMouseLeave={() => setShowMenu(false)}
         >
           {/* Triangle pointer connecting to button */}
@@ -154,7 +176,14 @@ const LoggedInUserMenu: React.FC = () => {
             onClick={handleLogout}
             className="border-b border-gray-200 w-full h-[50px] justify-start pl-5 px-4 py-2 text-[16px] text-error hover:bg-gray-100 flex items-center"
           >
-            <IoIosLogOut className="mr-2" /> Logout
+            <FiLogOut className="mr-2" /> Logout Current Session
+          </button>
+
+          <button
+            onClick={handleLogoutAllDevices}
+            className="w-full h-[50px] justify-start pl-5 px-4 py-2 text-[16px] text-error hover:bg-gray-100 flex items-center"
+          >
+            <FiLogOut className="mr-2" /> Logout All Devices
           </button>
         </div>
       )}

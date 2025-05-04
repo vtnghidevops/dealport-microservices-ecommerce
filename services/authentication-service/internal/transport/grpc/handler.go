@@ -382,6 +382,35 @@ func (h *AuthHandler) CheckAccountExists(ctx context.Context, req *pb.CheckAccou
 	}, nil
 }
 
+// Logout handles logout requests
+func (h *AuthHandler) Logout(ctx context.Context, req *pb.LogoutRequest) (*pb.LogoutResponse, error) {
+	var err error
+	
+	// Check if this is a logout from all devices
+	if req.LogoutAllDevices {
+		fmt.Printf("DEBUG gRPC Logout: Logging out from all devices for user %s\n", req.UserId)
+		err = h.authService.LogoutFromAllDevices(ctx, req.UserId, req.Email)
+	} else {
+		fmt.Printf("DEBUG gRPC Logout: Logging out from current session for user %s\n", req.UserId)
+		err = h.authService.Logout(ctx, req.UserId, req.Email)
+	}
+	
+	if err != nil {
+		return &pb.LogoutResponse{
+			Success: false,
+			Message: fmt.Sprintf("Logout failed: %v", err),
+		}, status.Error(codes.Internal, "Failed to logout user")
+	}
+
+	// Create response
+	response := &pb.LogoutResponse{
+		Success: true,
+		Message: "Logged out successfully",
+	}
+
+	return response, nil
+}
+
 // Helper function to map domain user to proto user
 func mapUserToProto(user *domain.User) *pb.UserInfo {
 	return &pb.UserInfo{

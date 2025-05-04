@@ -1,12 +1,10 @@
 package event
 
 import (
-	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
 	"log"
-	"net/http"
 	"os"
 	"strings"
 	"time"
@@ -15,7 +13,7 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 
-	pb "listener/proto/user"
+	pb "listener-service/proto/user"
 )
 
 // StandardEvent represents a standardized message format for all events
@@ -320,10 +318,31 @@ func (consumer *Consumer) Listen(topics []string) error {
 
 					if stdErr == nil && stdEvent.Name != "" {
 						// Process as a standard event
-						consumer.logger.Printf("Received standard event: %s", stdEvent.Name)
+						eventName := stdEvent.Name
+						consumer.logger.Printf("📨 Received standard event: %s", eventName)
+
+						// Special log for user activity events
+						if strings.HasPrefix(eventName, "log.INFO.user.") {
+							actionType := strings.TrimPrefix(eventName, "log.INFO.user.")
+							userID := ""
+
+							// Try to extract user ID from data
+							if data, ok := stdEvent.Data.(map[string]interface{}); ok {
+								if uid, ok := data["user_id"].(string); ok {
+									userID = uid
+								}
+							}
+
+							if userID != "" {
+								consumer.logger.Printf("👤 User activity detected: %s for user ID: %s", actionType, userID)
+							} else {
+								consumer.logger.Printf("👤 User activity detected: %s", actionType)
+							}
+						}
+
 						err := consumer.handleStandardEvent(stdEvent, d.RoutingKey)
 						if err != nil {
-							consumer.logger.Printf("Error processing standard event: %v", err)
+							consumer.logger.Printf("❌ Error processing standard event: %v", err)
 							// Nack and don't requeue to avoid infinite loop - goes to DLQ
 							d.Nack(false, false)
 						} else {
@@ -368,17 +387,72 @@ func (consumer *Consumer) Listen(topics []string) error {
 
 // handleStandardEvent processes standardized event format based on event name
 func (consumer *Consumer) handleStandardEvent(event StandardEvent, routingKey string) error {
-	// Log the event for historical purposes
+	// Log dạng đơn giản khi nhận được event
+	consumer.logger.Printf("📨 Received event: %s", event.Name)
+
+	// Ghi log sự kiện vào logger-service
 	err := consumer.logStandardEvent(event)
 	if err != nil {
-		consumer.logger.Printf("Error logging standard event: %v", err)
+		consumer.logger.Printf("Warning: Failed to log event: %v", err)
 		// Continue processing even if logging fails
 	}
 
-	// Handle other events by name
+	// Process based on event name
 	switch event.Name {
+	case "log.INFO.user.login_success":
+		// Hiển thị thông báo đăng nhập thành công
+		if data, ok := event.Data.(map[string]interface{}); ok {
+			userID, _ := data["user_id"].(string)
+			email, _ := data["email"].(string)
+			consumer.logger.Printf("👤 User login: %s (%s)", email, userID)
+		}
+		consumer.logger.Printf("✅ User activity logged: login_success")
+		return nil
+
+	case "log.INFO.user.login_failed":
+		// Hiển thị thông báo đăng nhập thất bại
+		if data, ok := event.Data.(map[string]interface{}); ok {
+			email, _ := data["email"].(string)
+			consumer.logger.Printf("🚫 Failed login attempt for user: %s", email)
+		}
+		consumer.logger.Printf("✅ User activity logged: login_failed")
+		return nil
+
+	case "log.INFO.user.registered", "log.INFO.user.profile_updated",
+		"log.INFO.user.password_changed", "log.INFO.user.password_reset_requested":
+		// Ghi log ngắn gọn
+		if data, ok := event.Data.(map[string]interface{}); ok {
+			action, _ := data["action"].(string)
+			consumer.logger.Printf("✅ User activity logged: %s", action)
+		} else {
+			consumer.logger.Printf("✅ User activity logged: %s", event.Name)
+		}
+		return nil
+
+	case "log.INFO.user.logout":
+		// Special handling for logout events
+		if data, ok := event.Data.(map[string]interface{}); ok {
+			userID, _ := data["user_id"].(string)
+			email, _ := data["email"].(string)
+			logoutType := "current session"
+
+			// Check if this was a logout from all devices
+			if metadata, ok := data["metadata"].(map[string]interface{}); ok {
+				if lt, ok := metadata["logout_type"].(string); ok && lt == "all_devices" {
+					logoutType = "all devices"
+				}
+			}
+
+			consumer.logger.Printf("🔒 User %s (%s) logged out from %s", userID, email, logoutType)
+		} else {
+			consumer.logger.Printf("🔒 User logged out (detailed info not available)")
+		}
+		consumer.logger.Printf("✅ User activity logged: logout")
+		return nil
+
 	case "user.registered":
 		// Forward to user-service to store the user
+		consumer.logger.Printf("👤 Forwarding new user registration to user-service")
 		err := consumer.forwardToUserService(event)
 		if err != nil {
 			consumer.logger.Printf("Error forwarding to user-service: %v", err)
@@ -386,6 +460,7 @@ func (consumer *Consumer) handleStandardEvent(event StandardEvent, routingKey st
 		}
 
 		// Send welcome email
+		consumer.logger.Printf("📧 Sending welcome email to new user")
 		err = consumer.sendWelcomeEmail(event)
 		if err != nil {
 			consumer.logger.Printf("Error sending welcome email: %v", err)
@@ -394,6 +469,7 @@ func (consumer *Consumer) handleStandardEvent(event StandardEvent, routingKey st
 
 	case "auth.password_reset_requested":
 		// Send password reset email
+		consumer.logger.Printf("📧 Sending password reset email")
 		err := consumer.sendPasswordResetEmail(event)
 		if err != nil {
 			consumer.logger.Printf("Error sending password reset email: %v", err)
@@ -402,6 +478,7 @@ func (consumer *Consumer) handleStandardEvent(event StandardEvent, routingKey st
 
 	case "auth.password_changed":
 		// Send password changed notification email
+		consumer.logger.Printf("📧 Sending password changed notification email")
 		err := consumer.sendPasswordChangedEmail(event)
 		if err != nil {
 			consumer.logger.Printf("Error sending password changed email: %v", err)
@@ -410,6 +487,7 @@ func (consumer *Consumer) handleStandardEvent(event StandardEvent, routingKey st
 
 	case "auth.otp_generated":
 		// Send OTP verification email
+		consumer.logger.Printf("📧 Sending OTP verification email")
 		err := consumer.sendOTPEmail(event)
 		if err != nil {
 			consumer.logger.Printf("Error sending OTP email: %v", err)
@@ -418,6 +496,7 @@ func (consumer *Consumer) handleStandardEvent(event StandardEvent, routingKey st
 
 	case "order.created":
 		// Send order confirmation email
+		consumer.logger.Printf("📧 Sending order confirmation email")
 		err := consumer.sendOrderConfirmationEmail(event)
 		if err != nil {
 			consumer.logger.Printf("Error sending order confirmation email: %v", err)
@@ -426,6 +505,7 @@ func (consumer *Consumer) handleStandardEvent(event StandardEvent, routingKey st
 
 	case "order.payment_succeeded":
 		// Send payment success email
+		consumer.logger.Printf("📧 Sending payment success email")
 		err := consumer.sendPaymentSuccessEmail(event)
 		if err != nil {
 			consumer.logger.Printf("Error sending payment success email: %v", err)
@@ -434,6 +514,7 @@ func (consumer *Consumer) handleStandardEvent(event StandardEvent, routingKey st
 
 	case "order.status_changed":
 		// Send order status notification email
+		consumer.logger.Printf("📧 Sending order status update email")
 		err := consumer.sendOrderStatusEmail(event)
 		if err != nil {
 			consumer.logger.Printf("Error sending order status email: %v", err)
@@ -441,8 +522,8 @@ func (consumer *Consumer) handleStandardEvent(event StandardEvent, routingKey st
 		}
 
 	default:
-		// Forward all other events to email-service
-		consumer.logger.Printf("Forward unhandled event type %s to appropriate service", event.Name)
+		// Forward all other events to appropriate service
+		consumer.logger.Printf("🔄 Forwarding event %s to appropriate service", event.Name)
 	}
 
 	return nil
@@ -533,32 +614,46 @@ func (consumer *Consumer) handleLegacyEvent(payload Payload) error {
 
 // Log standardized event to logger service
 func (consumer *Consumer) logStandardEvent(event StandardEvent) error {
-	jsonData, err := json.MarshalIndent(event, "", "\t")
+	// Tạo LoggerClient với địa chỉ localhost mặc định
+	consumer.logger.Printf("🔄 Creating logger client connection...")
+	loggerClient, err := NewLoggerClient("localhost:50001")
+	if err != nil {
+		consumer.logger.Printf("❌ Error creating logger client: %v", err)
+		return err
+	}
+	defer loggerClient.Close()
+
+	// Convert event to JSON
+	jsonData, err := json.Marshal(event)
 	if err != nil {
 		return fmt.Errorf("error marshaling event: %w", err)
 	}
 
-	logServiceURL := "http://logger-service:9001/logs"
+	// Extract user ID if available for better logging
+	userID := "unknown"
+	if data, ok := event.Data.(map[string]interface{}); ok {
+		if uid, ok := data["user_id"].(string); ok && uid != "" {
+			userID = uid
+		}
+	}
 
-	request, err := http.NewRequest("POST", logServiceURL, bytes.NewBuffer(jsonData))
+	// Get action type from event name
+	actionType := "event"
+	if strings.HasPrefix(event.Name, "log.INFO.user.") {
+		actionType = strings.TrimPrefix(event.Name, "log.INFO.user.")
+	}
+
+	consumer.logger.Printf("📤 Sending log to logger service: %s for user ID: %s", actionType, userID)
+
+	// Ghi log qua gRPC
+	ctx := context.Background()
+	err = loggerClient.WriteLog(ctx, event.Name, string(jsonData))
 	if err != nil {
+		consumer.logger.Printf("❌ Error logging event via gRPC: %v", err)
 		return err
 	}
 
-	request.Header.Set("Content-Type", "application/json")
-
-	client := &http.Client{}
-
-	response, err := client.Do(request)
-	if err != nil {
-		return err
-	}
-	defer response.Body.Close()
-
-	if response.StatusCode != http.StatusAccepted {
-		return fmt.Errorf("unexpected status code: %d", response.StatusCode)
-	}
-
+	consumer.logger.Printf("✅ User activity logged: %s for user ID: %s", actionType, userID)
 	return nil
 }
 
@@ -691,33 +786,31 @@ func (consumer *Consumer) forwardToUserService(event StandardEvent) error {
 	return nil
 }
 
-// Rest of the methods (sendWelcomeEmail, sendPasswordResetEmail, etc.) would go here...
-
 // logEvent logs a legacy event to the logger service
 func logEvent(entry Payload) error {
-	jsonData, _ := json.MarshalIndent(entry, "", "\t")
-
-	logServiceURL := "http://localhost:9001/logs"
-
-	request, err := http.NewRequest("POST", logServiceURL, bytes.NewBuffer(jsonData))
+	// Tạo LoggerClient với địa chỉ localhost mặc định
+	loggerClient, err := NewLoggerClient("localhost:50001")
 	if err != nil {
+		log.Printf("Error creating logger client: %v", err)
 		return err
 	}
+	defer loggerClient.Close()
 
-	request.Header.Set("Content-Type", "application/json")
-
-	client := &http.Client{}
-
-	response, err := client.Do(request)
+	// Convert payload to JSON
+	jsonData, err := json.Marshal(entry)
 	if err != nil {
-		return err
-	}
-	defer response.Body.Close()
-
-	if response.StatusCode != http.StatusAccepted {
-		return err
+		return fmt.Errorf("error marshaling payload: %w", err)
 	}
 
+	// Ghi log qua gRPC
+	ctx := context.Background()
+	err = loggerClient.WriteLog(ctx, entry.Name, string(jsonData))
+	if err != nil {
+		log.Printf("Error logging event via gRPC: %v", err)
+		return err
+	}
+
+	log.Printf("Legacy event logged: %s", entry.Name)
 	return nil
 }
 
@@ -797,8 +890,15 @@ func publishEmailEvent(emailType, data string) error {
 		return fmt.Errorf("error marshalling email payload: %w", err)
 	}
 
+	// Determine RabbitMQ connection URL
+	rabbitURL := "amqp://guest:guest@localhost:5672"
+
+	if os.Getenv("RABBITMQ_URL") != "" {
+		rabbitURL = os.Getenv("RABBITMQ_URL")
+	}
+
 	// Connect to RabbitMQ
-	conn, err := amqp.Dial("amqp://guest:guest@rabbitmq")
+	conn, err := amqp.Dial(rabbitURL)
 	if err != nil {
 		return fmt.Errorf("error connecting to RabbitMQ: %w", err)
 	}

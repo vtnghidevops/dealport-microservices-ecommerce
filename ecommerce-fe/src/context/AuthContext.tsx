@@ -13,19 +13,24 @@ const initialState: AuthState = {
   error: null
 };
 
-// Create the context
-export const AuthContext = createContext<{
+// Define AuthContextType interface
+type AuthContextType = {
   authState: AuthState;
   login: (email: string, password: string) => Promise<{ success: boolean, error?: string }>;
   register: (userData: UserRegistrationData) => Promise<boolean>;
-  logout: () => void;
+  logout: (logoutFromAllDevices?: boolean) => void;
+  logoutFromAllDevices: () => void;
   updateProfile: (userData: Partial<User>) => Promise<void>;
-}>({
+};
+
+// Create the context with a default empty value
+export const AuthContext = createContext<AuthContextType>({
   authState: initialState,
-  login: async () => ({ success: false, error: 'Not implemented' }),
+  login: async () => ({ success: false }),
   register: async () => false,
   logout: () => { },
-  updateProfile: async () => { }
+  logoutFromAllDevices: () => { },
+  updateProfile: async () => { },
 });
 
 // Create provider
@@ -358,9 +363,26 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   };
 
   // Logout function
-  const logout = () => {
-    authService.logout();
-    setAuthState(initialState);
+  const logout = (logoutFromAllDevices = false) => {
+    console.log("AuthContext: Calling logout with logoutFromAllDevices =", logoutFromAllDevices);
+    authService.logout(logoutFromAllDevices);
+
+    // Update auth state with initialState
+    setAuthState({
+      user: null,
+      accessToken: null,
+      isAuthenticated: false,
+      isLoading: false,
+      error: null
+    });
+
+    console.log("AuthContext: Auth state updated after logout");
+  };
+
+  // Specialized function to logout from all devices
+  const logoutFromAllDevices = () => {
+    console.log("AuthContext: Calling logoutFromAllDevices");
+    logout(true);
   };
 
   // Update profile function
@@ -390,7 +412,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   };
 
   return (
-    <AuthContext.Provider value={{ authState, login, register, logout, updateProfile }}>
+    <AuthContext.Provider value={{ authState, login, register, logout, logoutFromAllDevices, updateProfile }}>
       {children}
     </AuthContext.Provider>
   );

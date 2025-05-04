@@ -1,8 +1,7 @@
 package main
 
 import (
-	"fmt"
-	"listener/event"
+	"listener-service/event"
 	"log"
 	"math"
 	"os"
@@ -12,95 +11,88 @@ import (
 )
 
 func main() {
-	// try to connect to rabbitmq
-	rabbitConn, err := connect()
+	// Create a logger
+	logger := log.New(os.Stdout, "listener-service ", log.LstdFlags)
+	logger.Println("Starting listener service...")
+
+	// Connect to RabbitMQ
+	rabbitConn, err := connectToRabbitMQ()
 	if err != nil {
-		log.Println(err)
-		os.Exit(1)
+		logger.Fatalf("Failed to connect to RabbitMQ: %v", err)
 	}
 	defer rabbitConn.Close()
 
-	// start listening for messages
-	log.Println("Listening for and consuming RabbitMQ messages...")
-
-	// create consumer
+	// Setup consumer
 	consumer, err := event.NewConsumer(rabbitConn)
 	if err != nil {
-		log.Printf("Error creating consumer: %v", err)
-		os.Exit(1)
+		logger.Fatalf("Failed to create consumer: %v", err)
 	}
 
-	// define topics to listen for
+	// Watch the queue for events
+	logger.Println("Listening for events...")
+
+	// List all topics we want to listen to
 	topics := []string{
-		"log.INFO",
-		"log.WARNING",
-		"log.ERROR",
-		"user.registered",
-		"user.password_changed",
-		"email.send",
-		// Add new topics for order events
-		"order.created",
-		"order.payment_succeeded",
-		"order.status_changed",
+		"log.INFO.#",                             // All log events
+		"user.registered",                        // User registration
+		"auth.password_reset_requested",          // Password reset requested
+		"auth.password_changed",                  // Password changed
+		"auth.otp_generated",                     // OTP generation
+		"email.send",                             // Email sending
+		"order.created",                          // Order creation
+		"order.status_changed",                   // Order status changes
+		"order.payment_succeeded",                // Payment success
+		"log.INFO.user.login_success",            // User login successful
+		"log.INFO.user.login_failed",             // User login failed
+		"log.INFO.user.registered",               // User registration
+		"log.INFO.user.profile_updated",          // User profile updated
+		"log.INFO.user.password_changed",         // User password changed
+		"log.INFO.user.password_reset_requested", // User password reset requested
+		"log.INFO.user.logout",                   // User logout
 	}
 
-	// watch the queue and consume events
+	logger.Printf("Listener service is watching for the following topics: %v", topics)
+
+	// Listen for messages
 	err = consumer.Listen(topics)
 	if err != nil {
-		log.Println(err)
+		logger.Fatalf("Failed to listen for messages: %v", err)
 	}
 }
 
-func connect() (*amqp.Connection, error) {
+// connectToRabbitMQ attempts to connect to RabbitMQ with exponential backoff
+func connectToRabbitMQ() (*amqp.Connection, error) {
 	var counts int64
-	var backOff = 1 * time.Second
 	var connection *amqp.Connection
+	var err error
 
-	// Get RabbitMQ URL from environment variable or use default
-	rabbitURL := "amqp://guest:guest@localhost:5672"
-	if os.Getenv("RABBITMQ_URL") != "" {
-		rabbitURL = os.Getenv("RABBITMQ_URL")
-	} else if os.Getenv("RABBITMQ_HOST") != "" {
-		// Build URL from individual components if host is specified
-		host := os.Getenv("RABBITMQ_HOST")
-		user := "guest"
-		password := "guest"
-		port := "5672"
-
-		if os.Getenv("RABBITMQ_USER") != "" {
-			user = os.Getenv("RABBITMQ_USER")
-		}
-		if os.Getenv("RABBITMQ_PASSWORD") != "" {
-			password = os.Getenv("RABBITMQ_PASSWORD")
-		}
-		if os.Getenv("RABBITMQ_PORT") != "" {
-			port = os.Getenv("RABBITMQ_PORT")
-		}
-
-		rabbitURL = fmt.Sprintf("amqp://%s:%s@%s:%s", user, password, host, port)
+	// Get RabbitMQ connection details from environment or use defaults
+	rabbitURL := os.Getenv("RABBIT_URL")
+	if rabbitURL == "" {
+		rabbitURL = "amqp://guest:guest@localhost:5672/"
 	}
 
 	log.Printf("Attempting to connect to RabbitMQ at %s", rabbitURL)
 
-	// don't continue until rabbit is ready
+	// Try to connect to RabbitMQ with backoff
 	for {
-		c, err := amqp.Dial(rabbitURL)
+		connection, err = amqp.Dial(rabbitURL)
 		if err != nil {
-			log.Println("RabbitMQ not yet ready...")
+			log.Printf("RabbitMQ not ready yet: %s", err)
 			counts++
 		} else {
 			log.Println("Connected to RabbitMQ!")
-			connection = c
 			break
 		}
 
 		if counts > 5 {
-			fmt.Println(err)
+			log.Println("Could not connect to RabbitMQ after multiple attempts")
 			return nil, err
 		}
 
-		backOff = time.Duration(math.Pow(float64(counts), 2)) * time.Second
-		log.Printf("Backing off for %v seconds...", backOff.Seconds())
+		// Calculate backoff time using exponential backoff
+		backOff := time.Second * time.Duration(math.Pow(2, float64(counts)))
+		log.Printf("Backing off for %s", backOff)
 		time.Sleep(backOff)
 		continue
 	}

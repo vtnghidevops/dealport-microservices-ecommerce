@@ -458,3 +458,55 @@ func getStringValue(s *string) string {
 	}
 	return *s
 }
+
+// LogUserActivity logs a user activity
+func (h *UserHandler) LogUserActivity(ctx context.Context, req *pb.LogUserActivityRequest) (*pb.LogUserActivityResponse, error) {
+	// Extract request data
+	action := req.Action
+	userID := req.UserId
+	message := req.Message
+
+	// Parse metadata from JSON if provided
+	var metadata map[string]interface{}
+	if req.Metadata != "" {
+		if err := json.Unmarshal([]byte(req.Metadata), &metadata); err != nil {
+			return nil, status.Errorf(codes.InvalidArgument, "invalid metadata format: %v", err)
+		}
+	}
+
+	// Log the activity
+	err := h.userService.LogUserActivity(ctx, action, userID, message, metadata)
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "failed to log user activity: %v", err)
+	}
+
+	return &pb.LogUserActivityResponse{
+		Success: true,
+		Message: "User activity logged successfully",
+	}, nil
+}
+
+// GetUserActivityLogs retrieves user activity logs
+func (h *UserHandler) GetUserActivityLogs(ctx context.Context, req *pb.GetUserActivityLogsRequest) (*pb.GetUserActivityLogsResponse, error) {
+	// Extract request data
+	userID := req.UserId
+	actionType := req.ActionType
+
+	// Get the logs
+	logs, err := h.userService.GetUserActivityLogs(ctx, userID, actionType)
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "failed to get user activity logs: %v", err)
+	}
+
+	// Convert logs to proto format
+	pbLogs, err := json.Marshal(logs)
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "failed to serialize logs: %v", err)
+	}
+
+	return &pb.GetUserActivityLogsResponse{
+		Logs:    string(pbLogs),
+		Success: true,
+		Message: "User activity logs retrieved successfully",
+	}, nil
+}

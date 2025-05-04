@@ -33,6 +33,7 @@ func (app *Config) routers() http.Handler {
 			r.Post("/register", app.AuthHandler.Register)
 			r.Post("/verify-registration", app.AuthHandler.VerifyRegistration)
 			r.Post("/login", app.AuthHandler.Login)
+			r.Post("/logout", app.AuthHandler.Logout)
 			r.Post("/refresh", app.AuthHandler.RefreshToken)
 			r.Get("/validate", app.AuthHandler.ValidateToken)
 			r.Post("/password-reset", app.AuthHandler.RequestPasswordReset)

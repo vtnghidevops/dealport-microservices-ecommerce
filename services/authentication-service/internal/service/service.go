@@ -17,6 +17,12 @@ type AuthService interface {
 	// Login authenticates a user and returns tokens
 	Login(ctx context.Context, req *domain.LoginRequest) (*domain.TokenDetails, *domain.User, error)
 
+	// Logout logs out a user
+	Logout(ctx context.Context, userID, email string) error
+
+	// LogoutFromAllDevices logs out a user from all devices
+	LogoutFromAllDevices(ctx context.Context, userID, email string) error
+
 	// ValidateToken validates an access token and returns claims
 	ValidateToken(ctx context.Context, token string) (*domain.TokenMetadata, error)
 

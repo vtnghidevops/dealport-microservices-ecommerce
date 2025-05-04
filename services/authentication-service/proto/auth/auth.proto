@@ -14,6 +14,9 @@ service AuthService {
   // Login authenticates a user and returns a JWT token
   rpc Login(LoginRequest) returns (LoginResponse) {}
 
+  // Logout logs a user out and invalidates their refresh token
+  rpc Logout(LogoutRequest) returns (LogoutResponse) {}
+
   // Validate checks if a token is valid
   rpc Validate(ValidateRequest) returns (ValidateResponse) {}
 
@@ -40,6 +43,19 @@ service AuthService {
   // CheckAccountExists checks if an account exists with the given email
   rpc CheckAccountExists(CheckAccountExistsRequest)
       returns (CheckAccountExistsResponse) {}
+}
+
+// LogoutRequest contains the user information for logout
+message LogoutRequest {
+  string user_id = 1;
+  string email = 2;
+  bool logout_all_devices = 3;  // If true, logout from all devices
+}
+
+// LogoutResponse returns logout result
+message LogoutResponse {
+  bool success = 1;
+  string message = 2;
 }
 
 // RegisterRequest contains user registration data

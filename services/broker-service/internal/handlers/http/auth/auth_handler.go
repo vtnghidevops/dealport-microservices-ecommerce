@@ -691,3 +691,46 @@ func max(a, b int) int {
 	}
 	return b
 }
+
+// Logout handles user logout
+func (c *Config) Logout(w http.ResponseWriter, r *http.Request) {
+	var requestPayload struct {
+		UserID           string `json:"user_id"`
+		Email            string `json:"email"`
+		LogoutAllDevices bool   `json:"logout_all_devices"`
+	}
+
+	err := util.ReadJSON(w, r, &requestPayload)
+	if err != nil {
+		util.ErrorJSON(w, err, http.StatusBadRequest)
+		return
+	}
+
+	// Debug info
+	fmt.Printf("DEBUG BROKER Logout: Processing logout for user ID: %s, email: %s, logout all devices: %v\n",
+		requestPayload.UserID, requestPayload.Email, requestPayload.LogoutAllDevices)
+
+	// Call auth service via gRPC
+	res, err := c.AuthClient.Logout(r.Context(), &authpb.LogoutRequest{
+		UserId:           requestPayload.UserID,
+		Email:            requestPayload.Email,
+		LogoutAllDevices: requestPayload.LogoutAllDevices,
+	})
+
+	if err != nil {
+		fmt.Printf("DEBUG BROKER Logout: Error from auth service: %v\n", err)
+		util.ErrorJSON(w, err, http.StatusInternalServerError)
+		return
+	}
+
+	// Return response
+	responseData := util.JsonResponse{
+		Error:   false,
+		Message: res.Message,
+		Data: map[string]interface{}{
+			"success": res.Success,
+		},
+	}
+
+	util.WriteJSON(w, http.StatusOK, responseData)
+}

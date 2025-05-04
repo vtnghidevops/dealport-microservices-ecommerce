@@ -37,6 +37,10 @@ type UserServiceClient interface {
 	// ProcessEvent handles events from other services (like user registration,
 	// password changes)
 	ProcessEvent(ctx context.Context, in *EventRequest, opts ...grpc.CallOption) (*EventResponse, error)
+	// LogUserActivity logs a user activity
+	LogUserActivity(ctx context.Context, in *LogUserActivityRequest, opts ...grpc.CallOption) (*LogUserActivityResponse, error)
+	// GetUserActivityLogs retrieves user activity logs
+	GetUserActivityLogs(ctx context.Context, in *GetUserActivityLogsRequest, opts ...grpc.CallOption) (*GetUserActivityLogsResponse, error)
 }
 
 type userServiceClient struct {
@@ -110,6 +114,24 @@ func (c *userServiceClient) ProcessEvent(ctx context.Context, in *EventRequest, 
 	return out, nil
 }
 
+func (c *userServiceClient) LogUserActivity(ctx context.Context, in *LogUserActivityRequest, opts ...grpc.CallOption) (*LogUserActivityResponse, error) {
+	out := new(LogUserActivityResponse)
+	err := c.cc.Invoke(ctx, "/user.UserService/LogUserActivity", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *userServiceClient) GetUserActivityLogs(ctx context.Context, in *GetUserActivityLogsRequest, opts ...grpc.CallOption) (*GetUserActivityLogsResponse, error) {
+	out := new(GetUserActivityLogsResponse)
+	err := c.cc.Invoke(ctx, "/user.UserService/GetUserActivityLogs", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // UserServiceServer is the server API for UserService service.
 // All implementations must embed UnimplementedUserServiceServer
 // for forward compatibility
@@ -129,6 +151,10 @@ type UserServiceServer interface {
 	// ProcessEvent handles events from other services (like user registration,
 	// password changes)
 	ProcessEvent(context.Context, *EventRequest) (*EventResponse, error)
+	// LogUserActivity logs a user activity
+	LogUserActivity(context.Context, *LogUserActivityRequest) (*LogUserActivityResponse, error)
+	// GetUserActivityLogs retrieves user activity logs
+	GetUserActivityLogs(context.Context, *GetUserActivityLogsRequest) (*GetUserActivityLogsResponse, error)
 	mustEmbedUnimplementedUserServiceServer()
 }
 
@@ -156,6 +182,12 @@ func (UnimplementedUserServiceServer) SearchUsers(context.Context, *SearchUsersR
 }
 func (UnimplementedUserServiceServer) ProcessEvent(context.Context, *EventRequest) (*EventResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ProcessEvent not implemented")
+}
+func (UnimplementedUserServiceServer) LogUserActivity(context.Context, *LogUserActivityRequest) (*LogUserActivityResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method LogUserActivity not implemented")
+}
+func (UnimplementedUserServiceServer) GetUserActivityLogs(context.Context, *GetUserActivityLogsRequest) (*GetUserActivityLogsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetUserActivityLogs not implemented")
 }
 func (UnimplementedUserServiceServer) mustEmbedUnimplementedUserServiceServer() {}
 
@@ -296,6 +328,42 @@ func _UserService_ProcessEvent_Handler(srv interface{}, ctx context.Context, dec
 	return interceptor(ctx, in, info, handler)
 }
 
+func _UserService_LogUserActivity_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(LogUserActivityRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(UserServiceServer).LogUserActivity(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/user.UserService/LogUserActivity",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(UserServiceServer).LogUserActivity(ctx, req.(*LogUserActivityRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _UserService_GetUserActivityLogs_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetUserActivityLogsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(UserServiceServer).GetUserActivityLogs(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/user.UserService/GetUserActivityLogs",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(UserServiceServer).GetUserActivityLogs(ctx, req.(*GetUserActivityLogsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // UserService_ServiceDesc is the grpc.ServiceDesc for UserService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -330,6 +398,14 @@ var UserService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "ProcessEvent",
 			Handler:    _UserService_ProcessEvent_Handler,
+		},
+		{
+			MethodName: "LogUserActivity",
+			Handler:    _UserService_LogUserActivity_Handler,
+		},
+		{
+			MethodName: "GetUserActivityLogs",
+			Handler:    _UserService_GetUserActivityLogs_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

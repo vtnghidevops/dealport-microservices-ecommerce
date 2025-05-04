@@ -10,18 +10,21 @@ import (
 	"golang.org/x/crypto/bcrypt"
 
 	"user-service/internal/domain"
+	"user-service/internal/logging"
 	"user-service/internal/repository"
 )
 
 // userService implements the UserService interface
 type userService struct {
-	userRepo repository.UserRepository
+	userRepo     repository.UserRepository
+	loggerClient *logging.LoggerClient
 }
 
 // NewUserService creates a new user service
-func NewUserService(userRepo repository.UserRepository) UserService {
+func NewUserService(userRepo repository.UserRepository, loggerClient *logging.LoggerClient) UserService {
 	return &userService{
-		userRepo: userRepo,
+		userRepo:     userRepo,
+		loggerClient: loggerClient,
 	}
 }
 
@@ -183,11 +186,9 @@ func (s *userService) CreateUser(ctx context.Context, req *domain.CreateUserRequ
 	if err := s.userRepo.CreateUser(ctx, user); err != nil {
 		return nil, fmt.Errorf("failed to create user: %w", err)
 	}
-
-	// Don't return password hash
 	user.PasswordHash = ""
-
 	return user, nil
+
 }
 
 // UpdateUser updates user information
@@ -198,85 +199,79 @@ func (s *userService) UpdateUser(ctx context.Context, req *domain.UpdateUserRequ
 	}
 
 	// Get existing user
-	existingUser, err := s.userRepo.GetUserByID(ctx, req.ID)
+	user, err := s.userRepo.GetUserByID(ctx, req.ID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get user: %w", err)
 	}
 
-	// Track if first name or last name changes to update display name if needed
-	firstNameChanged := false
-	lastNameChanged := false
-
-	// Update fields that are provided
-	if req.Email != "" {
-		existingUser.Email = req.Email
+	// Update fields if provided
+	if req.Email != "" && req.Email != user.Email {
+		user.Email = req.Email
 	}
-
 	if req.FirstName != "" {
-		firstNameChanged = req.FirstName != existingUser.FirstName
-		existingUser.FirstName = req.FirstName
+		user.FirstName = req.FirstName
 	}
-
 	if req.LastName != "" {
-		lastNameChanged = req.LastName != existingUser.LastName
-		existingUser.LastName = req.LastName
+		user.LastName = req.LastName
 	}
-
 	if req.DisplayName != "" {
-		existingUser.DisplayName = req.DisplayName
-	} else if firstNameChanged || lastNameChanged {
-		// Update display name if first name or last name changed and display name was not provided
-		existingUser.DisplayName = fmt.Sprintf("%s %s", existingUser.FirstName, existingUser.LastName)
+		user.DisplayName = req.DisplayName
 	}
-
-	// Update username if provided or if first name/last name changed and custom username wasn't set
-	if req.Username != "" {
-		existingUser.Username = req.Username
-	} else if (firstNameChanged || lastNameChanged) && (existingUser.Username == "" ||
-		existingUser.Username == fmt.Sprintf("%s%s", existingUser.LastName, existingUser.FirstName)) {
-		// Only update automatically if username follows the default pattern or is empty
-		existingUser.Username = fmt.Sprintf("%s%s", existingUser.LastName, existingUser.FirstName)
-	}
-
 	if req.Phone != "" {
 		phone := req.Phone
-		existingUser.Phone = &phone
+		user.Phone = &phone
 	}
-
 	if req.ProfileImage != "" {
 		profileImage := req.ProfileImage
-		existingUser.ProfileImage = &profileImage
+		user.ProfileImage = &profileImage
 	}
-
+	if req.Username != "" {
+		user.Username = req.Username
+	}
+	if req.Gender != "" {
+		gender := req.Gender
+		user.Gender = &gender
+	}
+	if req.CartID != "" {
+		cartID := req.CartID
+		user.CartID = &cartID
+	}
 	if req.Role != "" {
-		existingUser.Role = req.Role
+		user.Role = req.Role
 	}
-
-	// Update status if provided
 	if req.Status != "" {
-		existingUser.Status = req.Status
+		user.Status = req.Status
 	}
-
-	// Update active status
-	existingUser.Active = req.Active
+	user.Active = req.Active
+	user.UpdatedAt = time.Now()
 
 	// Update addresses if provided
 	if len(req.Addresses) > 0 {
-		existingUser.Addresses = req.Addresses
+		// Replace existing addresses
+		user.Addresses = req.Addresses
 	}
 
-	// Update timestamp
-	existingUser.UpdatedAt = time.Now()
+	// Update payment methods if provided
+	if len(req.PaymentMethods) > 0 {
+		// Replace existing payment methods
+		user.PaymentMethods = req.PaymentMethods
+	}
 
-	// Update in the database
-	if err := s.userRepo.UpdateUser(ctx, existingUser); err != nil {
+	// Update user in the database
+	if err := s.userRepo.UpdateUser(ctx, user); err != nil {
 		return nil, fmt.Errorf("failed to update user: %w", err)
 	}
 
-	// Don't return password hash
-	existingUser.PasswordHash = ""
+	// Log profile update activity
+	if s.loggerClient != nil {
+		metadata := map[string]interface{}{
+			"updated_fields": getUpdatedFields(req),
+		}
+		go s.loggerClient.LogUserActivity(context.Background(), "profile_updated", user.ID, "User profile updated", metadata)
+	}
 
-	return existingUser, nil
+	user.PasswordHash = ""
+	return user, nil
 }
 
 // DeleteUser deletes a user
@@ -399,4 +394,148 @@ func (s *userService) GetWishlist(ctx context.Context, req *domain.GetWishlistRe
 	}
 
 	return response, nil
+}
+
+// ChangePassword changes a user's password
+func (s *userService) ChangePassword(ctx context.Context, userID, oldPassword, newPassword string) error {
+	// Get user
+	user, err := s.userRepo.GetUserByID(ctx, userID)
+	if err != nil {
+		return fmt.Errorf("failed to get user: %w", err)
+	}
+
+	// Verify old password
+	err = bcrypt.CompareHashAndPassword([]byte(user.PasswordHash), []byte(oldPassword))
+	if err != nil {
+		return errors.New("invalid current password")
+	}
+
+	// Hash new password
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(newPassword), bcrypt.DefaultCost)
+	if err != nil {
+		return fmt.Errorf("failed to hash password: %w", err)
+	}
+
+	// Update password
+	user.PasswordHash = string(hashedPassword)
+	user.UpdatedAt = time.Now()
+
+	// Save to database
+	if err := s.userRepo.UpdateUser(ctx, user); err != nil {
+		return fmt.Errorf("failed to update user: %w", err)
+	}
+
+	// Log password change activity
+	if s.loggerClient != nil {
+		go s.loggerClient.LogUserActivity(context.Background(), "password_changed", user.ID, "Password changed", nil)
+	}
+
+	return nil
+}
+
+// RequestPasswordReset initiates a password reset request
+func (s *userService) RequestPasswordReset(ctx context.Context, email string) error {
+	// Check if user exists
+	user, err := s.userRepo.GetUserByEmail(ctx, email)
+	if err != nil {
+		return fmt.Errorf("failed to get user: %w", err)
+	}
+
+	// Log password reset request activity
+	if s.loggerClient != nil {
+		go s.loggerClient.LogUserActivity(context.Background(), "password_reset_requested", user.ID, "Password reset requested", nil)
+	}
+
+	return nil
+}
+
+// ValidateCredentials validates user login credentials
+func (s *userService) ValidateCredentials(ctx context.Context, email, password string) (*domain.User, error) {
+	// Get user by email
+	user, err := s.userRepo.GetUserByEmail(ctx, email)
+	if err != nil {
+		return nil, errors.New("invalid credentials")
+	}
+
+	// Verify password
+	if err := bcrypt.CompareHashAndPassword([]byte(user.PasswordHash), []byte(password)); err != nil {
+		return nil, errors.New("invalid credentials")
+	}
+
+	// Don't return password hash
+	user.PasswordHash = ""
+
+	return user, nil
+}
+
+// LogoutUser logs out a user
+func (s *userService) LogoutUser(ctx context.Context, userID string) error {
+	// Get user to validate ID
+	user, err := s.userRepo.GetUserByID(ctx, userID)
+	if err != nil {
+		return fmt.Errorf("failed to get user: %w", err)
+	}
+
+	// Log logout activity
+	if s.loggerClient != nil {
+		go s.loggerClient.LogUserActivity(context.Background(), "logout", user.ID, "User logged out", nil)
+	}
+
+	return nil
+}
+
+// LogUserActivity logs a user activity
+func (s *userService) LogUserActivity(ctx context.Context, action, userID, message string, metadata map[string]interface{}) error {
+	if s.loggerClient == nil {
+		return errors.New("logger client not initialized")
+	}
+
+	return s.loggerClient.LogUserActivity(ctx, action, userID, message, metadata)
+}
+
+// GetUserActivityLogs retrieves user activity logs
+func (s *userService) GetUserActivityLogs(ctx context.Context, userID string, actionType string) (interface{}, error) {
+	if s.loggerClient == nil {
+		return nil, errors.New("logger client not initialized")
+	}
+
+	return s.loggerClient.GetUserActivityLogs(ctx, userID, actionType)
+}
+
+// Helper function to get updated fields for logging
+func getUpdatedFields(req *domain.UpdateUserRequest) map[string]interface{} {
+	fields := make(map[string]interface{})
+
+	if req.Email != "" {
+		fields["email"] = req.Email
+	}
+	if req.FirstName != "" {
+		fields["first_name"] = req.FirstName
+	}
+	if req.LastName != "" {
+		fields["last_name"] = req.LastName
+	}
+	if req.DisplayName != "" {
+		fields["display_name"] = req.DisplayName
+	}
+	if req.Phone != "" {
+		fields["phone"] = req.Phone
+	}
+	if req.ProfileImage != "" {
+		fields["profile_image"] = req.ProfileImage
+	}
+	if req.Username != "" {
+		fields["username"] = req.Username
+	}
+	if req.Gender != "" {
+		fields["gender"] = req.Gender
+	}
+	if len(req.Addresses) > 0 {
+		fields["addresses_updated"] = true
+	}
+	if len(req.PaymentMethods) > 0 {
+		fields["payment_methods_updated"] = true
+	}
+
+	return fields
 }

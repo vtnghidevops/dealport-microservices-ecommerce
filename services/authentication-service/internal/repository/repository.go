@@ -23,6 +23,9 @@ type UserRepository interface {
 	// Update user's refresh token
 	UpdateRefreshToken(ctx context.Context, userID, refreshToken string) error
 
+	// Logout from all devices
+	LogoutFromAllDevices(ctx context.Context, userID string) error
+
 	// Check if a user exists by email
 	UserExists(ctx context.Context, email string) (bool, error)
 }

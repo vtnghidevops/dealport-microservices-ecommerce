@@ -227,6 +227,28 @@ func (e *Emitter) EmitOTPGenerated(email, otp, purpose string, expiresIn int, me
 
 // EmitPasswordChanged emits a user.password_changed event
 func (e *Emitter) EmitPasswordChanged(email string) error {
+	// First emit the log event for user activity
+	logData := map[string]interface{}{
+		"email":      email,
+		"action":     "password_changed",
+		"message":    fmt.Sprintf("Password changed for user %s", email),
+		"level":      "INFO",
+		"service":    "authentication-service",
+		"created_at": time.Now().Format(time.RFC3339),
+		"metadata":   map[string]interface{}{},
+	}
+
+	logEvent := StandardEvent{
+		ID:         uuid.New().String(),
+		Name:       "log.INFO.user.password_changed",
+		Data:       logData,
+		DataSchema: "v1",
+		Source:     "authentication-service",
+		CreatedAt:  time.Now(),
+		Version:    "1.0",
+	}
+
+	// Also emit original event format for backward compatibility
 	data := map[string]string{
 		"email":      email,
 		"changed_at": time.Now().Format(time.RFC3339),
@@ -242,20 +264,90 @@ func (e *Emitter) EmitPasswordChanged(email string) error {
 		Version:    "1.0",
 	}
 
+	// Publish both events
+	go func() {
+		if err := e.publish("log.INFO.user.password_changed", logEvent); err != nil {
+			e.logger.Printf("Failed to publish log.INFO.user.password_changed event: %v", err)
+		}
+	}()
+
 	return e.publish("user.password_changed", event)
 }
 
 // EmitPasswordResetRequested emits a auth.password_reset_requested event
 func (e *Emitter) EmitPasswordResetRequested(email, tokenHash string, expiresAt time.Time) error {
-	data := PasswordResetData{
+	// First prepare the password reset data
+	passwordResetData := PasswordResetData{
 		Email:     email,
 		TokenHash: tokenHash,
 		ExpiresAt: expiresAt.Format(time.RFC3339),
 	}
 
+	// Emit log event for user activity
+	logData := map[string]interface{}{
+		"email":      email,
+		"action":     "password_reset_requested",
+		"message":    fmt.Sprintf("Password reset requested for user %s", email),
+		"level":      "INFO",
+		"service":    "authentication-service",
+		"created_at": time.Now().Format(time.RFC3339),
+		"metadata": map[string]interface{}{
+			"token_hash": tokenHash,
+			"expires_at": expiresAt.Format(time.RFC3339),
+		},
+	}
+
+	logEvent := StandardEvent{
+		ID:         uuid.New().String(),
+		Name:       "log.INFO.user.password_reset_requested",
+		Data:       logData,
+		DataSchema: "v1",
+		Source:     "authentication-service",
+		CreatedAt:  time.Now(),
+		Version:    "1.0",
+	}
+
+	// Also emit original event format for backward compatibility
 	event := StandardEvent{
 		ID:         uuid.New().String(),
 		Name:       "auth.password_reset_requested",
+		Data:       passwordResetData,
+		DataSchema: "v1",
+		Source:     "authentication-service",
+		CreatedAt:  time.Now(),
+		Version:    "1.0",
+	}
+
+	// Publish both events
+	go func() {
+		if err := e.publish("log.INFO.user.password_reset_requested", logEvent); err != nil {
+			e.logger.Printf("Failed to publish log.INFO.user.password_reset_requested event: %v", err)
+		}
+	}()
+
+	return e.publish("auth.password_reset_requested", event)
+}
+
+// EmitLoginSuccess emits a log.INFO.user.login_success event
+func (e *Emitter) EmitLoginSuccess(userID, email string, metadata map[string]interface{}) error {
+	if metadata == nil {
+		metadata = map[string]interface{}{}
+	}
+
+	data := map[string]interface{}{
+		"user_id":    userID,
+		"email":      email,
+		"action":     "login_success",
+		"message":    fmt.Sprintf("User %s logged in successfully", email),
+		"level":      "INFO",
+		"service":    "authentication-service",
+		"created_at": time.Now().Format(time.RFC3339),
+		"metadata":   metadata,
+	}
+
+	event := StandardEvent{
+		ID:         uuid.New().String(),
+		Name:       "log.INFO.user.login_success",
 		Data:       data,
 		DataSchema: "v1",
 		Source:     "authentication-service",
@@ -263,7 +355,68 @@ func (e *Emitter) EmitPasswordResetRequested(email, tokenHash string, expiresAt 
 		Version:    "1.0",
 	}
 
-	return e.publish("auth.password_reset_requested", event)
+	return e.publish("log.INFO.user.login_success", event)
+}
+
+// EmitLoginFailed emits a log.INFO.user.login_failed event
+func (e *Emitter) EmitLoginFailed(email, reason string, metadata map[string]interface{}) error {
+	if metadata == nil {
+		metadata = map[string]interface{}{}
+	}
+
+	metadata["reason"] = reason
+
+	data := map[string]interface{}{
+		"email":      email,
+		"action":     "login_failed",
+		"message":    fmt.Sprintf("Failed login attempt for %s: %s", email, reason),
+		"level":      "INFO",
+		"service":    "authentication-service",
+		"created_at": time.Now().Format(time.RFC3339),
+		"metadata":   metadata,
+	}
+
+	event := StandardEvent{
+		ID:         uuid.New().String(),
+		Name:       "log.INFO.user.login_failed",
+		Data:       data,
+		DataSchema: "v1",
+		Source:     "authentication-service",
+		CreatedAt:  time.Now(),
+		Version:    "1.0",
+	}
+
+	return e.publish("log.INFO.user.login_failed", event)
+}
+
+// EmitLogout emits a log.INFO.user.logout event
+func (e *Emitter) EmitLogout(userID, email string, metadata map[string]interface{}) error {
+	if metadata == nil {
+		metadata = map[string]interface{}{}
+	}
+
+	data := map[string]interface{}{
+		"user_id":    userID,
+		"email":      email,
+		"action":     "logout",
+		"message":    fmt.Sprintf("User %s logged out", email),
+		"level":      "INFO",
+		"service":    "authentication-service",
+		"created_at": time.Now().Format(time.RFC3339),
+		"metadata":   metadata,
+	}
+
+	event := StandardEvent{
+		ID:         uuid.New().String(),
+		Name:       "log.INFO.user.logout",
+		Data:       data,
+		DataSchema: "v1",
+		Source:     "authentication-service",
+		CreatedAt:  time.Now(),
+		Version:    "1.0",
+	}
+
+	return e.publish("log.INFO.user.logout", event)
 }
 
 // publish publishes an event to RabbitMQ

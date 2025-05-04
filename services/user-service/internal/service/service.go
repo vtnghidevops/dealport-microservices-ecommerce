@@ -49,4 +49,22 @@ type UserService interface {
 
 	// GetWishlist retrieves a user's wishlist
 	GetWishlist(ctx context.Context, req *domain.GetWishlistRequest) (*domain.GetWishlistResponse, error)
+
+	// ChangePassword changes a user's password
+	ChangePassword(ctx context.Context, userID, oldPassword, newPassword string) error
+
+	// RequestPasswordReset initiates a password reset request
+	RequestPasswordReset(ctx context.Context, email string) error
+
+	// ValidateCredentials validates user login credentials
+	ValidateCredentials(ctx context.Context, email, password string) (*domain.User, error)
+
+	// LogoutUser logs out a user
+	LogoutUser(ctx context.Context, userID string) error
+
+	// LogUserActivity logs a user activity
+	LogUserActivity(ctx context.Context, action, userID, message string, metadata map[string]interface{}) error
+
+	// GetUserActivityLogs retrieves user activity logs
+	GetUserActivityLogs(ctx context.Context, userID string, actionType string) (interface{}, error)
 }

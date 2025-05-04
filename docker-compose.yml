@@ -241,9 +241,9 @@ services:
     networks:
       - net
 
-  mongodb:
+  mongo-logger:
     image: "mongo:4.2.16-bionic"
-    container_name: mongodb
+    container_name: mongo-logger
     ports:
       - "27018:27017"
     environment:

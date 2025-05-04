@@ -14,6 +14,7 @@ import (
 	"google.golang.org/grpc/reflection"
 
 	"user-service/internal/config"
+	"user-service/internal/logging"
 	"user-service/internal/repository/postgres"
 	"user-service/internal/service"
 	grpcHandler "user-service/internal/transport/grpc"
@@ -44,11 +45,29 @@ func main() {
 		logger.Fatalf("Failed to ping database: %v", err)
 	}
 
+	// Get logger service host from environment or use default
+	loggerHost := os.Getenv("LOGGER_SERVICE_HOST")
+	if loggerHost == "" {
+		loggerHost = "localhost:50001"
+	}
+
+	// Initialize the logger client
+	var loggerClient *logging.LoggerClient
+	loggerClient, err = logging.NewLoggerClient(loggerHost)
+	if err != nil {
+		logger.Printf("Warning: Failed to initialize logger client: %v", err)
+		logger.Println("User activity logging will be disabled")
+		loggerClient = nil
+	} else {
+		logger.Println("Connected to logger service")
+		defer loggerClient.Close()
+	}
+
 	// Initialize repository
 	userRepo := postgres.NewPostgresRepository(db)
 
 	// Initialize service
-	userService := service.NewUserService(userRepo)
+	userService := service.NewUserService(userRepo, loggerClient)
 
 	// Initialize gRPC handler
 	userHandler := grpcHandler.NewUserHandler(userService, logger)

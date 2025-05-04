@@ -105,35 +105,32 @@ func (r *PostgresRepository) GetUserByID(ctx context.Context, id string) (*domai
 
 // GetUserByEmail retrieves a user by email
 func (r *PostgresRepository) GetUserByEmail(ctx context.Context, email string) (*domain.User, error) {
-	fmt.Printf("DEBUG GetUserByEmail: Looking for user with email: %s\n", email)
+	query := `SELECT id, email, password, refresh_token, username, first_name, last_name, 
+              role, status, active, phone, created_at, updated_at
+              FROM users WHERE email = $1`
 
 	var user domain.User
+	err := r.db.QueryRowContext(ctx, query, email).Scan(
+		&user.ID,
+		&user.Email,
+		&user.Password,
+		&user.RefreshToken,
+		&user.Username,
+		&user.FirstName,
+		&user.LastName,
+		&user.Role,
+		&user.Status,
+		&user.Active,
+		&user.Phone,
+		&user.CreatedAt,
+		&user.UpdatedAt,
+	)
 
-	query := `SELECT id, email, password_hash, first_name, last_name, username, active, role, 
-		refresh_token, created_at, updated_at 
-		FROM users 
-		WHERE email = $1`
-
-	err := r.db.GetContext(ctx, &user, query, email)
 	if err != nil {
-		if err == sql.ErrNoRows {
-			fmt.Printf("DEBUG GetUserByEmail: User not found: %s\n", email)
-			return nil, domain.ErrUserNotFound
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, fmt.Errorf("user not found with email: %s", email)
 		}
-		fmt.Printf("DEBUG GetUserByEmail: Database error: %v\n", err)
-		return nil, err
-	}
-
-	fmt.Printf("DEBUG GetUserByEmail: Found user with ID: %s\n", user.ID)
-	fmt.Printf("DEBUG GetUserByEmail: Password hash from DB: %s...\n",
-		user.Password[:min(20, len(user.Password))])
-
-	// Check RefreshToken value
-	if user.RefreshToken == nil {
-		fmt.Printf("DEBUG GetUserByEmail: RefreshToken is NULL\n")
-	} else {
-		fmt.Printf("DEBUG GetUserByEmail: RefreshToken: %s...\n",
-			(*user.RefreshToken)[:min(20, len(*user.RefreshToken))])
+		return nil, fmt.Errorf("failed to get user: %w", err)
 	}
 
 	return &user, nil
@@ -223,27 +220,22 @@ func (r *PostgresRepository) UpdateUser(ctx context.Context, user *domain.User) 
 
 // UpdateRefreshToken updates a user's refresh token
 func (r *PostgresRepository) UpdateRefreshToken(ctx context.Context, userID, refreshToken string) error {
-	fmt.Printf("DEBUG UpdateRefreshToken: Updating refresh token for user ID: %s\n", userID)
 	query := `UPDATE users SET refresh_token = $1 WHERE id = $2`
 
 	result, err := r.db.ExecContext(ctx, query, refreshToken, userID)
 	if err != nil {
-		fmt.Printf("DEBUG UpdateRefreshToken: Error updating refresh token: %v\n", err)
-		return err
+		return fmt.Errorf("failed to update refresh token: %w", err)
 	}
 
 	rowsAffected, err := result.RowsAffected()
 	if err != nil {
-		fmt.Printf("DEBUG UpdateRefreshToken: Error getting rows affected: %v\n", err)
-		return err
+		return fmt.Errorf("failed to get rows affected: %w", err)
 	}
 
 	if rowsAffected == 0 {
-		fmt.Printf("DEBUG UpdateRefreshToken: No rows affected, user may not exist: %s\n", userID)
-		return errors.New("user not found or token not updated")
+		return fmt.Errorf("user not found with ID: %s", userID)
 	}
 
-	fmt.Printf("DEBUG UpdateRefreshToken: Refresh token updated successfully, rows affected: %d\n", rowsAffected)
 	return nil
 }
 
@@ -284,6 +276,28 @@ func (r *PostgresRepository) GetUserByUsername(ctx context.Context, username str
 
 	fmt.Printf("DEBUG GetUserByUsername: Found user with ID: %s\n", user.ID)
 	return &user, nil
+}
+
+// LogoutFromAllDevices invalidates all refresh tokens for a user
+func (r *PostgresRepository) LogoutFromAllDevices(ctx context.Context, userID string) error {
+	// Set refresh_token to NULL (not empty string) to completely invalidate all sessions
+	query := `UPDATE users SET refresh_token = NULL WHERE id = $1`
+
+	result, err := r.db.ExecContext(ctx, query, userID)
+	if err != nil {
+		return fmt.Errorf("failed to logout from all devices: %w", err)
+	}
+
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		return fmt.Errorf("failed to get rows affected: %w", err)
+	}
+
+	if rowsAffected == 0 {
+		return fmt.Errorf("user not found with ID: %s", userID)
+	}
+
+	return nil
 }
 
 // min returns the minimum of two integers

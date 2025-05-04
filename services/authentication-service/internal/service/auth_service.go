@@ -523,62 +523,57 @@ func (s *authService) UpdatePassword(ctx context.Context, req *domain.UpdatePass
 	return nil
 }
 
-// Login authenticates a user and returns JWT tokens
+// Login authenticates a user and returns tokens
 func (s *authService) Login(ctx context.Context, req *domain.LoginRequest) (*domain.TokenDetails, *domain.User, error) {
-	fmt.Printf("DEBUG Login: Attempting login for email: %s\n", req.Email)
+	// Check if email, password are provided
+	if req.Email == "" || req.Password == "" {
+		return nil, nil, fmt.Errorf("email and password are required")
+	}
 
-	// Retrieve user by email
+	// Get user by email
 	user, err := s.userRepo.GetUserByEmail(ctx, req.Email)
 	if err != nil {
-		fmt.Printf("DEBUG Login: User not found: %v\n", err)
-		return nil, nil, errors.New("invalid credentials")
+		// Không cần hiện chi tiết lỗi, chỉ log chung là đăng nhập thất bại
+		s.emitLoginFailedEvent(req.Email, "invalid_credentials", nil)
+		return nil, nil, fmt.Errorf("invalid credentials")
 	}
 
-	fmt.Printf("DEBUG Login: User found with ID: %s\n", user.ID)
-
-	// Compare passwords - using bcrypt
-	err = bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(req.Password))
-	if err != nil {
-		fmt.Printf("DEBUG Login: Password comparison failed: %v\n", err)
-		fmt.Printf("DEBUG Login: Stored hash: %s\n", user.Password)
-		fmt.Printf("DEBUG Login: Provided password: %s\n", req.Password)
-
-		// Generate hash with the same password for comparison
-		testHash, testErr := bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
-		if testErr == nil {
-			fmt.Printf("DEBUG Login: Test hash generated with the same password: %s\n", string(testHash))
-			fmt.Printf("DEBUG Login: If these hashes are different, it confirms the stored password is incorrect\n")
-		}
-
-		return nil, nil, errors.New("invalid credentials")
+	// Verify password
+	if err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(req.Password)); err != nil {
+		// Đăng nhập thất bại, emit event
+		s.emitLoginFailedEvent(req.Email, "invalid_credentials", nil)
+		return nil, nil, fmt.Errorf("invalid credentials")
 	}
 
-	fmt.Printf("DEBUG Login: Password match successful\n")
-
-	// Create token
+	// Create tokens
 	td, err := s.createToken(user.ID, user.Email, user.Role)
 	if err != nil {
-		fmt.Printf("DEBUG Login: Failed to create token: %v\n", err)
-		return nil, nil, fmt.Errorf("failed to create token: %w", err)
+		return nil, nil, fmt.Errorf("failed to create authentication token: %w", err)
 	}
 
-	// Print full tokens for debugging
-	// fmt.Printf("DEBUG Login: FULL ACCESS TOKEN: %s\n", td.AccessToken)
-	// fmt.Printf("DEBUG Login: FULL REFRESH TOKEN: %s\n", td.RefreshToken)
-
 	// Store refresh token in the database
-	fmt.Printf("DEBUG Login: Storing refresh token in database\n")
-	err = s.userRepo.UpdateRefreshToken(ctx, user.ID, td.RefreshToken)
-	if err != nil {
-		fmt.Printf("DEBUG Login: Failed to store refresh token: %v\n", err)
+	if err := s.userRepo.UpdateRefreshToken(ctx, user.ID, td.RefreshToken); err != nil {
 		return nil, nil, fmt.Errorf("failed to store refresh token: %w", err)
 	}
 
-	// Don't return password
-	user.Password = ""
+	// Đăng nhập thành công, emit event
+	metadata := map[string]interface{}{
+		"role": user.Role,
+	}
+	if s.eventEmitter != nil {
+		s.eventEmitter.EmitLoginSuccess(user.ID, user.Email, metadata)
+	}
 
-	fmt.Printf("DEBUG Login: Login successful, tokens created\n")
+	// Mask password before returning user to client
+	user.Password = ""
 	return td, user, nil
+}
+
+// Helper function to emit login failed event
+func (s *authService) emitLoginFailedEvent(email, reason string, metadata map[string]interface{}) {
+	if s.eventEmitter != nil {
+		s.eventEmitter.EmitLoginFailed(email, reason, metadata)
+	}
 }
 
 // ValidateToken validates an access token and returns claims
@@ -860,21 +855,12 @@ func (s *authService) CheckAccountExists(ctx context.Context, email string) (boo
 
 // createToken generates access and refresh tokens
 func (s *authService) createToken(userID, email, role string) (*domain.TokenDetails, error) {
-	fmt.Printf("DEBUG createToken: Creating token for user ID: %s, email: %s, role: %s\n", userID, email, role)
-	//fmt.Printf("DEBUG createToken: Using accessSecret: %s\n", s.accessSecret)
-	//fmt.Printf("DEBUG createToken: Using refreshSecret: %s\n", s.refreshSecret)
-
 	td := &domain.TokenDetails{
 		AccessUUID:  uuid.New().String(),
 		RefreshUUID: uuid.New().String(),
 		AtExpires:   time.Now().Add(s.accessDuration).Unix(),
 		RtExpires:   time.Now().Add(s.refreshDuration).Unix(),
 	}
-
-	fmt.Printf("DEBUG createToken: Token durations - Access: %v, Refresh: %v\n",
-		s.accessDuration, s.refreshDuration)
-	fmt.Printf("DEBUG createToken: Token expiry - Access: %v, Refresh: %v\n",
-		time.Unix(td.AtExpires, 0), time.Unix(td.RtExpires, 0))
 
 	// Create access token
 	atClaims := jwtCustomClaims{
@@ -892,7 +878,6 @@ func (s *authService) createToken(userID, email, role string) (*domain.TokenDeta
 	at := jwt.NewWithClaims(jwt.SigningMethodHS256, atClaims)
 	accessToken, err := at.SignedString([]byte(s.accessSecret))
 	if err != nil {
-		fmt.Printf("DEBUG createToken: Error signing access token: %v\n", err)
 		return nil, err
 	}
 	td.AccessToken = accessToken
@@ -913,15 +898,9 @@ func (s *authService) createToken(userID, email, role string) (*domain.TokenDeta
 	rt := jwt.NewWithClaims(jwt.SigningMethodHS256, rtClaims)
 	refreshToken, err := rt.SignedString([]byte(s.refreshSecret))
 	if err != nil {
-		fmt.Printf("DEBUG createToken: Error signing refresh token: %v\n", err)
 		return nil, err
 	}
 	td.RefreshToken = refreshToken
-
-	fmt.Printf("DEBUG createToken: Access token generated (first 20 chars): %s...\n",
-		accessToken[:min(20, len(accessToken))])
-	fmt.Printf("DEBUG createToken: Refresh token generated (first 20 chars): %s...\n",
-		refreshToken[:min(20, len(refreshToken))])
 
 	return td, nil
 }
@@ -932,4 +911,52 @@ func min(a, b int) int {
 		return a
 	}
 	return b
+}
+
+// Logout logs out a user by invalidating their sessions
+func (s *authService) Logout(ctx context.Context, userID, email string) error {
+	// Invalidate refresh token by setting it to empty
+	if err := s.userRepo.UpdateRefreshToken(ctx, userID, ""); err != nil {
+		return fmt.Errorf("failed to invalidate refresh token: %w", err)
+	}
+
+	// Đăng xuất thành công, ghi log
+	log.Printf("User %s (%s) logged out successfully from current session", userID, email)
+
+	// Phát event log
+	metadata := map[string]interface{}{
+		"logout_type": "current_session",
+	}
+	if s.eventEmitter != nil {
+		if err := s.eventEmitter.EmitLogout(userID, email, metadata); err != nil {
+			log.Printf("Warning: Failed to emit logout event: %v", err)
+			// Continue even if event emission fails
+		}
+	}
+
+	return nil
+}
+
+// LogoutFromAllDevices logs out a user from all devices
+func (s *authService) LogoutFromAllDevices(ctx context.Context, userID, email string) error {
+	// Invalidate all refresh tokens
+	if err := s.userRepo.LogoutFromAllDevices(ctx, userID); err != nil {
+		return fmt.Errorf("failed to logout from all devices: %w", err)
+	}
+
+	// Đăng xuất thành công từ tất cả thiết bị, ghi log
+	log.Printf("User %s (%s) logged out successfully from all devices", userID, email)
+
+	// Phát event log với metadata chỉ rõ đã đăng xuất từ tất cả thiết bị
+	metadata := map[string]interface{}{
+		"logout_type": "all_devices",
+	}
+	if s.eventEmitter != nil {
+		if err := s.eventEmitter.EmitLogout(userID, email, metadata); err != nil {
+			log.Printf("Warning: Failed to emit logout event: %v", err)
+			// Continue even if event emission fails
+		}
+	}
+
+	return nil
 }

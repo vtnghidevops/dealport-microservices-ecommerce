@@ -1,4 +1,4 @@
-module listener
+module listener-service
 
 go 1.24
 

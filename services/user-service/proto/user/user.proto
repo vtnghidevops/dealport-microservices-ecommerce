@@ -25,6 +25,14 @@ service UserService {
   // ProcessEvent handles events from other services (like user registration,
   // password changes)
   rpc ProcessEvent(EventRequest) returns (EventResponse) {}
+
+  // LogUserActivity logs a user activity
+  rpc LogUserActivity(LogUserActivityRequest)
+      returns (LogUserActivityResponse) {}
+
+  // GetUserActivityLogs retrieves user activity logs
+  rpc GetUserActivityLogs(GetUserActivityLogsRequest)
+      returns (GetUserActivityLogsResponse) {}
 }
 
 // User represents a user entity
@@ -144,4 +152,31 @@ message EventRequest {
 message EventResponse {
   bool success = 1;
   string message = 2;
+}
+
+// LogUserActivityRequest is used to log a user activity
+message LogUserActivityRequest {
+  string user_id = 1;
+  string action = 2;
+  string message = 3;
+  string metadata = 4;  // JSON string of additional metadata
+}
+
+// LogUserActivityResponse is the response for logging a user activity
+message LogUserActivityResponse {
+  bool success = 1;
+  string message = 2;
+}
+
+// GetUserActivityLogsRequest is used to request user activity logs
+message GetUserActivityLogsRequest {
+  string user_id = 1;
+  string action_type = 2;  // Optional filter by action type
+}
+
+// GetUserActivityLogsResponse contains user activity logs
+message GetUserActivityLogsResponse {
+  string logs = 1;  // JSON string of logs
+  bool success = 2;
+  string message = 3;
 }

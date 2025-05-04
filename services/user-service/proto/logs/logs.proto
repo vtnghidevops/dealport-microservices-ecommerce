@@ -1,8 +1,8 @@
 syntax = "proto3";
 
-package logs;  // ns
+package logs;
 
-option go_package = "logger-service/proto/";  // package to import
+option go_package = "user-service/proto/logs";
 
 message Log {
   string name = 1;
@@ -23,7 +23,7 @@ message LogResponse {
   string result = 1;
 }
 
-// New message types for retrieving user activity logs
+// Message types for retrieving user activity logs
 message UserActivityLogRequest {
   string user_id = 1;
   string action_type = 2;  // optional filter by action type

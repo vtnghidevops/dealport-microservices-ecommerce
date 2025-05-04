@@ -2,7 +2,7 @@ syntax = "proto3";
 
 package logs;  // ns
 
-option go_package = "logger-service/proto/";  // package to import
+option go_package = "listener-service/proto/logs";  // package to import
 
 message Log {
   string name = 1;

@@ -274,9 +274,19 @@ class AuthService {
 
   /**
    * Đăng xuất - xóa token và thông tin user khỏi localStorage
+   * @param logoutFromAllDevices Nếu true, sẽ đăng xuất khỏi tất cả các thiết bị
    */
-  logout() {
-    console.log("Logging out user...");
+  logout(logoutFromAllDevices = false) {
+    console.log("Logging out user...", logoutFromAllDevices ? "from all devices" : "from current session");
+
+    // Lấy thông tin user trước khi xóa localStorage
+    const token = localStorage.getItem('token');
+    const userId = token ? this.getUserIdFromToken(token) : null;
+    const userEmail = localStorage.getItem('user') ? JSON.parse(localStorage.getItem('user') || '{}').email : '';
+
+    console.log(`DEBUG logout: userId=${userId}, email=${userEmail}, logoutFromAllDevices=${logoutFromAllDevices}`);
+
+    // Xóa thông tin trong localStorage
     localStorage.removeItem('token');
     localStorage.removeItem('refreshToken');
     localStorage.removeItem('user');
@@ -284,18 +294,36 @@ class AuthService {
     // Trigger a storage event to notify all components
     window.dispatchEvent(new Event('storage'));
 
-    // Optional: Make a logout request to the server to invalidate the token
-    try {
-      const token = localStorage.getItem('token');
-      if (token) {
-        // Non-blocking request, we don't wait for the response
-        apiClient.post('/auth/logout', {}).catch(err =>
-          console.log("Logout API call failed, but continuing local logout:", err)
-        );
-      }
-    } catch (error) {
-      console.error("Error during logout:", error);
-      // Continue with client-side logout regardless of server response
+    // Gửi request đến server để vô hiệu hóa token
+    // Đảm bảo request này được gửi dù có user hay không
+    if (userId && userEmail) {
+      console.log(`DEBUG logout: Sending logout request to server for user ${userId}`);
+
+      // Sử dụng axios trực tiếp thay vì apiClient để tránh interceptor
+      // và đảm bảo request được gửi dù đã xóa token
+      const logoutUrl = `${API_BASE_URL}/auth/logout`;
+      const logoutData = {
+        user_id: userId,
+        email: userEmail,
+        logout_all_devices: logoutFromAllDevices
+      };
+
+      console.log("DEBUG logout: Request URL:", logoutUrl);
+      console.log("DEBUG logout: Request data:", logoutData);
+
+      // Thêm timeout để đảm bảo request hoàn thành
+      axios.post(logoutUrl, logoutData, {
+        timeout: 5000 // 5 seconds timeout
+      })
+        .then(response => {
+          console.log("DEBUG logout: Logout API response:", response.data);
+        })
+        .catch(err => {
+          console.error("DEBUG logout: Logout API call failed:", err);
+          // Continue with client-side logout regardless of server response
+        });
+    } else {
+      console.warn("DEBUG logout: No user info available, skipping server logout request");
     }
   }
 
@@ -660,8 +688,16 @@ export const updateProfile = async (data: UserProfileData) => {
   }
 };
 
-export const logout = async () => {
-  return authService.logout();
+export const logout = async (logoutFromAllDevices = false) => {
+  return authService.logout(logoutFromAllDevices);
+};
+
+/**
+ * Đăng xuất khỏi tất cả các thiết bị
+ * Tiện ích để gọi logout với tham số logoutFromAllDevices = true
+ */
+export const logoutFromAllDevices = async () => {
+  return authService.logout(true);
 };
 
 export const forgotPassword = async (email: string) => {

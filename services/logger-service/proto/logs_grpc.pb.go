@@ -2,9 +2,9 @@
 // versions:
 // - protoc-gen-go-grpc v1.2.0
 // - protoc             v5.29.3
-// source: logs.proto
+// source: proto/logs.proto
 
-package pb
+package proto
 
 import (
 	context "context"
@@ -23,6 +23,7 @@ const _ = grpc.SupportPackageIsVersion7
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type LogServiceClient interface {
 	WriteLog(ctx context.Context, in *LogRequest, opts ...grpc.CallOption) (*LogResponse, error)
+	GetUserActivityLogs(ctx context.Context, in *UserActivityLogRequest, opts ...grpc.CallOption) (*UserActivityLogResponse, error)
 }
 
 type logServiceClient struct {
@@ -42,11 +43,21 @@ func (c *logServiceClient) WriteLog(ctx context.Context, in *LogRequest, opts ..
 	return out, nil
 }
 
+func (c *logServiceClient) GetUserActivityLogs(ctx context.Context, in *UserActivityLogRequest, opts ...grpc.CallOption) (*UserActivityLogResponse, error) {
+	out := new(UserActivityLogResponse)
+	err := c.cc.Invoke(ctx, "/logs.LogService/GetUserActivityLogs", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // LogServiceServer is the server API for LogService service.
 // All implementations must embed UnimplementedLogServiceServer
 // for forward compatibility
 type LogServiceServer interface {
 	WriteLog(context.Context, *LogRequest) (*LogResponse, error)
+	GetUserActivityLogs(context.Context, *UserActivityLogRequest) (*UserActivityLogResponse, error)
 	mustEmbedUnimplementedLogServiceServer()
 }
 
@@ -56,6 +67,9 @@ type UnimplementedLogServiceServer struct {
 
 func (UnimplementedLogServiceServer) WriteLog(context.Context, *LogRequest) (*LogResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method WriteLog not implemented")
+}
+func (UnimplementedLogServiceServer) GetUserActivityLogs(context.Context, *UserActivityLogRequest) (*UserActivityLogResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetUserActivityLogs not implemented")
 }
 func (UnimplementedLogServiceServer) mustEmbedUnimplementedLogServiceServer() {}
 
@@ -88,6 +102,24 @@ func _LogService_WriteLog_Handler(srv interface{}, ctx context.Context, dec func
 	return interceptor(ctx, in, info, handler)
 }
 
+func _LogService_GetUserActivityLogs_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(UserActivityLogRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(LogServiceServer).GetUserActivityLogs(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/logs.LogService/GetUserActivityLogs",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(LogServiceServer).GetUserActivityLogs(ctx, req.(*UserActivityLogRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // LogService_ServiceDesc is the grpc.ServiceDesc for LogService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -99,7 +131,11 @@ var LogService_ServiceDesc = grpc.ServiceDesc{
 			MethodName: "WriteLog",
 			Handler:    _LogService_WriteLog_Handler,
 		},
+		{
+			MethodName: "GetUserActivityLogs",
+			Handler:    _LogService_GetUserActivityLogs_Handler,
+		},
 	},
 	Streams:  []grpc.StreamDesc{},
-	Metadata: "logs.proto",
+	Metadata: "proto/logs.proto",
 }
