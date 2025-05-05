@@ -1,6 +1,6 @@
 // context/AuthContext.tsx
 import React, { createContext, useState, ReactNode, useEffect } from 'react';
-import { User, AuthState, UserLoginCredentials, UserRegistrationData } from '@/types/user.model';
+import { User, AuthState, UserLoginCredentials, UserRegistrationData, UserRole } from '@/types/user.model';
 import authService, { login as loginApi, register as registerApi } from '@/services/auth/auth.service';
 import userService from '@/services/user/user.service';
 
@@ -60,6 +60,22 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     return initialState;
   });
 
+  // Thêm helper function to parse JWT token
+  const parseJwt = (token: string) => {
+    try {
+      const base64Url = token.split('.')[1];
+      const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+      const jsonPayload = decodeURIComponent(atob(base64).split('').map(function (c) {
+        return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+      }).join(''));
+
+      return JSON.parse(jsonPayload);
+    } catch (e) {
+      console.error("Failed to parse JWT token:", e);
+      return null;
+    }
+  };
+
   // Kiểm tra token khi component mount
   useEffect(() => {
     // Start the automatic token refresh
@@ -102,19 +118,35 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         try {
           setAuthState(prev => ({ ...prev, isLoading: true }));
 
+          // Extract role directly from JWT token
+          let tokenRole: UserRole = 'user';
+          try {
+            const tokenData = parseJwt(authState.accessToken);
+            if (tokenData && tokenData.role) {
+              // Make sure tokenRole is a valid UserRole value
+              tokenRole = tokenData.role === 'admin' ? 'admin' : 'user';
+              console.log("Role extracted from JWT token during validation:", tokenRole);
+            }
+          } catch (jwtError) {
+            console.error("Error parsing JWT during validation:", jwtError);
+          }
+
           // Kiểm tra token
           const validateResult = await authService.validateToken();
 
           // Kiểm tra các claims để debug
           if (validateResult.claims) {
+            console.log("Claims from validation:", validateResult.claims);
             // Nếu có role trong claims, lưu tạm vào localStorage
             if (validateResult.claims.role) {
               const userStr = localStorage.getItem('user');
               if (userStr) {
                 try {
                   const userData = JSON.parse(userStr);
-                  userData.role = validateResult.claims.role;
+                  // Use role from JWT token
+                  userData.role = tokenRole;
                   localStorage.setItem('user', JSON.stringify(userData));
+                  console.log("Updated user role in localStorage to:", tokenRole);
                 } catch (e) {
                   console.error("Failed to update role from claims", e);
                 }
@@ -128,11 +160,13 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
               const userId = validateResult.user_id;
               const userData = await userService.getUserById(userId) as User;
 
-              // Đảm bảo role từ API /user/me được sử dụng
+              // Use role from JWT token
               const updatedUserData = {
                 ...userData,
-                role: userData.role || (authState.user?.role || 'user') // Ưu tiên role từ API
+                role: tokenRole
               };
+
+              console.log("Setting auth state with role from token:", tokenRole);
 
               setAuthState({
                 user: updatedUserData,
@@ -268,15 +302,38 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
       if (loginResult.success) {
         try {
+          // Extract role from JWT token directly
+          const token = loginResult.access_token;
+          let tokenRole: UserRole = 'user'; // Default role
+
+          // Parse JWT to extract role claim
+          try {
+            const base64Url = token.split('.')[1];
+            const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+            const jsonPayload = decodeURIComponent(atob(base64).split('').map(function (c) {
+              return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+            }).join(''));
+            const tokenData = JSON.parse(jsonPayload);
+            // Ensure it's a valid UserRole
+            tokenRole = tokenData.role === 'admin' ? 'admin' : 'user';
+            console.log("Role extracted from JWT token:", tokenRole);
+          } catch (jwtError) {
+            console.error("Error parsing JWT token:", jwtError);
+          }
+
           const userData = await userService.getUserById(loginResult.user_id);
           const userWithProfile = {
             ...userData,
-            role: userData.role || loginResult.user_info.role || 'user',
+            // Prioritize JWT token role over other sources
+            role: tokenRole,
             profile: userData.profile || {
               firstName: loginResult.user_info.first_name,
               lastName: loginResult.user_info.last_name
             }
           };
+
+          console.log("Setting user role from token:", tokenRole);
+
           setAuthState({
             user: userWithProfile as User,
             accessToken: loginResult.access_token,
@@ -287,16 +344,41 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           localStorage.setItem('user', JSON.stringify(userWithProfile));
           window.dispatchEvent(new Event('storage'));
         } catch (userError) {
+          console.error("Error getting user details:", userError);
+
+          // Extract role from JWT token directly
+          const token = loginResult.access_token;
+          let tokenRole: UserRole = 'user'; // Default role
+
+          // Parse JWT to extract role claim
+          try {
+            const base64Url = token.split('.')[1];
+            const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+            const jsonPayload = decodeURIComponent(atob(base64).split('').map(function (c) {
+              return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+            }).join(''));
+            const tokenData = JSON.parse(jsonPayload);
+            // Ensure it's a valid UserRole
+            tokenRole = tokenData.role === 'admin' ? 'admin' : 'user';
+            console.log("Fallback: Role extracted from JWT token:", tokenRole);
+          } catch (jwtError) {
+            console.error("Error parsing JWT token:", jwtError);
+          }
+
           const basicUserInfo = {
             id: loginResult.user_id,
             email: loginResult.user_info.email,
-            role: loginResult.user_info.role || 'user',
+            // Prioritize JWT token role
+            role: tokenRole,
             username: loginResult.user_info.username,
             profile: {
               firstName: loginResult.user_info.first_name,
               lastName: loginResult.user_info.last_name
             }
           };
+
+          console.log("Setting basic user info with role from token:", tokenRole);
+
           setAuthState({
             user: basicUserInfo as unknown as User,
             accessToken: loginResult.access_token,
@@ -304,6 +386,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             isLoading: false,
             error: null
           });
+          localStorage.setItem('user', JSON.stringify(basicUserInfo));
           window.dispatchEvent(new Event('storage'));
         }
         return { success: true };

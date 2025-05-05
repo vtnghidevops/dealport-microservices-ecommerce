@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { UserLoginCredentials, UserRegistrationData } from '@/types/user.model';
+import { UserLoginCredentials, UserRegistrationData, UserRole } from '@/types/user.model';
 
 // Base URL for API requests - thay bằng URL thực tế của broker-service
 const API_BASE_URL = import.meta.env.VITE_PUBLIC_PRODUCT_API_URL || 'http://localhost:8080';
@@ -192,13 +192,17 @@ class AuthService {
         const tokenData = this.parseJwt(responseData.access_token);
         console.log("Token data extracted:", tokenData);
 
+        // Explicitly check and log the role from token
+        const tokenRole: UserRole = tokenData?.role === 'admin' ? 'admin' : 'user';
+        console.log("Role from JWT token:", tokenRole);
+
         // Nếu broker trả về thông tin user cơ bản, lưu tạm để hiển thị ngay
         if (responseData.user_info) {
           const basicUserInfo = {
             id: responseData.user_id,
             email: responseData.user_info.email,
-            // Ưu tiên lấy role từ JWT token thay vì user_info
-            role: tokenData?.role || 'user',
+            // IMPORTANT: Always prioritize role from JWT token
+            role: tokenRole,
             username: responseData.user_info.username || responseData.user_info.email.split('@')[0],
             profile: {
               firstName: responseData.user_info.first_name,
@@ -308,8 +312,8 @@ class AuthService {
         logout_all_devices: logoutFromAllDevices
       };
 
-      console.log("DEBUG logout: Request URL:", logoutUrl);
-      console.log("DEBUG logout: Request data:", logoutData);
+      //console.log("DEBUG logout: Request URL:", logoutUrl);
+      //console.log("DEBUG logout: Request data:", logoutData);
 
       // Thêm timeout để đảm bảo request hoàn thành
       axios.post(logoutUrl, logoutData, {

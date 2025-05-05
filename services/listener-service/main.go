@@ -42,6 +42,7 @@ func main() {
 		"order.created",                          // Order creation
 		"order.status_changed",                   // Order status changes
 		"order.payment_succeeded",                // Payment success
+		"order.payment_failed",                   // Payment failure
 		"log.INFO.user.login_success",            // User login successful
 		"log.INFO.user.login_failed",             // User login failed
 		"log.INFO.user.registered",               // User registration
@@ -49,6 +50,13 @@ func main() {
 		"log.INFO.user.password_changed",         // User password changed
 		"log.INFO.user.password_reset_requested", // User password reset requested
 		"log.INFO.user.logout",                   // User logout
+		"log.INFO.order.created",                 // Order created log
+		"log.INFO.order.status_changed",          // Order status changed log
+		"log.INFO.order.payment_succeeded",       // Payment succeeded log
+		"log.INFO.order.payment_failed",          // Payment failed log
+		"log.INFO.order.cancelled",               // Order cancelled log
+		"log.INFO.order.shipped",                 // Order shipped log
+		"log.INFO.order.delivered",               // Order delivered log
 	}
 
 	logger.Printf("Listener service is watching for the following topics: %v", topics)

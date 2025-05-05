@@ -318,3 +318,86 @@ func (r *OrderRepository) ListAllOrders(ctx context.Context, skip, limit int) ([
 
 	return orders, int(total), nil
 }
+
+// GetUserTotalSpend calculates the total amount spent by a user across all their completed orders
+func (r *OrderRepository) GetUserTotalSpend(ctx context.Context, userID string) (float64, error) {
+	log.Printf("OrderRepository.GetUserTotalSpend: Calculating total spend for userID=%s", userID)
+
+	// Only count orders with status "paid", "shipped", or "delivered"
+	// These are considered completed orders where payment was successful
+	filter := bson.M{
+		"user_id": userID,
+		"status": bson.M{
+			"$in": []string{"paid", "shipped", "delivered"},
+		},
+	}
+
+	// Use MongoDB aggregation pipeline to calculate the total
+	pipeline := mongo.Pipeline{
+		// Match orders for this user with valid statuses
+		bson.D{{"$match", filter}},
+		// Group by user_id and sum the totals
+		bson.D{
+			{"$group", bson.D{
+				{"_id", "$user_id"},
+				{"totalSpend", bson.D{
+					{"$sum", "$totals.total"},
+				}},
+				{"orderCount", bson.D{
+					{"$sum", 1},
+				}},
+			}},
+		},
+	}
+
+	// Execute the aggregation
+	cursor, err := r.collection.Aggregate(ctx, pipeline)
+	if err != nil {
+		log.Printf("ERROR: Aggregation failed: %v", err)
+		return 0, errors.Join(domain.ErrDatabaseOperation, err)
+	}
+	defer cursor.Close(ctx)
+
+	// Process the result
+	type result struct {
+		ID         string  `bson:"_id"`
+		TotalSpend float64 `bson:"totalSpend"`
+		OrderCount int     `bson:"orderCount"`
+	}
+
+	var results []result
+	if err := cursor.All(ctx, &results); err != nil {
+		log.Printf("ERROR: Failed to decode aggregation results: %v", err)
+		return 0, errors.Join(domain.ErrDatabaseOperation, err)
+	}
+
+	// If no results, the user has no orders or all orders have $0 total
+	if len(results) == 0 {
+		log.Printf("No completed orders found for user %s", userID)
+		return 0, nil
+	}
+
+	// Return the total spend
+	totalSpend := results[0].TotalSpend
+	orderCount := results[0].OrderCount
+	log.Printf("User %s has spent %.2f across %d completed orders", userID, totalSpend, orderCount)
+
+	return totalSpend, nil
+}
+
+// GetUserOrderCount counts the number of orders placed by a user
+func (r *OrderRepository) GetUserOrderCount(ctx context.Context, userID string) (int, error) {
+	log.Printf("OrderRepository.GetUserOrderCount: Counting orders for userID=%s", userID)
+
+	// Count all orders for this user regardless of status
+	filter := bson.M{"user_id": userID}
+
+	count, err := r.collection.CountDocuments(ctx, filter)
+	if err != nil {
+		log.Printf("ERROR: CountDocuments failed: %v", err)
+		return 0, errors.Join(domain.ErrDatabaseOperation, err)
+	}
+
+	log.Printf("User %s has placed %d orders", userID, count)
+	return int(count), nil
+}

@@ -1,26 +1,32 @@
-import React from 'react';
-import NewProductItem from './NewProductItem';
-import { NewProduct } from '../models/product.model';
-
+import React from "react";
+import { Product } from '@/types/product.model';
 
 interface NewProductListProps {
-  products: NewProduct[];
+  products: Product[];
 }
 
-const NewProductList: React.FC<NewProductListProps> = ({ products }) => {
+const NewProductList: React.FC<NewProductListProps> = ({ products = [] }) => {
   return (
-    <div className="mt-6">
-      <h2 className="text-neutral-500 text-[14px] font-medium mb-[10px]">Product</h2>
-      
-      <div>
-        {products.map((product) => (
-          <NewProductItem key={product.id} product={product} />
-        ))}
-      </div>
-      
-      <div className="mt-[1.5rem] flex justify-center">
-        <button className="text-primary font-medium">See more</button>
-      </div>
+    <div className="space-y-3">
+      {products.slice(0, 5).map((product) => (
+        <div
+          key={product.id}
+          className="flex items-center border-b border-gray-100 pb-2"
+        >
+          <div className="flex-shrink-0 w-10 h-10 bg-gray-200 rounded-md overflow-hidden">
+            <img
+              src={product.imageUrl}
+              alt={product.name}
+              className="w-full h-full object-cover"
+            />
+          </div>
+          <div className="ml-3 flex-grow">
+            <h5 className="text-sm font-medium text-gray-800">{product.name}</h5>
+            <p className="text-xs text-gray-500">${product.price.toFixed(2)}</p>
+          </div>
+          <button className="text-xs text-primary">Details</button>
+        </div>
+      ))}
     </div>
   );
 };

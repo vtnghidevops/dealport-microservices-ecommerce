@@ -137,6 +137,8 @@ type OrderService interface {
 	UpdateOrderStatus(ctx context.Context, orderID string, status string) error
 	ValidateCheckout(ctx context.Context, data CheckoutValidationRequest) (CheckoutValidationResult, error)
 	ProcessPayment(ctx context.Context, paymentReq PaymentRequest) (PaymentResult, error)
+	GetUserTotalSpend(ctx context.Context, userID string) (float64, error)
+	GetUserOrderCount(ctx context.Context, userID string) (int, error)
 	GetRepository() OrderRepository
 }
 
@@ -148,4 +150,6 @@ type OrderRepository interface {
 	ListAllOrders(ctx context.Context, skip, limit int) ([]*Order, int, error)
 	UpdateOrderStatus(ctx context.Context, orderID string, status string) error
 	UpdatePaymentInfo(ctx context.Context, orderID string, paymentInfo PaymentInfo) error
+	GetUserTotalSpend(ctx context.Context, userID string) (float64, error)
+	GetUserOrderCount(ctx context.Context, userID string) (int, error)
 }

@@ -41,6 +41,12 @@ type UserServiceClient interface {
 	LogUserActivity(ctx context.Context, in *LogUserActivityRequest, opts ...grpc.CallOption) (*LogUserActivityResponse, error)
 	// GetUserActivityLogs retrieves user activity logs
 	GetUserActivityLogs(ctx context.Context, in *GetUserActivityLogsRequest, opts ...grpc.CallOption) (*GetUserActivityLogsResponse, error)
+	// GetUserStatistics retrieves statistics for the admin dashboard
+	GetUserStatistics(ctx context.Context, in *GetUserStatisticsRequest, opts ...grpc.CallOption) (*GetUserStatisticsResponse, error)
+	// GetUserActivityChart retrieves data for the customer activity chart
+	GetUserActivityChart(ctx context.Context, in *GetUserActivityChartRequest, opts ...grpc.CallOption) (*GetUserActivityChartResponse, error)
+	// SyncUserOrderData synchronizes user order data from checkout service
+	SyncUserOrderData(ctx context.Context, in *SyncUserOrderDataRequest, opts ...grpc.CallOption) (*SyncUserOrderDataResponse, error)
 }
 
 type userServiceClient struct {
@@ -132,6 +138,33 @@ func (c *userServiceClient) GetUserActivityLogs(ctx context.Context, in *GetUser
 	return out, nil
 }
 
+func (c *userServiceClient) GetUserStatistics(ctx context.Context, in *GetUserStatisticsRequest, opts ...grpc.CallOption) (*GetUserStatisticsResponse, error) {
+	out := new(GetUserStatisticsResponse)
+	err := c.cc.Invoke(ctx, "/user.UserService/GetUserStatistics", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *userServiceClient) GetUserActivityChart(ctx context.Context, in *GetUserActivityChartRequest, opts ...grpc.CallOption) (*GetUserActivityChartResponse, error) {
+	out := new(GetUserActivityChartResponse)
+	err := c.cc.Invoke(ctx, "/user.UserService/GetUserActivityChart", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *userServiceClient) SyncUserOrderData(ctx context.Context, in *SyncUserOrderDataRequest, opts ...grpc.CallOption) (*SyncUserOrderDataResponse, error) {
+	out := new(SyncUserOrderDataResponse)
+	err := c.cc.Invoke(ctx, "/user.UserService/SyncUserOrderData", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // UserServiceServer is the server API for UserService service.
 // All implementations must embed UnimplementedUserServiceServer
 // for forward compatibility
@@ -155,6 +188,12 @@ type UserServiceServer interface {
 	LogUserActivity(context.Context, *LogUserActivityRequest) (*LogUserActivityResponse, error)
 	// GetUserActivityLogs retrieves user activity logs
 	GetUserActivityLogs(context.Context, *GetUserActivityLogsRequest) (*GetUserActivityLogsResponse, error)
+	// GetUserStatistics retrieves statistics for the admin dashboard
+	GetUserStatistics(context.Context, *GetUserStatisticsRequest) (*GetUserStatisticsResponse, error)
+	// GetUserActivityChart retrieves data for the customer activity chart
+	GetUserActivityChart(context.Context, *GetUserActivityChartRequest) (*GetUserActivityChartResponse, error)
+	// SyncUserOrderData synchronizes user order data from checkout service
+	SyncUserOrderData(context.Context, *SyncUserOrderDataRequest) (*SyncUserOrderDataResponse, error)
 	mustEmbedUnimplementedUserServiceServer()
 }
 
@@ -188,6 +227,15 @@ func (UnimplementedUserServiceServer) LogUserActivity(context.Context, *LogUserA
 }
 func (UnimplementedUserServiceServer) GetUserActivityLogs(context.Context, *GetUserActivityLogsRequest) (*GetUserActivityLogsResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetUserActivityLogs not implemented")
+}
+func (UnimplementedUserServiceServer) GetUserStatistics(context.Context, *GetUserStatisticsRequest) (*GetUserStatisticsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetUserStatistics not implemented")
+}
+func (UnimplementedUserServiceServer) GetUserActivityChart(context.Context, *GetUserActivityChartRequest) (*GetUserActivityChartResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetUserActivityChart not implemented")
+}
+func (UnimplementedUserServiceServer) SyncUserOrderData(context.Context, *SyncUserOrderDataRequest) (*SyncUserOrderDataResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method SyncUserOrderData not implemented")
 }
 func (UnimplementedUserServiceServer) mustEmbedUnimplementedUserServiceServer() {}
 
@@ -364,6 +412,60 @@ func _UserService_GetUserActivityLogs_Handler(srv interface{}, ctx context.Conte
 	return interceptor(ctx, in, info, handler)
 }
 
+func _UserService_GetUserStatistics_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetUserStatisticsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(UserServiceServer).GetUserStatistics(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/user.UserService/GetUserStatistics",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(UserServiceServer).GetUserStatistics(ctx, req.(*GetUserStatisticsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _UserService_GetUserActivityChart_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetUserActivityChartRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(UserServiceServer).GetUserActivityChart(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/user.UserService/GetUserActivityChart",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(UserServiceServer).GetUserActivityChart(ctx, req.(*GetUserActivityChartRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _UserService_SyncUserOrderData_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(SyncUserOrderDataRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(UserServiceServer).SyncUserOrderData(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/user.UserService/SyncUserOrderData",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(UserServiceServer).SyncUserOrderData(ctx, req.(*SyncUserOrderDataRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // UserService_ServiceDesc is the grpc.ServiceDesc for UserService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -406,6 +508,18 @@ var UserService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetUserActivityLogs",
 			Handler:    _UserService_GetUserActivityLogs_Handler,
+		},
+		{
+			MethodName: "GetUserStatistics",
+			Handler:    _UserService_GetUserStatistics_Handler,
+		},
+		{
+			MethodName: "GetUserActivityChart",
+			Handler:    _UserService_GetUserActivityChart_Handler,
+		},
+		{
+			MethodName: "SyncUserOrderData",
+			Handler:    _UserService_SyncUserOrderData_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

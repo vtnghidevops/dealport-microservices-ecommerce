@@ -100,7 +100,7 @@ func main() {
 	}
 
 	// Start HTTP server for Postman testing
-	go app.serveHTTP()
+	// go app.serveHTTP()
 
 	// Connect to RabbitMQ and start consuming
 	go app.setupRabbitMQConsumer()

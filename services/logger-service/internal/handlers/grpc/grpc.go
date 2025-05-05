@@ -109,6 +109,49 @@ func (l *LogServer) GetUserActivityLogs(ctx context.Context, req *pb.UserActivit
 	}, nil
 }
 
+// GetOrderLogs retrieves logs for order activities
+func (l *LogServer) GetOrderLogs(ctx context.Context, req *pb.OrderLogRequest) (*pb.OrderLogResponse, error) {
+	orderID := req.GetOrderId()
+	orderNumber := req.GetOrderNumber()
+	actionType := req.GetActionType()
+
+	// Validate that at least one of orderID or orderNumber is provided
+	if orderID == "" && orderNumber == "" {
+		log.Printf("Error: Both orderID and orderNumber are empty in GetOrderLogs request")
+		return &pb.OrderLogResponse{}, fmt.Errorf("either order ID or order number must be provided")
+	}
+
+	// Get logs from database
+	logs, err := l.Models.LogEntry.FindOrderLogs(orderID, orderNumber, actionType)
+	if err != nil {
+		log.Printf("Error retrieving order logs: %v", err)
+		return &pb.OrderLogResponse{}, err
+	}
+
+	// Convert logs to protobuf format
+	var responseItems []*pb.Log
+	for _, logEntry := range logs {
+		pbLog := &pb.Log{
+			Name:      logEntry.Name,
+			Data:      logEntry.Data,
+			Level:     logEntry.Level,
+			Service:   logEntry.Service,
+			Action:    logEntry.Action,
+			UserId:    logEntry.UserID,
+			RequestId: logEntry.RequestID,
+			Message:   logEntry.Message,
+		}
+		responseItems = append(responseItems, pbLog)
+	}
+
+	log.Printf("Retrieved %d order logs for orderID=%s, orderNumber=%s, actionType=%s",
+		len(responseItems), orderID, orderNumber, actionType)
+
+	return &pb.OrderLogResponse{
+		Logs: responseItems,
+	}, nil
+}
+
 // GRPCListen starts the gRPC server
 func (app *Config) GRPCListen() {
 	log.Println("Starting gRPC server on port", gRpcPort)

@@ -33,6 +33,18 @@ service UserService {
   // GetUserActivityLogs retrieves user activity logs
   rpc GetUserActivityLogs(GetUserActivityLogsRequest)
       returns (GetUserActivityLogsResponse) {}
+
+  // GetUserStatistics retrieves statistics for the admin dashboard
+  rpc GetUserStatistics(GetUserStatisticsRequest)
+      returns (GetUserStatisticsResponse) {}
+
+  // GetUserActivityChart retrieves data for the customer activity chart
+  rpc GetUserActivityChart(GetUserActivityChartRequest)
+      returns (GetUserActivityChartResponse) {}
+
+  // SyncUserOrderData synchronizes user order data from checkout service
+  rpc SyncUserOrderData(SyncUserOrderDataRequest)
+      returns (SyncUserOrderDataResponse) {}
 }
 
 // User represents a user entity
@@ -49,6 +61,9 @@ message User {
   bool active = 10;
   string created_at = 11;
   string updated_at = 12;
+  int32 order_count = 13;
+  double total_spend = 14;
+  string last_login = 15;
 }
 
 // Address represents a user address
@@ -120,6 +135,7 @@ message GetUsersRequest {
   string sort_by = 3;
   string sort_order = 4;
   string role = 5;
+  bool active = 6;  // Filter by active status
 }
 
 // GetUsersResponse contains a list of users
@@ -179,4 +195,66 @@ message GetUserActivityLogsResponse {
   string logs = 1;  // JSON string of logs
   bool success = 2;
   string message = 3;
+}
+
+// GetUserStatisticsRequest is used to request user statistics for admin
+// dashboard
+message GetUserStatisticsRequest {
+  // Empty request as we'll return all statistics
+}
+
+// GetUserStatisticsResponse contains user statistics
+message GetUserStatisticsResponse {
+  int32 total_users = 1;
+  double user_growth = 2;
+  int32 new_users = 3;
+  double new_user_growth = 4;
+  int32 visitors = 5;
+  double visitor_growth = 6;
+  int32 active_users = 7;
+  int32 repeat_customers = 8;
+  int32 shop_visitors = 9;
+  double conversion_rate = 10;
+}
+
+// GetUserActivityChartRequest is used to request user activity chart data
+message GetUserActivityChartRequest {
+  int32 days = 1;         // Number of days to include in the chart
+  string chart_type = 2;  // Type of chart: "activity", "new_users", "orders",
+                          // "revenue", "conversion"
+}
+
+// UserActivityChartPoint represents a single data point in the activity chart
+message UserActivityChartPoint {
+  string day = 1;    // Day of week (e.g., "Mon")
+  string date = 2;   // Full date (e.g., "2023-07-10")
+  int32 count = 3;   // Primary count value (users/orders/etc)
+  double value = 4;  // Secondary value (revenue/conversion/etc)
+}
+
+// GetUserActivityChartResponse contains user activity chart data
+message GetUserActivityChartResponse {
+  repeated UserActivityChartPoint chart_data = 1;
+  string chart_type = 2;
+  string title = 3;
+  string y_axis_label = 4;
+  string description = 5;
+  double total_value = 6;
+  double avg_value = 7;
+  double max_value = 8;
+  double min_value = 9;
+  double growth_rate = 10;
+}
+
+// SyncUserOrderDataRequest is used to sync a user's order data
+message SyncUserOrderDataRequest {
+  string user_id = 1;
+  int32 order_count = 2;
+  double total_spend = 3;
+}
+
+// SyncUserOrderDataResponse is the response for syncing order data
+message SyncUserOrderDataResponse {
+  bool success = 1;
+  string message = 2;
 }

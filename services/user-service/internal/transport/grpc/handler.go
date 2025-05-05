@@ -510,3 +510,83 @@ func (h *UserHandler) GetUserActivityLogs(ctx context.Context, req *pb.GetUserAc
 		Message: "User activity logs retrieved successfully",
 	}, nil
 }
+
+// GetUserStatistics retrieves statistics for the admin dashboard
+func (h *UserHandler) GetUserStatistics(ctx context.Context, req *pb.GetUserStatisticsRequest) (*pb.GetUserStatisticsResponse, error) {
+	// Call service to get user statistics
+	stats, err := h.userService.GetUserStatistics(ctx)
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "failed to get user statistics: %v", err)
+	}
+
+	// Convert domain statistics to proto response
+	return &pb.GetUserStatisticsResponse{
+		TotalUsers:      int32(stats.TotalUsers),
+		UserGrowth:      stats.UserGrowth,
+		NewUsers:        int32(stats.NewUsers),
+		NewUserGrowth:   stats.NewUserGrowth,
+		Visitors:        int32(stats.Visitors),
+		VisitorGrowth:   stats.VisitorGrowth,
+		ActiveUsers:     int32(stats.ActiveUsers),
+		RepeatCustomers: int32(stats.RepeatCustomers),
+		ShopVisitors:    int32(stats.ShopVisitors),
+		ConversionRate:  stats.ConversionRate,
+	}, nil
+}
+
+// GetUserActivityChart retrieves data for the customer activity chart
+func (h *UserHandler) GetUserActivityChart(ctx context.Context, req *pb.GetUserActivityChartRequest) (*pb.GetUserActivityChartResponse, error) {
+	// Call service to get user activity chart data
+	chartData, err := h.userService.GetUserActivityChart(ctx, int(req.Days))
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "failed to get user activity chart data: %v", err)
+	}
+
+	// Convert domain chart data to proto response
+	protoChartData := make([]*pb.UserActivityChartPoint, 0, len(chartData.ChartData))
+	for _, point := range chartData.ChartData {
+		protoChartData = append(protoChartData, &pb.UserActivityChartPoint{
+			Day:   point.Day,
+			Date:  point.Date,
+			Count: int32(point.Count),
+		})
+	}
+
+	// Create response with available chart data
+	response := &pb.GetUserActivityChartResponse{
+		ChartData: protoChartData,
+	}
+
+	// TODO: Proto cần được cập nhật để hỗ trợ các trường bổ sung cho biểu đồ phong phú:
+	// - ChartType (string) - Loại biểu đồ (activity, new_users, orders, revenue, conversion)
+	// - Title (string) - Tiêu đề biểu đồ
+	// - YAxisLabel (string) - Nhãn trục Y
+	// - Description (string) - Mô tả biểu đồ
+	// - TotalValue (double) - Tổng giá trị
+	// - AvgValue (double) - Giá trị trung bình
+	// - MaxValue (double) - Giá trị cao nhất
+	// - MinValue (double) - Giá trị thấp nhất
+	// - GrowthRate (double) - Tỷ lệ tăng trưởng
+
+	return response, nil
+}
+
+// SyncUserOrderData syncs a user's order data from checkout service
+func (h *UserHandler) SyncUserOrderData(ctx context.Context, req *pb.SyncUserOrderDataRequest) (*pb.SyncUserOrderDataResponse, error) {
+	// Validate request
+	if req.UserId == "" {
+		return nil, status.Errorf(codes.InvalidArgument, "user ID is required")
+	}
+
+	// Call service to sync order data
+	err := h.userService.SyncUserOrderData(ctx, req.UserId, int(req.OrderCount), req.TotalSpend)
+	if err != nil {
+		h.logger.Printf("Failed to sync user order data: %v", err)
+		return nil, status.Errorf(codes.Internal, "failed to sync user order data: %v", err)
+	}
+
+	return &pb.SyncUserOrderDataResponse{
+		Success: true,
+		Message: "User order data synchronized successfully",
+	}, nil
+}

@@ -39,7 +39,13 @@ func (h *ProductHandler) GetAllProducts(w http.ResponseWriter, r *http.Request) 
 		}
 	}
 
-	if pageSizeStr := r.URL.Query().Get("page_size"); pageSizeStr != "" {
+	// Check for page_size first, then fall back to limit if page_size is not provided
+	pageSizeStr := r.URL.Query().Get("page_size")
+	if pageSizeStr == "" {
+		pageSizeStr = r.URL.Query().Get("limit") // Support both page_size and limit
+	}
+
+	if pageSizeStr != "" {
 		if ps, err := strconv.Atoi(pageSizeStr); err == nil && ps > 0 {
 			pageSize = ps
 		}
@@ -48,7 +54,7 @@ func (h *ProductHandler) GetAllProducts(w http.ResponseWriter, r *http.Request) 
 	// Extract filter parameters from the query string
 	filters := make(map[string]string)
 	for key, values := range r.URL.Query() {
-		if key != "page" && key != "page_size" && len(values) > 0 {
+		if key != "page" && key != "page_size" && key != "limit" && len(values) > 0 {
 			filters[key] = values[0]
 		}
 	}

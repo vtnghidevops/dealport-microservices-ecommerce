@@ -3,6 +3,7 @@ package domain
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"log"
 	"time"
 
@@ -327,6 +328,77 @@ func (l *LogEntry) FindUserActivityLogs(userID string, actionType string) ([]*Lo
 	cursor, err := collection.Find(ctx, filter, opts)
 	if err != nil {
 		log.Println("Finding user activity logs error:", err)
+		return nil, err
+	}
+	defer cursor.Close(ctx)
+
+	var logs []*LogEntry
+	for cursor.Next(ctx) {
+		var item LogEntry
+		err := cursor.Decode(&item)
+		if err != nil {
+			log.Println("Error decoding log into slice:", err)
+			return nil, err
+		} else {
+			logs = append(logs, &item)
+		}
+	}
+
+	return logs, nil
+}
+
+// FindOrderLogs retrieves logs related to order activities with optional filters
+func (l *LogEntry) FindOrderLogs(orderID, orderNumber, actionType string) ([]*LogEntry, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+	defer cancel()
+
+	collection := client.Database("logs").Collection("logs")
+
+	// Base filter for order logs
+	filter := bson.M{
+		"name": bson.M{
+			"$regex": "^log\\.INFO\\.order\\.",
+		},
+	}
+
+	// Apply additional filters if provided
+	if orderID != "" {
+		// Parse data field as JSON and check for order_id
+		filter["$or"] = []bson.M{
+			{"data": bson.M{"$regex": fmt.Sprintf("\"order_id\":\\s*\"%s\"", orderID)}},
+		}
+	}
+
+	if orderNumber != "" {
+		// Add orderNumber to the $or query if it doesn't exist
+		orConditions, orExists := filter["$or"].([]bson.M)
+		if orExists {
+			filter["$or"] = append(orConditions, bson.M{
+				"data": bson.M{"$regex": fmt.Sprintf("\"order_number\":\\s*\"%s\"", orderNumber)},
+			})
+		} else {
+			filter["$or"] = []bson.M{
+				{"data": bson.M{"$regex": fmt.Sprintf("\"order_number\":\\s*\"%s\"", orderNumber)}},
+			}
+		}
+	}
+
+	// If actionType is provided, add it to the filter
+	if actionType != "" {
+		// Replace the generic regex filter with specific action type
+		filter["name"] = fmt.Sprintf("log.INFO.order.%s", actionType)
+	}
+
+	// Log the query for debugging
+	queryJSON, _ := json.Marshal(filter)
+	log.Printf("Order logs query: %s", string(queryJSON))
+
+	opts := options.Find()
+	opts.SetSort(bson.D{{"created_at", -1}})
+
+	cursor, err := collection.Find(ctx, filter, opts)
+	if err != nil {
+		log.Println("Finding order logs error:", err)
 		return nil, err
 	}
 	defer cursor.Close(ctx)

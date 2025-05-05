@@ -63,8 +63,24 @@ func (app *Config) routers() http.Handler {
 			// Admin routes
 			r.Group(func(r chi.Router) {
 				r.Use(app.AuthMiddleware.RequireAuth)
-				// TODO: Add admin role check middleware
+				r.Use(app.AuthMiddleware.RequireAdmin)
+
+				// Lấy thông tin của một người dùng cụ thể
 				r.Get("/{id}", app.UserHandler.GetUser)
+
+				// API quản lý khách hàng cho admin
+				r.Route("/admin", func(r chi.Router) {
+					// Quản lý danh sách khách hàng
+					r.Post("/list", app.UserHandler.ListUsers)
+
+					// Thống kê và biểu đồ
+					r.Post("/statistics", app.UserHandler.GetUserStatistics)
+					r.Post("/activity-chart", app.UserHandler.GetUserActivityChart)
+				})
+
+				// Thao tác với từng khách hàng
+				r.Put("/{id}/status", app.UserHandler.UpdateCustomerStatus)
+				r.Delete("/{id}", app.UserHandler.DeleteCustomer)
 			})
 		})
 

@@ -371,6 +371,48 @@ func (h *CheckoutHandler) GetHealth(ctx context.Context, req *pb.HealthRequest) 
 	}, nil
 }
 
+// GetUserTotalSpend handles retrieving the total amount spent by a user
+func (h *CheckoutHandler) GetUserTotalSpend(ctx context.Context, req *pb.UserRequest) (*pb.TotalSpendResponse, error) {
+	log.Printf("GetUserTotalSpend gRPC handler called with UserID=%s", req.UserId)
+
+	if req.UserId == "" {
+		log.Printf("ERROR: Empty user ID provided in GetUserTotalSpend request")
+		return nil, status.Errorf(codes.InvalidArgument, "user ID is required")
+	}
+
+	totalSpend, err := h.orderService.GetUserTotalSpend(ctx, req.UserId)
+	if err != nil {
+		log.Printf("ERROR: Failed to get total spend for user %s: %v", req.UserId, err)
+		return nil, status.Errorf(codes.Internal, "failed to get total spend: %v", err)
+	}
+
+	log.Printf("Successfully retrieved total spend %.2f for user %s", totalSpend, req.UserId)
+	return &pb.TotalSpendResponse{
+		TotalSpend: totalSpend,
+	}, nil
+}
+
+// GetUserOrderCount handles retrieving the number of orders placed by a user
+func (h *CheckoutHandler) GetUserOrderCount(ctx context.Context, req *pb.UserRequest) (*pb.OrderCountResponse, error) {
+	log.Printf("GetUserOrderCount gRPC handler called with UserID=%s", req.UserId)
+
+	if req.UserId == "" {
+		log.Printf("ERROR: Empty user ID provided in GetUserOrderCount request")
+		return nil, status.Errorf(codes.InvalidArgument, "user ID is required")
+	}
+
+	orderCount, err := h.orderService.GetUserOrderCount(ctx, req.UserId)
+	if err != nil {
+		log.Printf("ERROR: Failed to get order count for user %s: %v", req.UserId, err)
+		return nil, status.Errorf(codes.Internal, "failed to get order count: %v", err)
+	}
+
+	log.Printf("Successfully retrieved order count %d for user %s", orderCount, req.UserId)
+	return &pb.OrderCountResponse{
+		OrderCount: int32(orderCount),
+	}, nil
+}
+
 // Helper functions to convert between domain models and protobuf messages
 func convertOrderToProto(order *domain.Order) *pb.Order {
 	// Check if order is nil

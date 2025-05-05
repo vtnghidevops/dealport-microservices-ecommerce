@@ -30,6 +30,7 @@ type User struct {
 	Wishlist       []int           `json:"wishlist,omitempty"`
 	CartID         *string         `json:"cart_id,omitempty" db:"cart_id"` // Changed to pointer for NULL handling
 	OrderCount     int             `json:"order_count,omitempty" db:"order_count"`
+	TotalSpend     float64         `json:"total_spend,omitempty" db:"total_spend"`
 }
 
 // Address represents a user address
@@ -104,6 +105,7 @@ type UserFilter struct {
 	SortOrder string `json:"sort_order" validate:"oneof=asc desc"`
 	Role      string `json:"role"`
 	Status    string `json:"status"`
+	Active    *bool  `json:"active,omitempty"` // Added to filter by active status
 }
 
 // SearchParams represents search parameters
@@ -145,4 +147,52 @@ type GetWishlistRequest struct {
 type GetWishlistResponse struct {
 	Items []WishlistItem `json:"items"`
 	Count int            `json:"count"`
+}
+
+// UserStatistics represents the statistics for the admin dashboard
+type UserStatistics struct {
+	TotalUsers      int     `json:"total_users"`
+	UserGrowth      float64 `json:"user_growth"`
+	NewUsers        int     `json:"new_users"`
+	NewUserGrowth   float64 `json:"new_user_growth"`
+	Visitors        int     `json:"visitors"`
+	VisitorGrowth   float64 `json:"visitor_growth"`
+	ActiveUsers     int     `json:"active_users"`
+	RepeatCustomers int     `json:"repeat_customers"`
+	ShopVisitors    int     `json:"shop_visitors"`
+	ConversionRate  float64 `json:"conversion_rate"`
+}
+
+// UserActivityChartPoint represents a data point for the user activity chart
+type UserActivityChartPoint struct {
+	Day   string  `json:"day"`             // Day of week (e.g., "Mon")
+	Date  string  `json:"date"`            // Full date (e.g., "2023-07-10")
+	Count int     `json:"count"`           // Primary count value (users/orders/etc)
+	Value float64 `json:"value,omitempty"` // Secondary value (revenue/conversion/etc)
+}
+
+// ChartType defines the type of chart to retrieve
+type ChartType string
+
+// Chart type constants
+const (
+	ChartTypeActivity   ChartType = "activity"   // User logins/activities
+	ChartTypeNewUsers   ChartType = "new_users"  // New user registrations
+	ChartTypeOrders     ChartType = "orders"     // Order counts
+	ChartTypeRevenue    ChartType = "revenue"    // Revenue/sales
+	ChartTypeConversion ChartType = "conversion" // Conversion rates
+)
+
+// UserActivityChart represents the data for the customer activity chart
+type UserActivityChart struct {
+	ChartData   []UserActivityChartPoint `json:"chart_data"`
+	ChartType   ChartType                `json:"chart_type"`
+	Title       string                   `json:"title"`
+	YAxisLabel  string                   `json:"y_axis_label"`
+	Description string                   `json:"description,omitempty"`
+	TotalValue  float64                  `json:"total_value,omitempty"` // Total value across all data points
+	AvgValue    float64                  `json:"avg_value,omitempty"`   // Average value across all data points
+	MaxValue    float64                  `json:"max_value,omitempty"`   // Maximum value in the data set
+	MinValue    float64                  `json:"min_value,omitempty"`   // Minimum value in the data set
+	GrowthRate  float64                  `json:"growth_rate,omitempty"` // Growth rate over the period
 }

@@ -66,7 +66,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen = true, onToggle }) => {
         {
           name: "Add Products",
           icon: <IoIosAddCircleOutline />,
-          link: "/admin/products/add",
+          link: "/admin/add-product",
         },
         // {
         //   name: "Product Media",

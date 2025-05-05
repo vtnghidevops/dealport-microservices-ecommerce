@@ -85,13 +85,13 @@ const CustomerTable: React.FC<CustomerTableProps> = ({
   return (
     <div className="overflow-hidden">
       {/* Search and Filter Bar */}
-      <div className="mb-4 p-4 bg-white rounded-t-lg border-b">
+      <div className="mb-5 p-4 bg-white rounded-t-lg ">
         <div className="flex flex-wrap items-center justify-between">
-          <div className="w-full md:w-1/3 mb-3 md:mb-0">
+          <div className="w-full md:w-1/3 mb-5 md:mb-0">
             <form onSubmit={handleSearchSubmit} className="relative">
               <input
                 type="text"
-                className="w-full rounded-md border-gray-300 shadow-sm pl-10 pr-4 py-2 focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50"
+                className="w-full rounded-md border-2 border-neutral-200 shadow-sm pl-10 pr-4 py-2 focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50"
                 placeholder="Search customers..."
                 value={searchTerm}
                 onChange={handleSearchChange}
@@ -109,7 +109,7 @@ const CustomerTable: React.FC<CustomerTableProps> = ({
             <div className="flex space-x-2">
               <button
                 onClick={() => handleFilterClick("All")}
-                className={`px-4 py-2 text-sm font-medium rounded-md ${activeFilter === "All"
+                className={`px-5 py-2 text-sm font-medium rounded-md ${activeFilter === "All"
                   ? "bg-blue-100 text-blue-700"
                   : "bg-gray-100 text-gray-700 hover:bg-gray-200"
                   }`}
@@ -118,7 +118,7 @@ const CustomerTable: React.FC<CustomerTableProps> = ({
               </button>
               <button
                 onClick={() => handleFilterClick("Active")}
-                className={`px-4 py-2 text-sm font-medium rounded-md ${activeFilter === CustomerStatus.ACTIVE
+                className={`px-5 py-2 text-sm font-medium rounded-md ${activeFilter === CustomerStatus.ACTIVE
                   ? "bg-green-100 text-green-700"
                   : "bg-gray-100 text-gray-700 hover:bg-gray-200"
                   }`}
@@ -127,21 +127,12 @@ const CustomerTable: React.FC<CustomerTableProps> = ({
               </button>
               <button
                 onClick={() => handleFilterClick("Inactive")}
-                className={`px-4 py-2 text-sm font-medium rounded-md ${activeFilter === CustomerStatus.INACTIVE
+                className={`px-5 py-2 text-sm font-medium rounded-md ${activeFilter === CustomerStatus.INACTIVE
                   ? "bg-red-100 text-red-700"
                   : "bg-gray-100 text-gray-700 hover:bg-gray-200"
                   }`}
               >
                 Inactive ({counts.inactive})
-              </button>
-              <button
-                onClick={() => handleFilterClick("VIP")}
-                className={`px-4 py-2 text-sm font-medium rounded-md ${activeFilter === CustomerStatus.VIP
-                  ? "bg-yellow-100 text-yellow-700"
-                  : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-                  }`}
-              >
-                VIP ({counts.vip})
               </button>
             </div>
           </div>
@@ -248,22 +239,22 @@ const CustomerTable: React.FC<CustomerTableProps> = ({
                         </svg>
                       </button>
                       {statusDropdownOpen === customer.id && (
-                        <div className="absolute right-0 mt-2 w-32 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 z-10">
+                        <div className="absolute right-0 mt-2 w-[8rem] flex justify-center items-center rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 z-10">
                           <div className="py-1" role="menu" aria-orientation="vertical">
                             <button
-                              className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                              className="block w-[8rem] text-center py-2 text-sm text-gray-700 hover:bg-gray-100"
                               onClick={(e) => handleStatusChange(e, customer.id, CustomerStatus.ACTIVE)}
                             >
                               Set Active
                             </button>
                             <button
-                              className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                              className="block text-center w-[8rem] py-2 text-sm text-gray-700 hover:bg-gray-100"
                               onClick={(e) => handleStatusChange(e, customer.id, CustomerStatus.INACTIVE)}
                             >
                               Set Inactive
                             </button>
                             <button
-                              className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                              className="block  text-center w-[8rem] py-2 text-sm text-gray-700 hover:bg-gray-100"
                               onClick={(e) => handleStatusChange(e, customer.id, CustomerStatus.VIP)}
                             >
                               Set VIP

@@ -33,8 +33,21 @@ message UserActivityLogResponse {
   repeated Log logs = 1;
 }
 
+// New message types for retrieving order logs
+message OrderLogRequest {
+  string order_id = 1;
+  string order_number = 2;  // optional, use either order_id or order_number
+  string action_type =
+      3;  // optional filter by action type (created, status_changed, etc)
+}
+
+message OrderLogResponse {
+  repeated Log logs = 1;
+}
+
 service LogService {
   rpc WriteLog(LogRequest) returns (LogResponse);
   rpc GetUserActivityLogs(UserActivityLogRequest)
       returns (UserActivityLogResponse);
+  rpc GetOrderLogs(OrderLogRequest) returns (OrderLogResponse);
 }

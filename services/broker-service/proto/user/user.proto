@@ -27,6 +27,14 @@ service UserService {
   rpc RemoveFromWishlist(RemoveFromWishlistRequest) returns (WishlistResponse) {
   }
   rpc GetWishlist(GetWishlistRequest) returns (GetWishlistResponse) {}
+
+  // GetUserStatistics retrieves statistics for the admin dashboard
+  rpc GetUserStatistics(GetUserStatisticsRequest)
+      returns (GetUserStatisticsResponse) {}
+
+  // GetUserActivityChart retrieves data for the customer activity chart
+  rpc GetUserActivityChart(GetUserActivityChartRequest)
+      returns (GetUserActivityChartResponse) {}
 }
 
 // User represents a user entity
@@ -45,6 +53,9 @@ message User {
   string updated_at = 12;
   string username = 13;
   repeated int32 wishlist = 14;
+  int32 order_count = 15;
+  double total_spend = 16;
+  string last_login = 17;
 }
 
 // Address represents a user address
@@ -125,6 +136,7 @@ message GetUsersRequest {
   string sort_by = 3;
   string sort_order = 4;
   string role = 5;
+  bool active = 6;  // Filter by active status
 }
 
 // GetUsersResponse contains a list of users
@@ -169,4 +181,41 @@ message GetWishlistResponse {
 message WishlistResponse {
   bool success = 1;
   string message = 2;
+}
+
+// GetUserStatisticsRequest is used to request user statistics for admin
+// dashboard
+message GetUserStatisticsRequest {
+  // Empty request as we'll return all statistics
+}
+
+// GetUserStatisticsResponse contains user statistics
+message GetUserStatisticsResponse {
+  int32 total_users = 1;
+  double user_growth = 2;
+  int32 new_users = 3;
+  double new_user_growth = 4;
+  int32 visitors = 5;
+  double visitor_growth = 6;
+  int32 active_users = 7;
+  int32 repeat_customers = 8;
+  int32 shop_visitors = 9;
+  double conversion_rate = 10;
+}
+
+// GetUserActivityChartRequest is used to request user activity chart data
+message GetUserActivityChartRequest {
+  int32 days = 1;  // Number of days to include in the chart
+}
+
+// UserActivityChartPoint represents a single data point in the activity chart
+message UserActivityChartPoint {
+  string day = 1;   // Day of week (e.g., "Mon")
+  string date = 2;  // Full date (e.g., "2023-07-10")
+  int32 count = 3;  // Number of active users on this day
+}
+
+// GetUserActivityChartResponse contains user activity chart data
+message GetUserActivityChartResponse {
+  repeated UserActivityChartPoint chart_data = 1;
 }

@@ -9,7 +9,8 @@ import axios from 'axios';
 
 // Base URL for API requests
 const API_BASE_URL = import.meta.env.VITE_PUBLIC_PRODUCT_API_URL || 'http://localhost:8080/api/v1';
-const BROKER_ENDPOINT = `${API_BASE_URL}/broker`;
+const USER_ENDPOINT = `${API_BASE_URL}/users`;
+const ADMIN_ENDPOINT = `${USER_ENDPOINT}/admin`;
 
 // Create an axios instance with authorization configuration
 const getAuthClient = () => {
@@ -23,67 +24,15 @@ const getAuthClient = () => {
   });
 };
 
-// Fallback mock data for cases where API is unavailable
-const fallbackMockData = {
-  customers: [
-    { id: 'CUST001', name: 'John Doe', phone: '+1234567890', orderCount: 25, totalSpend: 3450.00, status: CustomerStatus.ACTIVE },
-    { id: 'CUST002', name: 'Jane Smith', phone: '+1987654321', orderCount: 5, totalSpend: 250.00, status: CustomerStatus.INACTIVE },
-    { id: 'CUST003', name: 'Emily Davis', phone: '+1122334455', orderCount: 30, totalSpend: 4600.00, status: CustomerStatus.VIP },
-  ],
-  overview: {
-    totalCustomers: {
-      count: 11040,
-      growth: 14.4,
-      period: 'Last 7 days'
-    },
-    newCustomers: {
-      count: 2370,
-      growth: 20,
-      period: 'Last 7 days'
-    },
-    visitors: {
-      count: 250000,
-      growth: 20,
-      period: 'Last 7 days'
-    },
-    activeCustomers: {
-      count: 25000,
-      chartLabel: 'Active Customers'
-    },
-    repeatCustomers: {
-      count: 5600,
-      chartLabel: 'Repeat Customers'
-    },
-    shopVisitor: {
-      count: 250000,
-      chartLabel: 'Shop Visitor'
-    },
-    conversionRate: {
-      rate: 5.5,
-      chartLabel: 'Conversion Rate'
-    }
-  },
-  chartData: [
-    { day: 'Sun', count: 12000 },
-    { day: 'Mon', count: 19000 },
-    { day: 'Tue', count: 17000 },
-    { day: 'Wed', count: 22000 },
-    { day: 'Thu', count: 25000 },
-    { day: 'Fri', count: 23000 },
-    { day: 'Sat', count: 18000 },
-  ],
-};
-
 // Helper function to convert API data to Customer object
 const mapApiDataToCustomer = (userData: any): Customer => {
   return {
     id: userData.id?.toString() || '',
-    name: `${userData.first_name || ''} ${userData.last_name || ''}`.trim() || userData.email || 'Unknown User',
+    name: userData.name || 'Unknown User',
     phone: userData.phone || 'N/A',
-    orderCount: userData.order_count || 0,
-    totalSpend: userData.total_spend || 0,
-    status: userData.vip ? CustomerStatus.VIP :
-      userData.active ? CustomerStatus.ACTIVE : CustomerStatus.INACTIVE
+    orderCount: userData.orderCount || 0,
+    totalSpend: userData.totalSpend || 0,
+    status: userData.status || CustomerStatus.ACTIVE
   };
 };
 
@@ -92,75 +41,42 @@ export const CustomerService = {
     try {
       const api = getAuthClient();
 
-      // Building query parameters
-      const queryParams = new URLSearchParams();
-      queryParams.append('page', params.page.toString());
-      queryParams.append('limit', params.limit.toString());
+      // Build filter parameters based on CustomerFilterParams
+      const requestData: any = {
+        page: params.page,
+        limit: params.limit
+      };
 
+      // Add search term if provided
       if (params.searchTerm) {
-        queryParams.append('search', params.searchTerm);
+        requestData.search = params.searchTerm;
       }
 
+      // Add status filter if provided
       if (params.status) {
-        switch (params.status) {
-          case CustomerStatus.ACTIVE:
-            queryParams.append('active', 'true');
-            break;
-          case CustomerStatus.INACTIVE:
-            queryParams.append('active', 'false');
-            break;
-          case CustomerStatus.VIP:
-            queryParams.append('vip', 'true');
-            break;
-        }
+        requestData.status = params.status;
       }
 
-      // Call broker service to get user data from user-service
-      const response = await api.post(`${BROKER_ENDPOINT}/user-service/users/list`, {
-        params: queryParams.toString()
-      });
+      // Call the customer list API (sử dụng endpoint admin mới)
+      const response = await api.post(`${ADMIN_ENDPOINT}/list`, requestData);
 
-      if (response.data && response.data.data) {
-        const users = response.data.data;
-        const total = response.data.meta?.total || users.length;
+      if (response.data && !response.data.error && response.data.data) {
+        const { customers, total } = response.data.data;
 
         // Map API data to Customer model
-        const customers = users.map(mapApiDataToCustomer);
+        const mappedCustomers = customers.map(mapApiDataToCustomer);
 
         return {
-          customers,
-          total
+          customers: mappedCustomers,
+          total: total || mappedCustomers.length
         };
       } else {
-        throw new Error('Invalid API response format');
+        throw new Error(response.data?.message || 'Failed to fetch customers');
       }
     } catch (error) {
       console.error('Error fetching customers:', error);
-
-      // Fallback to mock data if API fails
-      const filteredCustomers = fallbackMockData.customers.filter(customer => {
-        if (params.status && customer.status !== params.status) {
-          return false;
-        }
-
-        if (params.searchTerm) {
-          const searchLower = params.searchTerm.toLowerCase();
-          return customer.name.toLowerCase().includes(searchLower) ||
-            customer.id.toLowerCase().includes(searchLower);
-        }
-
-        return true;
-      });
-
-      const total = filteredCustomers.length;
-      const start = (params.page - 1) * params.limit;
-      const end = start + params.limit;
-      const paginatedCustomers = filteredCustomers.slice(start, end);
-
-      return {
-        customers: paginatedCustomers,
-        total
-      };
+      // Throw the error to be handled by the component
+      throw error;
     }
   },
 
@@ -168,12 +84,14 @@ export const CustomerService = {
     try {
       const api = getAuthClient();
 
-      // Call broker service to get customer statistics from user-service
-      const response = await api.post(`${BROKER_ENDPOINT}/user-service/users/statistics`);
+      // Call the customer statistics API (sử dụng endpoint admin mới)
+      const response = await api.post(`${ADMIN_ENDPOINT}/statistics`);
 
-      if (response.data && response.data.data) {
+      if (response.data && !response.data.error && response.data.data) {
+        // Trích xuất dữ liệu thống kê từ API response
         const stats = response.data.data;
 
+        // Cấu trúc object đúng theo định dạng CustomerOverview
         return {
           totalCustomers: {
             count: stats.total_users || 0,
@@ -208,13 +126,12 @@ export const CustomerService = {
           }
         };
       } else {
-        throw new Error('Invalid API response format');
+        throw new Error(response.data?.message || 'Failed to fetch customer overview');
       }
     } catch (error) {
       console.error('Error fetching customer overview:', error);
-
-      // Fallback to mock data if API fails
-      return fallbackMockData.overview;
+      // Throw the error to be handled by the component
+      throw error;
     }
   },
 
@@ -222,23 +139,24 @@ export const CustomerService = {
     try {
       const api = getAuthClient();
 
-      // Call broker service to get chart data from user-service
-      const response = await api.post(`${BROKER_ENDPOINT}/user-service/users/activity-chart`);
+      // Call the customer activity chart API (sử dụng endpoint admin mới)
+      const response = await api.post(`${ADMIN_ENDPOINT}/activity-chart`);
 
-      if (response.data && response.data.data) {
-        // Map API response to CustomerChartData format
-        return response.data.data.map((item: any) => ({
-          day: item.day || item.date || 'Unknown',
-          count: item.count || item.value || 0
+      if (response.data && !response.data.error && response.data.data) {
+        const chartData = response.data.data.chart_data || [];
+
+        // Map API data to CustomerChartData format
+        return chartData.map((item: any) => ({
+          day: item.day || 'Unknown',
+          count: item.count || 0
         }));
       } else {
-        throw new Error('Invalid API response format');
+        throw new Error(response.data?.message || 'Failed to fetch customer chart data');
       }
     } catch (error) {
       console.error('Error fetching customer chart data:', error);
-
-      // Fallback to mock data if API fails
-      return fallbackMockData.chartData;
+      // Throw the error to be handled by the component
+      throw error;
     }
   },
 
@@ -247,29 +165,16 @@ export const CustomerService = {
       const api = getAuthClient();
 
       // Prepare update data based on status
-      const updateData: any = {};
+      const updateData: any = {
+        status: status
+      };
 
-      switch (status) {
-        case CustomerStatus.ACTIVE:
-          updateData.active = true;
-          updateData.vip = false;
-          break;
-        case CustomerStatus.INACTIVE:
-          updateData.active = false;
-          updateData.vip = false;
-          break;
-        case CustomerStatus.VIP:
-          updateData.active = true;
-          updateData.vip = true;
-          break;
-      }
+      // Gọi API cập nhật trạng thái người dùng
+      const response = await api.put(`${USER_ENDPOINT}/${customerId}/status`, updateData);
 
-      // Call broker service to update user status in user-service
-      const response = await api.post(`${BROKER_ENDPOINT}/user-service/users/${customerId}/update-status`, updateData);
-
-      return response.status === 200 || response.status === 204;
+      return response.data && !response.data.error;
     } catch (error) {
-      console.error(`Error updating customer ${customerId} status:`, error);
+      console.error('Error updating customer status:', error);
       return false;
     }
   },
@@ -278,12 +183,12 @@ export const CustomerService = {
     try {
       const api = getAuthClient();
 
-      // Call broker service to delete user in user-service
-      const response = await api.post(`${BROKER_ENDPOINT}/user-service/users/${customerId}/delete`);
+      // Gọi API xóa người dùng
+      const response = await api.delete(`${USER_ENDPOINT}/${customerId}`);
 
-      return response.status === 200 || response.status === 204;
+      return response.data && !response.data.error;
     } catch (error) {
-      console.error(`Error deleting customer ${customerId}:`, error);
+      console.error('Error deleting customer:', error);
       return false;
     }
   }

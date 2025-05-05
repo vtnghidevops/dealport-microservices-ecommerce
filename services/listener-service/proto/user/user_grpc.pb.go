@@ -25,6 +25,8 @@ type UserServiceClient interface {
 	// ProcessEvent handles events from other services (like user registration,
 	// password changes)
 	ProcessEvent(ctx context.Context, in *EventRequest, opts ...grpc.CallOption) (*EventResponse, error)
+	// SyncUserOrderData synchronizes user order data from checkout service
+	SyncUserOrderData(ctx context.Context, in *SyncUserOrderDataRequest, opts ...grpc.CallOption) (*SyncUserOrderDataResponse, error)
 }
 
 type userServiceClient struct {
@@ -44,6 +46,15 @@ func (c *userServiceClient) ProcessEvent(ctx context.Context, in *EventRequest, 
 	return out, nil
 }
 
+func (c *userServiceClient) SyncUserOrderData(ctx context.Context, in *SyncUserOrderDataRequest, opts ...grpc.CallOption) (*SyncUserOrderDataResponse, error) {
+	out := new(SyncUserOrderDataResponse)
+	err := c.cc.Invoke(ctx, "/user.UserService/SyncUserOrderData", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // UserServiceServer is the server API for UserService service.
 // All implementations must embed UnimplementedUserServiceServer
 // for forward compatibility
@@ -51,6 +62,8 @@ type UserServiceServer interface {
 	// ProcessEvent handles events from other services (like user registration,
 	// password changes)
 	ProcessEvent(context.Context, *EventRequest) (*EventResponse, error)
+	// SyncUserOrderData synchronizes user order data from checkout service
+	SyncUserOrderData(context.Context, *SyncUserOrderDataRequest) (*SyncUserOrderDataResponse, error)
 	mustEmbedUnimplementedUserServiceServer()
 }
 
@@ -60,6 +73,9 @@ type UnimplementedUserServiceServer struct {
 
 func (UnimplementedUserServiceServer) ProcessEvent(context.Context, *EventRequest) (*EventResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ProcessEvent not implemented")
+}
+func (UnimplementedUserServiceServer) SyncUserOrderData(context.Context, *SyncUserOrderDataRequest) (*SyncUserOrderDataResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method SyncUserOrderData not implemented")
 }
 func (UnimplementedUserServiceServer) mustEmbedUnimplementedUserServiceServer() {}
 
@@ -92,6 +108,24 @@ func _UserService_ProcessEvent_Handler(srv interface{}, ctx context.Context, dec
 	return interceptor(ctx, in, info, handler)
 }
 
+func _UserService_SyncUserOrderData_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(SyncUserOrderDataRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(UserServiceServer).SyncUserOrderData(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/user.UserService/SyncUserOrderData",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(UserServiceServer).SyncUserOrderData(ctx, req.(*SyncUserOrderDataRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // UserService_ServiceDesc is the grpc.ServiceDesc for UserService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -102,6 +136,10 @@ var UserService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "ProcessEvent",
 			Handler:    _UserService_ProcessEvent_Handler,
+		},
+		{
+			MethodName: "SyncUserOrderData",
+			Handler:    _UserService_SyncUserOrderData_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

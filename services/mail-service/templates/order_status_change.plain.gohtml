@@ -1,21 +1,28 @@
-Order Status Update
+{{define "body"}}
+===== VNTECH =====
 
-Dear Customer,
+ORDER STATUS UPDATE
 
-This is to inform you that the status of your Order #{{.order_number}} has been updated from "{{.previous_status}}" to
-"{{.status}}".
+ORDER #{{ .order_number }}
+{{ .order_date }}
 
-Order Details:
-- Order Number: {{.order_number}}
-- Previous Status: {{.previous_status}}
-- New Status: {{.status}}
-- Order Total: ${{.total}}
+Hi {{ .customer_name }},
 
-You can check the full details of your order by logging into your account.
+We wanted to let you know that the status of your order has been updated from "{{ .previous_status }}" to "{{ .status
+}}".
 
-If you have any questions about your order, please contact our customer service team.
+ORDER STATUS:
+- New Status: {{ .status }}
+- Order Total: ${{ .total }}
+
+You can track your order status and view more details by visiting:
+https://vntech.com/orders/{{ .order_number }}
+
+If you have any questions about your order, please contact our customer service at support@vntech.com or call us at +1
+(123) 456-7890.
 
 Thank you for shopping with us!
 
-Best regards,
-The E-commerce Team
+© 2023 VNTECH. All rights reserved.
+This email was sent to you because you placed an order on our website.
+{{end}}

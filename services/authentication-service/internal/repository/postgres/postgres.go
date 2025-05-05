@@ -105,15 +105,15 @@ func (r *PostgresRepository) GetUserByID(ctx context.Context, id string) (*domai
 
 // GetUserByEmail retrieves a user by email
 func (r *PostgresRepository) GetUserByEmail(ctx context.Context, email string) (*domain.User, error) {
-	query := `SELECT id, email, password, refresh_token, username, first_name, last_name, 
-              role, status, active, phone, created_at, updated_at
+	query := `SELECT id, email, password_hash, refresh_token, username, first_name, last_name, 
+              role, status, active, created_at, updated_at
               FROM users WHERE email = $1`
 
 	var user domain.User
 	err := r.db.QueryRowContext(ctx, query, email).Scan(
 		&user.ID,
 		&user.Email,
-		&user.Password,
+		&user.Password, // Mapped to password_hash column in the database
 		&user.RefreshToken,
 		&user.Username,
 		&user.FirstName,
@@ -121,7 +121,6 @@ func (r *PostgresRepository) GetUserByEmail(ctx context.Context, email string) (
 		&user.Role,
 		&user.Status,
 		&user.Active,
-		&user.Phone,
 		&user.CreatedAt,
 		&user.UpdatedAt,
 	)

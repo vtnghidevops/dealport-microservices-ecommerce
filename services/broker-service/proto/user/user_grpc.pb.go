@@ -38,6 +38,10 @@ type UserServiceClient interface {
 	AddToWishlist(ctx context.Context, in *AddToWishlistRequest, opts ...grpc.CallOption) (*WishlistResponse, error)
 	RemoveFromWishlist(ctx context.Context, in *RemoveFromWishlistRequest, opts ...grpc.CallOption) (*WishlistResponse, error)
 	GetWishlist(ctx context.Context, in *GetWishlistRequest, opts ...grpc.CallOption) (*GetWishlistResponse, error)
+	// GetUserStatistics retrieves statistics for the admin dashboard
+	GetUserStatistics(ctx context.Context, in *GetUserStatisticsRequest, opts ...grpc.CallOption) (*GetUserStatisticsResponse, error)
+	// GetUserActivityChart retrieves data for the customer activity chart
+	GetUserActivityChart(ctx context.Context, in *GetUserActivityChartRequest, opts ...grpc.CallOption) (*GetUserActivityChartResponse, error)
 }
 
 type userServiceClient struct {
@@ -129,6 +133,24 @@ func (c *userServiceClient) GetWishlist(ctx context.Context, in *GetWishlistRequ
 	return out, nil
 }
 
+func (c *userServiceClient) GetUserStatistics(ctx context.Context, in *GetUserStatisticsRequest, opts ...grpc.CallOption) (*GetUserStatisticsResponse, error) {
+	out := new(GetUserStatisticsResponse)
+	err := c.cc.Invoke(ctx, "/user.UserService/GetUserStatistics", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *userServiceClient) GetUserActivityChart(ctx context.Context, in *GetUserActivityChartRequest, opts ...grpc.CallOption) (*GetUserActivityChartResponse, error) {
+	out := new(GetUserActivityChartResponse)
+	err := c.cc.Invoke(ctx, "/user.UserService/GetUserActivityChart", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // UserServiceServer is the server API for UserService service.
 // All implementations must embed UnimplementedUserServiceServer
 // for forward compatibility
@@ -149,6 +171,10 @@ type UserServiceServer interface {
 	AddToWishlist(context.Context, *AddToWishlistRequest) (*WishlistResponse, error)
 	RemoveFromWishlist(context.Context, *RemoveFromWishlistRequest) (*WishlistResponse, error)
 	GetWishlist(context.Context, *GetWishlistRequest) (*GetWishlistResponse, error)
+	// GetUserStatistics retrieves statistics for the admin dashboard
+	GetUserStatistics(context.Context, *GetUserStatisticsRequest) (*GetUserStatisticsResponse, error)
+	// GetUserActivityChart retrieves data for the customer activity chart
+	GetUserActivityChart(context.Context, *GetUserActivityChartRequest) (*GetUserActivityChartResponse, error)
 	mustEmbedUnimplementedUserServiceServer()
 }
 
@@ -182,6 +208,12 @@ func (UnimplementedUserServiceServer) RemoveFromWishlist(context.Context, *Remov
 }
 func (UnimplementedUserServiceServer) GetWishlist(context.Context, *GetWishlistRequest) (*GetWishlistResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetWishlist not implemented")
+}
+func (UnimplementedUserServiceServer) GetUserStatistics(context.Context, *GetUserStatisticsRequest) (*GetUserStatisticsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetUserStatistics not implemented")
+}
+func (UnimplementedUserServiceServer) GetUserActivityChart(context.Context, *GetUserActivityChartRequest) (*GetUserActivityChartResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetUserActivityChart not implemented")
 }
 func (UnimplementedUserServiceServer) mustEmbedUnimplementedUserServiceServer() {}
 
@@ -358,6 +390,42 @@ func _UserService_GetWishlist_Handler(srv interface{}, ctx context.Context, dec 
 	return interceptor(ctx, in, info, handler)
 }
 
+func _UserService_GetUserStatistics_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetUserStatisticsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(UserServiceServer).GetUserStatistics(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/user.UserService/GetUserStatistics",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(UserServiceServer).GetUserStatistics(ctx, req.(*GetUserStatisticsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _UserService_GetUserActivityChart_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetUserActivityChartRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(UserServiceServer).GetUserActivityChart(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/user.UserService/GetUserActivityChart",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(UserServiceServer).GetUserActivityChart(ctx, req.(*GetUserActivityChartRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // UserService_ServiceDesc is the grpc.ServiceDesc for UserService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -400,6 +468,14 @@ var UserService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetWishlist",
 			Handler:    _UserService_GetWishlist_Handler,
+		},
+		{
+			MethodName: "GetUserStatistics",
+			Handler:    _UserService_GetUserStatistics_Handler,
+		},
+		{
+			MethodName: "GetUserActivityChart",
+			Handler:    _UserService_GetUserActivityChart_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

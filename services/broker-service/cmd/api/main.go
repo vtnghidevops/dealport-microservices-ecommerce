@@ -136,7 +136,8 @@ func main() {
 	}
 
 	userHttpHandler := &httpUserHandler.Config{
-		UserClient: userClient,
+		UserClient:     userClient,
+		CheckoutClient: checkoutClient,
 	}
 
 	cartHttpHandler := &httpCartHandler.Config{

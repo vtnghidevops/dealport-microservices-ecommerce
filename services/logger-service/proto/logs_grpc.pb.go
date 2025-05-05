@@ -24,6 +24,7 @@ const _ = grpc.SupportPackageIsVersion7
 type LogServiceClient interface {
 	WriteLog(ctx context.Context, in *LogRequest, opts ...grpc.CallOption) (*LogResponse, error)
 	GetUserActivityLogs(ctx context.Context, in *UserActivityLogRequest, opts ...grpc.CallOption) (*UserActivityLogResponse, error)
+	GetOrderLogs(ctx context.Context, in *OrderLogRequest, opts ...grpc.CallOption) (*OrderLogResponse, error)
 }
 
 type logServiceClient struct {
@@ -52,12 +53,22 @@ func (c *logServiceClient) GetUserActivityLogs(ctx context.Context, in *UserActi
 	return out, nil
 }
 
+func (c *logServiceClient) GetOrderLogs(ctx context.Context, in *OrderLogRequest, opts ...grpc.CallOption) (*OrderLogResponse, error) {
+	out := new(OrderLogResponse)
+	err := c.cc.Invoke(ctx, "/logs.LogService/GetOrderLogs", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // LogServiceServer is the server API for LogService service.
 // All implementations must embed UnimplementedLogServiceServer
 // for forward compatibility
 type LogServiceServer interface {
 	WriteLog(context.Context, *LogRequest) (*LogResponse, error)
 	GetUserActivityLogs(context.Context, *UserActivityLogRequest) (*UserActivityLogResponse, error)
+	GetOrderLogs(context.Context, *OrderLogRequest) (*OrderLogResponse, error)
 	mustEmbedUnimplementedLogServiceServer()
 }
 
@@ -70,6 +81,9 @@ func (UnimplementedLogServiceServer) WriteLog(context.Context, *LogRequest) (*Lo
 }
 func (UnimplementedLogServiceServer) GetUserActivityLogs(context.Context, *UserActivityLogRequest) (*UserActivityLogResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetUserActivityLogs not implemented")
+}
+func (UnimplementedLogServiceServer) GetOrderLogs(context.Context, *OrderLogRequest) (*OrderLogResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetOrderLogs not implemented")
 }
 func (UnimplementedLogServiceServer) mustEmbedUnimplementedLogServiceServer() {}
 
@@ -120,6 +134,24 @@ func _LogService_GetUserActivityLogs_Handler(srv interface{}, ctx context.Contex
 	return interceptor(ctx, in, info, handler)
 }
 
+func _LogService_GetOrderLogs_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(OrderLogRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(LogServiceServer).GetOrderLogs(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/logs.LogService/GetOrderLogs",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(LogServiceServer).GetOrderLogs(ctx, req.(*OrderLogRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // LogService_ServiceDesc is the grpc.ServiceDesc for LogService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -134,6 +166,10 @@ var LogService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetUserActivityLogs",
 			Handler:    _LogService_GetUserActivityLogs_Handler,
+		},
+		{
+			MethodName: "GetOrderLogs",
+			Handler:    _LogService_GetOrderLogs_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

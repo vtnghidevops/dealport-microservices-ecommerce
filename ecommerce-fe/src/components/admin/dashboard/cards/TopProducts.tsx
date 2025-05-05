@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Product } from "../models/product.model";
+import { BestSellingProductStats } from "../services/product.service";
 
 // interface Product {
 //   id: number;
@@ -11,7 +11,7 @@ import { Product } from "../models/product.model";
 // }
 
 interface TopProductsTableProps {
-  products: Product[];
+  products: BestSellingProductStats[];
 }
 
 const TopProductsTable: React.FC<TopProductsTableProps> = ({ products }) => {
@@ -22,11 +22,11 @@ const TopProductsTable: React.FC<TopProductsTableProps> = ({ products }) => {
   );
 
   return (
-    <div className="bg-white rounded-lg filter drop-shadow-lg h-[420px] w-[306px] px-[16px] py-[20px]">
+    <div className="bg-white rounded-lg filter drop-shadow-lg h-[420px] w-[360px] px-[16px] py-[20px]">
       <div className="flex justify-between items-center mb-3">
-        <h2 className="text-[18px] font-bold text-gray-900">Top Products</h2>
+        <h2 className="text-[18px] font-bold text-gray-900">Sản phẩm bán chạy (Top Products)</h2>
         <a href="#" className="text-primary text-sm ">
-          All product
+          All
         </a>
       </div>
 
@@ -59,21 +59,21 @@ const TopProductsTable: React.FC<TopProductsTableProps> = ({ products }) => {
       <div className="space-y-4">
         {filteredProducts.map((product) => (
           <div key={product.id} className="border-b border-gray-100 pb-4">
-            <div className="flex items-center justify-between h-[64px] w-[280px]">
+            <div className="flex items-center justify-between h-[64px] w-[328px]">
               <div className="flex items-center gap-[16px] w-full ">
                 <div className="relative bg-gray-100 rounded-md overflow-hidden w-[56px] h-[56px]">
                   <img
-                    src={product.imageUrl}
+                    src={product.imageSrc}
                     alt={product.name}
                     className="object-cover w-[56px] h-[56px]"
                   />
                 </div>
-                <div className="w-[108px] h-[46px] flex flex-col justify-center gap-[4px]">
+                <div className="w-[180px] h-[46px] flex flex-col justify-center gap-[4px]">
                   <h3 className="text-[15px] font-medium text-cyprus">
                     {product.name}
                   </h3>
-                  <p className="text-[12px]  text-[#8B909A]">
-                    Item: {product.itemCode}
+                  <p className="text-[12px] text-[#8B909A]">
+                    Sold: {product.sold}
                   </p>
                 </div>
                 <div className="text-right ml-[0.5rem]">

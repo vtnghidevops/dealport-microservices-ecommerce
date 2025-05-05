@@ -1,149 +1,213 @@
+{{define "body"}}
 <!DOCTYPE html>
-<html>
+<html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Order Status Update</title>
     <style>
         body {
-            font-family: Arial, sans-serif;
+            font-family: Arial, Helvetica, sans-serif;
             line-height: 1.6;
             color: #333;
-            background-color: #f9f9f9;
             margin: 0;
             padding: 0;
-        }
-        .container {
             max-width: 600px;
             margin: 0 auto;
-            padding: 20px;
-            background-color: #ffffff;
-            border-radius: 5px;
-            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
         }
+
         .header {
+            background-color: #F15A29;
+            padding: 20px;
             text-align: center;
-            padding: 20px 0;
-            border-bottom: 1px solid #eee;
         }
+
+        .header img {
+            max-width: 120px;
+        }
+
         .content {
-            padding: 20px 0;
+            padding: 20px;
         }
-        .details {
-            background-color: #f8f9fa;
-            padding: 15px;
-            border-radius: 5px;
-            margin: 20px 0;
-        }
-        .footer {
+
+        .order-title {
             text-align: center;
-            padding: 20px 0;
-            color: #777;
-            font-size: 14px;
-            border-top: 1px solid #eee;
-        }
-        .button {
-            display: inline-block;
-            background-color: #4CAF50;
-            color: white;
-            padding: 12px 24px;
-            text-decoration: none;
-            border-radius: 4px;
+            font-size: 24px;
             font-weight: bold;
             margin: 20px 0;
         }
+
+        .divider {
+            border-top: 1px solid #ddd;
+            margin: 20px 0;
+        }
+
+        .order-number {
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .order-date {
+            color: #666;
+            font-size: 14px;
+            margin-bottom: 20px;
+        }
+
+        .personal-greeting {
+            margin-bottom: 15px;
+        }
+
+        .order-message {
+            margin-bottom: 25px;
+        }
+
+        .status-info {
+            margin-bottom: 25px;
+            background-color: #f8f9fa;
+            padding: 15px;
+            border-radius: 5px;
+        }
+
         .status-badge {
             display: inline-block;
             padding: 6px 12px;
             border-radius: 4px;
             font-weight: bold;
             color: white;
+            margin: 10px 0;
         }
+
         .status-processing {
             background-color: #3498db;
         }
+
         .status-shipped {
             background-color: #f39c12;
         }
+
         .status-delivered {
             background-color: #2ecc71;
         }
+
         .status-cancelled {
             background-color: #e74c3c;
         }
+
+        .status-paid {
+            background-color: #27ae60;
+        }
+
         .status-pending {
             background-color: #95a5a6;
         }
-        table {
-            width: 100%;
-            border-collapse: collapse;
+
+        .price-summary {
+            margin-top: 10px;
         }
-        table, th, td {
-            border: 1px solid #ddd;
+
+        .price-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
         }
-        th, td {
+
+        .price-label {
+            flex-grow: 1;
+        }
+
+        .price-value {
+            text-align: right;
+        }
+
+        .total {
+            font-weight: bold;
+            font-size: 16px;
+        }
+
+        .order-status-btn {
+            display: block;
+            background-color: #222;
+            color: white;
+            text-align: center;
             padding: 12px;
-            text-align: left;
+            text-decoration: none;
+            font-weight: bold;
+            margin: 30px auto;
+            max-width: 250px;
         }
-        th {
-            background-color: #f2f2f2;
+
+        .contact-info {
+            text-align: center;
+            font-size: 14px;
+            color: #F15A29;
+            margin-top: 30px;
+        }
+
+        .footer {
+            text-align: center;
+            padding: 20px;
+            font-size: 14px;
+            color: #666;
+            border-top: 1px solid #ddd;
         }
     </style>
 </head>
+
 <body>
-    <div class="container">
-        <div class="header">
-            <h1 style="color: #3498db;">Order Status Update</h1>
+    <div class="header">
+        <img src="https://vntech.com/images/logo-white.png" alt="VNTECH"
+            onerror="this.src='https://placehold.co/200x50/F15A29/FFFFFF?text=VNTECH'">
+    </div>
+
+    <div class="content">
+        <div class="order-title">ORDER STATUS UPDATE</div>
+
+        <div class="divider"></div>
+
+        <div class="order-number">ORDER #{{ .order_number }}</div>
+        <div class="order-date">{{ .order_date }}</div>
+
+        <div class="personal-greeting">Hi {{ .customer_name }},</div>
+
+        <div class="order-message">
+            We wanted to let you know that the status of your order has been updated from
+            <strong>{{ .previous_status }}</strong> to <strong>{{ .status }}</strong>.
         </div>
-        
-        <div class="content">
-            <p>Dear Customer,</p>
-            
-            <p>This is to inform you that the status of your Order #{{.order_number}} has been updated from "<strong>{{.previous_status}}</strong>" to "<strong>{{.status}}</strong>".</p>
-            
-            <div class="details">
-                <h3>Order Details:</h3>
-                <table>
-                    <tr>
-                        <th>Order Number</th>
-                        <td>#{{.order_number}}</td>
-                    </tr>
-                    <tr>
-                        <th>Previous Status</th>
-                        <td>{{.previous_status}}</td>
-                    </tr>
-                    <tr>
-                        <th>New Status</th>
-                        <td>
-                            <span class="status-badge 
-                            {{if eq .status "processing"}}status-processing
-                            {{else if eq .status "shipped"}}status-shipped
-                            {{else if eq .status "delivered"}}status-delivered
-                            {{else if eq .status "cancelled"}}status-cancelled
-                            {{else}}status-pending{{end}}">
-                                {{.status}}
-                            </span>
-                        </td>
-                    </tr>
-                    <tr>
-                        <th>Order Total</th>
-                        <td>${{.total}}</td>
-                    </tr>
-                </table>
+
+        <div class="status-info">
+            <h3>Order Status:</h3>
+            <span class="status-badge 
+        {{if eq .status " processing"}}status-processing {{else if eq .status "shipped" }}status-shipped {{else if eq
+                .status "delivered" }}status-delivered {{else if eq .status "cancelled" }}status-cancelled {{else if eq
+                .status "paid" }}status-paid {{else}}status-pending{{end}}">
+                {{ .status }}
+            </span>
+
+            <div class="price-summary">
+                <div class="price-row total">
+                    <div class="price-label">Order Total</div>
+                    <div class="price-label">: </div>
+                    <div class="price-value ml-3">${{ .total }}</div>
+                </div>
             </div>
-            
-            <p>You can check the full details of your order by logging into your account.</p>
-            
-            <p>If you have any questions about your order, please contact our customer service team.</p>
-            
-            <p>Thank you for shopping with us!</p>
-            
-            <p>Best regards,<br>The E-commerce Team</p>
         </div>
-        
-        <div class="footer">
-            <p>&copy; 2023 E-commerce Company. All rights reserved.</p>
+
+        <p>You can track your order status and view more details by clicking the button below:</p>
+
+        <a href="https://vntech.com/orders/{{ .order_number }}" class="order-status-btn">VIEW ORDER STATUS</a>
+
+        <div class="contact-info">
+            If you have any questions about your order, please contact our customer service at
+            <strong>support@vntech.com</strong> or call us at <strong>+1 (123) 456-7890</strong>.
         </div>
     </div>
+
+    <div class="footer">
+        <p>&copy; 2023 VNTECH. All rights reserved.</p>
+        <p>This email was sent to you because you placed an order on our website.</p>
+    </div>
 </body>
+
 </html>
+{{end}}

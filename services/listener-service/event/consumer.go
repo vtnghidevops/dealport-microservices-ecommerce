@@ -7,13 +7,14 @@ import (
 	"log"
 	"os"
 	"strings"
+	"sync"
 	"time"
 
 	amqp "github.com/rabbitmq/amqp091-go"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 
-	pb "listener-service/proto/user"
+	userpb "listener-service/proto/user"
 )
 
 // StandardEvent represents a standardized message format for all events
@@ -130,9 +131,12 @@ type OTPGeneratedData struct {
 
 // Consumer handles message consumption from RabbitMQ
 type Consumer struct {
-	conn      *amqp.Connection
-	queueName string
-	logger    *log.Logger
+	conn       *amqp.Connection
+	queueName  string
+	logger     *log.Logger
+	userClient userpb.UserServiceClient
+	userConn   *grpc.ClientConn
+	userMutex  sync.Mutex
 }
 
 // Create a new consumer
@@ -450,6 +454,74 @@ func (consumer *Consumer) handleStandardEvent(event StandardEvent, routingKey st
 		consumer.logger.Printf("✅ User activity logged: logout")
 		return nil
 
+	// Xử lý các event đơn hàng và chuyển đổi thành log events
+	case "order.created":
+		// Chuyển đổi thành log.INFO.order.created
+		err := consumer.handleOrderCreatedEvent(event)
+		if err != nil {
+			consumer.logger.Printf("❌ Error processing order.created event: %v", err)
+			return err
+		}
+		consumer.logger.Printf("📦 Order created event processed and logged")
+
+		// Send order confirmation email
+		consumer.logger.Printf("📧 Sending order confirmation email")
+		err = consumer.sendOrderConfirmationEmail(event)
+		if err != nil {
+			consumer.logger.Printf("Error sending order confirmation email: %v", err)
+			// Continue even if email fails
+		}
+		return nil
+
+	case "order.status_changed":
+		// Chuyển đổi thành log.INFO.order.status_changed
+		err := consumer.handleOrderStatusChangedEvent(event)
+		if err != nil {
+			consumer.logger.Printf("❌ Error processing order.status_changed event: %v", err)
+			return err
+		}
+		consumer.logger.Printf("📦 Order status changed event processed and logged")
+
+		// Send order status notification email
+		consumer.logger.Printf("📧 Sending order status update email")
+		err = consumer.sendOrderStatusEmail(event)
+		if err != nil {
+			consumer.logger.Printf("Error sending order status email: %v", err)
+			// Continue even if email fails
+		}
+		return nil
+
+	case "order.payment_succeeded":
+		// Chuyển đổi thành log.INFO.order.payment_succeeded
+		err := consumer.handlePaymentSucceededEvent(event)
+		if err != nil {
+			consumer.logger.Printf("❌ Error processing order.payment_succeeded event: %v", err)
+			return err
+		}
+		consumer.logger.Printf("💰 Payment succeeded event processed and logged")
+
+		// Send payment success email
+		consumer.logger.Printf("📧 Sending payment success email")
+		err = consumer.sendPaymentSuccessEmail(event)
+		if err != nil {
+			consumer.logger.Printf("Error sending payment success email: %v", err)
+			// Continue even if email fails
+		}
+		return nil
+
+	case "order.payment_failed":
+		// Chuyển đổi thành log.INFO.order.payment_failed
+		err := consumer.handlePaymentFailedEvent(event)
+		if err != nil {
+			consumer.logger.Printf("❌ Error processing order.payment_failed event: %v", err)
+			return err
+		}
+		consumer.logger.Printf("💸 Payment failed event processed and logged")
+
+		// Có thể gửi email thông báo thanh toán thất bại
+		// (triển khai trong tương lai)
+		return nil
+
 	case "user.registered":
 		// Forward to user-service to store the user
 		consumer.logger.Printf("👤 Forwarding new user registration to user-service")
@@ -494,37 +566,267 @@ func (consumer *Consumer) handleStandardEvent(event StandardEvent, routingKey st
 			return err
 		}
 
-	case "order.created":
-		// Send order confirmation email
-		consumer.logger.Printf("📧 Sending order confirmation email")
-		err := consumer.sendOrderConfirmationEmail(event)
-		if err != nil {
-			consumer.logger.Printf("Error sending order confirmation email: %v", err)
-			// Continue even if email fails
-		}
-
-	case "order.payment_succeeded":
-		// Send payment success email
-		consumer.logger.Printf("📧 Sending payment success email")
-		err := consumer.sendPaymentSuccessEmail(event)
-		if err != nil {
-			consumer.logger.Printf("Error sending payment success email: %v", err)
-			// Continue even if email fails
-		}
-
-	case "order.status_changed":
-		// Send order status notification email
-		consumer.logger.Printf("📧 Sending order status update email")
-		err := consumer.sendOrderStatusEmail(event)
-		if err != nil {
-			consumer.logger.Printf("Error sending order status email: %v", err)
-			// Continue even if email fails
-		}
-
 	default:
 		// Forward all other events to appropriate service
 		consumer.logger.Printf("🔄 Forwarding event %s to appropriate service", event.Name)
 	}
+
+	return nil
+}
+
+// handleOrderCreatedEvent converts order.created event to log format and logs it
+func (consumer *Consumer) handleOrderCreatedEvent(event StandardEvent) error {
+	// Lấy dữ liệu từ event
+	var orderData map[string]interface{}
+
+	// Xử lý data dựa trên kiểu dữ liệu
+	switch data := event.Data.(type) {
+	case map[string]interface{}:
+		orderData = data
+	case string:
+		if err := json.Unmarshal([]byte(data), &orderData); err != nil {
+			return fmt.Errorf("failed to unmarshal order data string: %w", err)
+		}
+	default:
+		return fmt.Errorf("unsupported data type for order event")
+	}
+
+	// Tạo event mới với định dạng log
+	logEvent := StandardEvent{
+		ID:         fmt.Sprintf("log_%s", event.ID),
+		Name:       "log.INFO.order.created",
+		Data:       orderData,
+		DataSchema: event.DataSchema,
+		Source:     event.Source,
+		CreatedAt:  time.Now(),
+		Version:    event.Version,
+	}
+
+	// Ghi log vào logger-service
+	err := consumer.logStandardEvent(logEvent)
+	if err != nil {
+		return fmt.Errorf("failed to log order created event: %w", err)
+	}
+
+	// Hiển thị thông báo về đơn hàng mới
+	orderID := ""
+	orderNumber := ""
+	userEmail := ""
+	total := 0.0
+	userID := ""
+
+	if id, ok := orderData["order_id"].(string); ok {
+		orderID = id
+	}
+	if num, ok := orderData["order_number"].(string); ok {
+		orderNumber = num
+	}
+	if email, ok := orderData["user_email"].(string); ok {
+		userEmail = email
+	}
+	if t, ok := orderData["total"].(float64); ok {
+		total = t
+	}
+	if uid, ok := orderData["user_id"].(string); ok {
+		userID = uid
+	}
+
+	consumer.logger.Printf("📦 New order created: #%s (ID: %s) by %s - Total: $%.2f",
+		orderNumber, orderID, userEmail, total)
+
+	// Sync user order data
+	if userID != "" {
+		go func() {
+			ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+			defer cancel()
+			if err := consumer.updateUserOrderData(ctx, userID); err != nil {
+				consumer.logger.Printf("ERROR: Failed to sync user order data: %v", err)
+			}
+		}()
+	}
+
+	return nil
+}
+
+// handleOrderStatusChangedEvent converts order.status_changed event to log format and logs it
+func (consumer *Consumer) handleOrderStatusChangedEvent(event StandardEvent) error {
+	// Lấy dữ liệu từ event
+	var orderData map[string]interface{}
+
+	// Xử lý data dựa trên kiểu dữ liệu
+	switch data := event.Data.(type) {
+	case map[string]interface{}:
+		orderData = data
+	case string:
+		if err := json.Unmarshal([]byte(data), &orderData); err != nil {
+			return fmt.Errorf("failed to unmarshal order data string: %w", err)
+		}
+	default:
+		return fmt.Errorf("unsupported data type for order event")
+	}
+
+	// Tạo event mới với định dạng log
+	logEvent := StandardEvent{
+		ID:         fmt.Sprintf("log_%s", event.ID),
+		Name:       "log.INFO.order.status_changed",
+		Data:       orderData,
+		DataSchema: event.DataSchema,
+		Source:     event.Source,
+		CreatedAt:  time.Now(),
+		Version:    event.Version,
+	}
+
+	// Ghi log vào logger-service
+	err := consumer.logStandardEvent(logEvent)
+	if err != nil {
+		return fmt.Errorf("failed to log order status changed event: %w", err)
+	}
+
+	// Hiển thị thông báo về đơn hàng thay đổi trạng thái
+	orderID := ""
+	orderNumber := ""
+	status := ""
+	prevStatus := ""
+
+	if id, ok := orderData["order_id"].(string); ok {
+		orderID = id
+	}
+	if num, ok := orderData["order_number"].(string); ok {
+		orderNumber = num
+	}
+	if s, ok := orderData["status"].(string); ok {
+		status = s
+	}
+	if ps, ok := orderData["previous_status"].(string); ok {
+		prevStatus = ps
+	}
+
+	consumer.logger.Printf("📦 Order status changed: #%s (ID: %s) from '%s' to '%s'",
+		orderNumber, orderID, prevStatus, status)
+
+	return nil
+}
+
+// handlePaymentSucceededEvent converts order.payment_succeeded event to log format and logs it
+func (consumer *Consumer) handlePaymentSucceededEvent(event StandardEvent) error {
+	// Lấy dữ liệu từ event
+	var paymentData map[string]interface{}
+
+	// Xử lý data dựa trên kiểu dữ liệu
+	switch data := event.Data.(type) {
+	case map[string]interface{}:
+		paymentData = data
+	case string:
+		if err := json.Unmarshal([]byte(data), &paymentData); err != nil {
+			return fmt.Errorf("failed to unmarshal payment data string: %w", err)
+		}
+	default:
+		return fmt.Errorf("unsupported data type for payment event")
+	}
+
+	// Tạo event mới với định dạng log
+	logEvent := StandardEvent{
+		ID:         fmt.Sprintf("log_%s", event.ID),
+		Name:       "log.INFO.order.payment_succeeded",
+		Data:       paymentData,
+		DataSchema: event.DataSchema,
+		Source:     event.Source,
+		CreatedAt:  time.Now(),
+		Version:    event.Version,
+	}
+
+	// Ghi log vào logger-service
+	err := consumer.logStandardEvent(logEvent)
+	if err != nil {
+		return fmt.Errorf("failed to log payment succeeded event: %w", err)
+	}
+
+	// Hiển thị thông báo về thanh toán thành công
+	orderID := ""
+	orderNumber := ""
+	method := ""
+	amount := 0.0
+
+	if id, ok := paymentData["order_id"].(string); ok {
+		orderID = id
+	}
+	if num, ok := paymentData["order_number"].(string); ok {
+		orderNumber = num
+	}
+	if m, ok := paymentData["payment_method"].(string); ok {
+		method = m
+	}
+	if a, ok := paymentData["amount"].(float64); ok {
+		amount = a
+	}
+
+	consumer.logger.Printf("💰 Payment succeeded: #%s (ID: %s) - Method: %s, Amount: $%.2f",
+		orderNumber, orderID, method, amount)
+
+	// Update user order data
+	if userID, ok := paymentData["user_id"].(string); ok && userID != "" {
+		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
+		if err := consumer.updateUserOrderData(ctx, userID); err != nil {
+			consumer.logger.Printf("❌ Failed to update user order data: %v", err)
+			// Continue processing even if updating user data fails
+		}
+	}
+
+	return nil
+}
+
+// handlePaymentFailedEvent converts order.payment_failed event to log format and logs it
+func (consumer *Consumer) handlePaymentFailedEvent(event StandardEvent) error {
+	// Lấy dữ liệu từ event
+	var paymentData map[string]interface{}
+
+	// Xử lý data dựa trên kiểu dữ liệu
+	switch data := event.Data.(type) {
+	case map[string]interface{}:
+		paymentData = data
+	case string:
+		if err := json.Unmarshal([]byte(data), &paymentData); err != nil {
+			return fmt.Errorf("failed to unmarshal payment data string: %w", err)
+		}
+	default:
+		return fmt.Errorf("unsupported data type for payment event")
+	}
+
+	// Tạo event mới với định dạng log
+	logEvent := StandardEvent{
+		ID:         fmt.Sprintf("log_%s", event.ID),
+		Name:       "log.INFO.order.payment_failed",
+		Data:       paymentData,
+		DataSchema: event.DataSchema,
+		Source:     event.Source,
+		CreatedAt:  time.Now(),
+		Version:    event.Version,
+	}
+
+	// Ghi log vào logger-service
+	err := consumer.logStandardEvent(logEvent)
+	if err != nil {
+		return fmt.Errorf("failed to log payment failed event: %w", err)
+	}
+
+	// Hiển thị thông báo về thanh toán thất bại
+	orderID := ""
+	orderNumber := ""
+	method := ""
+
+	if id, ok := paymentData["order_id"].(string); ok {
+		orderID = id
+	}
+	if num, ok := paymentData["order_number"].(string); ok {
+		orderNumber = num
+	}
+	if m, ok := paymentData["payment_method"].(string); ok {
+		method = m
+	}
+
+	consumer.logger.Printf("💸 Payment failed: #%s (ID: %s) - Method: %s",
+		orderNumber, orderID, method)
 
 	return nil
 }
@@ -649,7 +951,7 @@ func (consumer *Consumer) logStandardEvent(event StandardEvent) error {
 	ctx := context.Background()
 	err = loggerClient.WriteLog(ctx, event.Name, string(jsonData))
 	if err != nil {
-		consumer.logger.Printf("❌ Error logging event via gRPC: %v", err)
+		consumer.logger.Printf("Error logging event via gRPC: %v", err)
 		return err
 	}
 
@@ -752,14 +1054,14 @@ func (consumer *Consumer) forwardToUserService(event StandardEvent) error {
 	defer conn.Close()
 
 	// Create gRPC client
-	client := pb.NewUserServiceClient(conn)
+	client := userpb.NewUserServiceClient(conn)
 
 	// Create context with timeout for the RPC call
 	callCtx, callCancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer callCancel()
 
 	// Create event request
-	eventRequest := &pb.EventRequest{
+	eventRequest := &userpb.EventRequest{
 		EventId:   event.ID,
 		EventName: event.Name,
 		EventData: string(eventData),
@@ -1556,4 +1858,100 @@ func (consumer *Consumer) sendOrderStatusEmail(event StandardEvent) error {
 
 	// Publish email event
 	return consumer.publishEmailEvent(emailEvent)
+}
+
+// updateUserOrderData updates the user's order count and total spend in the user service
+func (consumer *Consumer) updateUserOrderData(ctx context.Context, userID string) error {
+	if userID == "" {
+		return fmt.Errorf("user ID is required to update order data")
+	}
+
+	// Connect to user service if not already connected
+	if err := consumer.connectToUserService(); err != nil {
+		return fmt.Errorf("failed to connect to user service: %w", err)
+	}
+
+	// Get order count and total spend for the user from checkout service
+	// This would typically involve a call to the checkout service
+	// For now, we'll use a simple query to the order repository
+
+	// Since we don't have direct access to checkout repository here,
+	// we'll need to set up a dedicated endpoint or event to get this data
+
+	// Placeholder values - in production, these would come from checkout service
+	orderCount := 0
+	totalSpend := 0.0
+
+	// Call the user service to update the user order data
+	_, err := consumer.userClient.SyncUserOrderData(ctx, &userpb.SyncUserOrderDataRequest{
+		UserId:     userID,
+		OrderCount: int32(orderCount),
+		TotalSpend: totalSpend,
+	})
+
+	if err != nil {
+		consumer.logger.Printf("❌ Error updating user order data: %v", err)
+		return fmt.Errorf("failed to sync user order data: %w", err)
+	}
+
+	consumer.logger.Printf("✅ Updated order data for user %s: order count=%d, total spend=%.2f",
+		userID, orderCount, totalSpend)
+	return nil
+}
+
+// connectToUserService establishes a connection to the user service
+func (consumer *Consumer) connectToUserService() error {
+	consumer.userMutex.Lock()
+	defer consumer.userMutex.Unlock()
+
+	// If we already have a connection, return nil
+	if consumer.userClient != nil {
+		return nil
+	}
+
+	// Get user service host from environment or use default
+	userHost := os.Getenv("USER_SERVICE_HOST")
+	if userHost == "" {
+		userHost = "user-service:50001"
+	}
+
+	consumer.logger.Printf("DEBUG: Attempting to connect to user service at %s", userHost)
+
+	// Set up connection to user service with retry logic
+	maxRetries := 5
+	var dialErr error
+	var conn *grpc.ClientConn
+
+	for attempt := 1; attempt <= maxRetries; attempt++ {
+		// Set up connection with a timeout context
+		ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+		conn, dialErr = grpc.DialContext(
+			ctx,
+			userHost,
+			grpc.WithTransportCredentials(insecure.NewCredentials()),
+			grpc.WithBlock(),
+		)
+		cancel()
+
+		if dialErr == nil {
+			consumer.logger.Printf("DEBUG: Successfully connected to user service at %s", userHost)
+			break
+		}
+
+		consumer.logger.Printf("WARNING: Failed to connect to user service at %s (attempt %d/%d): %v",
+			userHost, attempt, maxRetries, dialErr)
+
+		// Wait before retrying
+		time.Sleep(time.Duration(attempt) * time.Second)
+	}
+
+	if dialErr != nil {
+		return fmt.Errorf("failed to connect to user service after %d attempts: %w", maxRetries, dialErr)
+	}
+
+	// Create user service client
+	consumer.userConn = conn
+	consumer.userClient = userpb.NewUserServiceClient(conn)
+
+	return nil
 }

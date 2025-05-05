@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import { useNavigate, useSearchParams, useLocation } from "react-router-dom";
 import { BsCheckCircleFill } from "react-icons/bs";
 import { useCart } from "../../hooks/useCart";
@@ -12,6 +12,8 @@ const SuccessfulPayment: React.FC = () => {
   const { toast } = useToast();
   const [animateCheck, setAnimateCheck] = useState(false);
   const [orderTotal, setOrderTotal] = useState<number>(0);
+  // Add ref to track if cart has been cleared
+  const hasCartBeenCleared = useRef(false);
 
   // Get values either from URL parameters or from location state
   const locationState = location.state || {};
@@ -39,9 +41,13 @@ const SuccessfulPayment: React.FC = () => {
       setAnimateCheck(true);
     }, 300);
 
-    // Clear cart after successful payment
+    // Clear cart after successful payment - but only once
     const handlePaymentSuccess = async () => {
+      // Check if cart has already been cleared in this session
+      if (hasCartBeenCleared.current) return;
+
       try {
+        hasCartBeenCleared.current = true; // Mark as cleared before the API call
         await clearCart();
         toast({
           title: "Payment Successful",
@@ -53,11 +59,14 @@ const SuccessfulPayment: React.FC = () => {
         sessionStorage.setItem('paymentStatus', status);
       } catch (error) {
         console.error("Error clearing cart:", error);
+        // If there's an error, we might want to reset the flag to try again
+        hasCartBeenCleared.current = false;
       }
     };
 
     handlePaymentSuccess();
-  }, [cartTotals.total, clearCart, toast, status]);
+    // Remove cartTotals.total from dependencies to avoid infinite loop
+  }, [clearCart, toast, status]);
 
   const handleViewOrders = () => {
     navigate("/user/orders-history");

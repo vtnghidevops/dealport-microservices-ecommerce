@@ -219,6 +219,7 @@ func (s *OrderService) UpdateOrderStatus(ctx context.Context, orderID string, st
 		"shipped":    true,
 		"delivered":  true,
 		"cancelled":  true,
+		"paid":       true,
 	}
 
 	if !validStatuses[status] {
@@ -542,4 +543,40 @@ func (s *OrderService) ProcessPayment(ctx context.Context, paymentReq domain.Pay
 	log.Printf("PAYMENT-DEBUG: Online payment initiated for order %s. Waiting for payment gateway callback.", paymentReq.OrderID)
 
 	return paymentResult, nil
+}
+
+// GetUserTotalSpend retrieves the total amount spent by a user
+func (s *OrderService) GetUserTotalSpend(ctx context.Context, userID string) (float64, error) {
+	if userID == "" {
+		return 0, errors.Join(domain.ErrInvalidOrderData, fmt.Errorf("user ID is required"))
+	}
+
+	log.Printf("GetUserTotalSpend: Calculating total spend for user %s", userID)
+
+	totalSpend, err := s.repo.GetUserTotalSpend(ctx, userID)
+	if err != nil {
+		log.Printf("ERROR: Failed to get total spend for user %s: %v", userID, err)
+		return 0, err
+	}
+
+	log.Printf("User %s has total spend of %.2f", userID, totalSpend)
+	return totalSpend, nil
+}
+
+// GetUserOrderCount retrieves the number of orders placed by a user
+func (s *OrderService) GetUserOrderCount(ctx context.Context, userID string) (int, error) {
+	if userID == "" {
+		return 0, errors.Join(domain.ErrInvalidOrderData, fmt.Errorf("user ID is required"))
+	}
+
+	log.Printf("GetUserOrderCount: Counting orders for user %s", userID)
+
+	orderCount, err := s.repo.GetUserOrderCount(ctx, userID)
+	if err != nil {
+		log.Printf("ERROR: Failed to get order count for user %s: %v", userID, err)
+		return 0, err
+	}
+
+	log.Printf("User %s has placed %d orders", userID, orderCount)
+	return orderCount, nil
 }

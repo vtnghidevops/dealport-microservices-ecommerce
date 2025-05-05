@@ -29,6 +29,9 @@ type CheckoutServiceClient interface {
 	UpdateOrderStatus(ctx context.Context, in *UpdateOrderStatusRequest, opts ...grpc.CallOption) (*StatusResponse, error)
 	ProcessPayment(ctx context.Context, in *ProcessPaymentRequest, opts ...grpc.CallOption) (*PaymentResponse, error)
 	ValidateCheckout(ctx context.Context, in *ValidateCheckoutRequest, opts ...grpc.CallOption) (*ValidateCheckoutResponse, error)
+	// User statistics operations
+	GetUserTotalSpend(ctx context.Context, in *UserRequest, opts ...grpc.CallOption) (*TotalSpendResponse, error)
+	GetUserOrderCount(ctx context.Context, in *UserRequest, opts ...grpc.CallOption) (*OrderCountResponse, error)
 	// Health check
 	GetHealth(ctx context.Context, in *HealthRequest, opts ...grpc.CallOption) (*HealthResponse, error)
 }
@@ -95,6 +98,24 @@ func (c *checkoutServiceClient) ValidateCheckout(ctx context.Context, in *Valida
 	return out, nil
 }
 
+func (c *checkoutServiceClient) GetUserTotalSpend(ctx context.Context, in *UserRequest, opts ...grpc.CallOption) (*TotalSpendResponse, error) {
+	out := new(TotalSpendResponse)
+	err := c.cc.Invoke(ctx, "/checkout.CheckoutService/GetUserTotalSpend", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *checkoutServiceClient) GetUserOrderCount(ctx context.Context, in *UserRequest, opts ...grpc.CallOption) (*OrderCountResponse, error) {
+	out := new(OrderCountResponse)
+	err := c.cc.Invoke(ctx, "/checkout.CheckoutService/GetUserOrderCount", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *checkoutServiceClient) GetHealth(ctx context.Context, in *HealthRequest, opts ...grpc.CallOption) (*HealthResponse, error) {
 	out := new(HealthResponse)
 	err := c.cc.Invoke(ctx, "/checkout.CheckoutService/GetHealth", in, out, opts...)
@@ -115,6 +136,9 @@ type CheckoutServiceServer interface {
 	UpdateOrderStatus(context.Context, *UpdateOrderStatusRequest) (*StatusResponse, error)
 	ProcessPayment(context.Context, *ProcessPaymentRequest) (*PaymentResponse, error)
 	ValidateCheckout(context.Context, *ValidateCheckoutRequest) (*ValidateCheckoutResponse, error)
+	// User statistics operations
+	GetUserTotalSpend(context.Context, *UserRequest) (*TotalSpendResponse, error)
+	GetUserOrderCount(context.Context, *UserRequest) (*OrderCountResponse, error)
 	// Health check
 	GetHealth(context.Context, *HealthRequest) (*HealthResponse, error)
 	mustEmbedUnimplementedCheckoutServiceServer()
@@ -141,6 +165,12 @@ func (UnimplementedCheckoutServiceServer) ProcessPayment(context.Context, *Proce
 }
 func (UnimplementedCheckoutServiceServer) ValidateCheckout(context.Context, *ValidateCheckoutRequest) (*ValidateCheckoutResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ValidateCheckout not implemented")
+}
+func (UnimplementedCheckoutServiceServer) GetUserTotalSpend(context.Context, *UserRequest) (*TotalSpendResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetUserTotalSpend not implemented")
+}
+func (UnimplementedCheckoutServiceServer) GetUserOrderCount(context.Context, *UserRequest) (*OrderCountResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetUserOrderCount not implemented")
 }
 func (UnimplementedCheckoutServiceServer) GetHealth(context.Context, *HealthRequest) (*HealthResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetHealth not implemented")
@@ -266,6 +296,42 @@ func _CheckoutService_ValidateCheckout_Handler(srv interface{}, ctx context.Cont
 	return interceptor(ctx, in, info, handler)
 }
 
+func _CheckoutService_GetUserTotalSpend_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(UserRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(CheckoutServiceServer).GetUserTotalSpend(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/checkout.CheckoutService/GetUserTotalSpend",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(CheckoutServiceServer).GetUserTotalSpend(ctx, req.(*UserRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _CheckoutService_GetUserOrderCount_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(UserRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(CheckoutServiceServer).GetUserOrderCount(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/checkout.CheckoutService/GetUserOrderCount",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(CheckoutServiceServer).GetUserOrderCount(ctx, req.(*UserRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _CheckoutService_GetHealth_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(HealthRequest)
 	if err := dec(in); err != nil {
@@ -314,6 +380,14 @@ var CheckoutService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "ValidateCheckout",
 			Handler:    _CheckoutService_ValidateCheckout_Handler,
+		},
+		{
+			MethodName: "GetUserTotalSpend",
+			Handler:    _CheckoutService_GetUserTotalSpend_Handler,
+		},
+		{
+			MethodName: "GetUserOrderCount",
+			Handler:    _CheckoutService_GetUserOrderCount_Handler,
 		},
 		{
 			MethodName: "GetHealth",

@@ -36,8 +36,19 @@ func ProxyRequest(w http.ResponseWriter, r *http.Request, endpoint string) {
 		targetURL = strings.Replace(targetURL, "{"+key+"}", chiParams.Values[i], -1)
 	}
 
+	// Make sure to forward query parameters
 	if r.URL.RawQuery != "" {
-		targetURL = targetURL + "?" + r.URL.RawQuery
+		// Check if we need to rename 'limit' to 'page_size' for product service
+		if strings.Contains(endpoint, "/products") && !strings.Contains(r.URL.RawQuery, "page_size=") && strings.Contains(r.URL.RawQuery, "limit=") {
+			// Replace 'limit=' with 'page_size=' for product service compatibility
+			rawQuery := strings.Replace(r.URL.RawQuery, "limit=", "page_size=", 1)
+			targetURL = targetURL + "?" + rawQuery
+		} else {
+			// Keep original query parameters for all other endpoints
+			targetURL = targetURL + "?" + r.URL.RawQuery
+		}
+
+		log.Printf("Forwarding request to %s with query: %s", targetURL, r.URL.RawQuery)
 	}
 
 	// Read the request body

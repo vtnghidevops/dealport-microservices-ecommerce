@@ -2,6 +2,7 @@ package repository
 
 import (
 	"context"
+	"time"
 
 	"user-service/internal/domain"
 )
@@ -51,4 +52,19 @@ type UserRepository interface {
 	AddToWishlist(ctx context.Context, userID string, productID int, notes string) error
 	RemoveFromWishlist(ctx context.Context, userID string, productID int) error
 	GetWishlist(ctx context.Context, userID string) ([]*domain.WishlistItem, error)
+
+	// Order and spending related methods
+	GetUserWithOrderCount(ctx context.Context, userID string) (int, error)
+	GetUserTotalSpend(ctx context.Context, userID string) (float64, error)
+	UpdateUserOrderCount(ctx context.Context, userID string, count int) error
+	UpdateUserTotalSpend(ctx context.Context, userID string, amount float64) error
+	GetRepeatCustomers(ctx context.Context) ([]*domain.User, error)
+	GetNewUsersCount(ctx context.Context, since time.Time) (int, error)
+	GetActiveUsersCount(ctx context.Context, since time.Time) (int, error)
+
+	// Statistics methods
+	GetNewUsersSince(ctx context.Context, filter *domain.UserFilter, since time.Time) ([]*domain.User, error)
+	GetActiveUsersSince(ctx context.Context, filter *domain.UserFilter, since time.Time) ([]*domain.User, error)
+	GetUsersWithOrderCount(ctx context.Context, filter *domain.UserFilter, minOrders int) ([]*domain.User, error)
+	GetUserActivityCountForDay(ctx context.Context, date time.Time) (int, error)
 }
