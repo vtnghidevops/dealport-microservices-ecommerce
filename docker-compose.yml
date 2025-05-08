@@ -209,6 +209,8 @@ services:
       MONGO_INITDB_ROOT_PASSWORD: ${MONGO_PASSWORD_LOGGER}
     volumes:
       - ./db-data/mongo/:/data/db
+      - ./services/logger-service/db:/docker-entrypoint-initdb.d
+    command: [ "--logpath", "/var/log/mongodb/mongod.log", "--logappend" ]
     networks:
       - net
 
