@@ -23,9 +23,6 @@ func (app *Config) routers() http.Handler {
 
 	mux.Use(chimiddleware.Heartbeat("/ping")) // Check if server is alive
 
-	// [POST] /logs/gRPC
-	// mux.Post("/log-grpc", app.LogViaGRPC)
-
 	// [Product-Service]
 	mux.Route("/api/v1", func(r chi.Router) {
 		// Authentication routes
@@ -65,20 +62,20 @@ func (app *Config) routers() http.Handler {
 				r.Use(app.AuthMiddleware.RequireAuth)
 				r.Use(app.AuthMiddleware.RequireAdmin)
 
-				// Lấy thông tin của một người dùng cụ thể
+				// Get user by id
 				r.Get("/{id}", app.UserHandler.GetUser)
 
-				// API quản lý khách hàng cho admin
+				// Admin API for managing customers
 				r.Route("/admin", func(r chi.Router) {
-					// Quản lý danh sách khách hàng
+					// Manage customer list
 					r.Post("/list", app.UserHandler.ListUsers)
 
-					// Thống kê và biểu đồ
+					// Get user statistics and activity chart
 					r.Post("/statistics", app.UserHandler.GetUserStatistics)
 					r.Post("/activity-chart", app.UserHandler.GetUserActivityChart)
 				})
 
-				// Thao tác với từng khách hàng
+				// Manage customer
 				r.Put("/{id}/status", app.UserHandler.UpdateCustomerStatus)
 				r.Delete("/{id}", app.UserHandler.DeleteCustomer)
 			})
@@ -108,7 +105,6 @@ func (app *Config) routers() http.Handler {
 			// Protected endpoints (require authentication and admin role)
 			r.Group(func(r chi.Router) {
 				r.Use(app.AuthMiddleware.RequireAuth)
-				// TODO: Add admin role check middleware
 				r.Post("/", app.CouponHandler.CreateCoupon)
 				r.Put("/{id}", app.CouponHandler.UpdateCoupon)
 				r.Delete("/{id}", app.CouponHandler.DeleteCoupon)
@@ -152,7 +148,7 @@ func (app *Config) routers() http.Handler {
 			r.Post("/momo/callback", app.PaymentHandler.HandleMomoCallback)
 			// r.Post("/vnpay/create", app.PaymentHandler.CreateVnpayPayment)
 			// r.Post("/vnpay/verify", app.PaymentHandler.VerifyVnpayPayment)
-			// MoMo QuickPay endpoints
+			// MoMo testing endpoints
 			r.Post("/momo/qr/create", app.PaymentHandler.CreateMomoQRPayment)
 			r.Post("/momo/pos/create", app.PaymentHandler.CreateMomoPosPayment)
 		})

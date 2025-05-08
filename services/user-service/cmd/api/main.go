@@ -48,7 +48,7 @@ func main() {
 	// Get logger service host from environment or use default
 	loggerHost := os.Getenv("LOGGER_SERVICE_HOST")
 	if loggerHost == "" {
-		loggerHost = "localhost:50001"
+		loggerHost = "logger-service:50056"
 	}
 
 	// Initialize the logger client

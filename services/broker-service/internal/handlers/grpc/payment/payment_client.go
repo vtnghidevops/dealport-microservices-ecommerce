@@ -2,6 +2,7 @@ package payment
 
 import (
 	"log"
+	"os"
 
 	pb "broker-service/proto/payment"
 
@@ -10,8 +11,14 @@ import (
 )
 
 func GetPaymentClient() (pb.PaymentServiceClient, error) {
-	// Use environment variable for service URL in a real deployment
-	conn, err := grpc.Dial("localhost:50055", grpc.WithTransportCredentials(insecure.NewCredentials()))
+	// Get payment service host from environment variable or use default
+	paymentHost := os.Getenv("CHECKOUT_SERVICE_HOST")
+	if paymentHost == "" {
+		paymentHost = "checkout-service:50055" // Use service name for docker environment
+	}
+
+	// Connect to the checkout service for payment handling
+	conn, err := grpc.Dial(paymentHost, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
 		log.Println("Error connecting to checkout service:", err)
 		return nil, err

@@ -15,7 +15,7 @@ func GetUserClient() (userpb.UserServiceClient, error) {
 	// Get user service host from environment variable or use default
 	userHost := os.Getenv("USER_SERVICE_HOST")
 	if userHost == "" {
-		userHost = "localhost:50052" // Use localhost for development
+		userHost = "user-service:50052" // Use service name for docker environment
 	}
 
 	log.Printf("Attempting to connect to user service at %s", userHost)

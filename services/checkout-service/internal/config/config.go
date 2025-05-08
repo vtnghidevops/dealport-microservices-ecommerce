@@ -50,19 +50,19 @@ func LoadConfig(path string) (*Config, error) {
 			// HTTPPort: getEnv("HTTP_PORT", "8085"),
 		},
 		MongoDB: MongoDBConfig{
-			Host:     getEnv("MONGO_HOST", "localhost"),
-			Port:     getEnv("MONGO_PORT", "27019"),
+			Host:     getEnv("MONGO_HOST", "mongo-checkout"),
+			Port:     getEnv("MONGO_PORT", "27017"),
 			User:     getEnv("MONGO_USER", ""),
 			Password: getEnv("MONGO_PASSWORD", ""),
 			Database: getEnv("MONGO_DATABASE", "checkout"),
-			URI:      getEnv("MONGO_URI", "mongodb://localhost:27019/checkout"),
+			URI:      getEnv("MONGO_URI", "mongodb://mongo-checkout:27017/checkout"),
 		},
 		RabbitMQ: RabbitMQConfig{
-			Host:     getEnv("RABBITMQ_HOST", "localhost"),
+			Host:     getEnv("RABBITMQ_HOST", "rabbitmq"),
 			Port:     getEnv("RABBITMQ_PORT", "5672"),
 			User:     getEnv("RABBITMQ_USER", "guest"),
 			Password: getEnv("RABBITMQ_PASSWORD", "guest"),
-			URL:      getEnv("RABBITMQ_URL", "amqp://guest:guest@localhost:5672"),
+			URL:      getEnv("RABBITMQ_URL", "amqp://guest:guest@rabbitmq:5672"),
 		},
 	}
 

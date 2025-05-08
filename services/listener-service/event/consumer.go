@@ -392,13 +392,12 @@ func (consumer *Consumer) Listen(topics []string) error {
 // handleStandardEvent processes standardized event format based on event name
 func (consumer *Consumer) handleStandardEvent(event StandardEvent, routingKey string) error {
 	// Log dạng đơn giản khi nhận được event
-	consumer.logger.Printf("📨 Received event: %s", event.Name)
+	// consumer.logger.Printf("Received event: %s", event.Name)
 
 	// Ghi log sự kiện vào logger-service
 	err := consumer.logStandardEvent(event)
 	if err != nil {
 		consumer.logger.Printf("Warning: Failed to log event: %v", err)
-		// Continue processing even if logging fails
 	}
 
 	// Process based on event name
@@ -408,18 +407,18 @@ func (consumer *Consumer) handleStandardEvent(event StandardEvent, routingKey st
 		if data, ok := event.Data.(map[string]interface{}); ok {
 			userID, _ := data["user_id"].(string)
 			email, _ := data["email"].(string)
-			consumer.logger.Printf("👤 User login: %s (%s)", email, userID)
+			consumer.logger.Printf("User login: %s (%s)", email, userID)
 		}
-		consumer.logger.Printf("✅ User activity logged: login_success")
+		consumer.logger.Printf("User activity logged: login_success")
 		return nil
 
 	case "log.INFO.user.login_failed":
 		// Hiển thị thông báo đăng nhập thất bại
 		if data, ok := event.Data.(map[string]interface{}); ok {
 			email, _ := data["email"].(string)
-			consumer.logger.Printf("🚫 Failed login attempt for user: %s", email)
+			consumer.logger.Printf("Failed login attempt for user: %s", email)
 		}
-		consumer.logger.Printf("✅ User activity logged: login_failed")
+		consumer.logger.Printf("User activity logged: login_failed")
 		return nil
 
 	case "log.INFO.user.registered", "log.INFO.user.profile_updated",
@@ -427,9 +426,9 @@ func (consumer *Consumer) handleStandardEvent(event StandardEvent, routingKey st
 		// Ghi log ngắn gọn
 		if data, ok := event.Data.(map[string]interface{}); ok {
 			action, _ := data["action"].(string)
-			consumer.logger.Printf("✅ User activity logged: %s", action)
+			consumer.logger.Printf("User activity logged: %s", action)
 		} else {
-			consumer.logger.Printf("✅ User activity logged: %s", event.Name)
+			consumer.logger.Printf("User activity logged: %s", event.Name)
 		}
 		return nil
 
@@ -447,11 +446,11 @@ func (consumer *Consumer) handleStandardEvent(event StandardEvent, routingKey st
 				}
 			}
 
-			consumer.logger.Printf("🔒 User %s (%s) logged out from %s", userID, email, logoutType)
+			consumer.logger.Printf("User %s (%s) logged out from %s", userID, email, logoutType)
 		} else {
-			consumer.logger.Printf("🔒 User logged out (detailed info not available)")
+			consumer.logger.Printf("User logged out (detailed info not available)")
 		}
-		consumer.logger.Printf("✅ User activity logged: logout")
+		consumer.logger.Printf("User activity logged: logout")
 		return nil
 
 	// Xử lý các event đơn hàng và chuyển đổi thành log events
@@ -459,13 +458,13 @@ func (consumer *Consumer) handleStandardEvent(event StandardEvent, routingKey st
 		// Chuyển đổi thành log.INFO.order.created
 		err := consumer.handleOrderCreatedEvent(event)
 		if err != nil {
-			consumer.logger.Printf("❌ Error processing order.created event: %v", err)
+			consumer.logger.Printf("Error processing order.created event: %v", err)
 			return err
 		}
-		consumer.logger.Printf("📦 Order created event processed and logged")
+		consumer.logger.Printf("Order created event processed and logged")
 
 		// Send order confirmation email
-		consumer.logger.Printf("📧 Sending order confirmation email")
+		consumer.logger.Printf("Sending order confirmation email")
 		err = consumer.sendOrderConfirmationEmail(event)
 		if err != nil {
 			consumer.logger.Printf("Error sending order confirmation email: %v", err)
@@ -477,13 +476,13 @@ func (consumer *Consumer) handleStandardEvent(event StandardEvent, routingKey st
 		// Chuyển đổi thành log.INFO.order.status_changed
 		err := consumer.handleOrderStatusChangedEvent(event)
 		if err != nil {
-			consumer.logger.Printf("❌ Error processing order.status_changed event: %v", err)
+			consumer.logger.Printf("Error processing order.status_changed event: %v", err)
 			return err
 		}
-		consumer.logger.Printf("📦 Order status changed event processed and logged")
+		consumer.logger.Printf("Order status changed event processed and logged")
 
 		// Send order status notification email
-		consumer.logger.Printf("📧 Sending order status update email")
+		consumer.logger.Printf("Sending order status update email")
 		err = consumer.sendOrderStatusEmail(event)
 		if err != nil {
 			consumer.logger.Printf("Error sending order status email: %v", err)
@@ -495,13 +494,13 @@ func (consumer *Consumer) handleStandardEvent(event StandardEvent, routingKey st
 		// Chuyển đổi thành log.INFO.order.payment_succeeded
 		err := consumer.handlePaymentSucceededEvent(event)
 		if err != nil {
-			consumer.logger.Printf("❌ Error processing order.payment_succeeded event: %v", err)
+			consumer.logger.Printf("Error processing order.payment_succeeded event: %v", err)
 			return err
 		}
-		consumer.logger.Printf("💰 Payment succeeded event processed and logged")
+		consumer.logger.Printf("Payment succeeded event processed and logged")
 
 		// Send payment success email
-		consumer.logger.Printf("📧 Sending payment success email")
+		consumer.logger.Printf("Sending payment success email")
 		err = consumer.sendPaymentSuccessEmail(event)
 		if err != nil {
 			consumer.logger.Printf("Error sending payment success email: %v", err)
@@ -513,10 +512,10 @@ func (consumer *Consumer) handleStandardEvent(event StandardEvent, routingKey st
 		// Chuyển đổi thành log.INFO.order.payment_failed
 		err := consumer.handlePaymentFailedEvent(event)
 		if err != nil {
-			consumer.logger.Printf("❌ Error processing order.payment_failed event: %v", err)
+			consumer.logger.Printf("Error processing order.payment_failed event: %v", err)
 			return err
 		}
-		consumer.logger.Printf("💸 Payment failed event processed and logged")
+		consumer.logger.Printf("Payment failed event processed and logged")
 
 		// Có thể gửi email thông báo thanh toán thất bại
 		// (triển khai trong tương lai)
@@ -524,7 +523,7 @@ func (consumer *Consumer) handleStandardEvent(event StandardEvent, routingKey st
 
 	case "user.registered":
 		// Forward to user-service to store the user
-		consumer.logger.Printf("👤 Forwarding new user registration to user-service")
+		consumer.logger.Printf("Forwarding new user registration to user-service")
 		err := consumer.forwardToUserService(event)
 		if err != nil {
 			consumer.logger.Printf("Error forwarding to user-service: %v", err)
@@ -532,7 +531,7 @@ func (consumer *Consumer) handleStandardEvent(event StandardEvent, routingKey st
 		}
 
 		// Send welcome email
-		consumer.logger.Printf("📧 Sending welcome email to new user")
+		consumer.logger.Printf("Sending welcome email to new user")
 		err = consumer.sendWelcomeEmail(event)
 		if err != nil {
 			consumer.logger.Printf("Error sending welcome email: %v", err)
@@ -541,7 +540,7 @@ func (consumer *Consumer) handleStandardEvent(event StandardEvent, routingKey st
 
 	case "auth.password_reset_requested":
 		// Send password reset email
-		consumer.logger.Printf("📧 Sending password reset email")
+		consumer.logger.Printf("Sending password reset email")
 		err := consumer.sendPasswordResetEmail(event)
 		if err != nil {
 			consumer.logger.Printf("Error sending password reset email: %v", err)
@@ -550,7 +549,7 @@ func (consumer *Consumer) handleStandardEvent(event StandardEvent, routingKey st
 
 	case "auth.password_changed":
 		// Send password changed notification email
-		consumer.logger.Printf("📧 Sending password changed notification email")
+		consumer.logger.Printf("Sending password changed notification email")
 		err := consumer.sendPasswordChangedEmail(event)
 		if err != nil {
 			consumer.logger.Printf("Error sending password changed email: %v", err)
@@ -559,7 +558,7 @@ func (consumer *Consumer) handleStandardEvent(event StandardEvent, routingKey st
 
 	case "auth.otp_generated":
 		// Send OTP verification email
-		consumer.logger.Printf("📧 Sending OTP verification email")
+		consumer.logger.Printf("Sending OTP verification email")
 		err := consumer.sendOTPEmail(event)
 		if err != nil {
 			consumer.logger.Printf("Error sending OTP email: %v", err)
@@ -568,7 +567,7 @@ func (consumer *Consumer) handleStandardEvent(event StandardEvent, routingKey st
 
 	default:
 		// Forward all other events to appropriate service
-		consumer.logger.Printf("🔄 Forwarding event %s to appropriate service", event.Name)
+		consumer.logger.Printf("Forwarding event %s to appropriate service", event.Name)
 	}
 
 	return nil
@@ -631,7 +630,7 @@ func (consumer *Consumer) handleOrderCreatedEvent(event StandardEvent) error {
 		userID = uid
 	}
 
-	consumer.logger.Printf("📦 New order created: #%s (ID: %s) by %s - Total: $%.2f",
+	consumer.logger.Printf("New order created: #%s (ID: %s) by %s - Total: $%.2f",
 		orderNumber, orderID, userEmail, total)
 
 	// Sync user order data
@@ -701,7 +700,7 @@ func (consumer *Consumer) handleOrderStatusChangedEvent(event StandardEvent) err
 		prevStatus = ps
 	}
 
-	consumer.logger.Printf("📦 Order status changed: #%s (ID: %s) from '%s' to '%s'",
+	consumer.logger.Printf("Order status changed: #%s (ID: %s) from '%s' to '%s'",
 		orderNumber, orderID, prevStatus, status)
 
 	return nil
@@ -760,7 +759,7 @@ func (consumer *Consumer) handlePaymentSucceededEvent(event StandardEvent) error
 		amount = a
 	}
 
-	consumer.logger.Printf("💰 Payment succeeded: #%s (ID: %s) - Method: %s, Amount: $%.2f",
+	consumer.logger.Printf("Payment succeeded: #%s (ID: %s) - Method: %s, Amount: $%.2f",
 		orderNumber, orderID, method, amount)
 
 	// Update user order data
@@ -768,7 +767,7 @@ func (consumer *Consumer) handlePaymentSucceededEvent(event StandardEvent) error
 		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 		defer cancel()
 		if err := consumer.updateUserOrderData(ctx, userID); err != nil {
-			consumer.logger.Printf("❌ Failed to update user order data: %v", err)
+			consumer.logger.Printf("Failed to update user order data: %v", err)
 			// Continue processing even if updating user data fails
 		}
 	}
@@ -825,7 +824,7 @@ func (consumer *Consumer) handlePaymentFailedEvent(event StandardEvent) error {
 		method = m
 	}
 
-	consumer.logger.Printf("💸 Payment failed: #%s (ID: %s) - Method: %s",
+	consumer.logger.Printf("Payment failed: #%s (ID: %s) - Method: %s",
 		orderNumber, orderID, method)
 
 	return nil
@@ -917,10 +916,10 @@ func (consumer *Consumer) handleLegacyEvent(payload Payload) error {
 // Log standardized event to logger service
 func (consumer *Consumer) logStandardEvent(event StandardEvent) error {
 	// Tạo LoggerClient với địa chỉ localhost mặc định
-	consumer.logger.Printf("🔄 Creating logger client connection...")
-	loggerClient, err := NewLoggerClient("localhost:50001")
+	consumer.logger.Printf("Creating logger client connection...")
+	loggerClient, err := NewLoggerClient("logger-service:50056")
 	if err != nil {
-		consumer.logger.Printf("❌ Error creating logger client: %v", err)
+		consumer.logger.Printf("Error creating logger client: %v", err)
 		return err
 	}
 	defer loggerClient.Close()
@@ -955,7 +954,7 @@ func (consumer *Consumer) logStandardEvent(event StandardEvent) error {
 		return err
 	}
 
-	consumer.logger.Printf("✅ User activity logged: %s for user ID: %s", actionType, userID)
+	consumer.logger.Printf("User activity logged: %s for user ID: %s", actionType, userID)
 	return nil
 }
 
@@ -980,7 +979,7 @@ func (consumer *Consumer) forwardToUserService(event StandardEvent) error {
 	}
 
 	// Set up gRPC connection to user service
-	userServiceURL := "localhost:50052" // Default for docker environment
+	userServiceURL := "user-service:50052" // Default for docker environment
 
 	// Try multiple service discovery patterns
 	userServiceOptions := []string{
@@ -992,10 +991,10 @@ func (consumer *Consumer) forwardToUserService(event StandardEvent) error {
 	// Allow override from environment
 	if envURL := os.Getenv("USER_SERVICE_URL"); envURL != "" {
 		userServiceURL = envURL
-		consumer.logger.Printf("DEBUG: Using USER_SERVICE_URL from environment: %s", userServiceURL)
+		// consumer.logger.Printf("DEBUG: Using USER_SERVICE_URL from environment: %s", userServiceURL)
 	} else if os.Getenv("USE_LOCAL_SERVICES") == "true" || os.Getenv("LOCAL_DEVELOPMENT") == "true" {
-		userServiceURL = "localhost:50052"
-		consumer.logger.Printf("DEBUG: Using localhost for user-service due to local environment")
+		userServiceURL = "user-service:50052"
+		// consumer.logger.Printf("DEBUG: Using localhost for user-service due to local environment")
 	}
 
 	// Add connection timeout with longer duration for reliability
@@ -1069,29 +1068,29 @@ func (consumer *Consumer) forwardToUserService(event StandardEvent) error {
 		CreatedAt: event.CreatedAt.Format(time.RFC3339),
 	}
 
-	consumer.logger.Printf("DEBUG: Calling ProcessEvent RPC with request: %+v", eventRequest)
-	consumer.logger.Printf("DEBUG: Full EventData being sent: %s", eventRequest.EventData)
+	// consumer.logger.Printf("DEBUG: Calling ProcessEvent RPC with request: %+v", eventRequest)
+	// consumer.logger.Printf("DEBUG: Full EventData being sent: %s", eventRequest.EventData)
 
 	// Call the ProcessEvent RPC
 	response, err := client.ProcessEvent(callCtx, eventRequest)
 	if err != nil {
-		consumer.logger.Printf("ERROR: Failed calling user service ProcessEvent: %v", err)
+		// consumer.logger.Printf("ERROR: Failed calling user service ProcessEvent: %v", err)
 		return fmt.Errorf("error calling user service ProcessEvent: %w", err)
 	}
 
 	if !response.Success {
-		consumer.logger.Printf("ERROR: User service reported failure: %s", response.Message)
+		// consumer.logger.Printf("ERROR: User service reported failure: %s", response.Message)
 		return fmt.Errorf("user service reported failure: %s", response.Message)
 	}
 
-	consumer.logger.Printf("EVENT SUCCESS: Event %s processed by user-service: %s", event.Name, response.Message)
+	// consumer.logger.Printf("EVENT SUCCESS: Event %s processed by user-service: %s", event.Name, response.Message)
 	return nil
 }
 
 // logEvent logs a legacy event to the logger service
 func logEvent(entry Payload) error {
 	// Tạo LoggerClient với địa chỉ localhost mặc định
-	loggerClient, err := NewLoggerClient("localhost:50001")
+	loggerClient, err := NewLoggerClient("logger-service:50056")
 	if err != nil {
 		log.Printf("Error creating logger client: %v", err)
 		return err
@@ -1193,7 +1192,7 @@ func publishEmailEvent(emailType, data string) error {
 	}
 
 	// Determine RabbitMQ connection URL
-	rabbitURL := "amqp://guest:guest@localhost:5672"
+	rabbitURL := "amqp://guest:guest@rabbitmq:5672"
 
 	if os.Getenv("RABBITMQ_URL") != "" {
 		rabbitURL = os.Getenv("RABBITMQ_URL")
@@ -1231,8 +1230,6 @@ func publishEmailEvent(emailType, data string) error {
 	return nil
 }
 
-// Implementation of additional methods for completeness
-
 // Send welcome email for new user registration
 func (consumer *Consumer) sendWelcomeEmail(event StandardEvent) error {
 	// Extract user data
@@ -1257,32 +1254,21 @@ func (consumer *Consumer) sendWelcomeEmail(event StandardEvent) error {
 		return fmt.Errorf("unsupported data type for user registration event")
 	}
 
-	// Create email data
-	emailData := EmailData{
-		Type:     "registration",
-		To:       userData.Email,
-		Subject:  "Welcome to our platform!",
-		Template: "welcome.html.gohtml",
-		Variables: map[string]string{
-			"first_name": userData.FirstName,
-			"last_name":  userData.LastName,
-			"email":      userData.Email,
-		},
+	// Create a mail client
+	mailClient, err := NewMailClient("")
+	if err != nil {
+		return fmt.Errorf("failed to create mail client: %w", err)
+	}
+	defer mailClient.Close()
+
+	// Send welcome email
+	err = mailClient.SendWelcomeEmail(userData.Email, userData.FirstName, userData.LastName)
+	if err != nil {
+		return fmt.Errorf("failed to send welcome email: %w", err)
 	}
 
-	// Create standard email event
-	emailEvent := StandardEvent{
-		ID:         fmt.Sprintf("evt_%d", time.Now().UnixNano()),
-		Name:       "email.send",
-		Data:       emailData,
-		DataSchema: "v1",
-		Source:     "listener-service",
-		CreatedAt:  time.Now(),
-		Version:    "v1",
-	}
-
-	// Forward to mail service
-	return consumer.publishEmailEvent(emailEvent)
+	consumer.logger.Printf("Welcome email sent to %s", userData.Email)
+	return nil
 }
 
 // Send password reset email
@@ -1309,33 +1295,21 @@ func (consumer *Consumer) sendPasswordResetEmail(event StandardEvent) error {
 		return fmt.Errorf("unsupported data type for password reset event")
 	}
 
-	// Create email data
-	emailData := EmailData{
-		Type:     "reset_password",
-		To:       resetData.Email,
-		Subject:  "Password Reset Request",
-		Template: "password_reset.html.gohtml",
-		Variables: map[string]string{
-			"email":      resetData.Email,
-			"token_hash": resetData.TokenHash,
-			"expires_at": resetData.ExpiresAt,
-			"year":       fmt.Sprintf("%d", time.Now().Year()),
-		},
+	// Create a mail client
+	mailClient, err := NewMailClient("")
+	if err != nil {
+		return fmt.Errorf("failed to create mail client: %w", err)
+	}
+	defer mailClient.Close()
+
+	// Send password reset email
+	err = mailClient.SendPasswordResetEmail(resetData.Email, resetData.TokenHash, resetData.ExpiresAt)
+	if err != nil {
+		return fmt.Errorf("failed to send password reset email: %w", err)
 	}
 
-	// Create standard email event
-	emailEvent := StandardEvent{
-		ID:         fmt.Sprintf("evt_%d", time.Now().UnixNano()),
-		Name:       "email.send",
-		Data:       emailData,
-		DataSchema: "v1",
-		Source:     "listener-service",
-		CreatedAt:  time.Now(),
-		Version:    "v1",
-	}
-
-	// Forward to mail service
-	return consumer.publishEmailEvent(emailEvent)
+	consumer.logger.Printf("Password reset email sent to %s", resetData.Email)
+	return nil
 }
 
 // Send password changed notification email
@@ -1362,32 +1336,21 @@ func (consumer *Consumer) sendPasswordChangedEmail(event StandardEvent) error {
 		return fmt.Errorf("unsupported data type for password changed event")
 	}
 
-	// Create email data
-	emailData := EmailData{
-		Type:     "password_change",
-		To:       changedData.Email,
-		Subject:  "Your Password Has Been Changed",
-		Template: "password_changed.html.gohtml",
-		Variables: map[string]string{
-			"email":      changedData.Email,
-			"changed_at": changedData.ChangedAt,
-			"year":       fmt.Sprintf("%d", time.Now().Year()),
-		},
+	// Create a mail client
+	mailClient, err := NewMailClient("")
+	if err != nil {
+		return fmt.Errorf("failed to create mail client: %w", err)
+	}
+	defer mailClient.Close()
+
+	// Send password changed email
+	err = mailClient.SendPasswordChangedEmail(changedData.Email, changedData.ChangedAt)
+	if err != nil {
+		return fmt.Errorf("failed to send password changed email: %w", err)
 	}
 
-	// Create standard email event
-	emailEvent := StandardEvent{
-		ID:         fmt.Sprintf("evt_%d", time.Now().UnixNano()),
-		Name:       "email.send",
-		Data:       emailData,
-		DataSchema: "v1",
-		Source:     "listener-service",
-		CreatedAt:  time.Now(),
-		Version:    "v1",
-	}
-
-	// Forward to mail service
-	return consumer.publishEmailEvent(emailEvent)
+	consumer.logger.Printf("Password changed email sent to %s", changedData.Email)
+	return nil
 }
 
 // Send order confirmation email
@@ -1409,7 +1372,7 @@ func (consumer *Consumer) sendOrderConfirmationEmail(event StandardEvent) error 
 			return fmt.Errorf("failed to unmarshal order data: %w", err)
 		}
 
-		// Lấy thông tin shipping trực tiếp từ data
+		// Get shipping information directly from data
 		if name, ok := data["shipping_name"].(string); ok && name != "" {
 			orderData.ShippingName = name
 		}
@@ -1420,11 +1383,7 @@ func (consumer *Consumer) sendOrderConfirmationEmail(event StandardEvent) error 
 			orderData.ShippingPhone = phone
 		}
 
-		// Log thông tin shipping để debug
-		consumer.logger.Printf("DEBUG: Shipping info from event - Name: %s, Address: %s, Phone: %s",
-			orderData.ShippingName, orderData.ShippingAddress, orderData.ShippingPhone)
-
-		// Khối code cũ, vẫn giữ lại để tương thích ngược
+		// Legacy code for backward compatibility
 		if shippingData, ok := data["shipping"].(map[string]interface{}); ok {
 			if name, ok := shippingData["name"].(string); ok && orderData.ShippingName == "" {
 				orderData.ShippingName = name
@@ -1449,7 +1408,7 @@ func (consumer *Consumer) sendOrderConfirmationEmail(event StandardEvent) error 
 		return fmt.Errorf("missing email in order data")
 	}
 
-	// Format items for display in email - this creates a more user-friendly presentation
+	// Format items for display in email
 	itemsStr := ""
 	if len(orderData.Items) > 0 {
 		for i, item := range orderData.Items {
@@ -1490,83 +1449,51 @@ func (consumer *Consumer) sendOrderConfirmationEmail(event StandardEvent) error 
 	if orderData.ShippingName != "" {
 		customerName = orderData.ShippingName
 	} else {
-		// Ghi log để biết chúng ta cần lấy thông tin từ user service
-		consumer.logger.Printf("DEBUG: ShippingName is empty, attempting to retrieve user info for user ID %s", orderData.UserID)
-
-		// Nếu có user ID, thử lấy thông tin user từ user-service
-		if orderData.UserID != "" {
-			// TODO: Triển khai gọi user-service để lấy thông tin người dùng
-			// Đây là nơi bạn sẽ thêm code để gọi user-service API
-			// Ví dụ: userInfo, err := getUserInfoFromUserService(orderData.UserID)
-
-			// Tạm thời sử dụng email làm customer name nếu không có shipping name
-			if orderData.UserEmail != "" {
-				parts := strings.Split(orderData.UserEmail, "@")
-				if len(parts) > 0 && parts[0] != "" {
-					customerName = strings.Title(parts[0])
-					consumer.logger.Printf("DEBUG: Using email user part as customer name: %s", customerName)
-				}
+		// If user ID is available, try to get user information from email
+		if orderData.UserEmail != "" {
+			parts := strings.Split(orderData.UserEmail, "@")
+			if len(parts) > 0 && parts[0] != "" {
+				customerName = strings.Title(parts[0])
 			}
 		}
 	}
 
-	// Create the order tracking URL (replace with your actual domain)
-	orderURL := fmt.Sprintf("https://vntech.com/orders/%s", orderData.OrderID)
+	// Create a mail client
+	mailClient, err := NewMailClient("")
+	if err != nil {
+		return fmt.Errorf("failed to create mail client: %w", err)
+	}
+	defer mailClient.Close()
 
-	// Create email data with all variables needed by the template
-	emailData := EmailData{
-		Type:     "order_confirmation",
-		To:       orderData.UserEmail,
-		Subject:  "Order Confirmation - #" + orderData.OrderNumber,
-		Template: "order_confirmation.html.gohtml",
-		Variables: map[string]string{
-			// Customer information
-			"customer_name": customerName,
-
-			// Order details
-			"order_id":       orderData.OrderID,
-			"order_number":   orderData.OrderNumber,
-			"order_date":     orderDate,
-			"status":         orderData.Status,
-			"payment_method": paymentMethod,
-			"total":          totalStr,
-			"items":          itemsStr,
-
-			// Shipping information
-			"shipping_name":    orderData.ShippingName,
-			"shipping_address": orderData.ShippingAddress,
-			"shipping_phone":   orderData.ShippingPhone,
-			"order_url":        orderURL,
-
-			// Additional variables that might be useful
-			"year":       fmt.Sprintf("%d", time.Now().Year()),
-			"user_id":    orderData.UserID,
-			"user_email": orderData.UserEmail,
-		},
+	// Send order confirmation email
+	err = mailClient.SendOrderConfirmationEmail(
+		orderData.UserEmail,
+		orderData.OrderID,
+		orderData.OrderNumber,
+		customerName,
+		orderDate,
+		orderData.Status,
+		paymentMethod,
+		totalStr,
+		itemsStr,
+		orderData.ShippingAddress,
+		orderData.ShippingName,
+		orderData.ShippingPhone,
+	)
+	if err != nil {
+		return fmt.Errorf("failed to send order confirmation email: %w", err)
 	}
 
-	// Log the variables we're sending for debugging
-	consumer.logger.Printf("Order confirmation email variables: %+v", emailData.Variables)
-
-	// Create standard email event
-	emailEvent := StandardEvent{
-		ID:         fmt.Sprintf("evt_%d", time.Now().UnixNano()),
-		Name:       "email.send",
-		Data:       emailData,
-		DataSchema: "v1",
-		Source:     "listener-service",
-		CreatedAt:  time.Now(),
-		Version:    "v1",
-	}
-
-	// Forward to mail service
-	return consumer.publishEmailEvent(emailEvent)
+	consumer.logger.Printf("Order confirmation email sent to %s", orderData.UserEmail)
+	return nil
 }
 
-// Send OTP verification email
-func (consumer *Consumer) sendOTPEmail(event StandardEvent) error {
-	// Extract OTP data
-	var otpData OTPGeneratedData
+// sendOrderStatusEmail sends order status notification email
+func (consumer *Consumer) sendOrderStatusEmail(event StandardEvent) error {
+	consumer.logger.Printf("Processing order status change event")
+
+	// Extract order status data
+	var statusData OrderStatusChangedData
 
 	// Handle different data formats
 	switch data := event.Data.(type) {
@@ -1574,93 +1501,78 @@ func (consumer *Consumer) sendOTPEmail(event StandardEvent) error {
 		// Convert map to JSON then to struct
 		jsonData, err := json.Marshal(data)
 		if err != nil {
-			return fmt.Errorf("failed to marshal OTP data: %w", err)
+			return fmt.Errorf("failed to marshal order status data: %w", err)
 		}
-		if err := json.Unmarshal(jsonData, &otpData); err != nil {
-			return fmt.Errorf("failed to unmarshal OTP data: %w", err)
+		if err := json.Unmarshal(jsonData, &statusData); err != nil {
+			return fmt.Errorf("failed to unmarshal order status data: %w", err)
 		}
 	case string:
-		if err := json.Unmarshal([]byte(data), &otpData); err != nil {
-			return fmt.Errorf("failed to unmarshal OTP data string: %w", err)
+		if err := json.Unmarshal([]byte(data), &statusData); err != nil {
+			return fmt.Errorf("failed to unmarshal order status data string: %w", err)
 		}
 	default:
-		return fmt.Errorf("unsupported data type for OTP event")
+		return fmt.Errorf("unsupported data type for order status data")
 	}
 
-	// Set subject based on purpose
-	subject := "Your Verification Code"
-	if otpData.Purpose == "password_reset" {
-		subject = "Password Reset Verification"
-	} else if otpData.Purpose == "registration" {
-		subject = "Complete Your Registration"
+	// Validate required fields
+	if statusData.UserEmail == "" {
+		return fmt.Errorf("missing email in order status data")
 	}
 
-	// Create email data
-	emailData := EmailData{
-		Type:     "otp",
-		To:       otpData.Email,
-		Subject:  subject,
-		Template: "otp_verification.html.gohtml",
-		Variables: map[string]string{
-			"email":       otpData.Email,
-			"otp":         otpData.OTP,
-			"purpose":     otpData.Purpose,
-			"expires_in":  fmt.Sprintf("%d", otpData.ExpiresIn),
-			"message":     otpData.Message,
-			"action_text": otpData.ActionText,
-			"year":        fmt.Sprintf("%d", time.Now().Year()),
-		},
+	// Get appropriate subject based on status
+	var subject string
+	var template string
+
+	switch statusData.Status {
+	case "processing":
+		subject = "Your Order is Being Processed"
+		template = "order_processing.html.gohtml"
+	case "shipped":
+		subject = "Your Order Has Been Shipped"
+		template = "order_shipped.html.gohtml"
+	case "delivered":
+		subject = "Your Order Has Been Delivered"
+		template = "order_delivered.html.gohtml"
+	case "cancelled":
+		subject = "Your Order Has Been Cancelled"
+		template = "order_cancelled.html.gohtml"
+	default:
+		subject = "Order Status Update: " + statusData.Status
+		template = "order_status_change.html.gohtml"
 	}
 
-	// Create standard email event
-	emailEvent := StandardEvent{
-		ID:         fmt.Sprintf("evt_%d", time.Now().UnixNano()),
-		Name:       "email.send",
-		Data:       emailData,
-		DataSchema: "v1",
-		Source:     "listener-service",
-		CreatedAt:  time.Now(),
-		Version:    "v1",
+	// Format total for display
+	totalStr := fmt.Sprintf("%.2f", statusData.Total)
+
+	// Create variables map
+	variables := map[string]string{
+		"order_id":        statusData.OrderID,
+		"order_number":    statusData.OrderNumber,
+		"status":          statusData.Status,
+		"previous_status": statusData.PreviousStatus,
+		"total":           totalStr,
+		"year":            fmt.Sprintf("%d", time.Now().Year()),
 	}
 
-	// Forward to mail service
-	return consumer.publishEmailEvent(emailEvent)
-}
-
-// Publish email event to mail service
-func (consumer *Consumer) publishEmailEvent(event StandardEvent) error {
-	// Set the PublishedAt timestamp just before publishing
-	event.PublishedAt = time.Now()
-
-	// Convert event to JSON
-	jsonData, err := json.Marshal(event)
+	// Create a mail client
+	mailClient, err := NewMailClient("")
 	if err != nil {
-		return fmt.Errorf("failed to marshal email event: %w", err)
+		return fmt.Errorf("failed to create mail client: %w", err)
 	}
+	defer mailClient.Close()
 
-	// Create a channel
-	ch, err := consumer.conn.Channel()
-	if err != nil {
-		return fmt.Errorf("failed to open RabbitMQ channel: %w", err)
-	}
-	defer ch.Close()
-
-	// Publish the message
-	err = ch.Publish(
-		"logs_topic", // exchange
-		"email.send", // routing key
-		false,        // mandatory
-		false,        // immediate
-		amqp.Publishing{
-			ContentType: "application/json",
-			Body:        jsonData,
-		},
+	// Send order status email
+	err = mailClient.SendTemplateEmail(
+		statusData.UserEmail,
+		subject+" - Order #"+statusData.OrderNumber,
+		template,
+		variables,
 	)
 	if err != nil {
-		return fmt.Errorf("failed to publish email event: %w", err)
+		return fmt.Errorf("failed to send order status email: %w", err)
 	}
 
-	consumer.logger.Printf("Email event published: %s for %s", event.Name, event.Data.(EmailData).To)
+	consumer.logger.Printf("Order status email sent to %s", statusData.UserEmail)
 	return nil
 }
 
@@ -1729,57 +1641,47 @@ func (consumer *Consumer) sendPaymentSuccessEmail(event StandardEvent) error {
 		currency = "VND (₫)"
 	}
 
-	// Create email data with improved variables for better user experience
-	emailData := EmailData{
-		Type:     "payment_success",
-		To:       paymentData.UserEmail,
-		Subject:  "Payment Confirmation for Order #" + paymentData.OrderNumber,
-		Template: "payment_success.html.gohtml",
-		Variables: map[string]string{
-			// Order information
-			"order_id":     paymentData.OrderID,
-			"order_number": paymentData.OrderNumber,
-
-			// Payment details
-			"amount":         amountStr,
-			"currency":       currency,
-			"payment_method": paymentMethod,
-			"transaction_id": paymentData.TransactionID,
-			"payment_date":   formattedPaymentDate,
-			"payment_status": paymentData.Status,
-
-			// Additional variables
-			"year":       fmt.Sprintf("%d", time.Now().Year()),
-			"user_id":    paymentData.UserID,
-			"user_email": paymentData.UserEmail,
-		},
+	// Create variables map
+	variables := map[string]string{
+		"order_id":       paymentData.OrderID,
+		"order_number":   paymentData.OrderNumber,
+		"amount":         amountStr,
+		"currency":       currency,
+		"payment_method": paymentMethod,
+		"transaction_id": paymentData.TransactionID,
+		"payment_date":   formattedPaymentDate,
+		"payment_status": paymentData.Status,
+		"year":           fmt.Sprintf("%d", time.Now().Year()),
+		"user_id":        paymentData.UserID,
+		"user_email":     paymentData.UserEmail,
 	}
 
-	// Create email event - pass the emailData object directly, not as a string
-	emailEvent := StandardEvent{
-		ID:         fmt.Sprintf("evt_%d", time.Now().UnixNano()),
-		Name:       "email.send",
-		Data:       emailData, // Pass emailData directly, not as a JSON string
-		DataSchema: "v1",
-		Source:     "listener-service",
-		CreatedAt:  time.Now(),
-		Version:    "v1",
+	// Create a mail client
+	mailClient, err := NewMailClient("")
+	if err != nil {
+		return fmt.Errorf("failed to create mail client: %w", err)
+	}
+	defer mailClient.Close()
+
+	// Send payment success email
+	err = mailClient.SendTemplateEmail(
+		paymentData.UserEmail,
+		"Payment Confirmation for Order #"+paymentData.OrderNumber,
+		"payment_success.html.gohtml",
+		variables,
+	)
+	if err != nil {
+		return fmt.Errorf("failed to send payment success email: %w", err)
 	}
 
-	// Log the email we're about to send
-	consumer.logger.Printf("Sending payment success email to %s for order #%s",
-		paymentData.UserEmail, paymentData.OrderNumber)
-
-	// Publish email event
-	return consumer.publishEmailEvent(emailEvent)
+	consumer.logger.Printf("Payment success email sent to %s", paymentData.UserEmail)
+	return nil
 }
 
-// sendOrderStatusEmail sends order status notification email
-func (consumer *Consumer) sendOrderStatusEmail(event StandardEvent) error {
-	consumer.logger.Printf("Processing order status change event")
-
-	// Extract order status data
-	var statusData OrderStatusChangedData
+// Send OTP verification email
+func (consumer *Consumer) sendOTPEmail(event StandardEvent) error {
+	// Extract OTP data
+	var otpData OTPGeneratedData
 
 	// Handle different data formats
 	switch data := event.Data.(type) {
@@ -1787,77 +1689,41 @@ func (consumer *Consumer) sendOrderStatusEmail(event StandardEvent) error {
 		// Convert map to JSON then to struct
 		jsonData, err := json.Marshal(data)
 		if err != nil {
-			return fmt.Errorf("failed to marshal order status data: %w", err)
+			return fmt.Errorf("failed to marshal OTP data: %w", err)
 		}
-		if err := json.Unmarshal(jsonData, &statusData); err != nil {
-			return fmt.Errorf("failed to unmarshal order status data: %w", err)
+		if err := json.Unmarshal(jsonData, &otpData); err != nil {
+			return fmt.Errorf("failed to unmarshal OTP data: %w", err)
 		}
 	case string:
-		if err := json.Unmarshal([]byte(data), &statusData); err != nil {
-			return fmt.Errorf("failed to unmarshal order status data string: %w", err)
+		if err := json.Unmarshal([]byte(data), &otpData); err != nil {
+			return fmt.Errorf("failed to unmarshal OTP data string: %w", err)
 		}
 	default:
-		return fmt.Errorf("unsupported data type for order status data")
+		return fmt.Errorf("unsupported data type for OTP event")
 	}
 
-	// Validate required fields
-	if statusData.UserEmail == "" {
-		return fmt.Errorf("missing email in order status data")
+	// Create a mail client
+	mailClient, err := NewMailClient("")
+	if err != nil {
+		return fmt.Errorf("failed to create mail client: %w", err)
+	}
+	defer mailClient.Close()
+
+	// Send OTP email
+	err = mailClient.SendOTPEmail(
+		otpData.Email,
+		otpData.OTP,
+		otpData.Purpose,
+		int32(otpData.ExpiresIn),
+		otpData.Message,
+		otpData.ActionText,
+	)
+	if err != nil {
+		return fmt.Errorf("failed to send OTP email: %w", err)
 	}
 
-	// Get appropriate subject line and template based on status
-	var subject string
-	var template string
-
-	switch statusData.Status {
-	case "processing":
-		subject = "Your Order is Being Processed"
-		template = "order_processing.html.gohtml"
-	case "shipped":
-		subject = "Your Order Has Been Shipped"
-		template = "order_shipped.html.gohtml"
-	case "delivered":
-		subject = "Your Order Has Been Delivered"
-		template = "order_delivered.html.gohtml"
-	case "cancelled":
-		subject = "Your Order Has Been Cancelled"
-		template = "order_cancelled.html.gohtml"
-	default:
-		subject = "Order Status Update: " + statusData.Status
-		template = "order_status_change.html.gohtml"
-	}
-
-	// Format total for display
-	totalStr := fmt.Sprintf("%.2f", statusData.Total)
-
-	// Create email data
-	emailData := EmailData{
-		Type:     "order_status",
-		To:       statusData.UserEmail,
-		Subject:  subject + " - Order #" + statusData.OrderNumber,
-		Template: template,
-		Variables: map[string]string{
-			"order_id":        statusData.OrderID,
-			"order_number":    statusData.OrderNumber,
-			"status":          statusData.Status,
-			"previous_status": statusData.PreviousStatus,
-			"total":           totalStr,
-		},
-	}
-
-	// Create email event - pass the emailData object directly
-	emailEvent := StandardEvent{
-		ID:         fmt.Sprintf("evt_%d", time.Now().UnixNano()),
-		Name:       "email.send",
-		Data:       emailData, // Pass emailData directly, not as a JSON string
-		DataSchema: "v1",
-		Source:     "listener-service",
-		CreatedAt:  time.Now(),
-		Version:    "v1",
-	}
-
-	// Publish email event
-	return consumer.publishEmailEvent(emailEvent)
+	consumer.logger.Printf("OTP email sent to %s", otpData.Email)
+	return nil
 }
 
 // updateUserOrderData updates the user's order count and total spend in the user service
@@ -1890,11 +1756,11 @@ func (consumer *Consumer) updateUserOrderData(ctx context.Context, userID string
 	})
 
 	if err != nil {
-		consumer.logger.Printf("❌ Error updating user order data: %v", err)
+		consumer.logger.Printf("Error updating user order data: %v", err)
 		return fmt.Errorf("failed to sync user order data: %w", err)
 	}
 
-	consumer.logger.Printf("✅ Updated order data for user %s: order count=%d, total spend=%.2f",
+	consumer.logger.Printf("Updated order data for user %s: order count=%d, total spend=%.2f",
 		userID, orderCount, totalSpend)
 	return nil
 }
@@ -1912,10 +1778,10 @@ func (consumer *Consumer) connectToUserService() error {
 	// Get user service host from environment or use default
 	userHost := os.Getenv("USER_SERVICE_HOST")
 	if userHost == "" {
-		userHost = "user-service:50001"
+		userHost = "user-service:50052"
 	}
 
-	consumer.logger.Printf("DEBUG: Attempting to connect to user service at %s", userHost)
+	// consumer.logger.Printf("DEBUG: Attempting to connect to user service at %s", userHost)
 
 	// Set up connection to user service with retry logic
 	maxRetries := 5
@@ -1933,13 +1799,13 @@ func (consumer *Consumer) connectToUserService() error {
 		)
 		cancel()
 
-		if dialErr == nil {
-			consumer.logger.Printf("DEBUG: Successfully connected to user service at %s", userHost)
-			break
-		}
+		// if dialErr == nil {
+		// 	// consumer.logger.Printf("DEBUG: Successfully connected to user service at %s", userHost)
+		// 	break
+		// }
 
-		consumer.logger.Printf("WARNING: Failed to connect to user service at %s (attempt %d/%d): %v",
-			userHost, attempt, maxRetries, dialErr)
+		// consumer.logger.Printf("WARNING: Failed to connect to user service at %s (attempt %d/%d): %v",
+		// 	userHost, attempt, maxRetries, dialErr)
 
 		// Wait before retrying
 		time.Sleep(time.Duration(attempt) * time.Second)

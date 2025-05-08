@@ -57,19 +57,19 @@ func main() {
 		logger.Fatalf("Failed to connect to RabbitMQ: %v", err)
 	}
 	defer rabbitConn.Close()
-	logger.Println("Connected to RabbitMQ")
+	// logger.Println("Connected to RabbitMQ")
 
 	// Initialize event emitter
 	eventEmitter, err := event.NewEmitter(rabbitConn, logger)
 	if err != nil {
 		logger.Fatalf("Failed to create event emitter: %v", err)
 	}
-	logger.Println("Event emitter initialized")
+	// logger.Println("Event emitter initialized")
 
 	// Add these debug logs after initializing event emitter (around line 90)
-	log.Printf("DEBUG STARTUP: Event emitter initialized - conn: %v, logger: %v", rabbitConn != nil, logger != nil)
+	// log.Printf("DEBUG STARTUP: Event emitter initialized - conn: %v, logger: %v", rabbitConn != nil, logger != nil)
 	// Test event emission during startup
-	log.Printf("DEBUG STARTUP: Testing event emission during startup")
+	// log.Printf("DEBUG STARTUP: Testing event emission during startup")
 	time.Sleep(5 * time.Second) // Allow service to fully start
 	go func() {
 		// Create a test event

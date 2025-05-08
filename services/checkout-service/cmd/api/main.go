@@ -157,7 +157,7 @@ func connectToRabbitMQ(cfg *config.Config, logger *log.Logger) (*amqp.Connection
 	var err error
 
 	// Default RabbitMQ URL if not specified in config
-	rabbitURL := "amqp://guest:guest@localhost:5672"
+	rabbitURL := "amqp://guest:guest@rabbitmq:5672"
 	if cfg.RabbitMQ.URL != "" {
 		rabbitURL = cfg.RabbitMQ.URL
 	}

@@ -1,23 +1,30 @@
 # base image
-FROM golang:1.23-alpine AS builder
-
-RUN mkdir /app
-
-COPY . /app
+FROM golang:1.24.1-alpine AS builder
 
 WORKDIR /app
 
-RUN CGO_ENABLE=0 go build -o product-service ./cmd/api
+# Copy go.mod, go.sum files
+COPY go.mod ./
+# Copy the entire service directory
+COPY . .
 
-RUN chmod +x /app/product-service
+# Download dependencies
+RUN go mod download
+
+# Build the application
+RUN CGO_ENABLED=0 GOOS=linux go build -o productService ./cmd/api
 
 # final stage with tiny img
 FROM alpine:latest
 
-RUN mkdir /app
+WORKDIR /app
+
+# Create uploads directory
 RUN mkdir -p /app/uploads/products
 
-COPY --from=builder /app/product-service /app
-COPY data/products.sql /app/products.sql
-CMD ["/app/product-service"]
+# Copy the binary from the builder stage
+COPY --from=builder /app/productService .
+
+EXPOSE 8080
+CMD ["./productService"]
 

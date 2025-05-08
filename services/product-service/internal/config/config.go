@@ -40,7 +40,7 @@ func LoadConfig(path string) (*Config, error) {
 			GRPCPort: getEnv("GRPC_PORT", "50053"),
 		},
 		Database: DatabaseConfig{
-			Host:     getEnv("DB_HOST", "localhost"),
+			Host:     getEnv("DB_HOST", "postgres-products"),
 			Port:     getEnv("DB_PORT", "5433"),
 			User:     getEnv("DB_USER", "postgres-products"),
 			Password: getEnv("DB_PASSWORD", "password"),

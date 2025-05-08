@@ -15,5 +15,4 @@ require (
 	google.golang.org/protobuf v1.36.4 // indirect
 )
 
-// Setup local module replacement for user-service proto
-replace user-service/proto/user => ../user-service/proto/user
+

@@ -62,8 +62,8 @@ func (m *Mail) SendSMTPMessage(msg Message) error {
 		msg.FromName = m.FromName
 	}
 
-	log.Printf("Preparing to send email: To=%s, Subject=%s, From=%s", msg.To, msg.Subject, msg.From)
-	log.Printf("Using SMTP server: %s:%d, User: %s", m.Host, m.Port, m.Username)
+	// log.Printf("Preparing to send email: To=%s, Subject=%s, From=%s", msg.To, msg.Subject, msg.From)
+	// log.Printf("Using SMTP server: %s:%d, User: %s", m.Host, m.Port, m.Username)
 
 	// Convert message data to map if possible
 	var dataMap map[string]interface{}
@@ -116,7 +116,7 @@ func (m *Mail) SendSMTPMessage(msg Message) error {
 	// Enable SMTP authentication debugging
 	server.Authentication = mail.AuthLogin // Explicitly set authentication method
 
-	log.Printf("Using encryption type: %v", server.Encryption)
+	// log.Printf("Using encryption type: %v", server.Encryption)
 
 	// Connect to SMTP server with retry
 	var smtpClient *mail.SMTPClient
@@ -192,12 +192,12 @@ func (m *Mail) buildHTMLMessage(msg Message, data map[string]interface{}) (strin
 	templateName := msg.Template
 	if !strings.HasSuffix(templateName, ".html.gohtml") && !strings.HasSuffix(templateName, ".gohtml") {
 		templateName = templateName + ".html.gohtml"
-		log.Printf("DEBUG: Added .html.gohtml extension to template name: %s", templateName)
+		// log.Printf("DEBUG: Added .html.gohtml extension to template name: %s", templateName)
 	}
 
 	// Check for template path with fallback
 	templatePath := fmt.Sprintf("./templates/%s", templateName)
-	log.Printf("DEBUG: Looking for template at: %s", templatePath)
+	// log.Printf("DEBUG: Looking for template at: %s", templatePath)
 
 	// Try different paths in this order:
 	possiblePaths := []string{
@@ -217,22 +217,22 @@ func (m *Mail) buildHTMLMessage(msg Message, data map[string]interface{}) (strin
 		if _, err := os.Stat(path); !os.IsNotExist(err) {
 			templatePath = path
 			templateFound = true
-			log.Printf("DEBUG: Template found at: %s", templatePath)
+			// log.Printf("DEBUG: Template found at: %s", templatePath)
 			break
 		}
 	}
 
 	if !templateFound {
-		log.Printf("ERROR: Template not found after trying multiple paths")
+		// log.Printf("ERROR: Template not found after trying multiple paths")
 		return "", fmt.Errorf("template not found: %s", msg.Template)
 	}
 
 	// Log the data we're providing to the template
-	log.Printf("DEBUG: Template data keys: %v", getMapKeys(data))
+	// log.Printf("DEBUG: Template data keys: %v", getMapKeys(data))
 
 	t, err := template.New(filepath.Base(templatePath)).ParseFiles(templatePath)
 	if err != nil {
-		log.Printf("ERROR: Failed to parse template: %v", err)
+		//log.Printf("ERROR: Failed to parse template: %v", err)
 		return "", err
 	}
 
@@ -258,7 +258,7 @@ func (m *Mail) buildHTMLMessage(msg Message, data map[string]interface{}) (strin
 
 	html, err := prem.Transform()
 	if err != nil {
-		log.Printf("ERROR: Failed to transform HTML: %v", err)
+	log.Printf("ERROR: Failed to transform HTML: %v", err)
 		return "", err
 	}
 

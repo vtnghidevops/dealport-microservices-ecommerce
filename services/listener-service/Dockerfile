@@ -1,21 +1,26 @@
 # base image
-FROM golang:1.18-alpine AS builder
-
-RUN mkdir /app
-
-COPY . /app
+FROM golang:1.24.1-alpine AS builder
 
 WORKDIR /app
 
-RUN CGO_ENABLE=0 go build -o listener-service .
+# Copy go.mod, go.sum files
+COPY go.mod ./
+# Copy the entire service directory
+COPY . .
 
-RUN chmod +x /app/listener-service
+# Download dependencies
+RUN go mod download
+
+# Build the application
+RUN CGO_ENABLED=0 GOOS=linux go build -o listenerService .
 
 # final stage with tiny img
 FROM alpine:latest
 
-RUN mkdir /app
-COPY --from=builder /app/listener-service /app
+WORKDIR /app
 
-CMD ["/app/listener-service"]
+# Copy the binary from the builder stage
+COPY --from=builder /app/listenerService .
+
+CMD ["./listenerService"]
 

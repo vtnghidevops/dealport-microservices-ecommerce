@@ -1,21 +1,26 @@
 # base image
 FROM golang:1.24.1-alpine AS builder
 
-RUN mkdir /app
+WORKDIR /app
 
-COPY . /app
+# Copy go.mod, go.sum files
+COPY go.mod ./
+# Copy the entire service directory
+COPY . .
+
+# Download dependencies
+RUN go mod download
+
+# Build the application
+RUN CGO_ENABLED=0 GOOS=linux go build -o brokerService ./cmd/api
+
+# Use a minimal alpine image for the final stage
+FROM alpine:latest
 
 WORKDIR /app
 
-RUN CGO_ENABLE=0 go build -o broker-service ./cmd/api
+# Copy the binary from the builder stage
+COPY --from=builder /app/brokerService .
 
-RUN chmod +x /app/broker-service
-
-# final stage with tiny img
-FROM alpine:latest
-
-RUN mkdir /app
-COPY --from=builder /app/broker-service /app
-
-CMD ["/app/broker-service"]
+CMD ["./brokerService"]
 

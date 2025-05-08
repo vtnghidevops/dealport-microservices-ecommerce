@@ -143,12 +143,11 @@ func connectToDB(dbCfg config.DatabaseConfig) *sql.DB {
 		"host=%s port=%s user=%s password=%s dbname=%s sslmode=%s",
 		dbCfg.Host, dbCfg.Port, dbCfg.User, dbCfg.Password, dbCfg.DBName, dbCfg.SSLMode,
 	)
-
-	// For development, provide a fallback if the environment variable is not set
-	if dsn == "" {
-		// dsn = "host=postgres-products port=5432 user=postgres-products password=password dbname=products sslmode=disable timezone=UTC connect_timeout=5"
-		dsn = "host=localhost port=5433 user=postgres-products password=password dbname=products sslmode=disable timezone=UTC connect_timeout=5"
-	}
+	
+	// if dsn == "" {
+	// 	dsn = "host=postgres-products port=5432 user=postgres-products password=password dbname=products sslmode=disable timezone=UTC connect_timeout=5"
+	// 	//dsn = "host=localhost port=5433 user=postgres-products password=password dbname=products sslmode=disable timezone=UTC connect_timeout=5"
+	// }
 
 	// Try to connect to the database with retries
 	for i := 0; i < 10; i++ {

@@ -1,4 +1,4 @@
-FROM golang:1.21-alpine AS builder
+FROM golang:1.24.1-alpine AS builder
 
 WORKDIR /app
 
@@ -21,14 +21,9 @@ WORKDIR /app
 # Copy the binary from the builder stage
 COPY --from=builder /app/authService .
 
-# Copy migrations
-COPY --from=builder /app/scripts/migrations ./scripts/migrations
-
 # Install necessary tools for migrations
 RUN apk add --no-cache postgresql-client
 
-# Expose the port
 EXPOSE 50051
-
 # Command to run the application
 CMD ["./authService"] 

@@ -10,24 +10,24 @@ import (
 	"google.golang.org/grpc/credentials/insecure"
 )
 
-// GetCouponClient returns a gRPC client for the coupon service (which is part of cart service)
+// GetCouponClient returns a gRPC client for the coupon service (which uses cart service)
 func GetCouponClient() (couponpb.CouponServiceClient, error) {
 	// Get cart service host from environment variable or use default
 	cartHost := os.Getenv("CART_SERVICE_HOST")
 	if cartHost == "" {
-		cartHost = "localhost:50054" // Default cart service port
+		cartHost = "cart-service:50054" // Use service name for docker environment
 	}
 
-	log.Printf("Attempting to connect to cart service (for coupon operations) at %s", cartHost)
+	log.Printf("Attempting to connect to cart service for coupons at %s", cartHost)
 
-	// Set up connection to cart service
+	// Set up connection to cart service (which implements coupon service)
 	conn, err := grpc.Dial(cartHost, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
-		log.Println("Error connecting to cart service for coupon operations:", err)
+		log.Println("Error connecting to cart service for coupons:", err)
 		return nil, err
 	}
 
-	// Create coupon service client
+	// Create coupon service client (uses cart service implementation)
 	couponClient := couponpb.NewCouponServiceClient(conn)
 	log.Println("CouponClient created successfully")
 

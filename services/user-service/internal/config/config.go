@@ -51,19 +51,19 @@ func LoadConfig(path string) (*Config, error) {
 	cfg := &Config{
 		Server: ServerConfig{
 			Port:        getEnv("PORT", "50052"),
-			HTTPPort:    getEnv("HTTP_PORT", "9001"),
+			// HTTPPort:    getEnv("HTTP_PORT", "9001"),
 			Environment: getEnv("ENVIRONMENT", "development"),
 		},
 		Database: DatabaseConfig{
-			Host:     getEnv("DB_HOST", "localhost"),
-			Port:     getEnv("DB_PORT", "5434"), // user-service
-			User:     getEnv("DB_USER", "postgres-users"),
-			Password: getEnv("DB_PASSWORD", "password"),
-			DBName:   getEnv("DB_NAME", "users"),
-			SSLMode:  getEnv("DB_SSLMODE", "disable"),
+			Host:     getEnv("USER_DB_HOST", "postgres-users"),
+			Port:     getEnv("USER_DB_PORT", "5432"), // user-service
+			User:     getEnv("USER_DB_USER", "postgres-users"),
+			Password: getEnv("USER_DB_PASSWORD", "password"),
+			DBName:   getEnv("USER_DB_NAME", "users"),
+			SSLMode:  getEnv("USER_DB_SSLMODE", "disable"),
 		},
 		Auth: AuthConfig{
-			AuthServiceURL: getEnv("AUTH_SERVICE_URL", "localhost:50051"),
+			AuthServiceURL: getEnv("AUTH_SERVICE_URL", "auth-service:50051"),
 		},
 	}
 

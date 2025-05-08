@@ -5,16 +5,20 @@ import (
 	"fmt"
 	"log"
 	"math"
-	"net/http"
+	"net"
 	"os"
 	"path/filepath"
 	"strings"
 	"time"
 
 	"mail-service/internal/config"
+	"mail-service/internal/grpc"
 	"mail-service/internal/mailer"
+	pb "mail-service/proto"
 
 	amqp "github.com/rabbitmq/amqp091-go"
+	grpclib "google.golang.org/grpc"
+	"google.golang.org/grpc/reflection"
 )
 
 // Config holds configuration for mail service
@@ -22,7 +26,10 @@ type Config struct {
 	Config config.Config // Service configuration
 }
 
-const port string = "9002"
+const (
+	// httpPort string = "9002"  // HTTP port for mail service
+	grpcPort string = "50057" // gRPC port for mail service
+)
 
 // MailPayload for test endpoint
 type MailPayload struct {
@@ -99,17 +106,50 @@ func main() {
 		Config: cfg,
 	}
 
-	// Start HTTP server for Postman testing
+	// Create a logger for gRPC server
+	grpcLogger := log.New(os.Stdout, "[MAIL-GRPC] ", log.LstdFlags)
+
+	// Start HTTP server for testing - COMMENTED OUT
 	// go app.serveHTTP()
+
+	// Start gRPC server
+	go app.serveGRPC(grpcLogger)
 
 	// Connect to RabbitMQ and start consuming
 	go app.setupRabbitMQConsumer()
 
-	log.Println("Mail service started")
-	log.Printf("HTTP endpoint available at http://localhost:%s/send (for Postman testing)", port)
+	log.Println("Mail service started successfully")
+	// log.Printf("HTTP endpoint available at http://localhost:%s", httpPort)
+	// log.Printf("gRPC server listening on port %s", grpcPort)
 
 	// Keep the application running indefinitely
 	select {}
+}
+
+// serveGRPC starts the gRPC server
+func (app *Config) serveGRPC(logger *log.Logger) {
+	lis, err := net.Listen("tcp", fmt.Sprintf(":%s", grpcPort))
+	if err != nil {
+		logger.Fatalf("Failed to listen for gRPC: %v", err)
+	}
+	defer lis.Close()
+
+	// Create a new gRPC server
+	s := grpclib.NewServer()
+
+	// Create mail server
+	mailServer := grpc.NewMailServer(app.Config, logger)
+
+	// Register mail server
+	pb.RegisterMailServiceServer(s, mailServer)
+
+	// Register reflection service on gRPC server (useful for tools like grpcurl)
+	reflection.Register(s)
+
+	logger.Printf("gRPC Server started on port %s", grpcPort)
+	if err := s.Serve(lis); err != nil {
+		logger.Fatalf("Failed to serve gRPC: %v", err)
+	}
 }
 
 // setupRabbitMQConsumer connects to RabbitMQ and starts consuming email.send events
@@ -162,37 +202,16 @@ func (app *Config) setupRabbitMQConsumer() {
 
 // connectToRabbitMQ connects to RabbitMQ with retries
 func connectToRabbitMQ() (*amqp.Connection, error) {
-	var counts int64
-	var connection *amqp.Connection
-	var err error
-	var backOff = 1 * time.Second
-
-	// Don't continue until rabbit is ready
-	// Use localhost instead of container name for local development
-	rabbitURL := "amqp://guest:guest@localhost:5672"
-	log.Printf("Attempting to connect to RabbitMQ at %s", rabbitURL)
-
-	for {
-		connection, err = amqp.Dial(rabbitURL)
-		if err != nil {
-			counts++
-			log.Printf("RabbitMQ not yet ready: %v", err)
-
-			if counts > 5 {
-				return nil, fmt.Errorf("cannot connect to RabbitMQ after 5 attempts: %w", err)
-			}
-
-			backOff = time.Duration(math.Pow(float64(counts), 2)) * time.Second
-			log.Printf("Backing off for %s...", backOff)
-			time.Sleep(backOff)
-			continue
-		}
-
-		log.Println("Connected to RabbitMQ!")
-		break
+	// Connect to RabbitMQ
+	log.Println("Connecting to RabbitMQ")
+	// Use container name instead of localhost for Docker environment
+	rabbitURL := "amqp://guest:guest@rabbitmq:5672"
+	conn, err := amqp.Dial(rabbitURL)
+	if err != nil {
+		log.Println(err)
+		os.Exit(1)
 	}
-
-	return connection, nil
+	return conn, nil
 }
 
 // consumeFromRabbitMQ consumes email events from RabbitMQ
@@ -414,20 +433,23 @@ func (app *Config) handleGenericEmail(data string) error {
 }
 
 // serveHTTP starts the HTTP server for testing with Postman
+/*
 func (app *Config) serveHTTP() {
 	srv := &http.Server{
-		Addr:    fmt.Sprintf(":%s", port),
+		Addr:    fmt.Sprintf(":%s", httpPort),
 		Handler: app.routes(),
 	}
 
-	log.Printf("Starting HTTP server on port %s", port)
+	log.Printf("Starting HTTP server on port %s", httpPort)
 	err := srv.ListenAndServe()
 	if err != nil {
 		log.Panic(err)
 	}
 }
+*/
 
 // routes defines HTTP routes for testing with Postman
+/*
 func (app *Config) routes() http.Handler {
 	mux := http.NewServeMux()
 
@@ -449,6 +471,7 @@ func (app *Config) routes() http.Handler {
 }
 
 // HandleEvent handles events from direct HTTP requests (for testing)
+/*
 func (app *Config) HandleEvent(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
 		app.errorJSON(w, fmt.Errorf("method not allowed"), http.StatusMethodNotAllowed)
@@ -494,6 +517,7 @@ func (app *Config) HandleEvent(w http.ResponseWriter, r *http.Request) {
 		Message: "Event processed successfully",
 	})
 }
+*/
 
 // handleRegistrationEmail processes registration email event
 func (app *Config) handleRegistrationEmail(data string) error {
@@ -763,6 +787,7 @@ func (app *Config) handlePasswordChangeEmailWithData(emailData EmailData) error 
 }
 
 // SendMailHandler handles test email sending
+/*
 func (app *Config) SendMailHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
 		app.errorJSON(w, fmt.Errorf("method not allowed"), http.StatusMethodNotAllowed)
@@ -812,8 +837,10 @@ func (app *Config) SendMailHandler(w http.ResponseWriter, r *http.Request) {
 		Message: "Mail sent successfully",
 	})
 }
+*/
 
 // SendOTPMailHandler handles sending OTP emails
+/*
 func (app *Config) SendOTPMailHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
 		app.errorJSON(w, fmt.Errorf("method not allowed"), http.StatusMethodNotAllowed)
@@ -870,15 +897,19 @@ func (app *Config) SendOTPMailHandler(w http.ResponseWriter, r *http.Request) {
 		Message: "OTP email sent successfully",
 	})
 }
+*/
 
 // writeJSON writes JSON response
+/*
 func (app *Config) writeJSON(w http.ResponseWriter, status int, data any) error {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(status)
 	return json.NewEncoder(w).Encode(data)
 }
+*/
 
 // errorJSON writes error as JSON
+/*
 func (app *Config) errorJSON(w http.ResponseWriter, err error, status ...int) error {
 	statusCode := http.StatusBadRequest
 	if len(status) > 0 {
@@ -891,6 +922,7 @@ func (app *Config) errorJSON(w http.ResponseWriter, err error, status ...int) er
 
 	return app.writeJSON(w, statusCode, payload)
 }
+*/
 
 // loadEnvFile loads environment variables from .env file
 func loadEnvFile(filename string) error {

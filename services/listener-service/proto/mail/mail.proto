@@ -1,0 +1,51 @@
+syntax = "proto3";
+
+package mail;
+option go_package = "listener-service/proto/mail";
+
+service MailService {
+  // Send a simple email with basic information
+  rpc SendEmail(SendEmailRequest) returns (SendEmailResponse) {}
+
+  // Send an email using a template
+  rpc SendTemplateEmail(SendTemplateEmailRequest) returns (SendEmailResponse) {}
+
+  // Send an OTP verification email
+  rpc SendOTPEmail(SendOTPEmailRequest) returns (SendEmailResponse) {}
+}
+
+// SendEmailRequest contains basic email information
+message SendEmailRequest {
+  string from = 1;
+  string from_name = 2;
+  string to = 3;
+  string subject = 4;
+  string message = 5;
+}
+
+// SendTemplateEmailRequest contains email information with template
+message SendTemplateEmailRequest {
+  string from = 1;
+  string from_name = 2;
+  string to = 3;
+  string subject = 4;
+  string template = 5;                // Template file name
+  map<string, string> variables = 6;  // Template variables
+}
+
+// SendOTPEmailRequest contains OTP email information
+message SendOTPEmailRequest {
+  string email = 1;
+  string otp = 2;
+  string purpose = 3;      // registration, password_reset, etc.
+  int32 expires_in = 4;    // Expiration time in minutes
+  string message = 5;      // Optional custom message
+  string action_text = 6;  // Action button text
+}
+
+// SendEmailResponse is the response from any email sending operation
+message SendEmailResponse {
+  bool success = 1;
+  string message = 2;
+  string error = 3;
+}

@@ -15,7 +15,7 @@ func GetCartClient() (cartpb.CartServiceClient, error) {
 	// Get cart service host from environment variable or use default
 	cartHost := os.Getenv("CART_SERVICE_HOST")
 	if cartHost == "" {
-		cartHost = "localhost:50054" // Default cart service port
+		cartHost = "cart-service:50054" // Use service name for docker environment
 	}
 
 	log.Printf("Attempting to connect to cart service at %s", cartHost)

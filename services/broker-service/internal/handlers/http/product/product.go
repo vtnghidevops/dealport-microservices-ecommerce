@@ -18,9 +18,7 @@ type Config struct {
 }
 
 const (
-	// ProductServiceURL is the URL of the product service
-	// For production, this should be configured via environment variables
-	ProductServiceURL = "http://localhost:8082"
+	ProductServiceURL = "http://product-service:8082"
 )
 
 // ProxyRequest forwards the request to the product service

@@ -1,21 +1,20 @@
-FROM golang:1.21-alpine AS builder
+FROM golang:1.24.1-alpine AS builder
 
 WORKDIR /app
 
-# Copy go module files
-COPY go.mod go.sum ./
-RUN go mod download
-
-# Copy the source code
+# Copy go.mod, go.sum files
+COPY go.mod ./
+# Copy the entire service directory
 COPY . .
+
+# Download dependencies
+RUN go mod download
 
 # Build the application
 RUN CGO_ENABLED=0 GOOS=linux go build -o cartService ./cmd/api
 
-# Use a small alpine image for the final image
+# Use a minimal alpine image for the final stage
 FROM alpine:latest
-
-RUN apk --no-cache add ca-certificates
 
 WORKDIR /app
 
@@ -26,4 +25,4 @@ COPY --from=builder /app/cartService .
 EXPOSE 50054
 
 # Command to run the application
-CMD ["/app/cartService"] 
+CMD ["./cartService"] 

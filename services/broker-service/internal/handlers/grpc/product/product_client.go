@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"os"
 	"sync"
 	"time"
 
@@ -14,12 +15,17 @@ import (
 	"google.golang.org/grpc/credentials/insecure"
 )
 
-const (
-	// ProductServiceAddress là địa chỉ của product-service
-	ProductServiceAddress = "localhost:50053"
-)
+// ProductServiceAddress is the address of the product service
+// Get from environment variable or use default for Docker environment
+func getProductServiceAddress() string {
+	productServiceAddr := os.Getenv("PRODUCT_SERVICE_HOST")
+	if productServiceAddr == "" {
+		return "product-service:50053" // Use service name for Docker environment
+	}
+	return productServiceAddr
+}
 
-// ProductClient là client gRPC cho product-service
+// ProductClient is a gRPC client for the product service
 type ProductClient struct {
 	productClient  pb.ProductServiceClient
 	categoryClient pb.CategoryServiceClient
@@ -28,10 +34,10 @@ type ProductClient struct {
 	conn           *grpc.ClientConn
 }
 
-// NewProductClient tạo một client gRPC mới kết nối đến product-service
+// NewProductClient creates a new gRPC client that connects to the product service
 func NewProductClient() (*ProductClient, error) {
-	// Kết nối với gRPC server (không bảo mật cho môi trường development)
-	conn, err := grpc.Dial(ProductServiceAddress, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	// Connect to the gRPC server (insecure for development environment)
+	conn, err := grpc.Dial(getProductServiceAddress(), grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
 		return nil, fmt.Errorf("failed to connect to product service: %w", err)
 	}

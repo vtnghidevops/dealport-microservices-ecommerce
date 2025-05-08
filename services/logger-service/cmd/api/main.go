@@ -19,11 +19,11 @@ import (
 
 // Default values - can be overridden by environment variables
 const (
-	defaultMongoURL      = "mongodb://localhost:27018"
+	defaultMongoURL      = "mongodb://mongo-logger:27017"
 	defaultMongoUsername = "admin"
 	defaultMongoPassword = "password"
 	defaultMongoDatabase = "logs"
-	defaultGRPCPort      = "50001"
+	defaultGRPCPort      = "50056"
 )
 
 var client *mongo.Client

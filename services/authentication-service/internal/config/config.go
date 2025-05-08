@@ -77,8 +77,8 @@ func LoadConfig(path string) (*Config, error) {
 			Environment: getEnv("ENVIRONMENT", "development"),
 		},
 		Database: DatabaseConfig{
-			Host:     getEnv("DB_HOST", "localhost"),
-			Port:     getEnv("DB_PORT", "5435"), // authen
+			Host:     getEnv("DB_HOST", "postgres-auth"),
+			Port:     getEnv("DB_PORT", "5432"), // authen
 			User:     getEnv("DB_USER", "postgres-auth"),
 			Password: getEnv("DB_PASSWORD", "password"),
 			DBName:   getEnv("DB_NAME", "auth"),
@@ -96,10 +96,10 @@ func LoadConfig(path string) (*Config, error) {
 			MaxAttempts: getEnvAsInt("OTP_MAX_ATTEMPTS", 3),
 		},
 		MailClient: MailClientConfig{
-			BaseURL: getEnv("MAIL_SERVICE_URL", "http://localhost:9002"),
+			BaseURL: getEnv("MAIL_SERVICE_URL", "http://mail-service:9002"),
 		},
 		RabbitMQ: RabbitMQConfig{
-			URL: getEnv("RABBITMQ_URL", "amqp://guest:guest@localhost:5672"),
+			URL: getEnv("RABBITMQ_URL", "amqp://guest:guest@rabbitmq:5672"),
 		},
 	}
 

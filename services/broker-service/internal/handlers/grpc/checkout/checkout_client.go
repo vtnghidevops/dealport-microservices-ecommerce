@@ -15,7 +15,7 @@ func GetCheckoutClient() (checkoutpb.CheckoutServiceClient, error) {
 	// Get checkout service host from environment variable or use default
 	checkoutHost := os.Getenv("CHECKOUT_SERVICE_HOST")
 	if checkoutHost == "" {
-		checkoutHost = "localhost:50055" // Default checkout service port
+		checkoutHost = "checkout-service:50055" // Use service name for docker environment
 	}
 
 	log.Printf("Attempting to connect to checkout service at %s", checkoutHost)

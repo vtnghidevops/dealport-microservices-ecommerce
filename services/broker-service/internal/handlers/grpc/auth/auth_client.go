@@ -15,7 +15,7 @@ func GetAuthClient() (authpb.AuthServiceClient, error) {
 	// Get auth service host from environment variable or use default
 	authHost := os.Getenv("AUTH_SERVICE_HOST")
 	if authHost == "" {
-		authHost = "localhost:50051" // Use localhost for development
+		authHost = "authentication-service:50051" // Use service name for docker environment
 	}
 
 	log.Printf("Attempting to connect to auth service at %s", authHost)

@@ -77,7 +77,7 @@ func connectToRabbitMQ() (*amqp.Connection, error) {
 	// Get RabbitMQ connection details from environment or use defaults
 	rabbitURL := os.Getenv("RABBIT_URL")
 	if rabbitURL == "" {
-		rabbitURL = "amqp://guest:guest@localhost:5672/"
+		rabbitURL = "amqp://guest:guest@rabbitmq:5672/"
 	}
 
 	log.Printf("Attempting to connect to RabbitMQ at %s", rabbitURL)

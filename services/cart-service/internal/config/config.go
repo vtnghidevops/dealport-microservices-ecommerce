@@ -47,19 +47,19 @@ func LoadConfig(path string) (*Config, error) {
 			// HTTPPort: getEnv("HTTP_PORT", "8084"),
 		},
 		Redis: RedisConfig{
-			Host:     getEnv("REDIS_HOST", "localhost"),
+			Host:     getEnv("REDIS_HOST", "redis-cart"),
 			Port:     getEnv("REDIS_PORT", "6379"),
 			Password: getEnv("REDIS_PASSWORD", ""),
 			DB:       getEnvAsInt("REDIS_DB", 0),
 		},
-		Database: DatabaseConfig{
-			Host:     getEnv("DB_HOST", "localhost"),
-			Port:     getEnv("DB_PORT", "5432"),
-			User:     getEnv("DB_USER", "postgres-cart"),
-			Password: getEnv("DB_PASSWORD", "password"),
-			DBName:   getEnv("DB_NAME", "cart"),
-			SSLMode:  getEnv("DB_SSL_MODE", "disable"),
-		},
+		// Database: DatabaseConfig{
+		// 	Host:     getEnv("DB_HOST", "postgres-cart"),
+		// 	Port:     getEnv("DB_PORT", "5432"),
+		// 	User:     getEnv("DB_USER", "postgres-cart"),
+		// 	Password: getEnv("DB_PASSWORD", "password"),
+		// 	DBName:   getEnv("DB_NAME", "cart"),
+		// 	SSLMode:  getEnv("DB_SSL_MODE", "disable"),
+		// },
 	}
 
 	// If a config file path is provided, load it

@@ -1,24 +1,30 @@
-# base image
-FROM golang:1.24-alpine AS builder
+FROM golang:1.24.1-alpine AS builder
 
 WORKDIR /app
 
+# Copy go.mod, go.sum files
+COPY go.mod ./
+# Copy the entire service directory
 COPY . .
 
-RUN CGO_ENABLED=0 go build -o mailApp ./cmd/api
+# Download dependencies
+RUN go mod download
 
-# Lightweight runtime image
+# Build the application
+RUN CGO_ENABLED=0 GOOS=linux go build -o mailService ./cmd/api
+
+# Use a minimal alpine image for the final stage
 FROM alpine:latest
 
 WORKDIR /app
 
-COPY --from=builder /app/mailApp .
+# Copy the binary from the builder stage
+COPY --from=builder /app/mailService .
 COPY --from=builder /app/templates /app/templates
-COPY --from=builder /app/.env .
 
-# Expose mail service port
-EXPOSE 9002
+# Expose mail service ports
+EXPOSE 50057
 
-# Entry point for the application
-CMD ["/app/mailApp"]
+# Command to run the application
+CMD ["./mailService"]
 
