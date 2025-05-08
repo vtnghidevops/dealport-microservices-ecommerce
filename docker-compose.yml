@@ -1,4 +1,15 @@
 services:
+  ecommerce-frontend:
+    container_name: ecommerce-frontend
+    image: ecommerce-frontend:v1
+    build:
+      context: ./ecommerce-fe/
+    restart: always
+    ports:
+      - "3000:80"
+    networks:
+      - net
+
   broker-service:
     container_name: broker-service
     image: broker-service:v1
@@ -8,11 +19,11 @@ services:
     ports:
       - "8080:8080"
     environment:
-      CART_SERVICE_HOST: cart-service:50054
-      CHECKOUT_SERVICE_HOST: checkout-service:50055
-    depends_on:
-      - cart-service
-      - checkout-service
+      AUTH_SERVICE_HOST: ${AUTH_SERVICE_HOST}
+      USER_SERVICE_HOST: ${USER_SERVICE_HOST}
+      PRODUCT_SERVICE_HOST: ${PRODUCT_SERVICE_HOST}
+      CART_SERVICE_HOST: ${CART_SERVICE_HOST}
+      CHECKOUT_SERVICE_HOST: ${CHECKOUT_SERVICE_HOST}
     networks:
       - net
 
@@ -72,7 +83,9 @@ services:
     ports:
       - "27019:27017"
     environment:
-      MONGO_INITDB_DATABASE: checkout
+      MONGO_INITDB_DATABASE: ${MONGO_DATABASE_CHECKOUT}
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_USERNAME_CHECKOUT}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_PASSWORD_CHECKOUT}
     volumes:
       - ./db-data/mongo-checkout:/data/db
       - ./services/checkout-service/internal/repository/mongodb/db:/docker-entrypoint-initdb.d
@@ -88,19 +101,24 @@ services:
     restart: always
     ports:
       - "50051:50051"
-    environment:
-      DB_HOST: ${AUTH_DB_HOST}
-      DB_PORT: ${AUTH_DB_PORT}
-      DB_USER: ${AUTH_DB_USER}
-      DB_PASSWORD: ${AUTH_DB_PASSWORD}
-      DB_NAME: ${AUTH_DB_NAME}
-      DB_SSLMODE: ${AUTH_DB_SSLMODE}
-      JWT_ACCESS_SECRET: ${JWT_ACCESS_SECRET}
-      JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET}
-      JWT_ACCESS_DURATION: ${JWT_ACCESS_DURATION}
-      JWT_REFRESH_DURATION: ${JWT_REFRESH_DURATION}
     depends_on:
       - postgres-auth
+    networks:
+      - net
+
+  postgres-auth:
+    container_name: postgres-auth
+    image: "postgres:14.0"
+    ports:
+      - "5435:5432"
+    restart: always
+    environment:
+      POSTGRES_USER: ${AUTH_DB_USER}
+      POSTGRES_PASSWORD: ${AUTH_DB_PASSWORD}
+      POSTGRES_DB: ${AUTH_DB_NAME}
+    volumes:
+      - ./db-data/postgres-auth:/var/lib/postgresql/data/
+      - ./services/authentication-service/scripts/db:/docker-entrypoint-initdb.d
     networks:
       - net
 
@@ -112,15 +130,24 @@ services:
     restart: always
     ports:
       - "50052:50052"
-    environment:
-      DB_HOST: ${USER_DB_HOST}
-      DB_PORT: ${USER_DB_PORT}
-      DB_USER: ${USER_DB_USER}
-      DB_PASSWORD: ${USER_DB_PASSWORD}
-      DB_NAME: ${USER_DB_NAME}
-      DB_SSLMODE: ${USER_DB_SSLMODE}
     depends_on:
       - postgres-users
+    networks:
+      - net
+
+  postgres-users:
+    container_name: postgres-users
+    image: "postgres:14.0"
+    ports:
+      - "5434:5432"
+    restart: always
+    environment:
+      POSTGRES_USER: ${USER_DB_USER}
+      POSTGRES_PASSWORD: ${USER_DB_PASSWORD}
+      POSTGRES_DB: ${USER_DB_NAME}
+    volumes:
+      - ./db-data/postgres-users:/var/lib/postgresql/data/
+      - ./services/user-service/scripts/db:/docker-entrypoint-initdb.d
     networks:
       - net
 
@@ -132,10 +159,27 @@ services:
     restart: always
     ports:
       - "8082:8082"
+      - "50053:50053"
     environment:
       DSN: ${PRODUCT_DSN}
     depends_on:
       - postgres-products
+    networks:
+      - net
+
+  postgres-products:
+    container_name: postgres-products
+    image: "postgres:14.0"
+    ports:
+      - "5433:5432"
+    restart: always
+    environment:
+      POSTGRES_USER: ${PRODUCT_DB_USER}
+      POSTGRES_PASSWORD: ${PRODUCT_DB_PASSWORD}
+      POSTGRES_DB: ${PRODUCT_DB_NAME}
+    volumes:
+      - ./db-data/postgres-products:/var/lib/postgresql/data/
+      - ./services/product-service/internal/repository/postgres/db:/docker-entrypoint-initdb.d
     networks:
       - net
 
@@ -145,6 +189,24 @@ services:
     build:
       context: ./services/logger-service
     restart: always
+    ports:
+      - "50056:50056"
+    depends_on:
+      - mongo-logger
+    networks:
+      - net
+
+  mongo-logger:
+    image: "mongo:4.2.16-bionic"
+    container_name: mongo-logger
+    ports:
+      - "27018:27017"
+    environment:
+      MONGO_INITDB_DATABASE: ${MONGO_DATABASE_LOGGER}
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_USERNAME_LOGGER}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_PASSWORD_LOGGER}
+    volumes:
+      - ./db-data/mongo/:/data/db
     networks:
       - net
 
@@ -154,6 +216,8 @@ services:
     build:
       context: ./services/mail-service
     restart: always
+    ports:
+      - "50057:50057"
     environment:
       MAIL_DOMAIN: ${MAIL_DOMAIN}
       MAIL_HOST: ${MAIL_HOST}
@@ -172,86 +236,9 @@ services:
     build:
       context: ./services/listener-service
     restart: always
-    networks:
-      - net
-
-  postgres:
-    container_name: postgres
-    image: "postgres:14.0"
-    ports:
-      - "5432:5432"
-    restart: always
-    environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: password
-      POSTGRES_DB: users
-      POSTGRES_MULTIPLE_DATABASES: users,products
-    volumes:
-      - ./db-data/postgres:/var/lib/postgresql/data/
-      - ./postgres-init:/docker-entrypoint-initdb.d
-    networks:
-      - net
-
-  postgres-products:
-    container_name: postgres-products
-    image: "postgres:14.0"
-    ports:
-      - "5433:5432"
-    restart: always
-    environment:
-      POSTGRES_USER: postgres-products
-      POSTGRES_PASSWORD: password
-      POSTGRES_DB: products
-    volumes:
-      - ./db-data/postgres-products:/var/lib/postgresql/data/
-      - ./services/product-service/internal/repository/postgres/db:/docker-entrypoint-initdb.d
-    #command: bash -c "chmod +x /docker-entrypoint-initdb.d/db/01-schema.sql && chmod +x /docker-entrypoint-initdb.d/db/02-data.sql && docker-entrypoint.sh postgres"
-    networks:
-      - net
-
-  postgres-auth:
-    container_name: postgres-auth
-    image: "postgres:14.0"
-    ports:
-      - "5435:5432"
-    restart: always
-    environment:
-      POSTGRES_USER: postgres-auth
-      POSTGRES_PASSWORD: password
-      POSTGRES_DB: auth
-    volumes:
-      - ./db-data/postgres-auth:/var/lib/postgresql/data/
-      - ./services/authentication-service/scripts/db:/docker-entrypoint-initdb.d
-    networks:
-      - net
-  postgres-users:
-    container_name: postgres-users
-    image: "postgres:14.0"
-    ports:
-      - "5434:5432"
-    restart: always
-    environment:
-      POSTGRES_USER: postgres-users
-      POSTGRES_PASSWORD: password
-      POSTGRES_DB: users
-    volumes:
-      - ./db-data/postgres-users:/var/lib/postgresql/data/
-      - ./services/user-service/scripts/db:/docker-entrypoint-initdb.d
-    #command: bash -c "chmod +x /docker-entrypoint-initdb.d/db/01-schema.sql && chmod +x /docker-entrypoint-initdb.d/db/02-data.sql && docker-entrypoint.sh postgres"
-    networks:
-      - net
-
-  mongo-logger:
-    image: "mongo:4.2.16-bionic"
-    container_name: mongo-logger
-    ports:
-      - "27018:27017"
-    environment:
-      MONGO_INITDB_DATABASE: logs
-      MONGO_INITDB_ROOT_USERNAME: ${MONGO_USERNAME}
-      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_PASSWORD}
-    volumes:
-      - ./db-data/mongo/:/data/db
+    depends_on:
+      - rabbitmq
+      - mail-service
     networks:
       - net
 
