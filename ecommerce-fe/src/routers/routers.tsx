@@ -1,6 +1,6 @@
 import React from "react";
 import { Route, Routes } from "react-router-dom";
-import Home from "@/pages/homepage/Home";
+  import Home from "@/pages/home/Home";
 import DashboardAdmin from "@/pages/admin/dashboard/Dashboard";
 import OrderPage from "@/pages/admin/order"; // Import Order Management page
 import CustomerPage from "@/pages/admin/customer";

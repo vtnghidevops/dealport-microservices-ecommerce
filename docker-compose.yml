@@ -1,12 +1,12 @@
 services:
-  ecommerce-frontend:
-    container_name: ecommerce-frontend
+  ecommerce-fe:
+    container_name: ecommerce-fe
     image: ecommerce-frontend:v1
     build:
       context: ./ecommerce-fe/
     restart: always
     ports:
-      - "3000:80"
+      - "3001:80"
     networks:
       - net
 

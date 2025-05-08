@@ -1,13 +1,13 @@
-import { HappyCustomers } from "../../components/homepage/HappyCustomers";
-import { TrendingProducts } from "../../components/homepage/TrendingProducts";
-import { CategoryExplorer } from "../../components/homepage/CategoryExplorer";
-import TopProducts from "../../components/homepage/BestSelling/TopProducts";
-import { LimitedDeal } from "../../components/homepage/LimitedDeal";
-import { HeroBanner } from "../../components/homepage/SliderBanner";
-import { BannerShowCase } from "../../components/homepage/Ads";
-import { DisplayGrid } from "../../components/homepage/Ads";
-import { NewFashion } from "../../components/homepage/Ads";
-import { GamingBanner } from "../../components/homepage/Ads";
+import { HappyCustomers } from "@/components/homepage/HappyCustomers";
+import { TrendingProducts } from "@/components/homepage/TrendingProducts";
+import { CategoryExplorer } from "@/components/homepage/CategoryExplorer";
+import TopProducts from "@/components/homepage/BestSelling/TopProducts";
+import { LimitedDeal } from "@/components/homepage/LimitedDeal";
+import { HeroBanner } from "@/components/homepage/SliderBanner";
+import { BannerShowCase } from "@/components/homepage/Ads";
+import { DisplayGrid } from "@/components/homepage/Ads";
+import { NewFashion } from "@/components/homepage/Ads";
+import { GamingBanner } from "@/components/homepage/Ads";
 
 
 export default function Home() {
