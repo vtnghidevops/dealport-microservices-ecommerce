@@ -5,7 +5,6 @@ import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
 import { UserAddress } from '@/types/user.model';
-import { FiCheck } from 'react-icons/fi';
 
 type AddressFormData = Omit<UserAddress, 'id'> & { id?: string };
 

@@ -3,24 +3,9 @@ import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
-import { Checkbox } from '@/components/ui/checkbox';
-import { Calendar } from '@/components/ui/calendar';
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from '@/components/ui/popover';
 import { format } from 'date-fns';
-import { CalendarIcon, ArrowLeft, Check } from 'lucide-react';
+import { ArrowLeft, Check } from 'lucide-react';
 import { Textarea } from '@/components/ui/textarea';
-import { cn } from '@/lib/utils';
 import couponService from '@/services/admin/coupon.service';
 import { useToast } from '@/hooks/use-toast';
 import AdminHeader from '@/components/admin/layout/AdminHeader';

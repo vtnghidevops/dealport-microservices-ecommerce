@@ -1,54 +1,135 @@
-# React + TypeScript + Vite
+# E-Commerce Frontend
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+A modern, responsive e-commerce frontend built with React, TypeScript, and Vite.
 
-Currently, two official plugins are available:
+## Technologies Used
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react/README.md) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+- **React 19** - A JavaScript library for building user interfaces
+- **TypeScript** - JavaScript with syntax for types
+- **Vite** - Next generation frontend tooling
+- **React Router** - Declarative routing for React
+- **TailwindCSS** - A utility-first CSS framework
+- **Radix UI** - Unstyled, accessible components
+- **Tanstack React Query** - Data fetching and state management
+- **Chart.js** - Simple yet flexible JavaScript charting library
+- **Docker** - Containerization platform
 
-## Expanding the ESLint configuration
+## Prerequisites
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+- Node.js v22.14.0 or higher
+- npm 10.2.5 or higher
 
-```js
-export default tseslint.config({
-  extends: [
-    // Remove ...tseslint.configs.recommended and replace with this
-    ...tseslint.configs.recommendedTypeChecked,
-    // Alternatively, use this for stricter rules
-    ...tseslint.configs.strictTypeChecked,
-    // Optionally, add this for stylistic rules
-    ...tseslint.configs.stylisticTypeChecked,
-  ],
-  languageOptions: {
-    // other options...
-    parserOptions: {
-      project: ['./tsconfig.node.json', './tsconfig.app.json'],
-      tsconfigRootDir: import.meta.dirname,
-    },
-  },
-})
+## Getting Started
+
+### Installation
+
+```bash
+# Clone the repository
+git clone <repository-url>
+cd ecommerce-fe
+
+# Install dependencies
+npm install
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+### Development
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
-
-export default tseslint.config({
-  plugins: {
-    // Add the react-x and react-dom plugins
-    'react-x': reactX,
-    'react-dom': reactDom,
-  },
-  rules: {
-    // other rules...
-    // Enable its recommended typescript rules
-    ...reactX.configs['recommended-typescript'].rules,
-    ...reactDom.configs.recommended.rules,
-  },
-})
+```bash
+# Start the development server
+npm run dev
 ```
+
+The application will be available at http://localhost:5173 by default.
+
+### Building for Production
+
+```bash
+# Build the application
+npm run build
+```
+
+This will generate optimized production files in the `dist` directory.
+
+### Running the Production Build Locally
+
+```bash
+# Preview the production build
+npm run preview
+```
+
+## Docker
+
+The application can be containerized using Docker.
+
+### Building the Docker Image
+
+```bash
+docker build -t ecommerce-fe .
+```
+
+### Running the Docker Container
+
+```bash
+docker run -p 80:80 ecommerce-fe
+```
+
+The application will be available at http://localhost.
+
+## Project Structure
+
+```
+ecommerce-fe/
+├── public/            # Static files
+├── src/               # Source code
+│   ├── assets/        # Images, fonts, etc.
+│   ├── components/    # Reusable components
+│   ├── pages/         # Page components
+│   ├── services/      # API services
+│   ├── store/         # State management
+│   ├── styles/        # Global styles
+│   ├── types/         # TypeScript type definitions
+│   ├── utils/         # Utility functions
+│   ├── App.tsx        # Root component
+│   ├── main.tsx       # Entry point
+│   └── ...
+├── .gitignore         # Git ignore file
+├── components.json    # Shadcn UI configuration
+├── Dockerfile         # Docker configuration
+├── index.html         # HTML entry point
+├── nginx.conf         # Nginx configuration for production
+├── package.json       # Dependencies and scripts
+├── postcss.config.js  # PostCSS configuration
+├── tailwind.config.js # Tailwind CSS configuration
+├── tsconfig.json      # TypeScript configuration
+└── vite.config.ts     # Vite configuration
+```
+
+## Features
+
+- Responsive design optimized for mobile, tablet, and desktop
+- Modern UI with animations and transitions
+- Error handling with custom error pages
+- API integration with React Query
+- Client-side routing with React Router
+- Charting and data visualization
+- Component-based architecture
+- Dark/light mode support
+
+## Best Practices
+
+- **Code Style**: Using ESLint to enforce coding standards
+- **Accessibility**: Following WCAG guidelines with Radix UI components
+- **Performance**: Optimized bundle size and lazy loading
+- **Error Handling**: Custom error pages for different error codes
+
+## Contributing
+
+1. Fork the repository
+2. Create your feature branch: `git checkout -b feature/my-new-feature`
+3. Commit your changes: `git commit -am 'Add some feature'`
+4. Push to the branch: `git push origin feature/my-new-feature`
+5. Submit a pull request
+
+## License
+
+This project is licensed under the MIT License.

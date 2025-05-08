@@ -4,7 +4,7 @@ import { Product } from '@/types/product.model';
 
 // Tạo một instance của axios với cấu hình chung
 const api = axios.create({
-  baseURL: import.meta.env.VITE_PUBLIC_PRODUCT_API_URL || 'http://localhost:8082/api/v1',
+  baseURL: import.meta.env.API_URL || 'http://localhost:8082/api/v1',
   headers: {
     'Content-Type': 'application/json',
   }
@@ -152,7 +152,7 @@ class ProductService {
 
       // Check if backend is available
       const isBackendAvailable = await this.isBackendAvailable();
-     // console.log('🔍 Backend available for upload?', isBackendAvailable);
+      // console.log('🔍 Backend available for upload?', isBackendAvailable);
 
       if (!isBackendAvailable) {
         // console.warn('⚠️ Backend upload service not available, using local file preview');
@@ -179,23 +179,23 @@ class ProductService {
       if (typeof productId === 'string') {
         productId = parseInt(productId);
         if (isNaN(productId)) {
-         // console.error('⚠️ Invalid product ID format:', productId);
+          // console.error('⚠️ Invalid product ID format:', productId);
           throw new Error('Invalid product ID format');
         }
       }
 
-     // console.log(`🔍 Using product ID for upload: ${productId} (type: ${typeof productId})`);
+      // console.log(`🔍 Using product ID for upload: ${productId} (type: ${typeof productId})`);
 
       // Get base URL from environment or default to localhost
-      const apiBaseUrl = import.meta.env.VITE_PUBLIC_PRODUCT_API_URL || 'http://localhost:8082/api/v1';
+      const apiBaseUrl = import.meta.env.API_URL || 'http://localhost:8082/api/v1';
       // Extract the base URL without /api/v1
-      const baseUrl = apiBaseUrl.replace(/\/api\/v1$/, '');
+      // const baseUrl = apiBaseUrl.replace(/\/api\/v1$/, '');
       // console.log('🔍 Base URL for image upload:', baseUrl);
 
       // Upload each file individually to the server
       for (const file of files) {
         try {
-         // console.log(`🔍 Preparing to upload file: ${file.name} (${file.size} bytes, type: ${file.type})`);
+          // console.log(`🔍 Preparing to upload file: ${file.name} (${file.size} bytes, type: ${file.type})`);
 
           // Create form data for file upload
           const formData = new FormData();
@@ -203,12 +203,12 @@ class ProductService {
           formData.append('isPrimary', uploadUrls.length === 0 ? 'true' : 'false'); // First image is primary
 
           // Log FormData contents
-        //  console.log('🔍 FormData created with keys:', [...formData.keys()]);
+          //  console.log('🔍 FormData created with keys:', [...formData.keys()]);
 
           // Create upload endpoint URL with numeric ID
           const uploadEndpoint = `${this.apiUrl}/${productId}/images`;
-        //  console.log('🔍 Upload endpoint:', uploadEndpoint);
-        //  console.log('🔍 Full upload URL:', api.defaults.baseURL + uploadEndpoint);
+          //  console.log('🔍 Upload endpoint:', uploadEndpoint);
+          //  console.log('🔍 Full upload URL:', api.defaults.baseURL + uploadEndpoint);
 
           // Use the endpoint with product ID
           const response = await api.post(uploadEndpoint, formData, {
@@ -217,8 +217,8 @@ class ProductService {
             }
           });
 
-         // console.log('🔍 Image upload response status:', response.status);
-         // console.log('🔍 Image upload response data:', response.data);
+          // console.log('🔍 Image upload response status:', response.status);
+          // console.log('🔍 Image upload response data:', response.data);
 
           // Get image URL from response
           let imageUrl = '';
@@ -226,21 +226,21 @@ class ProductService {
           // Handle the standard response format first
           if (response.data && response.data.data && response.data.data.url) {
             imageUrl = response.data.data.url;
-           // console.log('🔍 Found URL in response.data.data.url:', imageUrl);
+            // console.log('🔍 Found URL in response.data.data.url:', imageUrl);
           } else if (response.data && response.data.url) {
             imageUrl = response.data.url;
-           // console.log('🔍 Found URL in response.data.url:', imageUrl);
+            // console.log('🔍 Found URL in response.data.url:', imageUrl);
           } else if (response.data && typeof response.data === 'string') {
             // Direct string URL in response
             imageUrl = response.data;
-           // console.log('🔍 Found URL in response.data (string):', imageUrl);
+            // console.log('🔍 Found URL in response.data (string):', imageUrl);
           } else {
             // Try to find any URL or path in the response
             const responseStr = JSON.stringify(response.data);
             const urlMatches = responseStr.match(/"(\/[^"]+)"/);
             if (urlMatches && urlMatches[1]) {
               imageUrl = urlMatches[1];
-             // console.log('🔍 Extracted URL from response JSON:', imageUrl);
+              // console.log('🔍 Extracted URL from response JSON:', imageUrl);
             }
           }
 
@@ -248,16 +248,16 @@ class ProductService {
           if (imageUrl) {
             // Convert to absolute URL using our helper method
             imageUrl = this.getAbsoluteUrl(imageUrl);
-           // console.log('✅ Final image URL:', imageUrl);
+            // console.log('✅ Final image URL:', imageUrl);
             uploadUrls.push(imageUrl);
           } else {
-           // console.warn('⚠️ Could not extract image URL from response', response.data);
+            // console.warn('⚠️ Could not extract image URL from response', response.data);
 
             // Use a placeholder URL or throw an error
             throw new Error('Failed to get image URL from server response');
           }
         } catch (error) {
-         // console.error(`❌ Error uploading file ${file.name}:`, error);
+          // console.error(`❌ Error uploading file ${file.name}:`, error);
           // Continue with next file rather than failing completely
         }
       }
@@ -279,40 +279,40 @@ class ProductService {
   // Helper method to check if backend is available
   private async isBackendAvailable(): Promise<boolean> {
     try {
-     // console.log('🔍 Checking if backend is available...');
+      // console.log('🔍 Checking if backend is available...');
 
       // Mặc định, set availability là false, đợi kết quả check
       let isAvailable = false;
 
       // Get base URL from environment or default to localhost
-      const apiBaseUrl = import.meta.env.VITE_PUBLIC_PRODUCT_API_URL || 'http://localhost:8082/api/v1';
+      const apiBaseUrl = import.meta.env.API_URL || 'http://localhost:8082/api/v1';
 
 
       try {
         // Try to fetch health endpoint first at the BASE URL (not API URL)
         const healthResponse = await axios.get(`${apiBaseUrl}/health`, { timeout: 3000 });
-       // console.log('🔍 Health endpoint response:', healthResponse.status, healthResponse.data);
+        // console.log('🔍 Health endpoint response:', healthResponse.status, healthResponse.data);
         isAvailable = healthResponse.status === 200;
       } catch (healthError) {
-       // console.warn('⚠️ Health endpoint check failed:', healthError);
+        // console.warn('⚠️ Health endpoint check failed:', healthError);
 
         // If health endpoint fails, try categories endpoint as fallback
         try {
           const categoriesResponse = await api.get('/categories', { timeout: 3000 });
-         // console.log('🔍 Categories endpoint response:', categoriesResponse.status);
+          // console.log('🔍 Categories endpoint response:', categoriesResponse.status);
           isAvailable = categoriesResponse.status === 200;
         } catch (categoriesError) {
-         // console.warn('⚠️ Categories endpoint check failed:', categoriesError);
+          // console.warn('⚠️ Categories endpoint check failed:', categoriesError);
 
           // Last attempt: try to access the static file server endpoint
           try {
             const staticResponse = await fetch(`${apiBaseUrl}/api/products/images/test.jpg`, {
               method: 'HEAD'
             });
-           // console.log('🔍 Static file server response:', staticResponse.status);
+            // console.log('🔍 Static file server response:', staticResponse.status);
             isAvailable = staticResponse.ok;
           } catch (staticError) {
-           // console.warn('⚠️ Static file server check failed:', staticError);
+            // console.warn('⚠️ Static file server check failed:', staticError);
             isAvailable = false;
           }
         }
@@ -328,7 +328,7 @@ class ProductService {
 
   async createProduct(product: Partial<Product>): Promise<Product | null> {
     try {
-     // console.log('Original product data:', product);
+      // console.log('Original product data:', product);
 
       // First create the product - preserve the original data but remove id
       const productObj = { ...product } as any; // Use any to handle potential snake_case props
@@ -365,11 +365,11 @@ class ProductService {
         }));
       }
 
-     // console.log('Creating product with data:', productObj);
+      // console.log('Creating product with data:', productObj);
       const response = await api.post(this.apiUrl, productObj);
 
       // Debug log the full response
-     // console.log('Full API response:', {
+      // console.log('Full API response:', {
       //  status: response.status,
       //  statusText: response.statusText,
       //  headers: response.headers,
@@ -388,7 +388,7 @@ class ProductService {
           for (const field of possibleIdFields) {
             if (response.data[field] !== undefined) {
               productId = response.data[field];
-             // console.log(`Found product ID in response.data.${field}:`, productId);
+              // console.log(`Found product ID in response.data.${field}:`, productId);
               break;
             }
           }
@@ -398,7 +398,7 @@ class ProductService {
             for (const field of possibleIdFields) {
               if (response.data.product[field] !== undefined) {
                 productId = response.data.product[field];
-               // console.log(`Found product ID in response.data.product.${field}:`, productId);
+                // console.log(`Found product ID in response.data.product.${field}:`, productId);
                 break;
               }
             }
@@ -409,7 +409,7 @@ class ProductService {
             for (const field of possibleIdFields) {
               if (response.data.data[field] !== undefined) {
                 productId = response.data.data[field];
-               // console.log(`Found product ID in response.data.data.${field}:`, productId);
+                // console.log(`Found product ID in response.data.data.${field}:`, productId);
                 break;
               }
             }
@@ -417,13 +417,13 @@ class ProductService {
         } else if (typeof response.data === 'number') {
           // Some APIs might return the ID directly as a number
           productId = response.data;
-         // console.log('Found product ID as direct number response:', productId);
+          // console.log('Found product ID as direct number response:', productId);
         }
       }
 
       // Final check if we found an ID
       if (productId) {
-       // console.log('✅ Successfully extracted product ID:', productId);
+        // console.log('✅ Successfully extracted product ID:', productId);
 
         // Get the full product data
         const productData = await this.getProductById(productId);
@@ -434,27 +434,27 @@ class ProductService {
         // If getProductById fails but we have product data in the response, use that
         if (response.data.product) {
           const responseProduct = this.normalizeProductResponse(response.data.product);
-         // console.log('Using product data from response:', responseProduct);
+          // console.log('Using product data from response:', responseProduct);
           return responseProduct;
         } else if (response.data.data) {
           const responseProduct = this.normalizeProductResponse(response.data.data);
-         // console.log('Using product data from response.data:', responseProduct);
+          // console.log('Using product data from response.data:', responseProduct);
           return responseProduct;
         } else {
           // If we only have the ID, construct a minimal product object
-         // console.log('Constructing minimal product with ID:', productId);
+          // console.log('Constructing minimal product with ID:', productId);
           return {
             ...product,
             id: productId
           } as Product;
         }
       } else {
-       // console.error('❌ Could not extract product ID from response:', response.data);
+        // console.error('❌ Could not extract product ID from response:', response.data);
 
         // Last attempt: try to find any object that might be the product
         if (response.data && typeof response.data === 'object') {
           if (response.status >= 200 && response.status < 300) {
-           // console.log('Response status indicates success, returning data as-is with warning');
+            // console.log('Response status indicates success, returning data as-is with warning');
 
             // Return whatever we got, but try to normalize it first
             const normalizedData = this.normalizeProductResponse(response.data);
@@ -465,9 +465,9 @@ class ProductService {
         return null;
       }
     } catch (error) {
-     // console.error('Error creating product:', error);
+      // console.error('Error creating product:', error);
       if (axios.isAxiosError(error) && error.response) {
-       // console.error('Server response:', error.response.status, error.response.data);
+        // console.error('Server response:', error.response.status, error.response.data);
       }
       throw error;
     }
@@ -475,7 +475,7 @@ class ProductService {
 
   async updateProduct(id: number, product: Partial<Product>): Promise<Product | null> {
     try {
-     // console.log(`🔄 Updating product ${id} with data:`, JSON.stringify(product, null, 2));
+      // console.log(`🔄 Updating product ${id} with data:`, JSON.stringify(product, null, 2));
 
       // Lấy thông tin product hiện tại để kết hợp với dữ liệu cập nhật
       const currentProduct = await this.getProductById(id);
@@ -483,7 +483,7 @@ class ProductService {
         throw new Error(`Product with ID ${id} not found`);
       }
 
-     // console.log('📊 Current product data from server:', currentProduct);
+      // console.log('📊 Current product data from server:', currentProduct);
 
       // Kết hợp dữ liệu hiện tại với dữ liệu cập nhật
       const mergedProduct = {
@@ -491,7 +491,7 @@ class ProductService {
         ...product
       };
 
-     // console.log('🔄 Merged product data:', mergedProduct);
+      // console.log('🔄 Merged product data:', mergedProduct);
 
       // Chuẩn hóa imgSlider nếu có
       if (mergedProduct.imgSlider && Array.isArray(mergedProduct.imgSlider)) {
@@ -502,28 +502,28 @@ class ProductService {
           return img;
         });
 
-       // console.log('📊 Normalized imgSlider for update:', normalizedImgUrls);
+        // console.log('📊 Normalized imgSlider for update:', normalizedImgUrls);
 
         // Cập nhật lại product.imgSlider với dạng đã chuẩn hóa
         mergedProduct.imgSlider = normalizedImgUrls;
       }
 
       // Kiểm tra xem có cần cập nhật images không
-      const hasImageUpdates = mergedProduct.imgSlider && mergedProduct.imgSlider.length > 0;
+     // const hasImageUpdates = mergedProduct.imgSlider && mergedProduct.imgSlider.length > 0;
 
       // Chuẩn bị dữ liệu product cho cập nhật (bao gồm tất cả trường)
       const productData = this.prepareProductData(mergedProduct);
 
       // Kiểm tra lại có đủ các trường bắt buộc không
       if (!productData.name || !productData.slug || !productData.categoryId) {
-       // console.error('❌ Missing required fields for update:', {
-       //   name: productData.name,
-       //   slug: productData.slug,
-       //   categoryId: productData.categoryId
-       // });
+        // console.error('❌ Missing required fields for update:', {
+        //   name: productData.name,
+        //   slug: productData.slug,
+        //   categoryId: productData.categoryId
+        // });
       }
 
-     // console.log('📤 Final update data:', JSON.stringify(productData, null, 2));
+      // console.log('📤 Final update data:', JSON.stringify(productData, null, 2));
 
       // FINAL JSON CHECK before API call - Stringify and parse to detect any circular structures
       const jsonCheck = JSON.stringify(productData);
@@ -531,11 +531,11 @@ class ProductService {
 
       // Check imgSlider format in the parsed data one last time
       if (parsedData.imgSlider && !parsedData.imgSlider.every((url: any) => typeof url === 'string')) {
-       // console.error('❌ FINAL CHECK FAILED: imgSlider still contains non-string values after JSON stringify!');
+        // console.error('❌ FINAL CHECK FAILED: imgSlider still contains non-string values after JSON stringify!');
         parsedData.imgSlider = parsedData.imgSlider.map((item: any) =>
           typeof item === 'object' && item !== null && item.url ? item.url : String(item)
         );
-       // console.log('🛠️ Fixed imgSlider at final step:', parsedData.imgSlider);
+        // console.log('🛠️ Fixed imgSlider at final step:', parsedData.imgSlider);
       }
 
       // Ensure imageUrl is string
@@ -556,17 +556,17 @@ class ProductService {
 
         return updatedProduct;
       } catch (error) {
-       // console.error('❌ Error updating product:', error);
+        // console.error('❌ Error updating product:', error);
         if (axios.isAxiosError(error) && error.response) {
-         // console.error('❌ Server response:', error.response.status, error.response.data);
+          // console.error('❌ Server response:', error.response.status, error.response.data);
           throw new Error(error.response.data?.message || error.response.data?.error || `Failed with status: ${error.response.status}`);
         }
         throw error;
       }
     } catch (error) {
-     // console.error(`Error updating product ${id}:`, error);
+      // console.error(`Error updating product ${id}:`, error);
       if (axios.isAxiosError(error) && error.response) {
-       // throw new Error(error.response.data?.message || error.response.data?.error || `Failed with status: ${error.response.status}`);
+        // throw new Error(error.response.data?.message || error.response.data?.error || `Failed with status: ${error.response.status}`);
       }
       throw error;
     }
@@ -577,20 +577,20 @@ class ProductService {
       const response = await api.delete(`${this.apiUrl}/${id}`);
       return response.status >= 200 && response.status < 300;
     } catch (error) {
-     // console.error(`Error deleting product ${id}:`, error);
+      // console.error(`Error deleting product ${id}:`, error);
       return false;
     }
   }
 
   async getCategories(): Promise<any[]> {
     try {
-     // console.log('Fetching categories from:', this.categoryUrl);
+      // console.log('Fetching categories from:', this.categoryUrl);
 
       const response = await api.get(this.categoryUrl);
       const data = response.data;
       const categories = data.categories || data.items || data.data || data;
 
-     // console.log('Categories fetched:', categories);
+      // console.log('Categories fetched:', categories);
 
       // Chuẩn hóa dữ liệu trả về
       return Array.isArray(categories) ? categories.map((category: any) => ({
@@ -601,7 +601,7 @@ class ProductService {
         imageUrl: category.imageUrl || category.imageUrl || category.ImageURL || '',
       })) : [];
     } catch (error) {
-     // console.error('Error fetching categories:', error);
+      // console.error('Error fetching categories:', error);
       // Trả về mảng trống nhưng thêm một vài category mẫu để test UI
       return [
         { id: 1, name: "Electronics", slug: "electronics" },
@@ -614,7 +614,7 @@ class ProductService {
   }
 
   private prepareProductData(product: Partial<Product>): any {
-   // console.log('🔍 prepareProductData input:', product);
+    // console.log('🔍 prepareProductData input:', product);
 
     // Kiểm tra fields bắt buộc
     if (!product.name) {
@@ -710,22 +710,22 @@ class ProductService {
     }
 
     // Add debugging info
-      // console.log('🔄 Prepared product data details:'); 
-      // console.log('  • name:', productData.name, typeof productData.name);
-      // console.log('  • description:', productData.description ? 'set' : 'empty');
-      // console.log('  • categoryId:', productData.categoryId, typeof productData.categoryId);
-      // console.log('  • categorySlug:', productData.categorySlug, typeof productData.categorySlug);
-      // console.log('  • price:', productData.price, typeof productData.price);
-      // console.log('  • slug:', productData.slug, typeof productData.slug);
-      // console.log('  • images:', productData.images?.length || 0, 'objects');
-      // console.log('  • imgSlider:', productData.imgSlider?.length || 0, 'URLs (string array)');
-      // console.log('  • imageUrl:', typeof productData.imageUrl, productData.imageUrl || 'Not set');
+    // console.log('🔄 Prepared product data details:'); 
+    // console.log('  • name:', productData.name, typeof productData.name);
+    // console.log('  • description:', productData.description ? 'set' : 'empty');
+    // console.log('  • categoryId:', productData.categoryId, typeof productData.categoryId);
+    // console.log('  • categorySlug:', productData.categorySlug, typeof productData.categorySlug);
+    // console.log('  • price:', productData.price, typeof productData.price);
+    // console.log('  • slug:', productData.slug, typeof productData.slug);
+    // console.log('  • images:', productData.images?.length || 0, 'objects');
+    // console.log('  • imgSlider:', productData.imgSlider?.length || 0, 'URLs (string array)');
+    // console.log('  • imageUrl:', typeof productData.imageUrl, productData.imageUrl || 'Not set');
 
     // Kiểm tra imgSlider có đúng là mảng string URLs
-    if (productData.imgSlider && productData.imgSlider.length > 0) {
-      const isAllStrings = productData.imgSlider.every((item: any) => typeof item === 'string');
-      // console.log('  • imgSlider format check:', isAllStrings ? '✅ All strings' : '❌ Contains non-string items');
-    }
+      // if (productData.imgSlider && productData.imgSlider.length > 0) {
+      //   const isAllStrings = productData.imgSlider.every((item: any) => typeof item === 'string');
+      //   // console.log('  • imgSlider format check:', isAllStrings ? '✅ All strings' : '❌ Contains non-string items');
+      // }
 
     return productData;
   }
@@ -745,7 +745,7 @@ class ProductService {
   // Phương thức patch chỉ cập nhật các trường cụ thể thay vì toàn bộ sản phẩm
   async patchProduct(id: number, fields: Partial<Product>): Promise<Product | null> {
     try {
-    //  console.log(`🔄 Attempting to patch product ${id} with specific fields:`, JSON.stringify(fields, null, 2));
+      //  console.log(`🔄 Attempting to patch product ${id} with specific fields:`, JSON.stringify(fields, null, 2));
 
       // Ensure ID is valid
       if (!id || isNaN(Number(id))) {
@@ -782,7 +782,7 @@ class ProductService {
               // Normalize imageUrl to relative format
               fields.imageUrl = this.normalizeToRelativeUrl(fields.imageUrl);
             }
-// console.log('🔍 Updated imageUrl to:', fields.imageUrl);
+            // console.log('🔍 Updated imageUrl to:', fields.imageUrl);
           }
         }
       } else if (fields.imageUrl) {
@@ -891,7 +891,7 @@ class ProductService {
 
           // If it's a 405 Method Not Allowed or other error suggesting PATCH isn't supported
           if (patchError.response.status === 405 || patchError.response.status === 501) {
-          //  console.log('🔄 Falling back to PUT method (PATCH not supported)...');
+            //  console.log('🔄 Falling back to PUT method (PATCH not supported)...');
             return this.updateProduct(id, fields);
           }
 
@@ -902,7 +902,7 @@ class ProductService {
         }
 
         // For non-Axios errors or if we can't extract a message
-       // console.log('🔄 Falling back to PUT method due to unknown error...');
+        // console.log('🔄 Falling back to PUT method due to unknown error...');
         return this.updateProduct(id, fields);
       }
     } catch (error) {
@@ -932,7 +932,7 @@ class ProductService {
     if (localhostMatch && localhostMatch[1]) {
       // console.log('Converted localhost URL to relative path:', url, '→', localhostMatch[1]);
       return localhostMatch[1];
-    } 
+    }
 
     // Nếu là URL tuyệt đối của broker-service, chuyển thành tương đối
     const apiPattern = /\/api\/products\/images\/[^/]+\.\w+/;

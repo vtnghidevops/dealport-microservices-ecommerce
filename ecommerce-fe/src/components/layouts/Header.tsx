@@ -53,7 +53,7 @@ const LoggedOutUserMenu: React.FC = () => {
     password: ""
   });
   const [isLoading, setIsLoading] = useState(false);
-  const { login, authState } = useAuth();
+  const { login } = useAuth();
   const { toast } = useToast();
 
   const loginFormRef = useRef<HTMLDivElement>(null);
@@ -290,11 +290,11 @@ export const HeaderContext = React.createContext<{
 const Header: React.FC = () => {
   const { cartItems } = useCart();
   const cartItemCount = cartItems.length;
-  const { authState, logout } = useAuth();
+  const { authState } = useAuth();
   const { isAuthenticated, isLoading, user } = authState;
   const [forceRerender, setForceRerender] = useState(0);
-  const [showDebug, setShowDebug] = useState(false);
-  const navigate = useNavigate();
+  // const [showDebug, setShowDebug] = useState(false);
+  // const navigate = useNavigate();
 
   // Check localStorage directly
   useEffect(() => {

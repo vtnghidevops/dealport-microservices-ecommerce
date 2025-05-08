@@ -4,7 +4,7 @@ import { GamingItem } from "../../components/homepage/Ads/models/ads.model";
 import { NewFashionItem } from "../../components/homepage/Ads/models/ads.model";
 import axios from "axios";
 
-const API_URL = import.meta.env.VITE_PUBLIC_PRODUCT_API_URL || "http://localhost:8082/api/v1";
+const API_URL = import.meta.env.API_URL || "http://localhost:8082/api/v1";
 
 // Helper function to parse UI settings JSON safely
 function parseUISettings(data: any): any {

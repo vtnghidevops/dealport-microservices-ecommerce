@@ -13,9 +13,9 @@ interface ProductInventoryProps {
 export const ProductInventory: React.FC<ProductInventoryProps> = ({
   product,
   onChange,
-  onRadioChange,
-  handlePublish,
-  handleSaveDraft
+  // onRadioChange,
+  // handlePublish,
+  // handleSaveDraft
 }) => {
   // Handle quantity input to ensure only numbers
   const handleQuantityChange = (e: ChangeEvent<HTMLInputElement>) => {

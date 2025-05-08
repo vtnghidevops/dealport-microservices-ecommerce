@@ -3,7 +3,7 @@ import { ButtonType, getButtonClass } from "@/utils/buttonUtils";
 import { DisplayItem } from "./models/ads.model";
 import { DisplayService } from "../../../services/product/ads.service";
 import { Link } from "react-router-dom";
-
+import Loading from "@/components/shared/Loading";
 interface CardMain {
   id?: number;
   imageUrl: string;
@@ -51,7 +51,9 @@ const DisplayGrid: React.FC = () => {
     fetchDisplayData();
   }, []);
   //console.log("item displaygrid:", displayData)
-
+  if (loading) {
+    return <Loading />;
+  }
 
   return (
     <div className="h-[328px] w-[392px] mt-[-5%] text-black rounded-2xl relative">
@@ -74,21 +76,21 @@ const DisplayCard: React.FC<DisplayItem> = ({
   categorySlug,
 }) => {
   // Get navigation path based on type and slug
-  const getNavigationPath = () => {
-    if (!productSlug) return "#";
-    if (type === "product") {
-      // If we have a product with categorySlug, use the proper format
-      if (productSlug) {
-        return `/category/${categorySlug}/${productSlug}`;
-      }
-      // Fallback to products route if no category is available
-      return `/products/${productSlug}`;
-    }
-    // For category type
-    return `/category/${categorySlug}`;
-  };
+  // const getNavigationPath = () => {
+  //   if (!productSlug) return "#";
+  //   if (type === "product") {
+  //     // If we have a product with categorySlug, use the proper format
+  //     if (productSlug) {
+  //       return `/category/${categorySlug}/${productSlug}`;
+  //     }
+  //     // Fallback to products route if no category is available
+  //     return `/products/${productSlug}`;
+  //   }
+  //   // For category type
+  //   return `/category/${categorySlug}`;
+  // };
 
-  const navigationPath = getNavigationPath();
+  // const navigationPath = getNavigationPath();
 
   // Kiểm tra các props để quyết định render card nào (Check props to decide which card to render)
   if (discountImg) {

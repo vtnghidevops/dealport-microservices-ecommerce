@@ -1,10 +1,10 @@
 // components/user/OrderCard.tsx
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { FiChevronDown, FiChevronUp } from 'react-icons/fi';
-import { Order, OrderItem } from '@/services/user/order.service';
+import { Order } from '@/services/user/order.service';
 import { useNavigate } from 'react-router-dom';
 import { differenceInMinutes } from 'date-fns';
 
@@ -97,32 +97,32 @@ const OrderCard: React.FC<OrderCardProps> = ({ order, onRetryPayment }) => {
     }
   };
 
-  const getStatusColor = (status: string | undefined) => {
-    if (!status) {
-      console.log("OrderCard: Missing status");
-      return 'bg-gray-100 text-gray-800';
-    }
+  //   const getStatusColor = (status: string | undefined) => {
+  //     if (!status) {
+  //       console.log("OrderCard: Missing status");
+  //       return 'bg-gray-100 text-gray-800';
+  //     }
 
-    switch (status.toLowerCase()) {
-      case 'pending':
-        return 'bg-purple-100 text-purple-800';
-      case 'processing':
-        return 'bg-yellow-100 text-yellow-800';
-      case 'paid':
-        return 'bg-green-100 text-green-800';
-      case 'shipped':
-        return 'bg-blue-100 text-blue-800';
-      case 'delivered':
-        return 'bg-green-100 text-green-800';
-      case 'cancelled':
-        return 'bg-red-100 text-red-800';
-      case 'refunded':
-        return 'bg-orange-100 text-orange-800';
-      default:
-        console.log(`OrderCard: Unknown status "${status}"`);
-        return 'bg-gray-100 text-gray-800';
-    }
-  };
+  //   switch (status.toLowerCase()) {
+  //     case 'pending':
+  //       return 'bg-purple-100 text-purple-800';
+  //     case 'processing':
+  //       return 'bg-yellow-100 text-yellow-800';
+  //     case 'paid':
+  //       return 'bg-green-100 text-green-800';
+  //     case 'shipped':
+  //       return 'bg-blue-100 text-blue-800';
+  //     case 'delivered':
+  //       return 'bg-green-100 text-green-800';
+  //     case 'cancelled':
+  //       return 'bg-red-100 text-red-800';
+  //     case 'refunded':
+  //       return 'bg-orange-100 text-orange-800';
+  //     default:
+  //       console.log(`OrderCard: Unknown status "${status}"`);
+  //       return 'bg-gray-100 text-gray-800';
+  //   }
+  // };
 
   const getPaymentStatusColor = (status: string | undefined) => {
     if (!status) {

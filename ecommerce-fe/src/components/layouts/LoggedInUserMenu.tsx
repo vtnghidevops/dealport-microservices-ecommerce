@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useRef, useContext } from 'react';
 import { FaUser, FaRegHeart } from "react-icons/fa";
 import { IoCartOutline } from "react-icons/io5";
-import { IoIosLogOut } from "react-icons/io";
+// import { IoIosLogOut } from "react-icons/io";
 import { TbSettings } from "react-icons/tb";
 import { MdOutlineArrowDropDown } from "react-icons/md";
 import { FiLogOut } from "react-icons/fi";

@@ -1,7 +1,6 @@
 // components/user/UserAvatar.tsx
 import React, { useState } from 'react';
 import { User } from '@/types/user.model';
-import { Button } from '@/components/ui/button';
 import { FiCamera } from 'react-icons/fi';
 
 interface UserAvatarProps {

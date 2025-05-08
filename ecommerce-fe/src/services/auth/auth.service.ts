@@ -2,7 +2,7 @@ import axios from 'axios';
 import { UserLoginCredentials, UserRegistrationData, UserRole } from '@/types/user.model';
 
 // Base URL for API requests - thay bằng URL thực tế của broker-service
-const API_BASE_URL = import.meta.env.VITE_PUBLIC_PRODUCT_API_URL || 'http://localhost:8080';
+const API_BASE_URL = import.meta.env.API_URL || 'http://localhost:8080';
 
 // Thêm log để kiểm tra API_BASE_URL
 console.log("Auth Service API URL:", API_BASE_URL);

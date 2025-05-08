@@ -9,6 +9,7 @@ import { handleProductItemClick } from "../../../utils/helpers";
 import ProductCardItem from "./ProductsCard";
 import Loading from '@/components/shared/Loading'
 import { useNavigate } from "react-router-dom";
+
 const TopProducts: React.FC<TopProductsProps> = () => {
   // fetch data
   const [topProductsData, setTopProductsData] = useState<TopProductItem[]>([]);
@@ -103,7 +104,7 @@ const TopProducts: React.FC<TopProductsProps> = () => {
     // Add a 6th product if available and we don't have 6 yet
     if (result.length < 6) {
       const remainingProducts = sortedProducts.filter(
-        (p, index) => index > (result.length - (colProducts.length + doubleProducts.length) - 1)
+        (_, index) => index > (result.length - (colProducts.length + doubleProducts.length) - 1)
       );
 
       if (remainingProducts.length > 0) {

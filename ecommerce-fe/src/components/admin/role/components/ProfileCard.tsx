@@ -3,7 +3,7 @@ import React from 'react';
 import { AdminRole } from "../models/adminRole.model"
 import { SocialMediaLinks } from './SocialMediaLinks';
 import { MdOutlineContentCopy } from "react-icons/md";
-import { PasswordChangeForm } from './PasswordChangeForm';
+// import { PasswordChangeForm } from './PasswordChangeForm';
 interface ProfileCardProps {
   adminData: AdminRole;
 }

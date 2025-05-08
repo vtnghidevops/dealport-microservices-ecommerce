@@ -12,7 +12,7 @@ const BillingInformation: React.FC<BillingInformationProps> = ({
 }) => {
   const [firstNameFocus, setFirstNameFocus] = useState(false);
   const [lastNameFocus, setLastNameFocus] = useState(false);
-  const [companyNameFocus, setCompanyNameFocus] = useState(false);
+  // const [companyNameFocus, setCompanyNameFocus] = useState(false);
   const [addressFocus, setAddressFocus] = useState(false);
   const [zipCodeFocus, setZipCodeFocus] = useState(false);
   const [emailFocus, setEmailFocus] = useState(false);
@@ -39,7 +39,7 @@ const BillingInformation: React.FC<BillingInformationProps> = ({
         lastName: getInputValue("last-name"),
         address: getInputValue("address"),
         country: getInputValue("country"),
-        region: getInputValue("region-state"),
+        // region: getInputValue("region-state"),
         city: getInputValue("city"),
         zipCode: getInputValue("zip-code"),
         email: getInputValue("email"),

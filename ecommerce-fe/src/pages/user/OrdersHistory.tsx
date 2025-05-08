@@ -1,5 +1,5 @@
 // pages/user/Orders.tsx
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import UserLayout from '../../components/layouts/UserLayout';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../components/ui/tabs';
 import OrderCard from '../../components/user/OrderCard';

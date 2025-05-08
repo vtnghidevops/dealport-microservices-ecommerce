@@ -2,7 +2,7 @@ import axios from 'axios';
 import { Order, OrderStatus } from '@/services/user/order.service';
 
 // Base API URL already includes the /api/v1 prefix
-const API_URL = import.meta.env.VITE_PUBLIC_PRODUCT_API_URL || 'http://localhost:8080/api/v1';
+const API_URL = import.meta.env.API_URL || 'http://localhost:8080/api/v1';
 
 // Get auth header for authenticated requests
 const getAuthHeader = () => {

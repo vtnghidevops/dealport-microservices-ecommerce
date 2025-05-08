@@ -31,14 +31,14 @@ export const AddProduct: React.FC = () => {
     handleInputChange,
     handleRadioChange,
     handleColorSelect,
-    handleFeatureChange,
+    // handleFeatureChange,
     handleTagsChange,
     handleShippingInfoChange,
     handleUIMetadataChange,
     handlePublish: originalHandlePublish,
     handleSaveDraft,
     calculateSavings,
-    validateProduct
+    // validateProduct
   } = useProductForm();
 
   const {
@@ -94,8 +94,6 @@ export const AddProduct: React.FC = () => {
   // Override handlePublish to upload images first
   const handlePublish = async () => {
     try {
-      // console.log("🚀 Starting publish workflow...");
-
       // 1. Validate product data
       const validationError = validateProductData();
       if (validationError) {
@@ -116,10 +114,10 @@ export const AddProduct: React.FC = () => {
      // console.log("🔄 Creating initial product without images to get an ID...");
 
       // Make a copy of the product and set imgSlider to empty for initial creation
-      const initialProduct = {
-        ...product,
-        imgSlider: []
-      };
+      // const initialProduct = {
+      //   ...product,
+      //   imgSlider: []
+      // };
 
       try {
         // Call the original publish method to create product

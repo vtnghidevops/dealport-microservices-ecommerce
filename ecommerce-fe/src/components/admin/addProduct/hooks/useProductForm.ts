@@ -4,12 +4,12 @@ import { Product, ShippingInfo } from "@/types/product.model";
 import { productService } from "../services/product.service";
 
 // Interface to handle image objects from backend
-interface ProductImageResponse {
-  url: string;
-  is_primary?: boolean;
-  display_order?: number;
-  product_id?: number;
-}
+// interface ProductImageResponse {
+//   url: string;
+//   is_primary?: boolean;
+//   display_order?: number;
+//   product_id?: number;
+// }
 
 // Initial empty product to use as a starting state
 const initialProduct: Product = { // TypeScript hack: undefined for new products, will be assigned by backend

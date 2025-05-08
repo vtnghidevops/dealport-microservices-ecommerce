@@ -1,7 +1,7 @@
 // hooks/useAuth.tsx
-import { useContext, useEffect } from 'react';
+import { useContext } from 'react';
 import { AuthContext } from '@/context/AuthContext';
-import authService from '@/services/user/auth.service';
+// import authService from '@/services/auth/auth.service';
 
 /**
  * Hook để truy cập AuthContext một cách dễ dàng

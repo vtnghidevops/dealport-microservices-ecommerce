@@ -3,6 +3,7 @@ import { ButtonType, getButtonClass } from "@/utils/buttonUtils";
 import { BannerShowCaseItem } from "./models/ads.model";
 import { BannerService } from "../../../services/product/ads.service";
 import { Link } from "react-router-dom";
+import Loading from "@/components/shared/Loading";
 
 const BannerShowCase: React.FC = () => {
   // fetch data
@@ -25,6 +26,9 @@ const BannerShowCase: React.FC = () => {
     fetchBannerData();
   }, []);
   //console.log("item bannershowcae:", bannerData)
+  if (loading) {
+    return <Loading />;
+  }
 
   return (
     <div className="px-4 py-8">

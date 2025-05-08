@@ -139,7 +139,7 @@ const ProductDetail: React.FC = () => {
   };
 
   const productForCart = {
-    id: product.id.toString(),
+    productId: Number(product.id),
     name: product.name,
     price: product.price,
     originalPrice: product.originalPrice || undefined,

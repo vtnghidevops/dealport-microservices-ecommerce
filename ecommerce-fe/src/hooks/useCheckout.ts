@@ -10,7 +10,7 @@ import {
   BillingInfo,
   ShippingInfo,
   CheckoutOrder,
-  ValidationError,
+  // ValidationError,
   CheckoutValidationResponse,
   PaymentResponse
 } from '@/types/checkout.model';
@@ -48,7 +48,7 @@ export const useCheckout = (): UseCheckoutReturn => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const { authState } = useAuth();
-  const { cartItems, cartTotals, clearCart } = useCart();
+  const { cartItems, clearCart } = useCart();
   const { toast } = useToast();
   const navigate = useNavigate();
 

@@ -15,7 +15,7 @@ const CartItemRow: React.FC<CartItemRowProps> = ({
 }) => {
   const handleQuantityChange = (newQuantity: number) => {
     if (newQuantity >= 1) {
-      updateQuantity(item.id, newQuantity);
+      updateQuantity(item.id || '', newQuantity);
     }
   };
 
@@ -28,7 +28,7 @@ const CartItemRow: React.FC<CartItemRowProps> = ({
       <td className="px-6 py-4 w-[40%]">
         <div className="ml-5 flex items-center">
           <button
-            onClick={() => removeFromCart(item.id)}
+            onClick={() => removeFromCart(item.id || '')}
             className="mr-8 text-gray-400 hover:text-red-500 transform hover:scale-110 transition-all duration-200 ease-in-out"
             aria-label="Remove item"
           >

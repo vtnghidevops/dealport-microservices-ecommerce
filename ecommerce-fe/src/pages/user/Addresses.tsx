@@ -4,7 +4,7 @@ import { useAuth } from '@/hooks/useAuth';
 import UserLayout from '@/components/layouts/UserLayout';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { FiPlus, FiEdit, FiTrash2, FiCheck } from 'react-icons/fi';
+import { FiEdit, FiTrash2 } from 'react-icons/fi';
 import AddressForm from '@/components/user/AddressForm';
 import { UserAddress } from '@/types/user.model';
 

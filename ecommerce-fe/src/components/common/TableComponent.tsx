@@ -70,7 +70,7 @@ function TableComponent<T>({
     }
   };
 
-  const renderCell = (item: T, column: TableColumn<T>, index: number) => {
+  const renderCell = (item: T, column: TableColumn<T>) => {
     if (column.render) {
       return column.render(item);
     }
@@ -139,7 +139,7 @@ function TableComponent<T>({
                         key={`${key}-${idx}`}
                         className={`py-4 px-6 text-${column.align || "left"}`}
                       >
-                        {renderCell(item, column, index)}
+                        {renderCell(item, column)}
                       </td>
                     ))}
                   </tr>

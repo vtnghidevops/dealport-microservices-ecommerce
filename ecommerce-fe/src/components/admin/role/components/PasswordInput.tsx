@@ -12,7 +12,7 @@ export interface PasswordInputProps {
 }
 
 export const PasswordInput: React.FC<PasswordInputProps> = ({
-  type,
+  // type,
   placeholder,
   value,
   onChange,

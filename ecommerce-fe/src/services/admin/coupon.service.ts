@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const API_URL = import.meta.env.VITE_PUBLIC_PRODUCT_API_URL || 'http://localhost:8080';
+const API_URL = import.meta.env.API_URL || 'http://localhost:8080';
 
 // Frontend interface using camelCase (dữ liệu đến từ API đã ở dạng camelCase)
 export interface Coupon {

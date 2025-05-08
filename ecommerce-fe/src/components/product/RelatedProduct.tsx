@@ -13,7 +13,7 @@ interface RelatedProductProps extends Product {
 const RelatedProduct: React.FC<RelatedProductProps> = ({
   categorySlug,
   currentProductId,
-  name = "You may also like"
+  // name = "You may also like"
 }) => {
   const [relatedProducts, setRelatedProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState<boolean>(true);

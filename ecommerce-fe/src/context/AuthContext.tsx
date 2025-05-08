@@ -1,6 +1,6 @@
 // context/AuthContext.tsx
 import React, { createContext, useState, ReactNode, useEffect } from 'react';
-import { User, AuthState, UserLoginCredentials, UserRegistrationData, UserRole } from '@/types/user.model';
+import { User, AuthState, UserRegistrationData, UserRole } from '@/types/user.model';
 import authService, { login as loginApi, register as registerApi } from '@/services/auth/auth.service';
 import userService from '@/services/user/user.service';
 

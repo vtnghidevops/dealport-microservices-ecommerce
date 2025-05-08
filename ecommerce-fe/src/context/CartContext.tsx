@@ -1,5 +1,5 @@
 import React, { createContext, useState, useEffect, ReactNode } from 'react';
-import { CartItem, CartTotalsData } from '@/components/cart/models/cart.model';
+import { CartItem, CartTotalsData } from '@/types/cart.model';
 
 export const defaultCartTotals: CartTotalsData = {
   subtotal: 0,

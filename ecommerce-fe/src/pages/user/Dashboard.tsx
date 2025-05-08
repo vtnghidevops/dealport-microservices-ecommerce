@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { FiBell, FiEye, FiEdit } from 'react-icons/fi';
+import { FiEye } from 'react-icons/fi';
 import UserLayout from '@/components/layouts/UserLayout';
 import { Link } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
@@ -27,13 +27,13 @@ interface OrderStats {
   completed: number;
 }
 
-interface PaymentCard {
-  id: string;
-  last4: string;
-  cardHolder: string;
-  type: 'visa' | 'mastercard';
-  balance?: number;
-}
+  // interface PaymentCard {
+  //   id: string;
+  //   last4: string;
+  //   cardHolder: string;
+  //   type: 'visa' | 'mastercard';
+  //   balance?: number;
+  // }
 
 interface Order {
   id: string;
@@ -64,7 +64,7 @@ const UserDashboard: React.FC = () => {
     pending: 0,
     completed: 0,
   });
-  const [paymentCards, setPaymentCards] = useState<PaymentCard[]>([]);
+  // const [paymentCards, setPaymentCards] = useState<PaymentCard[]>([]);
   const [recentOrders, setRecentOrders] = useState<Order[]>([]);
 
   useEffect(() => {

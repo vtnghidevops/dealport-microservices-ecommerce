@@ -24,7 +24,7 @@ const Register: React.FC = () => {
     acceptTerms: false,
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [errors, setErrors] = useState<Record<string, string>>({});
+  // const [errors, setErrors] = useState<Record<string, string>>({});
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
@@ -112,25 +112,25 @@ const Register: React.FC = () => {
     }
   };
 
-  const validate = () => {
-    const errors: Record<string, string> = {};
-    if (!formData.firstName) {
-      errors.firstName = 'First name is required';
-    }
-    if (!formData.lastName) {
-      errors.lastName = 'Last name is required';
-    }
-    if (!formData.username) {
-      errors.username = 'Username is required';
-    }
-    if (!formData.email) {
-      errors.email = 'Email is required';
-    } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
-      errors.email = 'Email is invalid';
-    }
-    setErrors(errors);
-    return Object.keys(errors).length === 0;
-  };
+  // const validate = () => {
+  //   const errors: Record<string, string> = {};
+  //   if (!formData.firstName) {
+  //     errors.firstName = 'First name is required';
+  //   }
+  //   if (!formData.lastName) {
+  //     errors.lastName = 'Last name is required';
+  //   }
+  //   if (!formData.username) {
+  //     errors.username = 'Username is required';
+  //   }
+  //   if (!formData.email) {
+  //     errors.email = 'Email is required';
+  //   } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
+  //     errors.email = 'Email is invalid';
+  //   }
+  //   setErrors(errors);
+  //   return Object.keys(errors).length === 0;
+  // };
 
   return (
     <div className="my-[2rem] max-w-sm mx-auto p-[2rem] shadow-lg rounded-xl border w-[424px]">

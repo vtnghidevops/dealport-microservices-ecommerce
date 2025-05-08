@@ -1,8 +1,8 @@
 // components/layouts/UserLayout.tsx
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { useAuth } from '@/hooks/useAuth';
-import { FiUser, FiPackage, FiMapPin, FiHeart, FiRefreshCw, FiCreditCard, FiSettings, FiLogOut } from 'react-icons/fi';
+// import { useAuth } from '@/hooks/useAuth';
+import { FiUser, FiPackage, FiMapPin, FiHeart, FiCreditCard, FiSettings, FiLogOut } from 'react-icons/fi';
 
 interface UserLayoutProps {
   children: React.ReactNode;
@@ -10,7 +10,7 @@ interface UserLayoutProps {
 
 const UserLayout: React.FC<UserLayoutProps> = ({ children }) => {
   const { pathname } = useLocation();
-  const { authState } = useAuth();
+  // const { authState } = useAuth();
 
   const navigationItems = [
     { path: '/user/dashboard', label: 'Dashboard', icon: FiUser },

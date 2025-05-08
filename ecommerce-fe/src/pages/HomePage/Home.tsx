@@ -1,7 +1,7 @@
 import { HappyCustomers } from "../../components/homepage/HappyCustomers";
 import { TrendingProducts } from "../../components/homepage/TrendingProducts";
 import { CategoryExplorer } from "../../components/homepage/CategoryExplorer";
-import { TopProducts } from "../../components/homepage/BestSelling";
+import TopProducts from "../../components/homepage/BestSelling/TopProducts";
 import { LimitedDeal } from "../../components/homepage/LimitedDeal";
 import { HeroBanner } from "../../components/homepage/SliderBanner";
 import { BannerShowCase } from "../../components/homepage/Ads";
@@ -47,7 +47,7 @@ export default function Home() {
 
         {/* Best selling */}
         <div className="relative w-full pl-[6rem] pr-[4.3rem] mt-[3rem]">
-          <TopProducts></TopProducts>
+          <TopProducts products={[]} />
         </div>
 
         {/* Limited time deal */}

@@ -1,6 +1,6 @@
-import React from 'react';
 
-export function ReviewCard({ name, review, avatar, selected = false }) {
+
+export function ReviewCard({ name, review, avatar, selected = false }: { name: string, review: number, avatar: string, selected: boolean }) {
   return (
     <div className={`card p-4 ${selected ? 'border-2 border-ocean-green' : ''}`}>
       <div className="flex items-start">

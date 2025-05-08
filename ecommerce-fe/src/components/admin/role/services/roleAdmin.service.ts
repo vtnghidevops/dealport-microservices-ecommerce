@@ -7,7 +7,7 @@ import axios from 'axios';
 const getAuthClient = () => {
   const token = localStorage.getItem('token');
   return axios.create({
-    baseURL: import.meta.env.VITE_PUBLIC_PRODUCT_API_URL,
+    baseURL: import.meta.env.API_URL,
     headers: {
       'Content-Type': 'application/json',
       'Authorization': `Bearer ${token}`
@@ -94,7 +94,7 @@ export const updateAdminRole = async (adminRole: AdminRole): Promise<AdminRole> 
     };
 
     // Call API to update profile
-    const response = await api.put(`/user/${adminRole.id}`, updateData);
+    // const response = await api.put(`/user/${adminRole.id}`, updateData);
 
     // Update local storage with new data
     const userData = localStorage.getItem('user');

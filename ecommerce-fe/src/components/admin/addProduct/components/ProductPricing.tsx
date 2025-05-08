@@ -32,13 +32,13 @@ export const ProductPricing: React.FC<ProductPricingProps> = ({
   };
 
   // Calculate discounted price based on original price and discount percentage
-  const calculateDiscountedPrice = () => {
-    if (product.originalPrice && product.discount) {
-      const discountedPrice = product.originalPrice - (product.originalPrice * product.discount / 100);
-      return discountedPrice.toFixed(2);
-    }
-    return product.price ? product.price.toString() : '';
-  };
+  // const calculateDiscountedPrice = () => {
+  //   if (product.originalPrice && product.discount) {
+  //     const discountedPrice = product.originalPrice - (product.originalPrice * product.discount / 100);
+  //     return discountedPrice.toFixed(2);
+  //   }
+  //   return product.price ? product.price.toString() : '';
+  // };
 
   // Handle date changes for expiration dates
   const handleDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {

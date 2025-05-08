@@ -1,5 +1,5 @@
 import React from 'react';
-import { CartItem } from './models/cart.model';
+import { CartItem } from '@/types/cart.model';
 import CartItemRow from './CartItemRow';
 
 interface ShoppingCartTableProps {
