@@ -769,23 +769,55 @@ func (s *authService) RequestOTP(ctx context.Context, email string, purpose stri
 	// Get OTP expiration time in minutes
 	expiresIn, _ := s.otpManager.GetRemainingTime(email)
 
-	// Send OTP email based on purpose
-	go func() {
-		var mailErr error
-		switch otpPurpose {
-		case util.OTPPurposeRegistration:
-			mailErr = s.mailClient.SendRegistrationOTP(email, otp, expiresIn)
-		case util.OTPPurposePasswordReset:
-			mailErr = s.mailClient.SendPasswordResetOTP(email, otp, expiresIn)
-		default:
-			// Generic OTP email
-			mailErr = s.mailClient.SendGenericOTP(email, otp, string(otpPurpose), expiresIn)
-		}
+	// IMPORTANT: The code below uses direct HTTP calls to the mail service,
+	// which conflicts with the RabbitMQ message queue approach.
+	// We should use only one approach for email sending to prevent duplicates.
+	// Currently, we've standardized on using RabbitMQ (eventEmitter) for all email communications.
+	//
+	// The direct HTTP call to mail service is commented out to avoid duplicate emails.
+	// Instead, we should use the eventEmitter to publish events to RabbitMQ,
+	// which will be picked up by the listener service and forwarded to the mail service.
+	/*
+		// Send OTP email based on purpose
+		go func() {
+			var mailErr error
+			switch otpPurpose {
+			case util.OTPPurposeRegistration:
+				mailErr = s.mailClient.SendRegistrationOTP(email, otp, expiresIn)
+			case util.OTPPurposePasswordReset:
+				mailErr = s.mailClient.SendPasswordResetOTP(email, otp, expiresIn)
+			default:
+				// Generic OTP email
+				mailErr = s.mailClient.SendGenericOTP(email, otp, string(otpPurpose), expiresIn)
+			}
 
-		if mailErr != nil {
-			log.Printf("Failed to send OTP email for purpose %s: %v", purpose, mailErr)
-		}
-	}()
+			if mailErr != nil {
+				log.Printf("Failed to send OTP email for purpose %s: %v", purpose, mailErr)
+			}
+		}()
+	*/
+
+	// Use event emitter to publish the OTP generated event
+	// This will be picked up by the listener service and forwarded to the mail service
+	message := ""
+	actionText := "Verify"
+
+	switch otpPurpose {
+	case util.OTPPurposeRegistration:
+		message = "We received a request to create an account with this email address."
+		actionText = "Complete Registration"
+	case util.OTPPurposePasswordReset:
+		message = "We received a request to reset the password for your account."
+		actionText = "Reset Password"
+	default:
+		message = fmt.Sprintf("We received a request that requires verification for your account (%s).", purpose)
+	}
+
+	err = s.eventEmitter.EmitOTPGenerated(email, otp, string(otpPurpose), expiresIn, message, actionText)
+	if err != nil {
+		log.Printf("Failed to emit OTP generated event: %v", err)
+		// Don't return the error to avoid revealing information about the internal system
+	}
 
 	return nil
 }
