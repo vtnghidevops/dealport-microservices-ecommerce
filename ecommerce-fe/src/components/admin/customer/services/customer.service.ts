@@ -8,7 +8,7 @@ import {
 import axios from 'axios';
 
 // Base URL for API requests
-const API_BASE_URL = import.meta.env.API_URL || 'http://localhost:8080/api/v1';
+const API_BASE_URL = import.meta.env.VITE_PUBLIC_BROKER_API_URL || 'http://localhost:8080/api/v1';
 const USER_ENDPOINT = `${API_BASE_URL}/users`;
 const ADMIN_ENDPOINT = `${USER_ENDPOINT}/admin`;
 

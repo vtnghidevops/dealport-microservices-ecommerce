@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const API_URL = import.meta.env.API_URL || 'http://localhost:8080';
+const VITE_PUBLIC_BROKER_API_URL = import.meta.env.VITE_PUBLIC_BROKER_API_URL || 'http://localhost:8080';
 
 // Frontend interface using camelCase (dữ liệu đến từ API đã ở dạng camelCase)
 export interface Coupon {
@@ -67,7 +67,7 @@ const getAuthHeader = () => {
 };
 
 class CouponService {
-  private baseUrl = `${API_URL}/coupons`;
+  private baseUrl = `${VITE_PUBLIC_BROKER_API_URL}/coupons`;
 
   /**
    * Get all coupons with optional pagination
@@ -232,7 +232,7 @@ class CouponService {
    */
   async applyCoupon(couponCode: string): Promise<any> {
     try {
-      const response = await axios.post(`${API_URL}/cart/coupon`,
+      const response = await axios.post(`${VITE_PUBLIC_BROKER_API_URL}/cart/coupon`,
         { coupon_code: couponCode },
         {
           headers: {
@@ -254,7 +254,7 @@ class CouponService {
    */
   async removeCoupon(): Promise<any> {
     try {
-      const response = await axios.delete(`${API_URL}/cart/coupon`, {
+      const response = await axios.delete(`${VITE_PUBLIC_BROKER_API_URL}/cart/coupon`, {
         headers: getAuthHeader()
       });
 

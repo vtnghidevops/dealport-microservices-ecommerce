@@ -1,7 +1,7 @@
 import axios from 'axios';
 import { CartItem, CartTotalsData } from '@/types/cart.model';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080';
+const VITE_PUBLIC_BROKER_API_URL = import.meta.env.VITE_VITE_PUBLIC_BROKER_API_URL || 'http://localhost:8080';
 
 export interface CartItemRequest {
   productId: number;
@@ -49,7 +49,7 @@ const getCurrentUserId = (): string => {
 
 // Singleton instance of cart service
 class CartService {
-  private baseUrl = `${API_URL}/api/v1/cart`;
+  private baseUrl = `${VITE_PUBLIC_BROKER_API_URL}/api/v1/cart`;
 
   // Get the user's cart
   async getCart(): Promise<CartResponse> {

@@ -5,7 +5,7 @@ import { Category as GlobalCategory } from '@/types/category.model';
 import axios from 'axios';
 
 // Base URL for product service API from environment variables
-const API_BASE_URL = import.meta.env.API_URL || "http://localhost:8082/api/v1";
+const API_BASE_URL = import.meta.env.VITE_PUBLIC_BROKER_API_URL || "http://localhost:8082/api/v1";
 
 /**
  * Helper function to convert a global category to admin category format

@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 // Base API URL already includes the /api/v1 prefix
-const API_URL = import.meta.env.API_URL || 'http://localhost:8080/api/v1';
+const VITE_PUBLIC_BROKER_API_URL = import.meta.env.VITE_PUBLIC_BROKER_API_URL || 'http://localhost:8080/api/v1';
 
 // Get auth header for authenticated requests
 const getAuthHeader = () => {
@@ -187,7 +187,7 @@ const adaptOrder = (backendOrder: BackendOrder): Order => {
 };
 
 class OrderService {
-  private baseUrl = `${API_URL}/checkout/orders`;
+  private baseUrl = `${VITE_PUBLIC_BROKER_API_URL}/checkout/orders`;
 
   /**
    * Fetch all orders for the authenticated user

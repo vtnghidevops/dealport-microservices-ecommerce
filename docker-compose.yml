@@ -4,6 +4,8 @@ services:
     image: ecommerce-frontend:v1
     build:
       context: ./ecommerce-fe/
+      args:
+        - VITE_PUBLIC_BROKER_API_URL=${VITE_PUBLIC_BROKER_API_URL}
     restart: always
     ports:
       - "3001:80"

@@ -38,10 +38,11 @@ func LoadConfig(path string) (*Config, error) {
 		Server: ServerConfig{
 			HTTPPort: getEnv("HTTP_PORT", "8082"),
 			GRPCPort: getEnv("GRPC_PORT", "50053"),
+			// PRODUCT_DSN=host=postgres-products port=5432 user=postgres-products password=password dbname=products sslmode=disable timezone=UTC connect_timeout=5
 		},
 		Database: DatabaseConfig{
 			Host:     getEnv("DB_HOST", "postgres-products"),
-			Port:     getEnv("DB_PORT", "5433"),
+			Port:     getEnv("DB_PORT", "5432"),
 			User:     getEnv("DB_USER", "postgres-products"),
 			Password: getEnv("DB_PASSWORD", "password"),
 			DBName:   getEnv("DB_NAME", "products"),

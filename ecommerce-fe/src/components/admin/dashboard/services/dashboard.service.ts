@@ -1,7 +1,7 @@
 import { DashboardSummary } from '../models/dashboard.model';
 import axios from 'axios';
 
-const API_BASE_URL = import.meta.env.VITE_PUBLIC_BROKER_API_URL || 'http://localhost:8080/api/v1';
+const API_BASE_URL = import.meta.env.VITE_PUBLIC_BROKER_VITE_PUBLIC_BROKER_API_URL || 'http://localhost:8080/api/v1';
 
 interface ChartDataPoint {
   day: string;

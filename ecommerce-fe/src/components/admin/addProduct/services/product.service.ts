@@ -4,7 +4,7 @@ import { Product } from '@/types/product.model';
 
 // Tạo một instance của axios với cấu hình chung
 const api = axios.create({
-  baseURL: import.meta.env.API_URL || 'http://localhost:8082/api/v1',
+  baseURL: import.meta.env.VITE_PUBLIC_BROKER_API_URL || 'http://localhost:8082/api/v1',
   headers: {
     'Content-Type': 'application/json',
   }
@@ -187,7 +187,7 @@ class ProductService {
       // console.log(`🔍 Using product ID for upload: ${productId} (type: ${typeof productId})`);
 
       // Get base URL from environment or default to localhost
-      const apiBaseUrl = import.meta.env.API_URL || 'http://localhost:8082/api/v1';
+      const apiBaseUrl = import.meta.env.VITE_PUBLIC_BROKER_API_URL || 'http://localhost:8082/api/v1';
       // Extract the base URL without /api/v1
       // const baseUrl = apiBaseUrl.replace(/\/api\/v1$/, '');
       // console.log('🔍 Base URL for image upload:', baseUrl);
@@ -285,7 +285,7 @@ class ProductService {
       let isAvailable = false;
 
       // Get base URL from environment or default to localhost
-      const apiBaseUrl = import.meta.env.API_URL || 'http://localhost:8082/api/v1';
+      const apiBaseUrl = import.meta.env.VITE_PUBLIC_BROKER_API_URL || 'http://localhost:8082/api/v1';
 
 
       try {
@@ -509,7 +509,7 @@ class ProductService {
       }
 
       // Kiểm tra xem có cần cập nhật images không
-     // const hasImageUpdates = mergedProduct.imgSlider && mergedProduct.imgSlider.length > 0;
+      // const hasImageUpdates = mergedProduct.imgSlider && mergedProduct.imgSlider.length > 0;
 
       // Chuẩn bị dữ liệu product cho cập nhật (bao gồm tất cả trường)
       const productData = this.prepareProductData(mergedProduct);
@@ -722,10 +722,10 @@ class ProductService {
     // console.log('  • imageUrl:', typeof productData.imageUrl, productData.imageUrl || 'Not set');
 
     // Kiểm tra imgSlider có đúng là mảng string URLs
-      // if (productData.imgSlider && productData.imgSlider.length > 0) {
-      //   const isAllStrings = productData.imgSlider.every((item: any) => typeof item === 'string');
-      //   // console.log('  • imgSlider format check:', isAllStrings ? '✅ All strings' : '❌ Contains non-string items');
-      // }
+    // if (productData.imgSlider && productData.imgSlider.length > 0) {
+    //   const isAllStrings = productData.imgSlider.every((item: any) => typeof item === 'string');
+    //   // console.log('  • imgSlider format check:', isAllStrings ? '✅ All strings' : '❌ Contains non-string items');
+    // }
 
     return productData;
   }

@@ -7,7 +7,7 @@ import axios from 'axios';
 const getAuthClient = () => {
   const token = localStorage.getItem('token');
   return axios.create({
-    baseURL: import.meta.env.API_URL,
+    baseURL: import.meta.env.VITE_PUBLIC_BROKER_API_URL,
     headers: {
       'Content-Type': 'application/json',
       'Authorization': `Bearer ${token}`

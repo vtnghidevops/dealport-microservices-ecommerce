@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 // Base API URL already includes the /api/v1 prefix
-const API_URL = import.meta.env.API_URL || 'http://localhost:8080/api/v1';
+const VITE_PUBLIC_BROKER_API_URL = import.meta.env.VITE_PUBLIC_BROKER_API_URL || 'http://localhost:8080/api/v1';
 
 // Get auth header for authenticated requests
 const getAuthHeader = () => {
@@ -30,8 +30,8 @@ interface PaymentResult {
 
 class PaymentService {
   // The base URL should just add the payments path without double adding /api/v1
-  private baseUrl = `${API_URL}/payments`;
-  private checkoutBaseUrl = `${API_URL}/checkout/payments`;
+  private baseUrl = `${VITE_PUBLIC_BROKER_API_URL}/payments`;
+  private checkoutBaseUrl = `${VITE_PUBLIC_BROKER_API_URL}/checkout/payments`;
 
   /**
    * Generic method to process a payment for an order with any payment method
