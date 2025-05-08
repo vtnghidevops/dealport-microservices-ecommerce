@@ -1,10 +1,10 @@
-import AppRouters from './routers/routers';
-import { AppProvider } from './providers/AppProvider';
+import AppRouters from '@/routers/routers';
+import { AppProvider } from '@/providers/AppProvider';
 import { BrowserRouter } from 'react-router-dom';
 import { SnackbarProvider } from 'notistack';
-import { AuthProvider } from './context/AuthContext';
+import { AuthProvider } from '@/context/AuthContext';
 import { Toaster } from '@/components/ui/toaster';
-import './index.css'
+import '@/index.css'
 
 function App() {
   return (

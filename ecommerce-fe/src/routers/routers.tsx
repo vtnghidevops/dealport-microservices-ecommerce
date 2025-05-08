@@ -1,18 +1,18 @@
 import React from "react";
 import { Route, Routes } from "react-router-dom";
-import Home from "../pages/homepage/Home";
-import DashboardAdmin from "../pages/admin/dashboard/Dashboard";
-import OrderPage from "../pages/admin/order"; // Import Order Management page
-import CustomerPage from "../pages/admin/customer";
-import CategoryPage from "../pages/admin/category";
-import AdminRolePage from "../pages/admin/role";
-import CouponManagement from "../pages/admin/coupon"; // Import Coupon Management page
-import CouponCreate from "../pages/admin/coupon/create"; // Import Coupon Create page
+import Home from "@/pages/homepage/Home";
+import DashboardAdmin from "@/pages/admin/dashboard/Dashboard";
+import OrderPage from "@/pages/admin/order"; // Import Order Management page
+import CustomerPage from "@/pages/admin/customer";
+import CategoryPage from "@/pages/admin/category";
+import AdminRolePage from "@/pages/admin/role";
+import CouponManagement from "@/pages/admin/coupon"; // Import Coupon Management page
+import CouponCreate from "@/pages/admin/coupon/create"; // Import Coupon Create page
 
 import MainLayout from "@/components/layouts/MainLayout";
-import ProductList from "../pages/products/ProductList";
-import ProductDetail from "../pages/products/ProductDetails";
-import NotFound from "../pages/system/NotFound";
+import ProductList from "@/pages/products/ProductList";
+import ProductDetail from "@/pages/products/ProductDetails";
+import NotFound from "@/pages/system/NotFound";
 import ScrollToTop from "@/components/common/ScrollToTop";
 import Login from "@/pages/system/Login";
 import ForgotPassword from "@/pages/system/ForgotPassword";
@@ -22,17 +22,17 @@ import OTPVerification from "@/pages/system/OTPVerification";
 import Wishlist from "@/pages/wishlist/Wishlist";
 import Cart from "@/pages/cart/Cart";
 import Checkout from "@/pages/checkout/Checkout";
-import SuccessfulPayment from "../pages/checkout/SuccessfulPayment";
-import PaymentResult from "../pages/checkout/PaymentResult";
+import SuccessfulPayment from "@/pages/checkout/SuccessfulPayment";
+import PaymentResult from "@/pages/checkout/PaymentResult";
 import ResetPassword from "@/pages/system/ResetPassword";
 
-import Profile from "../pages/user/Profile";
-import OrdersHistory from "../pages/user/OrdersHistory";
-import Addresses from "../pages/user/Addresses";
-import SecuritySettings from "../pages/user/SecuritySettings";
-import UserDashboard from "../pages/user/Dashboard";
-import ProductPage from "../pages/admin/product";
-import AdminLogin from '../pages/admin/login/login' // Fix import path to correct location
+import Profile from "@/pages/user/Profile";
+import OrdersHistory from "@/pages/user/OrdersHistory";
+import Addresses from "@/pages/user/Addresses";
+import SecuritySettings from "@/pages/user/SecuritySettings";
+import UserDashboard from "@/pages/user/Dashboard";
+import ProductPage from "@/pages/admin/product";
+import AdminLogin from '@/pages/admin/login/login' // Fix import path to correct location
 import ProtectedAdminRoute from "@/components/admin/auth/ProtectedAdminRoute";
 
 const AppRouters: React.FC = () => {
