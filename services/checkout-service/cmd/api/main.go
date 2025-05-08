@@ -133,8 +133,18 @@ func connectToMongoDB(cfg *config.Config) (*mongo.Client, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
+	// Manually build the connection string with credentials
+	mongoURI := fmt.Sprintf("mongodb://checkout_user:password@%s:%s/%s?authSource=checkout",
+		cfg.MongoDB.Host,
+		cfg.MongoDB.Port,
+		cfg.MongoDB.Database)
+
 	// Set client options
-	clientOptions := options.Client().ApplyURI(cfg.MongoDB.URI)
+	clientOptions := options.Client().ApplyURI(mongoURI)
+
+	// Debug connection string (don't include in production)
+	log.Printf("Connecting to MongoDB with URI: %s", mongoURI)
+
 	client, err := mongo.Connect(ctx, clientOptions)
 	if err != nil {
 		return nil, err
@@ -146,7 +156,7 @@ func connectToMongoDB(cfg *config.Config) (*mongo.Client, error) {
 		return nil, err
 	}
 
-	log.Printf("Connected to MongoDB at %s", cfg.MongoDB.URI)
+	log.Printf("Connected to MongoDB at %s", mongoURI)
 	return client, nil
 }
 

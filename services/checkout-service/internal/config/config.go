@@ -52,10 +52,10 @@ func LoadConfig(path string) (*Config, error) {
 		MongoDB: MongoDBConfig{
 			Host:     getEnv("MONGO_HOST", "mongo-checkout"),
 			Port:     getEnv("MONGO_PORT", "27017"),
-			User:     getEnv("MONGO_USER", ""),
-			Password: getEnv("MONGO_PASSWORD", ""),
+			User:     getEnv("MONGO_USER", "checkout_user"),
+			Password: getEnv("MONGO_PASSWORD", "password"),
 			Database: getEnv("MONGO_DATABASE", "checkout"),
-			URI:      getEnv("MONGO_URI", "mongodb://mongo-checkout:27017/checkout"),
+			URI:      getEnv("MONGO_URI", "mongodb://checkout_user:password@mongo-checkout:27017/checkout"),
 		},
 		RabbitMQ: RabbitMQConfig{
 			Host:     getEnv("RABBITMQ_HOST", "rabbitmq"),
