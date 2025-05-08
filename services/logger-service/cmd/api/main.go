@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"logger-service/internal/config"
 	"logger-service/internal/domain"
 	"logger-service/internal/handlers/grpc"
 	"net"
@@ -17,31 +18,22 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
-// Default values - can be overridden by environment variables
-const (
-	defaultMongoURL      = "mongodb://mongo-logger:27017"
-	defaultMongoUsername = "admin"
-	defaultMongoPassword = "password"
-	defaultMongoDatabase = "logs"
-	defaultGRPCPort      = "50056"
-)
-
 var client *mongo.Client
 
 func main() {
 	// Thiết lập logger
 	logger := log.New(os.Stdout, "[LOGGER-SVC] ", log.LstdFlags)
 
-	// Get GRPC port from environment or use default
-	gRpcPort := os.Getenv("GRPC_PORT")
-	if gRpcPort == "" {
-		gRpcPort = defaultGRPCPort
+	// Load configuration
+	cfg, err := config.LoadConfig()
+	if err != nil {
+		logger.Fatalf("Failed to load configuration: %v", err)
 	}
 
-	logger.Printf("Starting logger service on port %s", gRpcPort)
+	logger.Printf("Starting logger service on port %s", cfg.Server.GRPCPort)
 
 	// Kết nối đến MongoDB
-	mongoClient, err := connectToMongo()
+	mongoClient, err := connectToMongo(cfg)
 	if err != nil {
 		logger.Panic(err)
 	}
@@ -67,7 +59,7 @@ func main() {
 	server := app.NewGrpcServer()
 
 	// Bắt đầu lắng nghe yêu cầu gRPC
-	lis, err := net.Listen("tcp", fmt.Sprintf(":%s", gRpcPort))
+	lis, err := net.Listen("tcp", fmt.Sprintf(":%s", cfg.Server.GRPCPort))
 	if err != nil {
 		logger.Fatalf("Failed to listen: %v", err)
 	}
@@ -83,52 +75,38 @@ func main() {
 	}()
 
 	// Khởi động gRPC server
-	logger.Printf("gRPC server is running on port %s", gRpcPort)
+	logger.Printf("gRPC server is running on port %s", cfg.Server.GRPCPort)
 	if err := server.Serve(lis); err != nil {
 		logger.Fatalf("Failed to serve: %v", err)
 	}
 }
 
-func connectToMongo() (*mongo.Client, error) {
-	// Get connection settings from environment variables
-	mongoURL := os.Getenv("MONGO_URL")
-	if mongoURL == "" {
-		mongoURL = defaultMongoURL
-	}
+func connectToMongo(cfg *config.Config) (*mongo.Client, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
 
-	mongoUsername := os.Getenv("MONGO_USERNAME")
-	if mongoUsername == "" {
-		mongoUsername = defaultMongoUsername
-	}
+	// Manually build the connection string with credentials
+	mongoURI := fmt.Sprintf("mongodb://%s:%s@%s:%s/%s?authSource=logs",
+		cfg.MongoDB.User,
+		cfg.MongoDB.Password,
+		cfg.MongoDB.Host,
+		cfg.MongoDB.Port,
+		cfg.MongoDB.Database)
 
-	mongoPassword := os.Getenv("MONGO_PASSWORD")
-	if mongoPassword == "" {
-		mongoPassword = defaultMongoPassword
-	}
+	// Set client options
+	clientOptions := options.Client().ApplyURI(mongoURI)
 
-	mongoDatabase := os.Getenv("MONGO_DATABASE")
-	if mongoDatabase == "" {
-		mongoDatabase = defaultMongoDatabase
-	}
+	// Debug connection string (don't include in production)
+	log.Printf("Connecting to MongoDB with URI: %s", mongoURI)
 
-	log.Printf("Connecting to MongoDB at %s with database %s", mongoURL, mongoDatabase)
-
-	// Thiết lập các tùy chọn kết nối
-	clientOptions := options.Client().ApplyURI(mongoURL)
-	clientOptions.SetAuth(options.Credential{
-		Username: mongoUsername,
-		Password: mongoPassword,
-	})
-
-	// Kết nối
-	c, err := mongo.Connect(context.TODO(), clientOptions)
+	c, err := mongo.Connect(ctx, clientOptions)
 	if err != nil {
 		log.Println("Error connecting to MongoDB:", err)
 		return nil, err
 	}
 
 	// Kiểm tra kết nối
-	if err = c.Ping(context.TODO(), nil); err != nil {
+	if err = c.Ping(ctx, nil); err != nil {
 		log.Println("Error pinging MongoDB:", err)
 		return nil, err
 	}
@@ -136,9 +114,9 @@ func connectToMongo() (*mongo.Client, error) {
 	log.Println("Connected to MongoDB!")
 
 	// Ensure logs database and collection exist
-	_, err = c.Database(mongoDatabase).Collection("logs").CountDocuments(context.TODO(), bson.M{})
+	_, err = c.Database(cfg.MongoDB.Database).Collection("logs").CountDocuments(context.TODO(), bson.M{})
 	if err != nil {
-		log.Printf("Creating logs collection in %s database", mongoDatabase)
+		log.Printf("Creating logs collection in %s database", cfg.MongoDB.Database)
 		// Error is expected if collection doesn't exist yet
 	}
 
