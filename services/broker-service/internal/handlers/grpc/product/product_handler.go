@@ -2,6 +2,7 @@ package grpc
 
 import (
 	pb "broker-service/proto/product"
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -531,6 +532,27 @@ func (h *ProductHandler) GetProductReviews(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
+	// Transform the response to match frontend expectations
+	// map review_text to comment, ensure userId and userName are present
+	formattedReviews := make([]map[string]interface{}, 0, len(resp.Reviews))
+	for _, review := range resp.Reviews {
+		// Extract userId from Email field (used as workaround to store userId)
+		userId := review.Email
+
+		formattedReview := map[string]interface{}{
+			"id":         review.Id,
+			"productId":  review.ProductId,
+			"userId":     userId,
+			"userName":   review.UserName,
+			"rating":     review.Rating,
+			"comment":    review.ReviewText, // Map ReviewText to comment
+			"reviewText": review.ReviewText, // Keep original for backward compatibility
+			"createdAt":  review.ReviewDate,
+		}
+
+		formattedReviews = append(formattedReviews, formattedReview)
+	}
+
 	// Prepare pagination metadata
 	meta := map[string]interface{}{
 		"current_page": page,
@@ -544,7 +566,7 @@ func (h *ProductHandler) GetProductReviews(w http.ResponseWriter, r *http.Reques
 	json.NewEncoder(w).Encode(map[string]interface{}{
 		"status":  "success",
 		"message": "Product reviews retrieved successfully",
-		"data":    resp.Reviews,
+		"data":    formattedReviews,
 		"meta":    meta,
 	})
 }
@@ -559,13 +581,30 @@ func (h *ProductHandler) AddProductReview(w http.ResponseWriter, r *http.Request
 		return
 	}
 
+	// Read and log the raw request body for debugging
+	bodyBytes, err := io.ReadAll(r.Body)
+	if err != nil {
+		http.Error(w, "Error reading request body", http.StatusBadRequest)
+		return
+	}
+
+	// Log the raw body
+	log.Printf("Raw request body: %s", string(bodyBytes))
+
+	// Create a new reader with the same data for the decoder
+	r.Body = io.NopCloser(bytes.NewBuffer(bodyBytes))
+
 	// Parse the request body
 	var reviewReq ProductReviewRequest
 	err = json.NewDecoder(r.Body).Decode(&reviewReq)
 	if err != nil {
+		log.Printf("Error decoding request body: %v", err)
 		http.Error(w, "Invalid request body", http.StatusBadRequest)
 		return
 	}
+
+	// Log the parsed request for debugging
+	log.Printf("Parsed request: %+v", reviewReq)
 
 	// Validate required fields
 	if reviewReq.UserName == "" || reviewReq.Rating <= 0 || reviewReq.Rating > 5 {
@@ -573,12 +612,64 @@ func (h *ProductHandler) AddProductReview(w http.ResponseWriter, r *http.Request
 		return
 	}
 
+	// Use Comment field if ReviewText is empty
+	reviewText := reviewReq.ReviewText
+	if reviewText == "" && reviewReq.Comment != "" {
+		reviewText = reviewReq.Comment
+		log.Printf("Using comment field instead of reviewText: %s", reviewText)
+	}
+
+	// Extract user ID from auth token if available
+	userID := ""
+	// Try to get user ID from auth context first
+	authUser := r.Context().Value("user")
+	if authUser != nil {
+		// Check the type and extract the ID
+		if userMap, ok := authUser.(map[string]interface{}); ok {
+			if id, ok := userMap["id"].(string); ok {
+				userID = id
+				log.Printf("User ID extracted from auth context: %s", userID)
+			}
+		}
+	}
+
+	// If no user ID from auth context, use the one from request
+	if userID == "" && reviewReq.UserID != nil {
+		// Convert userID from interface{} to string for UUID storage
+		switch v := reviewReq.UserID.(type) {
+		case string:
+			// Already a string, use directly
+			userID = v
+			log.Printf("Using string user ID from request: %s", userID)
+		case float64:
+			// WARNING: Received numeric userId, but database expects UUID string
+			// This is likely from a frontend sending numbers instead of UUIDs
+			userID = fmt.Sprintf("%.0f", v) // Convert number to string without decimal part
+			log.Printf("WARNING: Received numeric userId=%v, converting to string. Frontend should send UUID.", v)
+		case int:
+			userID = fmt.Sprintf("%d", v)
+			log.Printf("WARNING: Received numeric userId=%d, converting to string. Frontend should send UUID.", v)
+		case int64:
+			userID = fmt.Sprintf("%d", v)
+			log.Printf("WARNING: Received numeric userId=%d, converting to string. Frontend should send UUID.", v)
+		case float32:
+			userID = fmt.Sprintf("%.0f", v)
+			log.Printf("WARNING: Received numeric userId=%v, converting to string. Frontend should send UUID.", v)
+		}
+		log.Printf("Using user ID from request (converted from %T): %s", reviewReq.UserID, userID)
+	}
+
 	// Create the gRPC request
 	review := &pb.ProductReview{
 		ProductId:  int32(productID),
 		UserName:   reviewReq.UserName,
 		Rating:     int32(reviewReq.Rating),
-		ReviewText: reviewReq.ReviewText,
+		ReviewText: reviewText,
+	}
+
+	// Add user ID if available (via Email field as workaround since there's no userId field in the proto)
+	if userID != "" {
+		review.Email = userID // Use Email field to store the user ID as a workaround
 	}
 
 	// Call the gRPC client
@@ -617,18 +708,42 @@ func (h *ProductHandler) UpdateProductReview(w http.ResponseWriter, r *http.Requ
 		return
 	}
 
+	// Read and log the raw request body for debugging
+	bodyBytes, err := io.ReadAll(r.Body)
+	if err != nil {
+		http.Error(w, "Error reading request body", http.StatusBadRequest)
+		return
+	}
+
+	// Log the raw body
+	log.Printf("Raw request body for update: %s", string(bodyBytes))
+
+	// Create a new reader with the same data for the decoder
+	r.Body = io.NopCloser(bytes.NewBuffer(bodyBytes))
+
 	// Parse the request body
 	var reviewReq ProductReviewRequest
 	err = json.NewDecoder(r.Body).Decode(&reviewReq)
 	if err != nil {
+		log.Printf("Error decoding update request body: %v", err)
 		http.Error(w, "Invalid request body", http.StatusBadRequest)
 		return
 	}
+
+	// Log the parsed request for debugging
+	log.Printf("Parsed update request: %+v", reviewReq)
 
 	// Validate required fields
 	if reviewReq.UserName == "" || reviewReq.Rating <= 0 || reviewReq.Rating > 5 {
 		http.Error(w, "userName and rating (1-5) are required", http.StatusBadRequest)
 		return
+	}
+
+	// Use Comment field if ReviewText is empty
+	reviewText := reviewReq.ReviewText
+	if reviewText == "" && reviewReq.Comment != "" {
+		reviewText = reviewReq.Comment
+		log.Printf("Using comment field instead of reviewText: %s", reviewText)
 	}
 
 	// Create the gRPC request
@@ -637,7 +752,7 @@ func (h *ProductHandler) UpdateProductReview(w http.ResponseWriter, r *http.Requ
 		ProductId:  int32(productID),
 		UserName:   reviewReq.UserName,
 		Rating:     int32(reviewReq.Rating),
-		ReviewText: reviewReq.ReviewText,
+		ReviewText: reviewText,
 	}
 
 	// Call the gRPC client
@@ -849,9 +964,11 @@ func (h *ProductHandler) ProxyProductImage(w http.ResponseWriter, r *http.Reques
 	w.Write(imageData)
 }
 
-// ProductReviewRequest represents the JSON structure for product review requests
+// ProductReviewRequest struct definition
 type ProductReviewRequest struct {
-	UserName   string  `json:"userName"`
-	Rating     float64 `json:"rating"`
-	ReviewText string  `json:"reviewText,omitempty"`
+	UserName   string      `json:"userName"`
+	UserID     interface{} `json:"userId"`
+	Rating     float64     `json:"rating"`
+	ReviewText string      `json:"reviewText,omitempty"`
+	Comment    string      `json:"comment,omitempty"`
 }

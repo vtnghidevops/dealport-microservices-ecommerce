@@ -29,23 +29,32 @@ export interface StatusResponse {
   message: string;
 }
 
-// Lấy token xác thực từ localStorage
+/**
+ * Get authentication headers for API requests
+ * @returns Authentication headers object
+ */
 const getAuthHeader = () => {
   const token = localStorage.getItem('token');
   if (!token) {
-    throw new Error('You must be logged in to manage your cart');
+    console.warn('No token found for authenticated request');
+    return {};
   }
   return { Authorization: `Bearer ${token}` };
 };
 
-// Lấy user ID từ localStorage
-const getCurrentUserId = (): string => {
-  const userId = localStorage.getItem('user_id');
-  if (!userId) {
-    throw new Error('User ID not found. Please log in again.');
-  }
-  return userId;
-};
+// Helper function to get current user ID from localStorage
+// const getCurrentUserId = (): string | null => {
+//   const userStr = localStorage.getItem('user');
+//   if (!userStr) return null;
+
+//   try {
+//     const user = JSON.parse(userStr);
+//     return user?.id || null;
+//   } catch (e) {
+//     console.error('Error parsing user from localStorage', e);
+//     return null;
+//   }
+// };
 
 // Singleton instance of cart service
 class CartService {

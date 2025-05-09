@@ -79,7 +79,7 @@ export const fetchAdminRole = async (): Promise<AdminRole> => {
 
 export const updateAdminRole = async (adminRole: AdminRole): Promise<AdminRole> => {
   try {
-    const api = getAuthClient();
+    // const api = getAuthClient();
 
     // Create update data in format expected by API
     const updateData = {

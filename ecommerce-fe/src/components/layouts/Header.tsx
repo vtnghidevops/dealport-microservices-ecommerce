@@ -42,8 +42,8 @@ const SearchBar: React.FC = () => {
 };
 
 /**
- * PHẦN 1: USER MENU KHI CHƯA ĐĂNG NHẬP
- * Hiển thị nút Login đơn giản, chuyển hướng đến trang đăng nhập khi click
+ * PART 1: USER MENU WHEN NOT LOGGED IN
+ * Display a simple Login button that redirects to the login page when clicked
  */
 const LoggedOutUserMenu: React.FC = () => {
   const navigate = useNavigate();

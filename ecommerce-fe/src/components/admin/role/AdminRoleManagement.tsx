@@ -9,7 +9,7 @@ import { useAdminRole } from "./hooks/useAdminRole";
 import AdminHeader from "../layout/AdminHeader";
 
 const AdminRoleManagement: React.FC = () => {
-  const { adminData, isLoading, error, handleProfileUpdate, setAdminData } =
+  const { adminData, isLoading, error, handleProfileUpdate } =
     useAdminRole();
 
   if (isLoading) {
@@ -49,7 +49,7 @@ const AdminRoleManagement: React.FC = () => {
               <ProfileUpdateForm
                 adminData={adminData}
                 onUpdateProfile={handleProfileUpdate}
-                setAdminData={setAdminData}
+                // setAdminData={setAdminData}
               />
             </div>
           </div>

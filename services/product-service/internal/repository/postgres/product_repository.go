@@ -990,7 +990,7 @@ func (r *ProductRepository) GetProductReviews(productID int, page, pageSize int)
 
 	// Get paginated reviews
 	query := `
-		SELECT id, product_id, user_id, rating, comment, created_at
+		SELECT id, product_id, user_id, user_name, rating, comment, created_at
 		FROM product_reviews
 		WHERE product_id = $1
 		ORDER BY id ASC
@@ -1012,6 +1012,7 @@ func (r *ProductRepository) GetProductReviews(productID int, page, pageSize int)
 			&review.ID,
 			&review.ProductID,
 			&review.UserID,
+			&review.UserName,
 			&review.Rating,
 			&review.Comment,
 			&review.CreatedAt,
@@ -1046,8 +1047,8 @@ func (r *ProductRepository) AddProductReview(review *domain.ProductReview) (int,
 
 	// Insert review and get the auto-incremented ID
 	query := `
-		INSERT INTO product_reviews (product_id, user_id, rating, comment, created_at)
-		VALUES ($1, $2, $3, $4, $5)
+		INSERT INTO product_reviews (product_id, user_id, user_name, rating, comment, created_at)
+		VALUES ($1, $2, $3, $4, $5, $6)
 		RETURNING id
 	`
 
@@ -1056,10 +1057,15 @@ func (r *ProductRepository) AddProductReview(review *domain.ProductReview) (int,
 		review.CreatedAt = now
 	}
 
+	// Debug log để kiểm tra giá trị
+	log.Printf("Inserting review: ProductID=%d, UserID=%s, UserName=%s, Rating=%.1f, Comment=%s",
+		review.ProductID, review.UserID, review.UserName, review.Rating, review.Comment)
+
 	var id int
 	err = tx.QueryRowContext(ctx, query,
 		review.ProductID,
 		review.UserID,
+		review.UserName,
 		review.Rating,
 		review.Comment,
 		review.CreatedAt,

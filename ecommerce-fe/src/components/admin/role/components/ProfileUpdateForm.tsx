@@ -5,13 +5,11 @@ import { FiEdit } from "react-icons/fi";
 interface ProfileUpdateFormProps {
   adminData: AdminRole;
   onUpdateProfile: (data: Partial<AdminRole>) => Promise<boolean>;
-  setAdminData: (data: AdminRole) => void;
 }
 
-export const ProfileUpdateForm: React.FC<ProfileUpdateFormProps> = ({ 
-  adminData, 
-  onUpdateProfile,
-  setAdminData 
+export const ProfileUpdateForm: React.FC<ProfileUpdateFormProps> = ({
+  adminData,
+  onUpdateProfile
 }) => {
   const [isEditing, setIsEditing] = useState<boolean>(false);
   const [formData, setFormData] = useState<AdminRole>(adminData);
@@ -27,7 +25,7 @@ export const ProfileUpdateForm: React.FC<ProfileUpdateFormProps> = ({
       setIsEditing(false);
     }
   };
-  
+
 
   const handleCancel = () => {
     setFormData(adminData);

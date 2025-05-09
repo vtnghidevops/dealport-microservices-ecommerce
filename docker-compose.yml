@@ -112,7 +112,7 @@ services:
     container_name: postgres-auth
     image: "postgres:14.0"
     ports:
-      - "5435:5432"
+      - "56435:5432"
     restart: always
     environment:
       POSTGRES_USER: ${AUTH_DB_USER}
@@ -141,7 +141,7 @@ services:
     container_name: postgres-users
     image: "postgres:14.0"
     ports:
-      - "5434:5432"
+      - "55434:5432"
     restart: always
     environment:
       POSTGRES_USER: ${USER_DB_USER}
@@ -173,7 +173,7 @@ services:
     container_name: postgres-products
     image: "postgres:14.0"
     ports:
-      - "5433:5432"
+      - "55433:5432"
     restart: always
     environment:
       POSTGRES_USER: ${PRODUCT_DB_USER}

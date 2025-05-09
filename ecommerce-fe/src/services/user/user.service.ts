@@ -41,7 +41,7 @@ class UserService {
         throw new Error('User ID not found');
       }
 
-      return this.getUserById(userId);
+      return this.getUserById();
     } catch (error) {
       console.error('Get current user error:', error);
       throw error;
@@ -50,10 +50,9 @@ class UserService {
 
   /**
    * Lấy thông tin user theo ID
-   * @param id ID của user
    * @returns Chi tiết thông tin user
    */
-  async getUserById(userId: string): Promise<User> {
+  async getUserById(): Promise<User> {
     try {
       const response = await api.get(`/users/me`);
 
@@ -69,55 +68,74 @@ class UserService {
   }
 
   /**
-   * Cập nhật thông tin profile của user
-   * @param userId ID của user
-   * @param userData Dữ liệu cần cập nhật
-   * @returns Thông tin user đã cập nhật
+   * Cập nhật thông tin user
+   * @param userData Thông tin user cần cập nhật
+   * @returns Chi tiết thông tin user sau khi cập nhật
    */
-  async updateProfile(userId: string, userData: Partial<User>): Promise<User> {
+  async updateProfile(userData: Partial<User>): Promise<User> {
     try {
-      // Deep clone user data to avoid modifying the original
-      const userDataToUpdate = JSON.parse(JSON.stringify(userData));
-
-      // Format profile data according to API expectations
-      if (userDataToUpdate.profile) {
-        // Convert null values to empty strings for the API
-        Object.keys(userDataToUpdate.profile).forEach(key => {
-          if (userDataToUpdate.profile[key] === null) {
-            userDataToUpdate.profile[key] = '';
-          }
-        });
-      }
-
-      console.log('Updating profile with data:', userDataToUpdate);
-
-      const response = await api.put(`/users/me`, userDataToUpdate);
+      const response = await api.put(`/users/profile`, userData);
 
       if (response.status === 200 && response.data.error === false) {
-        // Update local storage with the updated user data
-        const currentUser = this.getUserFromStorage();
-        if (currentUser) {
-          const updatedUser = { ...currentUser, ...response.data.data };
-          localStorage.setItem('user', JSON.stringify(updatedUser));
-        }
-
         return response.data.data;
       } else {
-        throw new Error(response.data.message || 'Failed to update profile');
+        throw new Error(response.data.message || 'Failed to update user profile');
       }
     } catch (error: any) {
-      console.error('Error updating profile:', error);
+      console.error('Error updating user profile:', error);
       throw error;
     }
   }
 
   /**
+   * Cập nhật mật khẩu user
+   * @param currentPassword Mật khẩu hiện tại
+   * @param newPassword Mật khẩu mới
+   * @returns Kết quả cập nhật mật khẩu
+   */
+  async updatePassword(currentPassword: string, newPassword: string): Promise<any> {
+    try {
+      const response = await api.put(`/users/password`, {
+        current_password: currentPassword,
+        new_password: newPassword
+      });
+
+      if (response.status === 200 && response.data.error === false) {
+        return response.data;
+      } else {
+        throw new Error(response.data.message || 'Failed to update password');
+      }
+    } catch (error: any) {
+      console.error('Error updating password:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Lấy danh sách địa chỉ của user
+   * @returns Danh sách địa chỉ
+   */
+  async getUserAddresses(): Promise<any[]> {
+    try {
+      const response = await api.get(`/users/addresses`);
+
+      if (response.status === 200 && response.data.error === false) {
+        return response.data.data || [];
+      } else {
+        throw new Error(response.data.message || 'Failed to fetch user addresses');
+      }
+    } catch (error: any) {
+      console.error('Error fetching user addresses:', error);
+      return [];
+    }
+  }
+
+  /**
    * Thêm địa chỉ mới cho người dùng
-   * @param userId ID của user
    * @param address Thông tin địa chỉ
    * @returns Thông tin user đã cập nhật
    */
-  async addAddress(userId: string, address: Omit<any, 'id'>) {
+  async addAddress(address: Omit<any, 'id'>) {
     try {
       // Format địa chỉ theo yêu cầu của API
       const addressData = {
@@ -157,10 +175,9 @@ class UserService {
 
   /**
    * Lấy danh sách sản phẩm yêu thích
-   * @param userId ID của user
    * @returns Danh sách sản phẩm yêu thích
    */
-  async getWishlist(userId: string) {
+  async getWishlist() {
     try {
       const response = await api.get(`/users/me/wishlist`);
       return response.data;

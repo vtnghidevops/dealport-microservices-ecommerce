@@ -110,16 +110,14 @@ export const ProductCategories: React.FC<ProductCategoriesProps> = ({
 }) => {
   // Log available categories on mount
   useEffect(() => {
-   //  console.log("ProductCategories - Available categories:", categories);
+    //  console.log("ProductCategories - Available categories:", categories);
     // console.log("ProductCategories - Current product category:", product.categoryId, product.categorySlug);
   }, [categories, product.categoryId, product.categorySlug]);
 
   // Handle category change with additional logging
   const handleCategoryChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    const categoryId = parseInt(e.target.value);
-    const selectedCategory = categories.find(cat => cat.id === categoryId);
-
-    // console.log("ProductCategories - Selected category:", categoryId, selectedCategory);
+    // const categoryId = parseInt(e.target.value);
+    // console.log("ProductCategories - Selected category:", categoryId);
     onChange(e);
   };
 

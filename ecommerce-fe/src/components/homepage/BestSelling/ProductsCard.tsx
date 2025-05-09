@@ -8,7 +8,7 @@ import { ProductCard } from "./models/topProducts.model";
 //   "flex justify-center bg-white items-center absolute bottom-[5%] left-1/2 -translate-x-1/2 text-[12px] w-[7rem] h-[2rem] rounded-3xl hover:bg-aqua-spring hover:shadow-md transition-all duration-300 ease-out";
 
 // Product Card Component
-const ProductCardItem: React.FC<ProductCard> = ({ product, onClick }) => {
+const ProductCardItem: React.FC<ProductCard> = ({ product }) => {
   const {
     name,
     price,
@@ -61,7 +61,7 @@ const ProductCardItem: React.FC<ProductCard> = ({ product, onClick }) => {
             className="aspect-[16/9] h-[200px] w-[630px] rounded-xl"
           />
         </Link>
-      
+
       </div>
     );
   }

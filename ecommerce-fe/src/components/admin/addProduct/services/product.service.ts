@@ -187,7 +187,7 @@ class ProductService {
       // console.log(`🔍 Using product ID for upload: ${productId} (type: ${typeof productId})`);
 
       // Get base URL from environment or default to localhost
-      const apiBaseUrl = import.meta.env.VITE_PUBLIC_BROKER_API_URL || 'http://localhost:8082/api/v1';
+      // const apiBaseUrl = import.meta.env.VITE_PUBLIC_BROKER_API_URL || 'http://localhost:8082/api/v1';
       // Extract the base URL without /api/v1
       // const baseUrl = apiBaseUrl.replace(/\/api\/v1$/, '');
       // console.log('🔍 Base URL for image upload:', baseUrl);
@@ -547,7 +547,7 @@ class ProductService {
       const fixedData = parsedData;
 
       try {
-        // Gửi yêu cầu cập nhật
+        // Send update request
         const response = await api.put(`${this.apiUrl}/${id}`, fixedData);
         let updatedProduct = response.data.product || response.data.data || response.data;
 
@@ -592,7 +592,7 @@ class ProductService {
 
       // console.log('Categories fetched:', categories);
 
-      // Chuẩn hóa dữ liệu trả về
+      // Normalize returned data
       return Array.isArray(categories) ? categories.map((category: any) => ({
         id: category.id || category.ID,
         name: category.name || category.Name,
@@ -602,7 +602,7 @@ class ProductService {
       })) : [];
     } catch (error) {
       // console.error('Error fetching categories:', error);
-      // Trả về mảng trống nhưng thêm một vài category mẫu để test UI
+      // Return an empty array but add some sample categories for UI testing
       return [
         { id: 1, name: "Electronics", slug: "electronics" },
         { id: 2, name: "Clothing", slug: "clothing" },
@@ -616,7 +616,7 @@ class ProductService {
   private prepareProductData(product: Partial<Product>): any {
     // console.log('🔍 prepareProductData input:', product);
 
-    // Kiểm tra fields bắt buộc
+    // Check required fields
     if (!product.name) {
       console.error('❌ Missing required field: name');
     }
@@ -632,8 +632,8 @@ class ProductService {
 
     // Convert frontend product model to backend expected format
     const productData: any = {
-      // Các trường cơ bản (basic fields) - đảm bảo trường bắt buộc có giá trị mặc định
-      name: product.name || 'Unnamed Product', // Trường bắt buộc, không được để trống
+      // Basic fields - ensure required fields have default values
+      name: product.name || 'Unnamed Product', // Required field, must not be empty
       description: product.description || '',
       type: product.type || 'normal',
       price: parseFloat(String(product.price || 0)),
@@ -650,7 +650,7 @@ class ProductService {
       features: product.features || [],
     };
 
-    // Xử lý shipping_info đúng format (Process shipping_info in correct format)
+    // Process shipping_info in correct format
     if (product.shippingInfo) {
       productData.shippingInfo = {
         courier: product.shippingInfo.courier || '',
@@ -667,7 +667,7 @@ class ProductService {
       };
     }
 
-    // Xử lý UI metadata (Process UI metadata)
+    // Process UI metadata
     if (product.uiMetadata) {
       try {
         const jsonStr = JSON.stringify(product.uiMetadata);
@@ -678,9 +678,9 @@ class ProductService {
       }
     }
 
-    // Xử lý hình ảnh (Process images)
+    // Process images
     if (product.imgSlider && Array.isArray(product.imgSlider)) {
-      // 1. Đảm bảo imgSlider luôn là mảng string URLs đơn giản
+      // 1. Ensure imgSlider is always an array of simple string URLs
       const imgUrls = product.imgSlider.map(img => {
         if (typeof img === 'object' && img !== null && img && 'url' in img) {
           return (img as any).url;
@@ -688,13 +688,13 @@ class ProductService {
         return img;
       });
 
-      // 2. Đặt imgSlider là mảng URLs đơn giản
+      // 2. Set imgSlider as a simple array of URLs
       productData.imgSlider = imgUrls;
 
-      // 3. Đặt imageUrl là URL đầu tiên (string đơn giản)
+      // 3. Set imageUrl as the first URL (simple string)
       productData.imageUrl = imgUrls.length > 0 ? imgUrls[0] : '';
 
-      // 4. Tạo mảng images cho backend nếu cần
+      // 4. Create images array for backend if needed
       productData.images = imgUrls.map((url, index) => ({
         url: url,
         is_primary: index === 0,
@@ -703,7 +703,7 @@ class ProductService {
         ...(product.id ? { product_id: product.id } : {})
       }));
     } else {
-      // Đảm bảo các trường hình ảnh luôn được khởi tạo
+      // Ensure image fields are always initialized
       productData.images = [];
       productData.imgSlider = [];
       productData.imageUrl = '';
@@ -742,7 +742,7 @@ class ProductService {
       .replace(/-+$/, '');            // Trim - from end of text
   }
 
-  // Phương thức patch chỉ cập nhật các trường cụ thể thay vì toàn bộ sản phẩm
+  // Patch method to update specific fields instead of the entire product
   async patchProduct(id: number, fields: Partial<Product>): Promise<Product | null> {
     try {
       //  console.log(`🔄 Attempting to patch product ${id} with specific fields:`, JSON.stringify(fields, null, 2));
@@ -790,10 +790,10 @@ class ProductService {
         fields.imageUrl = this.normalizeToRelativeUrl(fields.imageUrl);
       }
 
-      // Chuẩn bị các trường cần cập nhật (prepare fields for update)
+      // Prepare fields for update
       const patchData: any = {};
 
-      // Xử lý từng trường riêng lẻ với đúng định dạng (process each field with correct format)
+      // Process each field with correct format
       Object.entries(fields).forEach(([key, value]) => {
         switch (key) {
           case 'categoryId':
@@ -840,7 +840,7 @@ class ProductService {
             }
             break;
           default:
-            // Các trường khác giữ nguyên (keep other fields as is)
+            // Keep other fields as is
             if (value !== undefined) {
               patchData[key] = value;
             }
@@ -869,7 +869,7 @@ class ProductService {
       }
 
       try {
-        // Thử gửi yêu cầu PATCH (try PATCH request)
+        // Try PATCH request
         // console.log('🔄 Sending PATCH request to:', `${this.apiUrl}/${id}`);
         const response = await api.patch(`${this.apiUrl}/${id}`, patchData);
         // console.log('✅ PATCH request successful, response:', response.data);
@@ -883,7 +883,7 @@ class ProductService {
         // console.log('✅ Normalized updated product:', updatedProduct);
         return updatedProduct;
       } catch (patchError) {
-        // Nếu PATCH không được hỗ trợ, chuyển sang sử dụng PUT (if PATCH not supported, fall back to PUT)
+        // If PATCH not supported, fall back to PUT
         console.warn('⚠️ PATCH method failed:', patchError);
 
         if (axios.isAxiosError(patchError) && patchError.response) {
@@ -917,11 +917,11 @@ class ProductService {
     }
   }
 
-  // Chuyển URL tuyệt đối thành URL tương đối cho database
+  // Convert absolute URL to relative URL for database
   private normalizeToRelativeUrl(url: string): string {
     if (!url) return '';
 
-    // Nếu đã là URL tương đối thì giữ nguyên
+    // If already a relative URL, keep as is
     if (url.startsWith('/api/products/images/')) {
       return url;
     }
@@ -934,7 +934,7 @@ class ProductService {
       return localhostMatch[1];
     }
 
-    // Nếu là URL tuyệt đối của broker-service, chuyển thành tương đối
+    // If it's an absolute URL from broker-service, convert to relative
     const apiPattern = /\/api\/products\/images\/[^/]+\.\w+/;
     const apiMatch = url.match(apiPattern);
     if (apiMatch) {
@@ -942,8 +942,7 @@ class ProductService {
       return apiMatch[0];
     }
 
-    //console.log('URL not normalized (keeping as is):', url);
-    // If no transformations applied, return original URL
+    // Return original URL if we can't normalize it
     return url;
   }
 }

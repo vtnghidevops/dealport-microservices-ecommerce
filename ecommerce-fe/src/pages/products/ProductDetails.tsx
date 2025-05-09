@@ -450,7 +450,11 @@ const ProductDetail: React.FC = () => {
 
       {/* Product Comments */}
       <div ref={commentsRef}>
-        <ProductComments productId={product.id.toString()} />
+        <ProductComments
+          productId={product.id.toString()}
+          productName={product.name}
+          productImage={product.imageUrl}
+        />
       </div>
     </div>
   );

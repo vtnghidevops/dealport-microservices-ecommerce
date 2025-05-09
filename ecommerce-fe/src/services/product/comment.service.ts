@@ -1,45 +1,29 @@
 // src/services/comment.service.ts
 
 import { Comment, Reply, CommentPaginatedResponse } from '@/types/comment.model';
+// import axios from 'axios';
+import { ProductReview } from '@/types/product.model';
+import ProductService from './product.service';
 
-const comments: Comment[] = [
-  {
-    id: '1',
-    productId: '1',
-    userId: '101',
-    userName: 'Phan Khánh Linh',
-    userAvatar: '/images/avatars/p.png',
-    content: 'Cho em hỏi sản phẩm này còn hàng ở gò đâu tây ninh không ạ ?',
-    rating: 0, // Không đánh giá
-    createdAt: '2024-03-11T00:00:00Z',
+
+
+// Get API base URL from environment variables
+// const API_BASE_URL = import.meta.env.VITE_PUBLIC_BROKER_API_URL || "http://localhost:8082/api/v1";
+
+// Convert ProductReview from API to Comment type for frontend
+const convertProductReviewToComment = (review: ProductReview): Comment => {
+  return {
+    id: review.id?.toString() || '',
+    productId: review.productId.toString(),
+    userId: review.userId?.toString() || '',
+    userName: review.userName || '',
+    content: review.comment,
+    rating: review.rating,
+    createdAt: review.createdAt || new Date().toISOString(),
     likes: 0,
-    replies: [
-      {
-        id: '101',
-        commentId: '1',
-        userId: 'admin1',
-        userName: 'Thành Nhân',
-        userAvatar: '/images/avatars/admin_logo.png',
-        content: 'Chào chị Linh, Dạ, Laptop MSI Gaming Thin A15 B7UC-261VN R5 7535HS/16GB/512GB/15.6" FHD/RTX3050_4GB/Win11_Balo với thiết kế ấn tượng cùng cấu hình vượt trội, sản phẩm đang có giá ưu đãi chỉ còn 17.490.000 đ áp dụng đến 13/03. Mẫu này chưa có sẵn hàng tại Tây Ninh, chị tham khảo chờ hàng từ 3-5 ngày làm việc ạ. Nếu cần thêm thông tin khác chị gọi tổng đài miễn phí 18006601 hoặc có thể chat qua Zalo tại đây. Thân mến!',
-        createdAt: '2024-03-11T01:00:00Z',
-        isAdmin: true,
-        likes: 0
-      }
-    ]
-  },
-  {
-    id: '2',
-    productId: '1',
-    userId: '102',
-    userName: 'Mạc Quang Huy',
-    userAvatar: '/images/avatars/m.png',
-    content: 'Con này ở hải dương còn hàng không',
-    rating: 0,
-    createdAt: '2024-02-11T00:00:00Z',
-    likes: 0,
-    replies: []
-  }
-];
+    replies: [],
+  };
+};
 
 export const commentService = {
   getCommentsByProductId: async (
@@ -48,93 +32,168 @@ export const commentService = {
     limit: number,
     rating?: number,
   ): Promise<CommentPaginatedResponse> => {
-    let filteredComments = comments
-      .filter((c) => c.productId === productId)
-      .sort(
-        (a, b) =>
-          new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-      );
+    try {
+      // Use the ProductService to fetch reviews from the API
+      const response = await ProductService.getProductReviews(productId, page, limit);
 
-    if (rating !== undefined) {
-      filteredComments = filteredComments.filter((c) => c.rating === rating);
+      // Convert API responses to frontend Comment format
+      const comments: Comment[] = response.reviews.map(convertProductReviewToComment);
+
+      // If there are ratings filter, filter them on client-side
+      // In a real app, you might want to add this filtering to the API call
+      let filteredComments = comments;
+      if (rating !== undefined) {
+        filteredComments = comments.filter((c) => c.rating === rating);
+      }
+
+      return {
+        data: filteredComments,
+        pagination: {
+          total: response.pagination.total_items,
+          currentPage: response.pagination.current_page,
+          totalPages: response.pagination.total_pages,
+          limit: response.pagination.page_size,
+        },
+      };
+    } catch (error) {
+      console.error("Error fetching comments from API:", error);
+      // Fallback to mock data in case of error
+      // let filteredMockComments = mockComments
+      //   .filter((c) => c.productId === productId)
+      //   .sort(
+      //     (a, b) =>
+      //       new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+      //   );
+
+      // if (rating !== undefined) {
+      //   filteredMockComments = filteredMockComments.filter((c) => c.rating === rating);
+      // }
+
+      // const total = filteredMockComments.length;
+      // const startIndex = (page - 1) * limit;
+      // const endIndex = startIndex + limit;
+
+      return {
+        data: [],
+        pagination: {
+          total: 0,
+          currentPage: page,
+          totalPages: 0,
+          limit,
+        },
+      };
     }
-    const total = filteredComments.length;
-    const startIndex = (page - 1) * limit;
-    const endIndex = startIndex + limit;
-
-    return {
-      data: filteredComments.slice(startIndex, endIndex),
-      pagination: {
-        total,
-        currentPage: page,
-        totalPages: Math.ceil(total / limit),
-        limit,
-      },
-    };
   },
 
-  addComment: (comment: Omit<Comment, 'id' | 'createdAt' | 'likes' | 'replies'>) => {
-    const newComment: Comment = {
-      ...comment,
-      id: Date.now().toString(),
-      createdAt: new Date().toISOString(),
-      likes: 0,
-      replies: []
-    };
-    // comments.push(newComment);
-    comments.unshift(newComment);
-    return Promise.resolve(newComment);
+  addComment: async (comment: Omit<Comment, 'id' | 'createdAt' | 'likes' | 'replies'>) => {
+    try {
+      // Convert comment to ProductReview format for API
+      const reviewData: Omit<ProductReview, 'id'> = {
+        productId: parseInt(comment.productId),
+        userId: comment.userId, // Keep userId as string (UUID format)
+        userName: comment.userName,
+        rating: comment.rating,
+        comment: comment.content,
+      };
+
+      // Call the API to add the review
+      const response = await ProductService.addProductReview(reviewData);
+
+      // Return a properly formatted Comment object
+      return {
+        id: response.id?.toString() || Date.now().toString(),
+        productId: comment.productId,
+        userId: comment.userId,
+        userName: comment.userName,
+        content: comment.content,
+        rating: comment.rating,
+        createdAt: response.createdAt || new Date().toISOString(),
+        likes: 0,
+        replies: []
+      };
+    } catch (error) {
+      console.error("Error adding comment via API:", error);
+
+      // Fallback to creating a mock comment if API fails
+      const newComment: Comment = {
+        ...comment,
+        id: Date.now().toString(),
+        createdAt: new Date().toISOString(),
+        likes: 0,
+        replies: []
+      };
+
+      return newComment;
+    }
   },
 
-  addReply: (commentId: string, reply: Omit<Reply, 'id' | 'commentId' | 'createdAt' | 'likes'>) => {
-    const comment = comments.find(c => c.id === commentId);
-    if (!comment) return Promise.reject('Comment not found');
+  addReply: async (commentId: string, reply: Omit<Reply, 'id' | 'commentId' | 'createdAt' | 'likes'>) => {
+    try {
+      // Note: If there's no API endpoint for replies, we can implement this later
+      // For now, handle this client-side
+      const newReply: Reply = {
+        ...reply,
+        id: Date.now().toString(),
+        commentId,
+        createdAt: new Date().toISOString(),
+        likes: 0
+      };
 
-    const newReply: Reply = {
-      ...reply,
-      id: Date.now().toString(),
-      commentId,
-      createdAt: new Date().toISOString(),
-      likes: 0
-    };
+      // We'd need to fetch the comment first, add the reply, then update it
+      // This is a placeholder until API support is added
 
-    if (!comment.replies) {
-      comment.replies = [];
+      return newReply;
+    } catch (error) {
+      console.error("Error adding reply:", error);
+
+      // Fallback
+      const newReply: Reply = {
+        ...reply,
+        id: Date.now().toString(),
+        commentId,
+        createdAt: new Date().toISOString(),
+        likes: 0
+      };
+
+      return newReply;
     }
-    comment.replies.push(newReply);
-    return Promise.resolve(newReply);
   },
 
-  likeComment: (commentId: string) => {
-    const comment = comments.find(c => c.id === commentId);
-    if (!comment) return Promise.reject('Comment not found');
-
-    // Toggle like status instead of always incrementing
-    if (comment.isLiked) {
-      comment.likes -= 1;
-      comment.isLiked = false;
-    } else {
-      comment.likes += 1;
-      comment.isLiked = true;
+  likeComment: async (commentId: string) => {
+    try {
+      // Note: If there's no API endpoint for liking comments, implement client-side
+      // This is a placeholder until API support is added
+      return {
+        id: commentId,
+        likes: 1,
+        isLiked: true
+      };
+    } catch (error) {
+      console.error("Error liking comment:", error);
+      return {
+        id: commentId,
+        likes: 1,
+        isLiked: true
+      };
     }
-
-    return Promise.resolve({
-      likes: comment.likes,
-      isLiked: comment.isLiked
-    });
   },
 
-  likeReply: (commentId: string, replyId: string) => {
-    const comment = comments.find(c => c.id === commentId);
-    if (!comment) return Promise.reject('Comment not found');
-
-    if (!comment.replies) {
-      comment.replies = [];
+  likeReply: async (replyId: string) => {
+    try {
+      // Note: If there's no API endpoint for liking replies, implement client-side
+      // This is a placeholder until API support is added
+      return {
+        id: replyId,
+        likes: 1,
+        isLiked: true
+      };
+    } catch (error) {
+      console.error("Error liking reply:", error);
+      return {
+        id: replyId,
+        likes: 1,
+        isLiked: true
+      };
     }
-    const reply = comment.replies.find(r => r.id === replyId);
-    if (!reply) return Promise.reject('Reply not found');
-
-    reply.likes += 1;
-    return Promise.resolve(reply);
   }
 }; 

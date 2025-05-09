@@ -157,8 +157,8 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           if (validateResult.valid) {
             // Nếu token hợp lệ, lấy thông tin user đầy đủ
             try {
-              const userId = validateResult.user_id;
-              const userData = await userService.getUserById(userId) as User;
+              // const userId = validateResult.user_id;
+              const userData = await userService.getUserById() as User;
 
               // Use role from JWT token
               const updatedUserData = {
@@ -194,7 +194,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             // Token không hợp lệ, thử làm mới token
             try {
               const refreshResult = await authService.refreshToken();
-              console.log("Token refresh successful:", refreshResult);
+              // console.log("Token refresh successful:", refreshResult);
 
               // Get user again with the new token
               try {
@@ -204,8 +204,8 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                   throw new Error('Cannot get user data after refresh: missing user ID');
                 }
 
-                console.log("Fetching user data after token refresh for ID:", userId);
-                const userData = await userService.getUserById(userId) as User;
+                // console.log("Fetching user data after token refresh for ID:", userId);
+                const userData = await userService.getUserById() as User;
 
                 setAuthState({
                   user: userData,
@@ -321,7 +321,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             console.error("Error parsing JWT token:", jwtError);
           }
 
-          const userData = await userService.getUserById(loginResult.user_id);
+          const userData = await userService.getUserById();
           const userWithProfile = {
             ...userData,
             // Prioritize JWT token role over other sources
@@ -478,7 +478,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       }
 
       // Gọi API cập nhật thông tin
-      const updatedUser = await userService.updateProfile(authState.user.id, userData);
+      const updatedUser = await userService.updateProfile(userData);
 
       setAuthState(prev => ({
         ...prev,

@@ -1,24 +1,19 @@
-import {useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 
-interface ReplyComponentProps {
-  replyToUser: string;
-  onSubmit: (content: string) => void;
-  onClose: () => void;
-  currentUserAvatar?: string;
-  currentUserInitial?: string;
+interface ReplyCommentProps {
+  commentId: string;
+  userName: string;
+  onSubmit: (commentId: string, content: string) => void;
+  onCancel: () => void;
 }
 
-export default function ReplyComment({ 
-  replyToUser, 
-  onSubmit, 
-  onClose,
-  currentUserAvatar,
-  currentUserInitial = 'U',
-  // likes = 0,
-  // onLike,
-  // isLiked = false
-}: ReplyComponentProps) {
-  const [replyContent, setReplyContent] = useState(`@${replyToUser} `); // Initialize with @mention
+const ReplyComment: React.FC<ReplyCommentProps> = ({
+  commentId,
+  userName,
+  onSubmit,
+  onCancel
+}) => {
+  const [replyContent, setReplyContent] = useState(`@${userName} `); // Initialize with @mention
   const [isSubmitting, setIsSubmitting] = useState(false); // Add submitting state
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -36,10 +31,11 @@ export default function ReplyComment({
     try {
       setIsSubmitting(true);
       // Remove @mention from the start of content before submitting
-      const content = replyContent.replace(`@${replyToUser} `, '').trim();
-      await onSubmit(content);
+      const content = replyContent.replace(`@${userName} `, '').trim();
+      await onSubmit(commentId, content);
       setReplyContent("");
-      onClose();
+    } catch (error) {
+      console.error("Error submitting reply:", error);
     } finally {
       setIsSubmitting(false);
     }
@@ -53,9 +49,9 @@ export default function ReplyComment({
   };
 
   const handleChangeMention = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const mention = `@${replyToUser} `;
+    const mention = `@${userName} `;
     const newValue = e.target.value;
-    
+
     // Always ensure @mention stays at the beginning
     if (!newValue.startsWith(mention)) {
       setReplyContent(mention + newValue.replace(mention, ''));
@@ -67,7 +63,7 @@ export default function ReplyComment({
   return (
     <div className="bg-gray-50 p-6 rounded-lg mt-5 w-[80%]">
       <div className="flex items-center ml-[3rem] mb-3">
-        <button className="mr-2" onClick={onClose}>
+        <button className="mr-2" onClick={onCancel}>
           <svg
             className="w-5 h-5 mr-1 text-cyprus font-medium"
             viewBox="0 0 24 24"
@@ -79,9 +75,9 @@ export default function ReplyComment({
           </svg>
         </button>
         <span className="text-base font-medium">
-          Repling: <strong>{replyToUser}</strong>
+          Repling: <strong>{userName}</strong>
         </span>
-        <button className="ml-auto" onClick={onClose}>
+        <button className="ml-auto" onClick={onCancel}>
           <svg
             width="24"
             height="24"
@@ -102,15 +98,7 @@ export default function ReplyComment({
 
       <div className="flex items-start">
         <div className="w-10 h-10 rounded-full bg-gray-300 flex items-center justify-center text-white font-semibold mr-4">
-          {currentUserAvatar ? (
-            <img
-              src={currentUserAvatar}
-              alt="User avatar"
-              className="w-full h-full rounded-full object-cover"
-            />
-          ) : (
-            <span>{currentUserInitial}</span>
-          )}
+          <span>A</span>
         </div>
 
         <div className="flex-1">
@@ -119,7 +107,7 @@ export default function ReplyComment({
               <input
                 ref={inputRef}
                 className="ml-4 h-[50px] flex items-center pl-5 border border-gray-300 rounded-lg overflow-hidden w-full p-4 focus:outline-none"
-                placeholder={`Reply to ${replyToUser}...`}
+                placeholder={`Reply to ${userName}...`}
                 value={replyContent}
                 onChange={handleChangeMention}
                 onKeyDown={handleKeyDown}
@@ -142,10 +130,11 @@ export default function ReplyComment({
                 {isSubmitting ? "Sending..." : "Send Comment"}
               </button>
             </div>
-           
           </div>
         </div>
       </div>
     </div>
   );
-}
+};
+
+export default ReplyComment;

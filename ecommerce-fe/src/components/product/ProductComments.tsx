@@ -1,26 +1,29 @@
-
 import React, { useEffect, useState, useRef } from "react";
 import { Comment } from "@/types/comment.model";
 import { commentService } from "@/services/product/comment.service";
 import ReplyComment from './ReplyComment'
 import Pagination from "@/components/common/Pagination";
+import { useAuth } from "@/hooks/useAuth";
+import { Link } from "react-router-dom";
+import { formatDistanceToNow } from 'date-fns';
 
 interface ProductCommentsProps {
   productId: string;
+  productName?: string;
+  productImage?: string;
 }
 
-const ProductComments: React.FC<ProductCommentsProps> = ({ productId }) => {
+const ProductComments: React.FC<ProductCommentsProps> = ({ productId, productName = "", productImage }) => {
+  const { authState } = useAuth();
   const [comments, setComments] = useState<Comment[]>([]);
   const [newComment, setNewComment] = useState("");
   const [rating, setRating] = useState<number>(5);
   const [loading, setLoading] = useState(false);
   const [replyTo, setReplyTo] = useState<string | null>(null);
   const [activeFilter, setActiveFilter] = useState<number | "all">("all");
-  const [currentUser] = useState({ avatar: "", name: "Test User" }); // Add mock user data
 
-  // Thêm state cho pagination
+  // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
-  // const [totalPages, setTotalPages] = useState(1);
   const [total, setTotal] = useState(0);
   const commentSectionRef = useRef<HTMLDivElement>(null);
   const limit = 5;
@@ -99,14 +102,16 @@ const ProductComments: React.FC<ProductCommentsProps> = ({ productId }) => {
 
   const handleSubmitComment = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newComment.trim()) return;
+    if (!newComment.trim() || !authState.isAuthenticated) return;
 
     try {
-      // add new comment
+      // Use user info from auth state
       const comment = await commentService.addComment({
         productId,
-        userId: "user123",
-        userName: currentUser.name,
+        userId: authState.user?.id || '',
+        userName: authState.user?.profile ?
+          `${authState.user.profile.firstName} ${authState.user.profile.lastName}` :
+          authState.user?.username || '',
         content: newComment,
         rating,
       });
@@ -127,30 +132,17 @@ const ProductComments: React.FC<ProductCommentsProps> = ({ productId }) => {
   };
 
   const handleReply = async (commentId: string, content: string) => {
-    if (!content.trim()) return;
+    if (!content.trim() || !authState.isAuthenticated) return;
 
     try {
       const reply = await commentService.addReply(commentId, {
-        userId: "user123",
-        userName: "Admin",
+        userId: authState.user?.id || '',
+        userName: authState.user?.profile ?
+          `${authState.user.profile.firstName} ${authState.user.profile.lastName}` :
+          authState.user?.username || '',
         content: content,
       });
 
-      // // Check if reply was already added to prevent duplicates
-      // setComments((prev) =>
-      //   prev.map((comment) => {
-      //     if (comment.id !== commentId) return comment;
-
-      //     // Check if reply already exists
-      //     const replyExists = comment.replies?.some(r => r.id === reply.id);
-      //     if (replyExists) return comment;
-
-      //     return {
-      //       ...comment,
-      //       replies: [...(comment.replies || []), reply]
-      //     };
-      //   })
-      // );
       setComments((prev) =>
         prev.map((comment) => {
           if (comment.id !== commentId) return comment;
@@ -175,8 +167,44 @@ const ProductComments: React.FC<ProductCommentsProps> = ({ productId }) => {
     }
   };
 
+  // Format date for display
+  const formatDate = (dateString: string) => {
+    try {
+      const date = new Date(dateString);
+
+      // Validate the date
+      if (isNaN(date.getTime())) {
+        return 'Invalid date';
+      }
+
+      // Use date-fns formatDistanceToNow for a localized, relative time string
+      return formatDistanceToNow(date, { addSuffix: true });
+    } catch (error) {
+      console.error('Error formatting date:', error);
+      return 'Unknown date';
+    }
+  };
+
+  const handleToggleReply = (commentId: string) => {
+    if (!authState.isAuthenticated) {
+      // Show login prompt or redirect
+      return;
+    }
+
+    if (replyTo === commentId) {
+      setReplyTo(null);
+    } else {
+      setReplyTo(commentId);
+      if (!expandedReplies.includes(commentId)) {
+        setExpandedReplies(prev => [...prev, commentId]);
+      }
+    }
+  };
 
   const handleLikeComment = async (commentId: string) => {
+    // Require login to like comments
+    if (!authState.isAuthenticated) return;
+
     const targetComment = comments.find(comment => comment.id === commentId);
     if (!targetComment) return;
 
@@ -230,6 +258,9 @@ const ProductComments: React.FC<ProductCommentsProps> = ({ productId }) => {
   };
 
   const handleLikeReply = async (commentId: string, replyId: string) => {
+    // Require login to like replies
+    if (!authState.isAuthenticated) return;
+
     const targetComment = comments.find((comment) => comment.id === commentId);
     const targetReply = targetComment?.replies?.find(
       (reply) => reply.id === replyId
@@ -256,7 +287,7 @@ const ProductComments: React.FC<ProductCommentsProps> = ({ productId }) => {
       );
 
       // Call API
-      await commentService.likeReply(commentId, replyId);
+      await commentService.likeReply(replyId);
     } catch (error) {
       console.error("Error liking reply:", error);
       // Revert on error
@@ -274,33 +305,6 @@ const ProductComments: React.FC<ProductCommentsProps> = ({ productId }) => {
       );
     }
   };
-
-  const handleToggleReply = (commentId: string) => {
-    if (replyTo === commentId) {
-      setReplyTo(null);
-    } else {
-      setReplyTo(commentId);
-      if (!expandedReplies.includes(commentId)) {
-        setExpandedReplies(prev => [...prev, commentId]);
-      }
-    }
-  };
-
-
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    const now = new Date();
-    const diffTime = Math.abs(now.getTime() - date.getTime());
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-
-    if (diffDays <= 30) {
-      return `${diffDays} ngày trước`;
-    } else {
-      const diffMonths = Math.floor(diffDays / 30);
-      return `${diffMonths} tháng trước`;
-    }
-  };
-
 
   return (
     <div className="mt-12" ref={commentSectionRef}>
@@ -321,7 +325,7 @@ const ProductComments: React.FC<ProductCommentsProps> = ({ productId }) => {
               onClick={() => setActiveFilter(value as number | "all")}
             >
               {value === "all" ? (
-                "Tất cả"
+                "All"
               ) : (
                 <>
                   {value} <span className="ml-1">★</span>
@@ -332,36 +336,73 @@ const ProductComments: React.FC<ProductCommentsProps> = ({ productId }) => {
         </div>
       </div>
 
-      {/* Comment Form */}
-      <div className="mb-8">
-        <form onSubmit={handleSubmitComment}>
-          <div className="flex justify-between items-center mt-5 gap-16 ">
-            <div className="relative w-[90%] flex items-center">
-              <input
-                className="h-[50px] flex items-center pl-5 border border-gray-300 rounded-lg overflow-hidden w-full p-4 focus:outline-none"
-                placeholder="Nhập nội dung bình luận"
-                value={newComment}
-                onChange={(e) => setNewComment(e.target.value)}
-              />
-              <span className="absolute right-1 bottom-1 text-gray-500 mr-2">
-                {newComment.length}/3000
-              </span>
+      {/* Comment Form with integrated Rating */}
+      {authState.isAuthenticated ? (
+        <div className="mb-8 bg-gray-50 p-5 rounded-lg border border-gray-100 shadow-sm">
+          <form onSubmit={handleSubmitComment}>
+            {/* Rating Selection */}
+            <div className="mb-6 flex gap-8">
+              <h3 className="text-lg font-medium mb-4">Rating</h3>
+              <div className="flex items-center space-x-2 mb-4">
+                {[1, 2, 3, 4, 5].map((star) => (
+                  <button
+                    key={star}
+                    type="button"
+                    onClick={() => setRating(star)}
+                    className="focus:outline-none transition-all"
+                  >
+                    <svg
+                      className={`w-5 h-5 ${star <= rating ? "text-yellow-400" : "text-gray-300"
+                        }`}
+                      fill="currentColor"
+                      viewBox="0 0 20 20"
+                    >
+                      <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                    </svg>
+                  </button>
+                ))}
+                <span className="ml-2 text-gray-600">{rating}/5</span>
+              </div>
             </div>
 
-            <div className="!w-[15%] bg-gray-50 p-4 flex justify-between items-center">
-              <div className="flex items-center w-full">
+            <div className="flex justify-between items-center gap-6">
+              <div className="relative w-[85%] flex items-center">
+                <textarea
+                  className="min-h-[3rem] flex items-center pl-5 pt-3 border h-[50px] border-gray-300 rounded-lg overflow-hidden w-full p-4 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
+                  placeholder="Share your thoughts about this product"
+                  value={newComment}
+                  onChange={(e) => setNewComment(e.target.value)}
+                ></textarea>
+                <span className="absolute right-3 bottom-3 text-gray-500 text-sm">
+                  {newComment.length}/3000
+                </span>
+              </div>
+
+              <div className="!w-[15%] flex justify-between items-center">
                 <button
                   type="submit"
-                  className="font-[18px]  cursor-pointer h-[50px] w-full px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                  className="font-medium cursor-pointer h-[50px] w-full px-6 py-2 bg-blue-600  text-white rounded-lg hover:bg-blue-700 transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
                   disabled={!newComment.trim()}
                 >
                   Send Comment
                 </button>
               </div>
             </div>
-          </div>
-        </form>
-      </div>
+          </form>
+        </div>
+      ) : (
+        <div className="bg-blue-50 p-5 rounded-lg mb-8 text-center">
+          <p className="text-blue-700 mb-3 font-medium">
+            Please log in to post comments or reviews
+          </p>
+          <Link
+            to="/login"
+            className="inline-block px-5 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
+          >
+            Log in
+          </Link>
+        </div>
+      )}
 
       {/* Comments List */}
       <div className="space-y-8">
@@ -373,7 +414,7 @@ const ProductComments: React.FC<ProductCommentsProps> = ({ productId }) => {
         ) : comments.length > 0 ? (
           <>
             {comments.map((comment) => (
-              <div key={comment.id} className=" pb-8 mb-5">
+              <div key={comment.id} className="pb-8 mb-5">
                 <div className="flex items-start">
                   <div className="w-[40px] h-[40px] mr-5 rounded-full bg-gray-300 flex items-center justify-center text-xl font-bold text-white">
                     {comment.userAvatar ? (
@@ -383,13 +424,13 @@ const ProductComments: React.FC<ProductCommentsProps> = ({ productId }) => {
                         className="w-full h-full rounded-full object-cover"
                       />
                     ) : (
-                      comment.userName.charAt(0).toUpperCase()
+                      comment.userName?.charAt(0).toUpperCase() || 'U'
                     )}
                   </div>
 
                   <div className="flex-1">
                     <div className="flex items-center">
-                      <h3 className="font-bold text-lg">{comment.userName}</h3>
+                      <h3 className="font-bold text-lg">{comment.userName || 'Anonymous'}</h3>
                       {comment.isAdmin && (
                         <span className="ml-2 px-2 py-1 bg-gray-200 text-xs rounded-md">
                           Admin
@@ -407,8 +448,8 @@ const ProductComments: React.FC<ProductCommentsProps> = ({ productId }) => {
                           <svg
                             key={index}
                             className={`w-[15px] h-[15px] ${index < comment.rating
-                                ? "text-yellow-400"
-                                : "text-gray-300"
+                              ? "text-yellow-400"
+                              : "text-gray-300"
                               }`}
                             fill="currentColor"
                             viewBox="0 0 20 20"
@@ -466,6 +507,7 @@ const ProductComments: React.FC<ProductCommentsProps> = ({ productId }) => {
                           Reply
                         </span>
                       </button>
+
                       {/* Hide or Show Comment reply */}
                       {comment.replies && comment.replies.length > 0 && (
                         <button
@@ -485,7 +527,7 @@ const ProductComments: React.FC<ProductCommentsProps> = ({ productId }) => {
                         >
                           <span className="text-gray-800 font-medium">
                             {expandedReplies.includes(comment.id)
-                              ? "Hiden"
+                              ? "Hide"
                               : `Show ${comment.replies.length} reply`}
                           </span>
                         </button>
@@ -493,14 +535,28 @@ const ProductComments: React.FC<ProductCommentsProps> = ({ productId }) => {
                     </div>
 
                     {/* Show Reply Form */}
-                    {replyTo === comment.id && (
+                    {replyTo === comment.id && authState.isAuthenticated && (
                       <ReplyComment
-                        replyToUser={comment.userName}
-                        onSubmit={(content) => handleReply(comment.id, content)}
-                        onClose={() => setReplyTo(null)}
-                        currentUserAvatar={currentUser?.avatar} // Nếu có thông tin user hiện tại
-                        currentUserInitial={currentUser?.name?.charAt(0) || "U"} // Lấy chữ cái đầu của tên user
+                        commentId={comment.id}
+                        userName={comment.userName || 'Anonymous'}
+                        onSubmit={handleReply}
+                        onCancel={() => setReplyTo(null)}
                       />
+                    )}
+
+                    {/* Login prompt for replying if not authenticated */}
+                    {replyTo === comment.id && !authState.isAuthenticated && (
+                      <div className="bg-blue-50 p-3 rounded-lg mt-3">
+                        <p className="text-blue-700 text-sm mb-2">
+                          Please log in to reply to comments
+                        </p>
+                        <Link
+                          to="/login"
+                          className="inline-block px-4 py-1 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 transition-colors"
+                        >
+                          Log in
+                        </Link>
+                      </div>
                     )}
 
                     {/* Response Replies from Form */}
@@ -519,14 +575,14 @@ const ProductComments: React.FC<ProductCommentsProps> = ({ productId }) => {
                                       className="w-full h-full rounded-full object-cover"
                                     />
                                   ) : (
-                                    reply.userName.charAt(0).toUpperCase()
+                                    reply.userName?.charAt(0).toUpperCase() || 'U'
                                   )}
                                 </div>
 
                                 <div className="flex-1">
                                   <div className="flex items-center">
                                     <h4 className="font-bold">
-                                      {reply.userName}
+                                      {reply.userName || 'Anonymous'}
                                     </h4>
                                     {reply.isAdmin && (
                                       <span className="ml-2 px-2 py-1 bg-gray-200 text-xs rounded-md">
@@ -540,7 +596,7 @@ const ProductComments: React.FC<ProductCommentsProps> = ({ productId }) => {
 
                                   <div className="mt-1 text-gray-800">
                                     <span className="text-blue-600 font-medium">
-                                      @{comment.userName}
+                                      @{comment.userName || 'Anonymous'}
                                     </span>{" "}
                                     {reply.content}
                                   </div>
@@ -551,15 +607,15 @@ const ProductComments: React.FC<ProductCommentsProps> = ({ productId }) => {
                                         handleLikeReply(comment.id, reply.id)
                                       }
                                       className={`bg-white justify-center h-[30px] w-[60px] border rounded-full flex items-center transition-all duration-200 ${reply.isLiked
-                                          ? "text-blue-600 border-blue-600"
-                                          : "text-gray-500 border-gray-500"
+                                        ? "text-blue-600 border-blue-600"
+                                        : "text-gray-500 border-gray-500"
                                         } hover:text-blue-600 hover:border-blue-600 transition-colors
                                     `}
                                     >
                                       <svg
                                         className={`w-5 h-5 mr-1 ${reply.isLiked
-                                            ? "text-blue-500"
-                                            : "text-cyprus"
+                                          ? "text-blue-500"
+                                          : "text-cyprus"
                                           }`}
                                         viewBox="0 0 24 24"
                                         fill={
@@ -602,7 +658,7 @@ const ProductComments: React.FC<ProductCommentsProps> = ({ productId }) => {
         ) : (
           <div className="text-center py-8">
             <p className="text-gray-500">
-              Chưa có bình luận nào. Hãy là người đầu tiên bình luận!
+              No comments yet. Be the first to comment!
             </p>
           </div>
         )}

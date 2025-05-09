@@ -7,9 +7,9 @@ import { useToast } from '@/hooks/use-toast';
 import UserLayout from '../../components/layouts/UserLayout';
 import UserAvatar from '../../components/user/UserAvatar';
 import { FiEdit, FiCheck } from 'react-icons/fi';
-import { User, UserProfile, UserAddress } from '@/types/user.model';
+import { User, UserProfile } from '@/types/user.model';
 import userService from '@/services/user/user.service';
-import { updateProfile, changePassword } from '@/services/auth/auth.service';
+import { changePassword } from '@/services/auth/auth.service';
 
 const Profile: React.FC = () => {
   const { authState, updateProfile } = useAuth();
@@ -190,7 +190,7 @@ const Profile: React.FC = () => {
           const userId = userService.getUserIdFromStorage();
           if (userId) {
             try {
-              const updatedUser = await userService.getUserById(userId);
+              const updatedUser = await userService.getUserById();
               console.log('User data refreshed:', updatedUser);
 
               // If the function call didn't update the global state, we could manually update it here

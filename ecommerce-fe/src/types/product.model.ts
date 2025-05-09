@@ -33,7 +33,7 @@ export interface ProductImage {
 export interface ProductReview {
   id?: number;
   productId: number;
-  userId: number;
+  userId: string;
   userName?: string;
   rating: number;
   comment: string;

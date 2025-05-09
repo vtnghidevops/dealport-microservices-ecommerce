@@ -25,7 +25,7 @@ export const OrderManagement: React.FC = () => {
 
   // Pagination state
   const [currentPage, setCurrentPage] = useState<number>(1);
-  const [itemsPerPage, setItemsPerPage] = useState<number>(10);
+  const itemsPerPage = 10;
   const [totalItems, setTotalItems] = useState<number>(0);
 
   // Filter state

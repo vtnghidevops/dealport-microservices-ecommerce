@@ -311,6 +311,7 @@ func (s *GrpcServer) GetProductReviews(ctx context.Context, req *pb.GetProductRe
 			Id:         int32(review.ID),
 			ProductId:  int32(review.ProductID),
 			UserName:   review.UserName,
+			Email:      review.UserID,
 			Rating:     int32(review.Rating),
 			ReviewDate: review.CreatedAt.Format(time.RFC3339),
 			ReviewText: review.Comment,
@@ -331,6 +332,13 @@ func (s *GrpcServer) AddProductReview(ctx context.Context, req *pb.ProductReview
 		UserName:  req.UserName,
 		Rating:    float64(req.Rating),
 		Comment:   req.ReviewText,
+	}
+
+	// Extract user ID from Email field if available (workaround for user ID)
+	if req.Email != "" {
+		domainReview.UserID = req.Email
+		// Log to debug
+		log.Printf("Using user ID from email field: %s", req.Email)
 	}
 
 	id, err := s.productService.AddProductReview(domainReview)
