@@ -5,7 +5,8 @@ import { Product } from "@/types/product.model";
 import ProductService from "@/services/product/product.service";
 import { handleViewAll } from "@/utils/helpers";
 import { useNavigate } from "react-router-dom";
-import Loading from "@/components/shared/Loading";
+import { ProductCardSkeletonGrid } from "@/components/ui/skeletons";
+
 const LimitedDeal: React.FC = () => {
   // fetch data
   const [limitedData, setLimitedData] = useState<Product[]>([]);
@@ -68,7 +69,7 @@ const LimitedDeal: React.FC = () => {
   };
 
   if (loading) {
-    return <Loading />;
+    return <ProductCardSkeletonGrid count={5} />;
   }
 
   return (

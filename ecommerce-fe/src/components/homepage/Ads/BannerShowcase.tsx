@@ -3,8 +3,7 @@ import { ButtonType, getButtonClass } from "@/utils/buttonUtils";
 import { BannerShowCaseItem } from "./models/ads.model";
 import { BannerService } from "../../../services/product/ads.service";
 import { Link } from "react-router-dom";
-import Loading from "@/components/shared/Loading";
-
+import { BannerShowCaseSkeleton } from "@/components/ui/skeletons";
 const BannerShowCase: React.FC = () => {
   // fetch data
   const [bannerData, setBannerData] = useState<BannerShowCaseItem[]>([]);
@@ -27,7 +26,7 @@ const BannerShowCase: React.FC = () => {
   }, []);
   //console.log("item bannershowcae:", bannerData)
   if (loading) {
-    return <Loading />;
+    return <BannerShowCaseSkeleton />;
   }
 
   return (

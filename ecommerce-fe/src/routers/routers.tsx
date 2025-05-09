@@ -1,6 +1,6 @@
 import React from "react";
 import { Route, Routes } from "react-router-dom";
-  import Home from "@/pages/home/Home";
+import Home from "@/pages/home/Home";
 import DashboardAdmin from "@/pages/admin/dashboard/Dashboard";
 import OrderPage from "@/pages/admin/order"; // Import Order Management page
 import CustomerPage from "@/pages/admin/customer";
@@ -25,7 +25,6 @@ import Checkout from "@/pages/checkout/Checkout";
 import SuccessfulPayment from "@/pages/checkout/SuccessfulPayment";
 import PaymentResult from "@/pages/checkout/PaymentResult";
 import ResetPassword from "@/pages/system/ResetPassword";
-
 import Profile from "@/pages/user/Profile";
 import OrdersHistory from "@/pages/user/OrdersHistory";
 import Addresses from "@/pages/user/Addresses";
@@ -34,6 +33,8 @@ import UserDashboard from "@/pages/user/Dashboard";
 import ProductPage from "@/pages/admin/product";
 import AdminLogin from '@/pages/admin/login/login' // Fix import path to correct location
 import ProtectedAdminRoute from "@/components/admin/auth/ProtectedAdminRoute";
+// import SkeletonDemoLive from "@/pages/SkeletonDemoLive";
+// import SkeletonDemo from "@/pages/SkeletonDemo";
 
 const AppRouters: React.FC = () => {
   return (
@@ -72,6 +73,10 @@ const AppRouters: React.FC = () => {
             <Route path="checkout/success" element={<SuccessfulPayment />} />
             <Route path="payment/result" element={<PaymentResult />} />
           </Route>
+
+          {/* Skeleton Demo Routes */}
+          {/* <Route path="/skeleton-demo-live" element={<SkeletonDemoLive />} />
+          <Route path="/skeleton-demo" element={<SkeletonDemo />} /> */}
         </Route>
 
         {/* Admin Login Route */}

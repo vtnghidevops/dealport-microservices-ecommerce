@@ -24,6 +24,7 @@ RUN mkdir -p /app/uploads/products
 
 # Copy the binary from the builder stage
 COPY --from=builder /app/productService .
+COPY --from=builder /app/uploads/products /app/uploads/products
 
 EXPOSE 8080
 CMD ["./productService"]

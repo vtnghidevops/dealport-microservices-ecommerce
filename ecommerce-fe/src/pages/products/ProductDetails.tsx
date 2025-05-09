@@ -11,7 +11,8 @@ import { IoIosArrowForward, IoIosArrowBack } from "react-icons/io";
 import { TbScale } from "react-icons/tb";
 import ProductComments from '@/components/product/ProductComments';
 import { useCart } from '@/hooks/useCart';
-import Loading from '@/components/shared/Loading';
+import { ProductDetailSkeleton } from '@/components/ui/skeletons';
+
 const ProductDetail: React.FC = () => {
   const { categorySlug, productSlug } = useParams<{
     categorySlug: string;
@@ -49,7 +50,11 @@ const ProductDetail: React.FC = () => {
   console.log("product to receive: ", product)
 
   if (loading) {
-    return <Loading />
+    return (
+      <div className="container mx-auto px-4 md:px-[5rem] py-[1rem]">
+        <ProductDetailSkeleton />
+      </div>
+    );
   }
 
   if (!product) {

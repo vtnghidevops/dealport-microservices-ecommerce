@@ -7,8 +7,8 @@ import ProductService from "@/services/product/product.service";
 import { handleViewAll } from "../../../utils/helpers";
 import { handleProductItemClick } from "../../../utils/helpers";
 import ProductCardItem from "./ProductsCard";
-import Loading from '@/components/shared/Loading'
 import { useNavigate } from "react-router-dom";
+import { TopProductSkeleton } from "@/components/ui/skeletons";
 
 const TopProducts: React.FC<TopProductsProps> = () => {
   // fetch data
@@ -51,7 +51,7 @@ const TopProducts: React.FC<TopProductsProps> = () => {
   ];
 
   if (loading) {
-    return <Loading />;
+    return <TopProductSkeleton />
   }
 
   // Rearrange products to prioritize specific designs for positions 4 and 5

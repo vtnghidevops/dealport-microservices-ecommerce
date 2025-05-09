@@ -10,16 +10,16 @@ function App() {
   return (
     <>
       <AuthProvider>
-        <div className="w-full max-w-[1440px] mx-auto px-4 min-w-[1440px]">
-          <SnackbarProvider>
-            <BrowserRouter>
-              <AppProvider>
-                <AppRouters />
-                <Toaster />
-              </AppProvider>
-            </BrowserRouter>
-          </SnackbarProvider>
-        </div>
+          <div className="w-full max-w-[1440px] mx-auto px-4 min-w-[1440px]">
+            <SnackbarProvider>
+              <BrowserRouter>
+                <AppProvider>
+                  <AppRouters />
+                  <Toaster />
+                </AppProvider>
+              </BrowserRouter>
+            </SnackbarProvider>
+          </div>
       </AuthProvider>
     </>
   );

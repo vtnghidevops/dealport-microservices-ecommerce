@@ -3,7 +3,8 @@ import { ButtonType, getButtonClass } from "@/utils/buttonUtils";
 import { DisplayItem } from "./models/ads.model";
 import { DisplayService } from "../../../services/product/ads.service";
 import { Link } from "react-router-dom";
-import Loading from "@/components/shared/Loading";
+// import Loading from "@/components/shared/Loading";
+import { DisplayGridSkeleton } from "@/components/ui/skeletons";
 interface CardMain {
   id?: number;
   imageUrl: string;
@@ -52,7 +53,7 @@ const DisplayGrid: React.FC = () => {
   }, []);
   //console.log("item displaygrid:", displayData)
   if (loading) {
-    return <Loading />;
+    return <DisplayGridSkeleton />;
   }
 
   return (

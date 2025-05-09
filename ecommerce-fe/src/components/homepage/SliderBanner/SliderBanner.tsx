@@ -6,7 +6,7 @@ import { FaArrowRight } from "react-icons/fa6";
 import { BannerService } from "@/services/product/product.service";
 import { SliderBannerItem } from "@/types/banner.model";
 import { Link } from "react-router-dom";
-import Loading from "@/components/shared/Loading";
+import { SliderSkeleton } from "@/components/ui/skeletons";
 
 const SliderBanner: React.FC = () => {
 
@@ -65,13 +65,8 @@ const SliderBanner: React.FC = () => {
     "Electronics",
     "Industrial equipment",
   ];
-
   if (loading) {
-    return <Loading />
-  }
-
-  if (sliderData.length === 0) {
-    return <div className="w-full h-[500px] flex items-center justify-center">No banner data available</div>;
+    return <SliderSkeleton />
   }
 
   // const currentSlide = sliderData[currentIndex];

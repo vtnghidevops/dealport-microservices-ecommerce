@@ -10,7 +10,8 @@ import NotFound from '../system/NotFound';
 import { CiSearch } from "react-icons/ci";
 import Pagination from '@/components/common/Pagination';
 import { normalizeText } from '@/utils/helpers';
-import Loading from '@/components/shared/Loading';
+import { ProductListSkeleton } from '@/components/ui/skeletons';
+
 const ProductListPage: React.FC = () => {
   const { categorySlug } = useParams<{ categorySlug: string }>();
   const [products, setProducts] = useState<Product[]>([]);
@@ -206,7 +207,7 @@ const ProductListPage: React.FC = () => {
   };
 
   if (loading) {
-    return <Loading />
+    return <ProductListSkeleton />;
   }
 
   if (notFound) {

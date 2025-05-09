@@ -4,6 +4,8 @@ import { Category } from "@/types/category.model";
 import { CategoryService } from "@/services/product/product.service";
 import { FaStar } from "react-icons/fa";
 import { GoChevronDown, GoChevronUp } from "react-icons/go";
+import { FilterSidebarSkeleton } from "@/components/ui/skeletons/sidebar-skeleton";
+
 interface ProductFilterProps {
   currentCategory: Category | null;
   selectedRating: number | null;
@@ -168,11 +170,9 @@ const ProductFilter: React.FC<ProductFilterProps> = ({
     }
   };
 
-  // const handleTagClick = (tag: string) => {
-  //   if (onTagFilter) {
-  //     onTagFilter(tag);
-  //   }
-  // };
+  if (isLoading) {
+    return <FilterSidebarSkeleton />;
+  }
 
   return (
     <div className="bg-white p-6 rounded-lg shadow-sm">
@@ -451,8 +451,8 @@ const ProductFilter: React.FC<ProductFilterProps> = ({
                 key={tag}
                 onClick={() => onTagFilter(tag)}
                 className={`px-3 py-1 rounded-full text-sm transition-all duration-200 ${normalizeText(selectedTag || '') === normalizeText(tag)
-                    ? "bg-[#0496FF] text-white"
-                    : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                  ? "bg-[#0496FF] text-white"
+                  : "bg-gray-100 text-gray-600 hover:bg-gray-200"
                   }`}
               >
                 {tag}

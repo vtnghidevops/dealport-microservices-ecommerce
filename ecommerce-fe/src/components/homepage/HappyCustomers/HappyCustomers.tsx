@@ -5,6 +5,7 @@ import { TestimonialItem } from "./models/testimonial.model";
 import { getButtonClass } from "@/utils/buttonUtils";
 // import "../../../app.css";
 import "@/App.css"
+import { HappyCustomerSkeleton } from "@/components/ui/skeletons";
 
 const HappyCustomers: React.FC = () => {
   const [testimonials, setTestimonials] = useState<TestimonialItem[]>([]);
@@ -30,7 +31,7 @@ const HappyCustomers: React.FC = () => {
   const bottomRow = testimonials.slice(3);
 
   if (loading) {
-    return <div className="text-center py-16">Loading testimonials...</div>;
+    return <HappyCustomerSkeleton />;
   }
 
   return (

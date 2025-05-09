@@ -3,7 +3,7 @@ import { getButtonClass, ButtonType } from "../../../utils/buttonUtils";
 import { NewFashionItem } from "./models/ads.model";
 import { NewFashionService } from "../../../services/product/ads.service";
 import { Link } from "react-router-dom";
-
+import { NewFashionSkeleton } from "@/components/ui/skeletons";
 const NewFashion: React.FC = () => {
   // fetch data
   const [newFashionData, setNewFashionData] = useState<NewFashionItem>();
@@ -28,7 +28,7 @@ const NewFashion: React.FC = () => {
 
 
   if (loading || !newFashionData) {
-    return <div>Loading...</div>;
+    return <NewFashionSkeleton count={1} />;
   }
   const { title, imageUrl, buttonType, type, productSlug, categorySlug } = newFashionData;
 

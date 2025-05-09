@@ -3,8 +3,8 @@ import ProductCard from "../../common/Card";
 import MenCollection from "./MenCollection";
 import ProductService from "@/services/product/product.service";
 import { Product } from "@/types/product.model.ts";
-import Loading from "@/components/shared/Loading";
 import { useNavigate } from "react-router-dom";
+import { TopProductSkeleton } from "@/components/ui/skeletons";
 
 const TrendingProducts: React.FC = () => {
 
@@ -60,7 +60,7 @@ const TrendingProducts: React.FC = () => {
   };
 
   if (loading) {
-    return <Loading />;
+    return <TopProductSkeleton count={5} />;
   }
   return (
     <div className="h-full relative">

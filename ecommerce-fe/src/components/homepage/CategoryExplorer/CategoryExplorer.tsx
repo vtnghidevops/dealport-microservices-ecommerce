@@ -6,7 +6,7 @@ import { handleCategoryClick } from "../../../utils/helpers";
 import { useNavigate } from 'react-router-dom';
 import { Category } from "@/types/category.model";
 import { CategoryService } from "@/services/product/product.service";
-import Loading from "@/components/shared/Loading";
+import { CategorySkeleton } from "@/components/ui/skeletons";
 
 const CategoryExplorer: React.FC = () => {
   const navigate = useNavigate();
@@ -108,7 +108,7 @@ const CategoryExplorer: React.FC = () => {
   };
 
   if (loading) {
-    return <Loading />;
+    return <CategorySkeleton count={6} variant="homepage" />;
   }
   return (
     <div className="w-full py-6 md:px-6">

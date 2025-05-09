@@ -13,7 +13,7 @@ interface ProductCommentsProps {
   productImage?: string;
 }
 
-const ProductComments: React.FC<ProductCommentsProps> = ({ productId, productName = "", productImage }) => {
+const ProductComments: React.FC<ProductCommentsProps> = ({ productId }) => {
   const { authState } = useAuth();
   const [comments, setComments] = useState<Comment[]>([]);
   const [newComment, setNewComment] = useState("");
