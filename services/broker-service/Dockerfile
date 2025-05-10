@@ -22,5 +22,7 @@ WORKDIR /app
 # Copy the binary from the builder stage
 COPY --from=builder /app/brokerService .
 
+EXPOSE 8080
+
 CMD ["./brokerService"]
 

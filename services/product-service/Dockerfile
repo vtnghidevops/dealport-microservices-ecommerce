@@ -26,6 +26,7 @@ RUN mkdir -p /app/uploads/products
 COPY --from=builder /app/productService .
 COPY --from=builder /app/uploads/products /app/uploads/products
 
-EXPOSE 8080
+EXPOSE 50053
+
 CMD ["./productService"]
 

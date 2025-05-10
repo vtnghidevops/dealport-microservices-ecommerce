@@ -22,5 +22,7 @@ WORKDIR /app
 # Copy the binary from the builder stage
 COPY --from=builder /app/loggerService .
 
+EXPOSE 50056
+
 CMD ["./loggerService"]
 
