@@ -1,4 +1,5 @@
 // MongoDB Schema Definition for Checkout Service
+db = db.getSiblingDB('checkout');
 
 print("Starting MongoDB schema initialization for checkout service...");
 
@@ -140,5 +141,4 @@ db.createCollection("payments", {
 db.payments.createIndex({ "order_id": 1 });
 db.payments.createIndex({ "transaction_id": 1 }, { unique: true, sparse: true });
 
-// Print completion message
 print("MongoDB schema initialization completed for checkout service"); 

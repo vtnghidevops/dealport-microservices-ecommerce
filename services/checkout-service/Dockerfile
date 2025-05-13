@@ -1,3 +1,4 @@
+# base image
 FROM golang:1.24.1-alpine AS builder
 
 WORKDIR /app
@@ -11,18 +12,31 @@ COPY . .
 RUN go mod download
 
 # Build the application
-RUN CGO_ENABLED=0 GOOS=linux go build -o checkoutService ./cmd/api
+RUN CGO_ENABLED=0 GOOS=linux go build -o checkout-service ./cmd/api
 
-# Use a minimal alpine image for the final stage
+# final stage with tiny img
 FROM alpine:latest
 
 WORKDIR /app
 
-# Copy the binary from the builder stage
-COPY --from=builder /app/checkoutService .
+# Install MongoDB tools and Node.js for running migrations
+RUN apk add --no-cache mongodb-tools nodejs npm curl bash \
+    python3 make g++ 
 
-# Expose the port the app runs on
+# Set PATH to include npm global binaries
+ENV PATH="/usr/local/share/.config/yarn/global/node_modules/.bin:${PATH}"
+
+# Copy the binary from the builder stage
+COPY --from=builder /app/checkout-service .
+
+# Copy migration files
+COPY --from=builder /app/migrations/ ./migrations/
+
+# Make migration scripts executable
+RUN chmod +x /app/migrations/*.js
+
 EXPOSE 50055
 
-# Command to run the application
-CMD ["./checkoutService"] 
+# Default command
+CMD ["./checkout-service"]
+

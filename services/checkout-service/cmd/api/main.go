@@ -12,6 +12,7 @@ import (
 
 	"checkout-service/internal/config"
 	"checkout-service/internal/event"
+	"checkout-service/internal/migrations"
 	"checkout-service/internal/repository"
 	"checkout-service/internal/service"
 	"checkout-service/internal/transport/grpc"
@@ -29,6 +30,12 @@ func main() {
 	// Set up logger
 	logger := log.New(os.Stdout, "checkout-service ", log.LstdFlags)
 
+	// Process command line arguments for migrations
+	if len(os.Args) > 1 {
+		handleMigrationCommands(logger)
+		return
+	}
+
 	// Load configuration
 	cfg, err := config.LoadConfig("")
 	if err != nil {
@@ -45,6 +52,16 @@ func main() {
 			logger.Printf("Failed to disconnect from MongoDB: %v", err)
 		}
 	}()
+
+	// Auto run migrations if enabled
+	if os.Getenv("AUTO_MIGRATE") == "true" {
+		logger.Println("AUTO_MIGRATE enabled, running MongoDB migrations...")
+		migrator := migrations.NewMongoDatabaseMigrator(mongoClient, cfg.MongoDB.Database)
+		if err := migrator.RunMigrations(); err != nil {
+			logger.Fatalf("Failed to run MongoDB migrations: %v", err)
+		}
+		logger.Println("MongoDB migrations completed successfully")
+	}
 
 	// Connect to RabbitMQ synchronously rather than in a goroutine
 	logger.Printf("EVENT-DEBUG: Attempting to connect to RabbitMQ...")
@@ -128,13 +145,68 @@ func main() {
 	gracefulShutdown(grpcServer, rabbitConn, logger)
 }
 
+// handleMigrationCommands processes the migration related commands
+func handleMigrationCommands(logger *log.Logger) {
+	migrationCommand := os.Args[1]
+
+	// Load configuration
+	cfg, err := config.LoadConfig("")
+	if err != nil {
+		logger.Fatalf("Failed to load configuration: %v", err)
+	}
+
+	// Connect to MongoDB
+	mongoClient, err := connectToMongoDB(cfg)
+	if err != nil {
+		logger.Fatalf("Failed to connect to MongoDB for migrations: %v", err)
+	}
+	defer func() {
+		if err := mongoClient.Disconnect(context.Background()); err != nil {
+			logger.Printf("Failed to disconnect from MongoDB: %v", err)
+		}
+	}()
+
+	// Create migrator
+	migrator := migrations.NewMongoDatabaseMigrator(mongoClient, cfg.MongoDB.Database)
+
+	// Process the command
+	switch migrationCommand {
+	case "migrate":
+		// Run migrations
+		if err := migrator.RunMigrations(); err != nil {
+			logger.Fatalf("Migration failed: %v", err)
+		}
+		logger.Println("MongoDB migrations completed successfully")
+
+	case "status":
+		// Check migration status
+		status, err := migrator.GetMigrationStatus()
+		if err != nil {
+			logger.Fatalf("Failed to get migration status: %v", err)
+		}
+		logger.Printf("MongoDB migration status: %s", status)
+
+	case "check-connection":
+		// Check connection
+		if err := migrator.CheckDatabaseConnection(); err != nil {
+			logger.Fatalf("Database connection check failed: %v", err)
+		}
+		logger.Println("MongoDB connection is healthy")
+
+	default:
+		logger.Fatalf("Unknown migration command: %s", migrationCommand)
+	}
+
+	logger.Printf("Migration command '%s' completed successfully", migrationCommand)
+}
+
 // Connect to MongoDB
 func connectToMongoDB(cfg *config.Config) (*mongo.Client, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
 	// Manually build the connection string with credentials
-	mongoURI := fmt.Sprintf("mongodb://checkout_user:password@%s:%s/%s?authSource=checkout",
+	mongoURI := fmt.Sprintf("mongodb://checkout_user:password@%s:%s/%s?authSource=admin",
 		cfg.MongoDB.Host,
 		cfg.MongoDB.Port,
 		cfg.MongoDB.Database)
