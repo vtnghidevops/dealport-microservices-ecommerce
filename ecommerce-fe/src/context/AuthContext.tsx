@@ -3,6 +3,7 @@ import React, { createContext, useState, ReactNode, useEffect } from 'react';
 import { User, AuthState, UserRegistrationData, UserRole } from '@/types/user.model';
 import authService, { login as loginApi, register as registerApi } from '@/services/auth/auth.service';
 import userService from '@/services/user/user.service';
+import { extractErrorMessage } from '@/utils/error-handler';
 
 // Initial state
 const initialState: AuthState = {
@@ -391,20 +392,22 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         }
         return { success: true };
       } else {
+        const friendlyMessage = extractErrorMessage(loginResult.message);
         setAuthState(prev => ({
           ...prev,
           isLoading: false,
-          error: loginResult.message || 'Authentication failed'
+          error: friendlyMessage
         }));
-        return { success: false, error: loginResult.message || 'Authentication failed' };
+        return { success: false, error: friendlyMessage };
       }
     } catch (error: any) {
+      const friendlyMessage = extractErrorMessage(error);
       setAuthState(prev => ({
         ...prev,
         isLoading: false,
-        error: error.message || 'Authentication failed. Please check your credentials.'
+        error: friendlyMessage
       }));
-      return { success: false, error: error.message || 'Authentication failed. Please check your credentials.' };
+      return { success: false, error: friendlyMessage };
     }
   };
 

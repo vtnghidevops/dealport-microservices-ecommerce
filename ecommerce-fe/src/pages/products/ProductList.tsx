@@ -222,7 +222,7 @@ const ProductListPage: React.FC = () => {
           Home
         </Link>
         <span className="mx-2">/</span>
-        <Link to="/shop" className="hover:text-primary text-base">
+        <Link to="/products" className="hover:text-primary text-base">
           Shop
         </Link>
         <span className="mx-2">/</span>

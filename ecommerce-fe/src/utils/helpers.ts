@@ -39,3 +39,14 @@ export const normalizeText = (text: string): string => {
     .trim()
     .replace(/\s+/g, ' ');
 };
+
+// Tạo slug từ tên danh mục
+export const handleCreateSlug = (name: string): string => {
+  return name
+    .toLowerCase()
+    .replace(/[&\s]+/g, '-')  // Thay thế khoảng trắng và ký tự & bằng dấu gạch ngang
+    .replace(/[^\w\-]+/g, '') // Loại bỏ các ký tự đặc biệt ngoại trừ chữ, số và dấu gạch ngang
+    .replace(/\-\-+/g, '-')   // Thay thế nhiều dấu gạch ngang liên tiếp bằng một dấu
+    .replace(/^-+/, '')       // Loại bỏ dấu gạch ngang ở đầu
+    .replace(/-+$/, '');      // Loại bỏ dấu gạch ngang ở cuối
+};

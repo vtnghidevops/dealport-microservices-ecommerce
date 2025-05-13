@@ -24,7 +24,7 @@ const TopProductsTable: React.FC<TopProductsTableProps> = ({ products }) => {
   return (
     <div className="bg-white rounded-lg filter drop-shadow-lg h-[420px] w-[360px] px-[16px] py-[20px]">
       <div className="flex justify-between items-center mb-3">
-        <h2 className="text-[18px] font-bold text-gray-900">Sản phẩm bán chạy (Top Products)</h2>
+        <h2 className="text-[18px] font-bold text-gray-900">Top Products</h2>
         <a href="#" className="text-primary text-sm ">
           All
         </a>

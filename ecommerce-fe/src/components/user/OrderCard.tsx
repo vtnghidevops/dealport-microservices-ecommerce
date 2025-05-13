@@ -132,6 +132,7 @@ const OrderCard: React.FC<OrderCardProps> = ({ order, onRetryPayment }) => {
 
     switch (status.toLowerCase()) {
       case 'paid':
+        return 'bg-green-100 text-green-800';
       case 'completed':
         return 'bg-green-100 text-green-800';
       case 'pending':

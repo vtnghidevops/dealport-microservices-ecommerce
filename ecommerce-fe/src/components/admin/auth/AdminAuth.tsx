@@ -5,6 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { FiEye, FiEyeOff } from "react-icons/fi";
+import { extractErrorMessage } from '@/utils/error-handler';
 
 // Simple logo component
 const Logo: React.FC = () => {
@@ -78,15 +79,16 @@ const AdminAuth: React.FC = () => {
           }, 1500);
         }
       } else {
-        setError(result.error || 'Invalid email or password');
+        const friendlyError = extractErrorMessage(result.error);
+        setError(friendlyError);
         toast({
           variant: 'destructive',
           title: 'Login Failed',
-          description: result.error || 'Invalid email or password'
+          description: friendlyError
         });
       }
     } catch (error: any) {
-      const errorMessage = error.message || 'An error occurred during login';
+      const errorMessage = extractErrorMessage(error);
       setError(errorMessage);
       toast({
         variant: 'destructive',

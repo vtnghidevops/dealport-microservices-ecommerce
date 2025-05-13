@@ -32,7 +32,7 @@ export default function Home() {
     // Simulate data loading with timeout
     const timer = setTimeout(() => {
       setLoading(false);
-    }, 3000);
+    }, 1000);
 
     return () => clearTimeout(timer);
   }, []);

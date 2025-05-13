@@ -117,7 +117,7 @@ class ProductService {
     if (product.imgSlider && Array.isArray(product.imgSlider)) {
       // Convert any complex objects to string URLs and ensure all URLs are absolute
       product.imgSlider = product.imgSlider.map((item: string | ProductImageResponse) => {
-        let url = typeof item === 'object' && item && 'url' in item
+        const url = typeof item === 'object' && item && 'url' in item
           ? (item as ProductImageResponse).url
           : item;
 

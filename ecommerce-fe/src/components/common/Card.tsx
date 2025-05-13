@@ -2,6 +2,7 @@ import { FaRegHeart, FaHeart } from "react-icons/fa";
 import { useCart } from '@/hooks/useCart';
 import { useWishlist } from "@/hooks/useWishList";
 import { Product } from "@/types/product.model";
+import { Link } from "react-router-dom";
 
 interface StarRatingProps {
   rating: number;
@@ -68,13 +69,13 @@ const ProductCard: React.FC<ProductCardProps> = ({
   return (
     <div className="mx-2 p-[10px] rounded-xl max-w-[272px] min-w-[272px] border border-grep-300 shadow-[0_2px_15px_-3px_rgba(0,0,0,0.1),0_4px_6px_-2px_rgba(0,0,0,0.05)] ">
       <div className="relative overflow-hidden rounded-xl">
-        <a href={`/${product.categorySlug}/${product.slug}`} className="block overflow-hidden">
+        <Link to={`/category/${product.categorySlug || 'uncategorized'}/${product.slug}`} className="block overflow-hidden">
           <img
             src={product.imageUrl}
             alt={product.name}
             className="min-w-[248px] min-h-[180px] max-w-[248px] max-h-[180px] object-cover rounded-xl transition-transform duration-700"
           />
-        </a>
+        </Link>
         <button
           onClick={handleLikeClick}
           className="absolute top-2 right-[5%] flex items-center justify-center rounded-full h-[1.5rem] w-[1.5rem] bg-white hover:bg-gray-100 transition-colors duration-300"
@@ -111,9 +112,9 @@ const ProductCard: React.FC<ProductCardProps> = ({
         </div>
 
         <div className="flex justify-between items-center mt-[15px]">
-          <a href={`/${product.categorySlug}/${product.slug}`} className="text-primary text-sm hover:text-ocean-green transition-all duration-300">
+          <Link to={`/category/${product.categorySlug || 'uncategorized'}/${product.slug}`} className="text-primary text-sm hover:text-ocean-green transition-all duration-300">
             View Details
-          </a>
+          </Link>
           <button onClick={handleAddToCart} className="btn-primary text-sm py-1 h-[39px] w-[120px] border-2 border-transparent hover:bg-green-500 hover:shadow-md transition-all duration-300 ease-out">
             Add to Cart
           </button>

@@ -1,131 +1,113 @@
 import { Skeleton } from "@/components/ui/skeleton";
+import { ProductCardSkeleton } from "./product-card-skeleton";
 
-export const ProductListSkeleton = () => {
+interface ProductListSkeletonProps {
+  itemCount?: number;
+  withFilters?: boolean;
+  withPagination?: boolean;
+}
+
+export const ProductListSkeleton = ({
+  itemCount = 12,
+  withFilters = true,
+  withPagination = true,
+}: ProductListSkeletonProps) => {
   return (
-    <div className="container mx-auto px-4 md:px-8 py-4">
-      {/* Breadcrumb skeleton */}
+    <div className="container mx-auto px-4 my-8 max-w-7xl">
+      {/* Breadcrumb */}
       <div className="flex items-center mb-6">
-        <div className="flex gap-2 items-center">
-          <Skeleton className="h-4 w-14 rounded" />
-          <span className="mx-2">/</span>
-          <Skeleton className="h-4 w-14 rounded" />
-          <span className="mx-2">/</span>
-          <Skeleton className="h-4 w-24 rounded" />
-        </div>
+        <Skeleton className="h-4 w-16 rounded-md" />
+        <div className="mx-2">/</div>
+        <Skeleton className="h-4 w-20 rounded-md" />
+        <div className="mx-2">/</div>
+        <Skeleton className="h-4 w-24 rounded-md" />
       </div>
 
-      <div className="flex flex-col lg:flex-row gap-8">
-        {/* Sidebar skeleton */}
-        <div className="w-full lg:w-1/4 mb-5">
-          <div className="bg-white rounded-lg shadow-md p-5 mb-6 min-h-[600px] md:min-h-[800px] sticky top-4">
-            <Skeleton className="h-7 w-36 mb-6" />
-
-            {/* Category filter */}
-            <div className="space-y-3 mb-8">
-              <Skeleton className="h-5 w-full" />
-              <Skeleton className="h-5 w-full" />
-              <Skeleton className="h-5 w-full" />
-              <Skeleton className="h-5 w-4/5" />
-              <Skeleton className="h-5 w-3/5" />
-            </div>
-
-            {/* Price filter */}
-            <Skeleton className="h-7 w-28 mb-4" />
-            <div className="space-y-4 mb-8">
-              <div className="flex justify-between">
-                <Skeleton className="h-6 w-20" />
-                <Skeleton className="h-6 w-20" />
-              </div>
-              <Skeleton className="h-8 w-full rounded-lg" />
-            </div>
-
-            {/* Rating filter */}
-            <Skeleton className="h-7 w-28 mb-4" />
-            <div className="space-y-3 mb-8">
-              {Array(4).fill(0).map((_, i) => (
-                <div key={i} className="flex items-center gap-3">
-                  <Skeleton className="h-5 w-5 rounded-sm" />
-                  <div className="flex gap-1">
-                    {Array(5 - i).fill(0).map((_, j) => (
-                      <Skeleton key={j} className="h-5 w-5 rounded-full" />
-                    ))}
+      <div className="flex flex-col lg:flex-row gap-6">
+        {/* Sidebar */}
+        {withFilters && (
+          <div className="w-full lg:w-64 flex-shrink-0">
+            <div className="sticky top-24 space-y-6">
+              {/* Category filter */}
+              <div className="border border-aqua-spring/60 rounded-lg p-4 shadow-sm hover:shadow-md transition-all duration-300 hover:border-aqua-spring/80">
+                <Skeleton className="h-6 w-32 mb-4 bg-aqua-spring" />
+                {[1, 2, 3, 4, 5].map((i) => (
+                  <div key={i} className="flex items-center mb-3">
+                    <Skeleton className="h-4 w-4 rounded-sm mr-3" />
+                    <Skeleton className="h-4 flex-1" />
                   </div>
-                </div>
-              ))}
-            </div>
+                ))}
+                <Skeleton className="h-8 w-full mt-4 rounded-md bg-aqua-spring/80 hover:bg-aqua-spring/90" />
+              </div>
 
-            {/* Brand filter */}
-            <Skeleton className="h-7 w-28 mb-4" />
-            <div className="space-y-3 mb-8">
-              {Array(5).fill(0).map((_, i) => (
-                <div key={i} className="flex items-center gap-3">
-                  <Skeleton className="h-5 w-5 rounded-sm" />
-                  <Skeleton className="h-5 w-36" />
+              {/* Price filter */}
+              <div className="border border-aqua-spring/60 rounded-lg p-4 shadow-sm hover:shadow-md transition-all duration-300 hover:border-aqua-spring/80">
+                <Skeleton className="h-6 w-24 mb-4 bg-aqua-spring" />
+                <div className="space-y-4">
+                  <div className="flex justify-between">
+                    <Skeleton className="h-5 w-20 bg-aqua-spring/80" />
+                    <Skeleton className="h-5 w-20 bg-aqua-spring/80" />
+                  </div>
+                  <Skeleton className="h-4 w-full" />
+                  <Skeleton className="h-8 w-full rounded-md bg-aqua-spring/80 hover:bg-aqua-spring/90" />
                 </div>
-              ))}
-            </div>
+              </div>
 
-            {/* Tags filter */}
-            <Skeleton className="h-7 w-28 mb-4" />
-            <div className="flex flex-wrap gap-2">
-              {Array(6).fill(0).map((_, i) => (
-                <Skeleton key={i} className="h-8 w-20 rounded-full mb-2" />
-              ))}
+              {/* Rating filter */}
+              <div className="border border-aqua-spring/60 rounded-lg p-4 shadow-sm hover:shadow-md transition-all duration-300 hover:border-aqua-spring/80">
+                <Skeleton className="h-6 w-28 mb-4 bg-aqua-spring" />
+                {[5, 4, 3, 2, 1].map((rating) => (
+                  <div key={rating} className="flex items-center mb-3">
+                    <Skeleton className="h-4 w-4 rounded-sm mr-3" />
+                    <div className="flex space-x-1 mr-2">
+                      {Array.from({ length: 5 }).map((_, i) => (
+                        <Skeleton key={i} className="h-3.5 w-3.5 rounded-sm" />
+                      ))}
+                    </div>
+                    <Skeleton className="h-4 w-12" />
+                  </div>
+                ))}
+                <Skeleton className="h-8 w-full mt-4 rounded-md bg-aqua-spring/80 hover:bg-aqua-spring/90" />
+              </div>
             </div>
           </div>
-        </div>
+        )}
 
-        {/* Main content skeleton */}
-        <div className="w-full lg:w-3/4">
-          {/* Header with search and sort */}
-          <div className="bg-white p-5 rounded-lg shadow-md mb-6">
-            <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-5">
-              <div className="w-full md:w-[400px] h-[44px] mb-4 md:mb-0">
-                <Skeleton className="h-full w-full rounded-lg" />
+        {/* Product Grid */}
+        <div className="flex-1">
+          {/* Sorting and view options */}
+          <div className="flex justify-between items-center mb-6">
+            <Skeleton className="h-5 w-48 bg-aqua-spring/80" />
+            <div className="flex items-center space-x-3">
+              <Skeleton className="h-9 w-36 rounded-md bg-aqua-spring/80" />
+              <div className="flex space-x-2">
+                <Skeleton className="h-9 w-9 rounded-md bg-aqua-spring/70" />
+                <Skeleton className="h-9 w-9 rounded-md bg-aqua-spring/70" />
               </div>
-
-              <div className="flex items-center space-x-3">
-                <Skeleton className="h-5 w-24" />
-                <Skeleton className="h-[44px] w-[160px] rounded-lg" />
-              </div>
-            </div>
-
-            {/* Active filters */}
-            <div className="flex flex-wrap gap-2 py-3">
-              <Skeleton className="h-5 w-24" />
-              <Skeleton className="h-8 w-28 rounded-full" />
-              <Skeleton className="h-8 w-36 rounded-full" />
-              <Skeleton className="h-8 w-32 rounded-full" />
             </div>
           </div>
 
-          {/* Product grid */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 mb-5">
-            {Array(9).fill(0).map((_, index) => (
-              <div key={index} className="bg-white rounded-lg shadow-md overflow-hidden mb-5">
-                <Skeleton className="h-[200px] w-full" />
-                <div className="p-4 space-y-3">
-                  <Skeleton className="h-6 w-4/5" />
-                  <Skeleton className="h-5 w-3/5" />
-                  <div className="flex justify-between items-center pt-2">
-                    <Skeleton className="h-7 w-24" />
-                    <Skeleton className="h-9 w-9 rounded-full" />
-                  </div>
-                </div>
+          {/* Products grid */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            {Array.from({ length: itemCount }).map((_, index) => (
+              <div key={index} className="transform transition-all duration-300 hover:scale-[1.02]">
+                <ProductCardSkeleton />
               </div>
             ))}
           </div>
 
           {/* Pagination */}
-          <div className="flex justify-center mt-8 mb-10">
-            <div className="flex gap-2">
-              <Skeleton className="h-10 w-10 rounded-md" />
-              {Array(3).fill(0).map((_, i) => (
-                <Skeleton key={i} className="h-10 w-10 rounded-md mx-1" />
-              ))}
-              <Skeleton className="h-10 w-10 rounded-md" />
+          {withPagination && (
+            <div className="flex justify-center items-center mt-10">
+              <div className="flex space-x-2">
+                <Skeleton className="h-10 w-10 rounded-md bg-aqua-spring/80" />
+                {[1, 2, 3, 4, 5].map((i) => (
+                  <Skeleton key={i} className="h-10 w-10 rounded-md bg-aqua-spring/80" />
+                ))}
+                <Skeleton className="h-10 w-10 rounded-md bg-aqua-spring/80" />
+              </div>
             </div>
-          </div>
+          )}
         </div>
       </div>
     </div>

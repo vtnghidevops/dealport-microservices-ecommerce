@@ -32,7 +32,7 @@ const TopProducts: React.FC<TopProductsProps> = () => {
   // console.log("topProductsData", topProductsData[0].uiMetadata)
 
 
-  var topProducts: TopProductsProps = {
+  const topProducts: TopProductsProps = {
     title: "Best selling product",
     products: topProductsData,
     viewAllLabel: "View All",

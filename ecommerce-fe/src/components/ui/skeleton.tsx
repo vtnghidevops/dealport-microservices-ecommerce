@@ -7,7 +7,7 @@ const Skeleton = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <div
     className={cn(
-      "animate-pulse rounded-md bg-primary/10 transition-opacity duration-200 ease-in-out",
+      "animate-pulse rounded-md bg-aqua-spring/80 transition-all duration-500 ease-in-out shadow-sm hover:bg-aqua-spring hover:shadow-md transform hover:scale-[1.005]",
       className
     )}
     ref={ref}

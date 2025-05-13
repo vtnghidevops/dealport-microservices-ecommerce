@@ -102,13 +102,13 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen = true, onToggle }) => {
     },
   ];
 
-  // Kiểm tra xem đường dẫn có khớp với link menu không
+  // Check if path matches menu link
   const isLinkActive = (link: string): boolean => {
-    // Kiểm tra đúng URL
+    // Check exact URL match
     if (location.pathname === link) return true;
 
-    // Kiểm tra URL con (subpath)
-    // Ví dụ: /admin/orders/123 cũng sẽ active cho /admin/orders
+    // Check subpath match
+    // Example: /admin/orders/123 will also activate /admin/orders
     if (link !== "/admin/dashboard" && location.pathname.startsWith(link)) return true;
 
     return false;

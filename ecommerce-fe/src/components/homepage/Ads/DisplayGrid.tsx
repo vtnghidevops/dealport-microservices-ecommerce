@@ -150,7 +150,7 @@ const CardFirst: React.FC<CardFirst> = ({ imageUrl, type, productSlug, categoryS
     } else {
       navigationPath = `/products/${productSlug}`;
     }
-  } else if (type === "category" && productSlug) {
+  } else if (type === "category" && categorySlug) {
     navigationPath = `/category/${categorySlug}`;
   }
 
@@ -173,7 +173,7 @@ const CardSecond: React.FC<CardSecond> = ({ imageUrl, buttonType, type, productS
     } else {
       navigationPath = `/products/${productSlug}`;
     }
-  } else if (type === "category" && productSlug) {
+  } else if (type === "category" && categorySlug) {
     navigationPath = `/category/${categorySlug}`;
   }
 
@@ -213,7 +213,7 @@ const CardMain: React.FC<CardMain> = ({
     } else {
       navigationPath = `/products/${productSlug}`;
     }
-  } else if (type === "category" && productSlug) {
+  } else if (type === "category" && categorySlug) {
     navigationPath = `/category/${categorySlug}`;
   }
 

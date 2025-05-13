@@ -7,6 +7,7 @@ import { BannerService } from "@/services/product/product.service";
 import { SliderBannerItem } from "@/types/banner.model";
 import { Link } from "react-router-dom";
 import { SliderSkeleton } from "@/components/ui/skeletons";
+import { handleCreateSlug } from "@/utils/helpers";
 
 const SliderBanner: React.FC = () => {
 
@@ -77,18 +78,18 @@ const SliderBanner: React.FC = () => {
         <ul className="mr-0 ml-[67px] w-full max-w-7xl mx-auto text-black flex items-center justify-between h-[48px] overflow-x-auto">
           {categories.map((category, index) => (
             <li key={index}>
-              <a
-                href="#"
+              <Link
+                to={`/category/${handleCreateSlug(category)}`}
                 className="whitespace-nowrap px-3 py-2 hover:text-blue-600 transition-colors text-cyprus"
               >
                 {category}
-              </a>
+              </Link>
             </li>
           ))}
           <li className="hover:text-blue-600 transition-colors">
-            <a href="#" className="px-3 py-2 text-blue-500">
+            <Link to="/products" className="px-3 py-2 text-blue-500">
               See more
-            </a>
+            </Link>
           </li>
         </ul>
       </nav>

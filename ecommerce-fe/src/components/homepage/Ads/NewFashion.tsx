@@ -40,7 +40,7 @@ const NewFashion: React.FC = () => {
     } else {
       navigationPath = `/products/${productSlug}`;
     }
-  } else if (type === "category" && productSlug) {
+  } else if (type === "category" && categorySlug) {
     navigationPath = `/category/${categorySlug}`;
   }
 

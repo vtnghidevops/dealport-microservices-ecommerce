@@ -55,8 +55,8 @@ const TrendingProducts: React.FC = () => {
 
   // Handle View All click
   const handleViewAllClick = () => {
-    // Navigate to trending products page
-    navigate(`/${TRENDING_CATEGORY_SLUG}`);
+    // Navigate to trending products page with proper routing
+    navigate(`/category/${TRENDING_CATEGORY_SLUG}`);
   };
 
   if (loading) {

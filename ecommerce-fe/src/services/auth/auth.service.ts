@@ -1,5 +1,6 @@
 import axios from 'axios';
 import { UserLoginCredentials, UserRegistrationData, UserRole } from '@/types/user.model';
+import { formatErrorMessage } from '@/utils/error-handler';
 
 // Base URL for API requests - thay bằng URL thực tế của broker-service
 const API_BASE_URL = import.meta.env.VITE_PUBLIC_BROKER_API_URL || 'http://localhost:8080';
@@ -225,9 +226,9 @@ class AuthService {
     } catch (error: any) {
       console.error('Login error:', error);
       if (error.response && error.response.data) {
-        throw new Error(error.response.data.message || error.response.data.error || "Login failed");
+        throw new Error(formatErrorMessage(error.response.data.message || error.response.data.error || "Login failed"));
       }
-      throw error;
+      throw new Error(formatErrorMessage(error.message || "Login failed"));
     }
   }
 

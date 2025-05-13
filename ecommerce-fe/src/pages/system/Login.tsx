@@ -7,6 +7,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import { FiEye, FiEyeOff } from "react-icons/fi";
+import { extractErrorMessage } from '@/utils/error-handler';
 
 interface LoginFormData {
   email: string;
@@ -57,10 +58,7 @@ const Login: React.FC = () => {
       });
       navigate("/");
     } else {
-      let friendlyMsg = result.error || "Login failed";
-      if (friendlyMsg.includes('rpc error: code = Unauthenticated')) {
-        friendlyMsg = 'Invalid credentials. Please check your email and password.';
-      }
+      const friendlyMsg = extractErrorMessage(result.error);
       toast({
         variant: "destructive",
         title: "Login Failed",

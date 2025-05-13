@@ -16,6 +16,7 @@ import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import LoggedInUserMenu from './LoggedInUserMenu';
 import { useCart } from "@/hooks/useCart";
+import { extractErrorMessage } from '@/utils/error-handler';
 
 const Logo: React.FC = () => {
   return (
@@ -128,16 +129,14 @@ const LoggedOutUserMenu: React.FC = () => {
         navigate('/');
       }
     } else {
-      let friendlyMsg = result.error || "Login failed";
-      if (friendlyMsg.includes('rpc error: code = Unauthenticated')) {
-        friendlyMsg = 'Invalid credentials. Please check your email and password.';
-      }
+      const friendlyMsg = extractErrorMessage(result.error);
       toast({
         variant: "destructive",
         title: "Login Failed",
         description: friendlyMsg
       });
     }
+    setIsLoading(false);
   };
 
   return (
@@ -254,27 +253,27 @@ const NavMenu: React.FC = () => {
         <div className="absolute -top-2 left-6 w-4 h-4 bg-white border-t border-l border-gray-200 transform rotate-45"></div>
 
         {categories.map((category, index) => (
-          <a
+          <Link
             key={index}
-            href={category.href}
-            className="text-[16px] pl-5 px-4 py-2  text-gray-700 hover:bg-gray-100 flex items-center"
+            to={category.href}
+            className="text-[16px] pl-5 px-4 py-2 text-gray-700 hover:bg-gray-100 flex items-center"
           >
             {category.icon} {category.name}
-          </a>
+          </Link>
         ))}
         <div className="border-t border-gray-100 my-1"></div>
-        <a
-          href="/new-arrivals"
+        <Link
+          to="/new-arrivals"
           className="pl-5 px-4 py-2 text-[16px] font-medium text-green-600 hover:bg-gray-100 flex items-center"
         >
           <CiHeart className="mr-2" /> New Arrivals
-        </a>
-        <a
-          href="/sale"
+        </Link>
+        <Link
+          to="/sale"
           className="pl-5 px-4 py-2 text-[16px] font-medium text-red-600 hover:bg-gray-100 flex items-center"
         >
           <TbSettings className="mr-2" /> On Sale
-        </a>
+        </Link>
       </div>
     </div>
   );
