@@ -7,25 +7,33 @@ import (
 	"log"
 	"net"
 	"net/http"
-	// "os"
+	"os"
+	"product-service/internal/config"
 	"product-service/internal/domain"
 	"product-service/internal/handler"
+	"product-service/internal/migrations"
 	"product-service/internal/repository/postgres"
 	"product-service/internal/service"
 	transportGrpc "product-service/internal/transport/grpc"
 	transportHttp "product-service/internal/transport/http"
-	"time"
-	"product-service/internal/config"
 	pb "product-service/proto/product"
+	"strconv"
+	"time"
 
 	_ "github.com/jackc/pgconn"
 	_ "github.com/jackc/pgx/v4"
 	_ "github.com/jackc/pgx/v4/stdlib"
+	"github.com/jmoiron/sqlx"
 	"google.golang.org/grpc"
 )
 
-
 func main() {
+	// Process command line arguments for migrations
+	if len(os.Args) > 1 {
+		handleMigrationCommands()
+		return
+	}
+
 	// Load config (Tải cấu hình)
 	cfg, err := config.LoadConfig("")
 	if err != nil {
@@ -40,6 +48,17 @@ func main() {
 		log.Panic("Could not connect to Postgres")
 	}
 	defer conn.Close()
+
+	// Convert sql.DB to sqlx.DB for migrations
+	dbx := sqlx.NewDb(conn, "pgx")
+
+	// Run migrations if AUTO_MIGRATE is set to true
+	if os.Getenv("AUTO_MIGRATE") == "true" {
+		log.Println("AUTO_MIGRATE enabled, running migrations...")
+		if err := migrations.RunMigrations(dbx); err != nil {
+			log.Fatalf("Failed to run migrations: %v", err)
+		}
+	}
 
 	// Create repositories
 	productRepo := postgres.NewProductRepository(conn)
@@ -83,6 +102,71 @@ func main() {
 
 	// Block until we get an error from one of the servers
 	log.Fatalf("Server error: %v", <-errCh)
+}
+
+// handleMigrationCommands processes the migration related commands
+func handleMigrationCommands() {
+	migrationCommand := os.Args[1]
+
+	// Load config
+	cfg, err := config.LoadConfig("")
+	if err != nil {
+		log.Fatalf("Failed to load config: %v", err)
+	}
+
+	// Connect to database
+	conn := connectToDB(cfg.Database)
+	if conn == nil {
+		log.Fatalf("Could not connect to Postgres for migrations")
+	}
+	defer conn.Close()
+
+	// Convert sql.DB to sqlx.DB for migrations
+	dbx := sqlx.NewDb(conn, "pgx")
+
+	// Process the command
+	switch migrationCommand {
+	case "migrate":
+		// Run migrations up
+		if err := migrations.RunMigrations(dbx); err != nil {
+			log.Fatalf("Migration failed: %v", err)
+		}
+	case "rollback":
+		// Rollback the last migration
+		if err := migrations.RollbackMigration(dbx); err != nil {
+			log.Fatalf("Rollback failed: %v", err)
+		}
+	case "drop":
+		// Drop all tables (development only)
+		if err := migrations.DropAllTables(dbx); err != nil {
+			log.Fatalf("Drop failed: %v", err)
+		}
+	case "status":
+		// Print current migration status
+		version, dirty, err := migrations.GetMigrationStatus(dbx)
+		if err != nil {
+			log.Fatalf("Failed to get migration status: %v", err)
+		}
+		log.Printf("Current migration version: %d, dirty: %t", version, dirty)
+	case "force":
+		// Force migration to specific version
+		if len(os.Args) < 3 {
+			log.Fatalf("force command requires a version number")
+		}
+
+		version, err := strconv.Atoi(os.Args[2])
+		if err != nil {
+			log.Fatalf("Invalid version number: %v", err)
+		}
+
+		if err := migrations.ForceVersion(dbx, version); err != nil {
+			log.Fatalf("Force failed: %v", err)
+		}
+	default:
+		log.Fatalf("Unknown migration command: %s", migrationCommand)
+	}
+
+	log.Printf("Migration command '%s' completed successfully", migrationCommand)
 }
 
 func startGRPCServer(
@@ -143,7 +227,7 @@ func connectToDB(dbCfg config.DatabaseConfig) *sql.DB {
 		"host=%s port=%s user=%s password=%s dbname=%s sslmode=%s",
 		dbCfg.Host, dbCfg.Port, dbCfg.User, dbCfg.Password, dbCfg.DBName, dbCfg.SSLMode,
 	)
-	
+
 	// if dsn == "" {
 	// 	dsn = "host=postgres-products port=5432 user=postgres-products password=password dbname=products sslmode=disable timezone=UTC connect_timeout=5"
 	// 	//dsn = "host=localhost port=5433 user=postgres-products password=password dbname=products sslmode=disable timezone=UTC connect_timeout=5"

@@ -1,28 +1,3 @@
--- Products database schema and initial data
-DO $$
-BEGIN
-    IF NOT EXISTS (
-        SELECT FROM pg_catalog.pg_roles WHERE rolname = 'postgres-products'
-    ) THEN
-        CREATE ROLE "postgres-products" LOGIN PASSWORD 'password';
-    END IF;
-END
-$$;
-
--- Tạo DB nếu chưa có
-DO $$
-BEGIN
-    IF NOT EXISTS (
-        SELECT FROM pg_database WHERE datname = 'products'
-    ) THEN
-        CREATE DATABASE products OWNER "postgres-products";
-    END IF;
-END
-$$;
-
-\connect products
-
-
 -- Insert categories with UUIDs
 INSERT INTO categories (id, name, slug, description, image_url, product_count, is_active, is_visible) 
 VALUES 
@@ -299,12 +274,12 @@ INSERT INTO products (
     52, 'top-sale', 'Security Camera System', 'category', 'security-camera-system', 420, 420, 0,
     10, 'top-sell', 0, 'apple',
     '["feature1","feature2","feature3"]', '{"courier":"2-4 days, free shipping","local":"up to one week, $19.00","ups":"4-6 days, $29.00","global":"3-4 days, $39.00"}', '{"setUpDesign":"double","isComingSoon":false}', 100
-  ),
+),
 (
     53, 'top-sale', 'Premium Cosmetic Set', 'category', 'premium-cosmetic-set', 149, 149, 0,
     10, 'top-sell', 0, 'apple',
     '["feature1","feature2","feature3"]', '{"courier":"2-4 days, free shipping","local":"up to one week, $19.00","ups":"4-6 days, $29.00","global":"3-4 days, $39.00"}', '{"setUpDesign":"row","isComingSoon":false}', 100
-  );
+);
 
 
 
@@ -595,7 +570,6 @@ SET product_count = (
     SELECT COUNT(*) FROM products p
     WHERE p.category_id = c.id
 );
-
 -- Insert banner slider data
 INSERT INTO banners (
     title, subtitle, description, discount, highlight_text, 
@@ -710,6 +684,22 @@ INSERT INTO banners (
     'seasonal',
     NULL, -- Not tied to specific product
     NULL -- Not tied to specific category
+);
+
+
+-- =====================================================
+-- New Fashion item (NewFashion.tsx component)
+-- =====================================================
+INSERT INTO ads_placement (
+    location, reference_type, reference_id, display_order, 
+    custom_title, custom_image_url, ui_settings, is_active
+) VALUES 
+-- New Fashion banner
+(
+    'new_fashion', 'product', 1, 1, -- Using Fashion category (ID=3)
+    'New Year! New Fashion', 'images/ads/products/new-fashion.png',
+    '{"button_type": "secondary"}',
+    true
 );
 
 
@@ -889,45 +879,36 @@ INSERT INTO ads_placement (
 -- Gaming Banner items (GamingBanner.tsx component)
 -- =====================================================
 INSERT INTO ads_placement (
-    location, reference_type, reference_id, display_order, 
-    custom_title, custom_image_url, is_active
-) VALUES 
--- Gaming item 1: Headsets
-(
-    'gaming', 'category', 4, 1, -- Using Electronics category (ID=4)
+  location,
+  reference_type,
+  reference_id,
+  display_order,
+  custom_title,
+  custom_image_url,
+  is_active
+) VALUES
+  -- Gaming item 1: Headsets
+  (
+    'gaming', 'category', 4, 1,
     'Headsets', 'images/ads/gaming/headsets.png',
     true
-),
--- Gaming item 2: Mouse
-(
-    'gaming', 'category', 4, 2, -- Using Electronics category (ID=4)
+  ),
+  -- Gaming item 2: Mouse
+  (
+    'gaming', 'category', 4, 2,
     'Mouse', 'images/ads/gaming/mouse.png',
     true
-),
--- Gaming item 3: Controller
-(
-    'gaming', 'category', 4, 3, -- Using Electronics category (ID=4)
+  ),
+  -- Gaming item 3: Controller
+  (
+    'gaming', 'category', 4, 3,
     'Controller', 'images/ads/gaming/controller.png',
     true
-),
--- Gaming item 4: Chair
-(
-    'gaming', 'category', 4, 4, -- Using Electronics category (ID=4)
+  ),
+  -- Gaming item 4: Chair
+  (
+    'gaming', 'category', 4, 4,
     'Chair', 'images/ads/gaming/chair.png',
     true
-);
+  );
 
--- =====================================================
--- New Fashion item (NewFashion.tsx component)
--- =====================================================
-INSERT INTO ads_placement (
-    location, reference_type, reference_id, display_order, 
-    custom_title, custom_image_url, ui_settings, is_active
-) VALUES 
--- New Fashion banner
-(
-    'new_fashion', 'product', 1, 1, -- Using Fashion category (ID=3)
-    'New Year! New Fashion', 'images/ads/products/new-fashion.png',
-    '{"button_type": "secondary"}',
-    true
-); 
