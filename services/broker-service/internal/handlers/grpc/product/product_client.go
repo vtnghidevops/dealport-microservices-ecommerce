@@ -36,8 +36,14 @@ type ProductClient struct {
 
 // NewProductClient creates a new gRPC client that connects to the product service
 func NewProductClient() (*ProductClient, error) {
+	// Get the address of the product service
+	productServiceAddr := getProductServiceAddress()
+
+	// Log the attempt to connect to the product service
+	log.Printf("Attempting to connect to product service at %s", productServiceAddr)
+
 	// Connect to the gRPC server (insecure for development environment)
-	conn, err := grpc.Dial(getProductServiceAddress(), grpc.WithTransportCredentials(insecure.NewCredentials()))
+	conn, err := grpc.Dial(productServiceAddr, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
 		return nil, fmt.Errorf("failed to connect to product service: %w", err)
 	}

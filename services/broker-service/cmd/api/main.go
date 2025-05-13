@@ -3,7 +3,6 @@ package main
 import (
 	"fmt"
 	"log"
-	"math"
 	"net/http"
 	"os"
 	"time"
@@ -29,14 +28,13 @@ import (
 	"broker-service/internal/event"
 
 	"github.com/go-chi/chi/v5"
-	amqp "github.com/rabbitmq/amqp091-go"
 )
 
 // Config is the application configuration
 type Config struct {
 	router             *chi.Mux
 	eventEmitter       *event.Emitter
-	Rabbit             *amqp.Connection
+	// Rabbit             *amqp.Connection
 	httpProductHandler *httpProductHandler.Config
 	ProductHandler     *grpcProductHandler.ProductHandler
 	CategoryHandler    *grpcProductHandler.CategoryGrpcHandler
@@ -68,20 +66,7 @@ func main() {
 		port = "8080"
 	}
 
-	// Connect to RabbitMQ
-	rabbitConn, err := connectToRabbitMQ()
-	if err != nil {
-		logger.Fatalf("Cannot connect to RabbitMQ: %v", err)
-	}
-	defer rabbitConn.Close()
-
-	// Create an event emitter
-	emitter, err := event.NewEventEmitter(rabbitConn)
-	if err != nil {
-		logger.Fatalf("Cannot create event emitter: %v", err)
-	}
-
-	// Initialize the gRPC clients
+	// Connect to product service
 	productClient, err := grpcProductHandler.GetProductClient()
 	if err != nil {
 		log.Println("Error connecting to product service:", err)
@@ -169,8 +154,8 @@ func main() {
 	// Create the application config
 	app := Config{
 		router:             chi.NewRouter(),
-		eventEmitter:       emitter,
-		Rabbit:             rabbitConn,
+		// eventEmitter:       emitter,
+		// Rabbit:             rabbitConn,
 		httpProductHandler: httpProductHandler,
 		ProductHandler:     grpcProductHandler.NewProductHandler(productClient),
 		CategoryHandler:    grpcProductHandler.NewCategoryGrpcHandler(productClient),
@@ -211,39 +196,4 @@ func main() {
 	}
 }
 
-func connectToRabbitMQ() (*amqp.Connection, error) {
-	var counts int64
-	var backOff = 1 * time.Second
-	var connection *amqp.Connection
 
-	// Get RabbitMQ URL from environment or use docker service name
-	rabbitURL := os.Getenv("RABBIT_URL")
-	if rabbitURL == "" {
-		rabbitURL = "amqp://guest:guest@rabbitmq:5672"
-	}
-
-	// don't continue until rabbit is ready
-	for {
-		c, err := amqp.Dial(rabbitURL)
-		if err != nil {
-			fmt.Println("RabbitMQ not yet ready...")
-			counts++
-		} else {
-			log.Println("Connected to RabbitMQ!")
-			connection = c
-			break
-		}
-
-		if counts > 5 {
-			fmt.Println(err)
-			return nil, err
-		}
-
-		backOff = time.Duration(math.Pow(float64(counts), 2)) * time.Second
-		log.Println("backing off...")
-		time.Sleep(backOff)
-		continue
-	}
-
-	return connection, nil
-}
