@@ -20,9 +20,11 @@ WORKDIR /app
 
 # Copy the binary from the builder stage
 COPY --from=builder /app/authService .
+# Copy the migrations directory
+COPY --from=builder /app/migrations /app/migrations
 
 # Install necessary tools for migrations
-RUN apk add --no-cache postgresql-client
+RUN apk add --no-cache postgresql-client bash
 
 EXPOSE 50051
 # Command to run the application

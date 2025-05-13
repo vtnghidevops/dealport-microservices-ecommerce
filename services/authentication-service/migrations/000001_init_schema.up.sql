@@ -1,15 +1,3 @@
-/*
-  Authentication Service Database Schema
-  
-  Schema này được thiết kế cho authentication-service trong dự án ecommerce-microservices.
-  Lưu ý rằng schema này cần đồng bộ với user-service để đảm bảo tính nhất quán.
-  
-  Nguyên tắc chính:
-  - Chỉ lưu thông tin liên quan đến xác thực người dùng
-  - Username được tạo tự động từ lastName + firstName (đồng bộ với user-service)
-  - Password được hash với bcrypt
-*/
-
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
 -- Users table for authentication
@@ -52,4 +40,5 @@ CREATE TABLE IF NOT EXISTS login_attempts (
 CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
 CREATE INDEX IF NOT EXISTS idx_users_username ON users(username);
 CREATE INDEX IF NOT EXISTS idx_sessions_user_id ON sessions(user_id);
-CREATE INDEX IF NOT EXISTS idx_login_attempts_email ON login_attempts(email);
+CREATE INDEX IF NOT EXISTS idx_login_attempts_email ON login_attempts(email); 
+

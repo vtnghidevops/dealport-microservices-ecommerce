@@ -20,6 +20,7 @@ import (
 
 	"authentication-service/internal/config"
 	"authentication-service/internal/event"
+	"authentication-service/internal/migrations"
 	"authentication-service/internal/repository/postgres"
 	"authentication-service/internal/service"
 	grpcHandler "authentication-service/internal/transport/grpc"
@@ -28,6 +29,12 @@ import (
 )
 
 func main() {
+	// Process command line arguments for migrations
+	if len(os.Args) > 1 {
+		handleMigrationCommands()
+		return
+	}
+
 	// Load config
 	cfg, err := config.LoadConfig("")
 	if err != nil {
@@ -45,6 +52,14 @@ func main() {
 	}
 	defer db.Close()
 	logger.Println("Connected to PostgreSQL database")
+
+	// Run migrations if AUTO_MIGRATE is set to true
+	if os.Getenv("AUTO_MIGRATE") == "true" {
+		logger.Println("AUTO_MIGRATE enabled, running migrations...")
+		if err := migrations.RunMigrations(db); err != nil {
+			logger.Fatalf("Failed to run migrations: %v", err)
+		}
+	}
 
 	// Ping the database to ensure connection
 	if err := db.Ping(); err != nil {
@@ -195,4 +210,52 @@ func main() {
 	if err := grpcServer.Serve(lis); err != nil {
 		logger.Fatalf("Failed to serve: %v", err)
 	}
+}
+
+// handleMigrationCommands processes the migration related commands
+func handleMigrationCommands() {
+	migrationCommand := os.Args[1]
+
+	// Load config
+	cfg, err := config.LoadConfig("")
+	if err != nil {
+		log.Fatalf("Failed to load config: %v", err)
+	}
+
+	// Connect to database
+	db, err := sqlx.Connect("postgres", cfg.PostgresConnectionString())
+	if err != nil {
+		log.Fatalf("Failed to connect to database: %v", err)
+	}
+	defer db.Close()
+
+	// Process the command
+	switch migrationCommand {
+	case "migrate":
+		// Run migrations up
+		if err := migrations.RunMigrations(db); err != nil {
+			log.Fatalf("Migration failed: %v", err)
+		}
+	case "rollback":
+		// Rollback the last migration
+		if err := migrations.RollbackMigration(db); err != nil {
+			log.Fatalf("Rollback failed: %v", err)
+		}
+	case "drop":
+		// Drop all tables (development only)
+		if err := migrations.DropAllTables(db); err != nil {
+			log.Fatalf("Drop failed: %v", err)
+		}
+	case "status":
+		// Print current migration status
+		version, dirty, err := migrations.GetMigrationStatus(db)
+		if err != nil {
+			log.Fatalf("Failed to get migration status: %v", err)
+		}
+		log.Printf("Current migration version: %d, dirty: %t", version, dirty)
+	default:
+		log.Fatalf("Unknown migration command: %s", migrationCommand)
+	}
+
+	log.Printf("Migration command '%s' completed successfully", migrationCommand)
 }
