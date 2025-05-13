@@ -7,6 +7,7 @@ import (
 	"logger-service/internal/config"
 	"logger-service/internal/domain"
 	"logger-service/internal/handlers/grpc"
+	"logger-service/internal/migrations"
 	"net"
 	"os"
 	"os/signal"
@@ -24,13 +25,17 @@ func main() {
 	// Thiết lập logger
 	logger := log.New(os.Stdout, "[LOGGER-SVC] ", log.LstdFlags)
 
+	// Process command line arguments for migrations
+	if len(os.Args) > 1 {
+		handleMigrationCommands(logger)
+		return
+	}
+
 	// Load configuration
 	cfg, err := config.LoadConfig()
 	if err != nil {
 		logger.Fatalf("Failed to load configuration: %v", err)
 	}
-
-	logger.Printf("Starting logger service on port %s", cfg.Server.GRPCPort)
 
 	// Kết nối đến MongoDB
 	mongoClient, err := connectToMongo(cfg)
@@ -38,6 +43,15 @@ func main() {
 		logger.Panic(err)
 	}
 	client = mongoClient
+
+	// Run migrations if AUTO_MIGRATE is set to true
+	if os.Getenv("AUTO_MIGRATE") == "true" {
+		logger.Println("AUTO_MIGRATE enabled, running migrations...")
+		migrator := migrations.NewMongoDatabaseMigrator(client, cfg.MongoDB.Database)
+		if err := migrator.RunMigrations(); err != nil {
+			logger.Fatalf("Failed to run migrations: %v", err)
+		}
+	}
 
 	// Tạo context để đóng kết nối
 	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
@@ -81,12 +95,75 @@ func main() {
 	}
 }
 
+// handleMigrationCommands processes migration commands
+func handleMigrationCommands(logger *log.Logger) {
+	migrationCommand := os.Args[1]
+	logger.Printf("Running migration command: %s", migrationCommand)
+
+	// Load config
+	cfg, err := config.LoadConfig()
+	if err != nil {
+		logger.Fatalf("Failed to load config: %v", err)
+	}
+
+	// Connect to MongoDB
+	mongoClient, err := connectToMongo(cfg)
+	if err != nil {
+		logger.Fatalf("Failed to connect to MongoDB for migrations: %v", err)
+	}
+	defer func() {
+		if err := mongoClient.Disconnect(context.Background()); err != nil {
+			logger.Printf("Failed to disconnect from MongoDB: %v", err)
+		}
+	}()
+
+	// Create migrator
+	migrator := migrations.NewMongoDatabaseMigrator(mongoClient, cfg.MongoDB.Database)
+
+	// Process the command
+	switch migrationCommand {
+	case "migrate":
+		// Run migrations
+		if err := migrator.RunMigrations(); err != nil {
+			logger.Fatalf("Migration failed: %v", err)
+		}
+		logger.Println("MongoDB migrations completed successfully")
+
+	case "rollback":
+		// Rollback the last migration
+		if err := migrator.RollbackMigration(); err != nil {
+			logger.Fatalf("Rollback failed: %v", err)
+		}
+		logger.Println("Rollback completed successfully")
+
+	case "drop":
+		// Drop the database
+		if err := migrator.DropDatabase(); err != nil {
+			logger.Fatalf("Drop failed: %v", err)
+		}
+		logger.Println("Database dropped successfully")
+
+	case "status":
+		// Get migration status
+		status, err := migrator.GetMigrationStatus()
+		if err != nil {
+			logger.Fatalf("Failed to get migration status: %v", err)
+		}
+		logger.Printf("MongoDB migration status:\n%s", status)
+
+	default:
+		logger.Fatalf("Unknown migration command: %s", migrationCommand)
+	}
+
+	logger.Printf("Migration command '%s' completed successfully", migrationCommand)
+}
+
 func connectToMongo(cfg *config.Config) (*mongo.Client, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
 	// Manually build the connection string with credentials
-	mongoURI := fmt.Sprintf("mongodb://%s:%s@%s:%s/%s?authSource=logs",
+	mongoURI := fmt.Sprintf("mongodb://%s:%s@%s:%s/%s?authSource=admin",
 		cfg.MongoDB.User,
 		cfg.MongoDB.Password,
 		cfg.MongoDB.Host,
