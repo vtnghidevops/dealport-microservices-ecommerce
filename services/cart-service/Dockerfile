@@ -20,6 +20,14 @@ WORKDIR /app
 
 # Copy the binary from the builder stage
 COPY --from=builder /app/cartService .
+# Copy the migrations directory
+COPY --from=builder /app/migrations /app/migrations
+
+# Make the init script executable
+RUN chmod +x /app/migrations/init_redis.sh
+
+# Install necessary tools for Redis
+RUN apk add --no-cache redis bash
 
 # Expose the port the app runs on
 EXPOSE 50054

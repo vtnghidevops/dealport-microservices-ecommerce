@@ -6,7 +6,9 @@ import (
 	"log"
 	"net"
 	"os"
+	"os/exec"
 	"os/signal"
+	"path/filepath"
 	"syscall"
 	"time"
 
@@ -24,6 +26,12 @@ import (
 )
 
 func main() {
+	// Process command line arguments
+	if len(os.Args) > 1 {
+		handleCommands()
+		return
+	}
+
 	log.Println("Starting cart service")
 
 	// Load config
@@ -35,6 +43,14 @@ func main() {
 	// Connect to Redis
 	redisConn := connectToRedis(cfg.Redis)
 	defer redisConn.Close()
+
+	// Auto-initialize Redis if enabled
+	if os.Getenv("AUTO_REDIS_INIT") == "true" {
+		log.Println("AUTO_REDIS_INIT enabled, initializing Redis...")
+		if err := initRedis(); err != nil {
+			log.Printf("Warning: Failed to initialize Redis: %v", err)
+		}
+	}
 
 	// Create repositories
 	cartRepo := redis.NewCartRepository(redisConn)
@@ -54,6 +70,65 @@ func main() {
 
 	log.Println("Shutting down cart service...")
 	time.Sleep(1 * time.Second) // Allow some time for cleanup
+}
+
+// handleCommands processes command line arguments
+func handleCommands() {
+	command := os.Args[1]
+
+	switch command {
+	case "init-redis":
+		// Initialize Redis
+		if err := initRedis(); err != nil {
+			log.Fatalf("Failed to initialize Redis: %v", err)
+		}
+		log.Println("Redis initialization completed successfully")
+	default:
+		log.Fatalf("Unknown command: %s", command)
+	}
+}
+
+// initRedis runs the Redis initialization script
+func initRedis() error {
+	// Find the script path - should be in the migrations directory
+	scriptPath := "migrations/init_redis.sh"
+
+	// For container environment, we may need to look elsewhere
+	containerScriptPath := "/app/migrations/init_redis.sh"
+
+	// Check if the script exists in the first path
+	if _, err := os.Stat(scriptPath); os.IsNotExist(err) {
+		// If not, try the container path
+		if _, err := os.Stat(containerScriptPath); os.IsNotExist(err) {
+			return fmt.Errorf("Redis initialization script not found at %s or %s",
+				scriptPath, containerScriptPath)
+		}
+		scriptPath = containerScriptPath
+	}
+
+	// Make the script executable
+	if err := os.Chmod(scriptPath, 0755); err != nil {
+		return fmt.Errorf("failed to make initialization script executable: %w", err)
+	}
+
+	// Get the directory containing the script
+	scriptDir := filepath.Dir(scriptPath)
+
+	// Set environment for the script
+	env := os.Environ()
+	if os.Getenv("ENVIRONMENT") == "" {
+		env = append(env, "ENVIRONMENT="+os.Getenv("ENVIRONMENT"))
+	}
+
+	// Create and run the command
+	cmd := exec.Command(scriptPath)
+	cmd.Env = env
+	cmd.Dir = scriptDir
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+
+	log.Printf("Running Redis initialization script: %s", scriptPath)
+	return cmd.Run()
 }
 
 func startGRPCServer(cartService domain.CartService, couponService domain.CouponService, port string) {
