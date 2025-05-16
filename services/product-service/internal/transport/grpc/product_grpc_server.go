@@ -595,6 +595,49 @@ func convertDomainProductToProto(product *domain.Product) *pb.Product {
 		return nil
 	}
 
+	// Lấy domain cho URL ảnh từ biến môi trường
+	imgBaseURL := os.Getenv("ECOMMERCE_IMG_URL")
+	if imgBaseURL == "" {
+		// Kiểm tra môi trường để quyết định URL mặc định
+		_, isLocalDev := os.LookupEnv("LOCAL_DEV")
+		if isLocalDev {
+			// Đang ở môi trường phát triển cục bộ
+			imgBaseURL = "http://localhost:58082" // Sử dụng cổng local của product-service
+		} else {
+			// Môi trường sản xuất hoặc staging
+			imgBaseURL = "https://api.deploy.io.vn" // Fallback nếu không có biến môi trường
+		}
+	}
+
+	// Hàm để thêm domain vào URL ảnh nếu nó là đường dẫn tương đối
+	addDomainToURL := func(url string) string {
+		if url == "" {
+			return ""
+		}
+		// Nếu URL đã có http:// hoặc https://, giữ nguyên
+		if strings.HasPrefix(url, "http://") || strings.HasPrefix(url, "https://") {
+			return url
+		}
+
+		// Nếu URL bắt đầu bằng /images, không cần thêm domain (giữ nguyên URL)
+		// if strings.HasPrefix(url, "/images") {
+		// 	return url
+		// }
+
+		// Nếu URL bắt đầu bằng /, thêm domain vào
+		if strings.HasPrefix(url, "/") {
+			return imgBaseURL + url
+		}
+
+		// Nếu URL không bắt đầu bằng giao thức (có thể là hostname), thêm http:// vào đầu
+		if strings.Contains(url, ".") || strings.Contains(url, "localhost") || strings.Contains(url, ":") {
+			return "http://" + url
+		}
+
+		// Trường hợp còn lại, thêm domain và / vào
+		return imgBaseURL + "/" + url
+	}
+
 	protoProduct := &pb.Product{
 		Id:            int32(product.ID),
 		Type:          product.Type,
@@ -620,8 +663,10 @@ func convertDomainProductToProto(product *domain.Product) *pb.Product {
 	// Convert features
 	protoProduct.Features = append([]string{}, product.Features...)
 
-	// Convert img_slider
-	protoProduct.ImgSlider = append([]string{}, product.ImgSlider...)
+	// Convert img_slider - thêm domain vào mỗi URL
+	for _, url := range product.ImgSlider {
+		protoProduct.ImgSlider = append(protoProduct.ImgSlider, addDomainToURL(url))
+	}
 
 	// Convert categories
 	protoProduct.Categories = append([]string{}, product.Categories...)
@@ -640,13 +685,13 @@ func convertDomainProductToProto(product *domain.Product) *pb.Product {
 		Count:         int32(product.ReviewsAvg.Count),
 	}
 
-	// Convert images
+	// Convert images - thêm domain vào URL của từng hình ảnh
 	protoImages := make([]*pb.ProductImage, 0, len(product.Images))
 	for _, image := range product.Images {
 		protoImages = append(protoImages, &pb.ProductImage{
 			Id:           int32(image.ID),
 			ProductId:    int32(image.ProductID),
-			Url:          image.URL,
+			Url:          addDomainToURL(image.URL),
 			IsPrimary:    image.IsPrimary,
 			DisplayOrder: int32(image.DisplayOrder),
 			CreatedAt:    image.CreatedAt.Format(time.RFC3339),

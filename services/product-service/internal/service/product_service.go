@@ -210,7 +210,20 @@ func (s *ProductService) UploadProductImage(productID int, file domain.FileUploa
 
 	// Create fully qualified URL for response - make sure we provide full URL
 	// This is what will be returned to the client after upload
-	fullImageURL := fmt.Sprintf("http://localhost:8080/api/products/images/%s", fileName)
+
+	imgBaseURL := os.Getenv("ECOMMERCE_IMG_URL")
+	if imgBaseURL == "" {
+		// Kiểm tra môi trường để quyết định URL mặc định
+		_, isLocalDev := os.LookupEnv("LOCAL_DEV")
+		if isLocalDev {
+			// Đang ở môi trường phát triển cục bộ
+			imgBaseURL = "http://localhost:58082" // Sử dụng cổng local của product-service
+		} else {
+			// Môi trường sản xuất hoặc staging
+			imgBaseURL = "https://api.deploy.io.vn" // Fallback nếu không có biến môi trường
+		}
+	}
+	fullImageURL := fmt.Sprintf("%s/api/products/images/%s", imgBaseURL, fileName)
 	fmt.Printf("Full image URL for response: %s", fullImageURL)
 
 	// If this is set as primary and there are existing images,
