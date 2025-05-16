@@ -12,6 +12,7 @@ import { TbScale } from "react-icons/tb";
 import ProductComments from '@/components/product/ProductComments';
 import { useCart } from '@/hooks/useCart';
 import { ProductDetailSkeleton } from '@/components/ui/skeletons';
+import { formatImageUrl } from '@/utils/api-config';
 
 const ProductDetail: React.FC = () => {
   const { categorySlug, productSlug } = useParams<{
@@ -36,6 +37,7 @@ const ProductDetail: React.FC = () => {
           setProduct(data || null);
           if (data) {
             setSelectedImage(data.imageUrl);
+            // console.log("reviewsAvg data:", data.reviewsAvg);
           }
         }
       } catch (error) {
@@ -137,7 +139,6 @@ const ProductDetail: React.FC = () => {
   // Format discount percentage
   const discountPercentage = product.discount ? `${product.discount}% OFF` : null;
 
-
   // Hàm scroll đến phần comments
   const scrollToComments = () => {
     commentsRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -148,9 +149,30 @@ const ProductDetail: React.FC = () => {
     name: product.name,
     price: product.price,
     originalPrice: product.originalPrice || undefined,
-    imageUrl: product.imageUrl,
+    imageUrl: formatImageUrl(product.imageUrl),
     stockQuantity: product.stockQuantity
   };
+
+  // Hàm helper để lấy giá trị rating đúng từ reviewsAvg bất kể cấu trúc
+  const getRating = (reviewsData: any) => {
+    if (!reviewsData) return 0;
+
+    // Kiểm tra các trường có thể có từ API
+    if (typeof reviewsData.rating === 'number') return reviewsData.rating;
+    if (typeof reviewsData.averageRating === 'number') return reviewsData.averageRating;
+    if (typeof reviewsData.average_rating === 'number') return reviewsData.average_rating;
+
+    return 0;
+  };
+
+  // Hàm helper để lấy số lượng đánh giá
+  const getReviewCount = (reviewsData: any) => {
+    if (!reviewsData) return 0;
+
+    if (typeof reviewsData.count === 'number') return reviewsData.count;
+    return 0;
+  };
+
   return (
     <div className="container mx-auto px-4 md:px-[5rem] py-[1rem]">
       {/* Breadcrumb */}
@@ -191,7 +213,7 @@ const ProductDetail: React.FC = () => {
             {/* Main Image */}
             <div className="w-full h-full flex items-center justify-center">
               <img
-                src={selectedImage || product.imageUrl}
+                src={formatImageUrl(selectedImage || product.imageUrl)}
                 alt={product.name}
                 className="w-full h-full object-contain max-h-[15rem] max-w-[30rem]"
               />
@@ -237,7 +259,7 @@ const ProductDetail: React.FC = () => {
                         }`}
                     >
                       <img
-                        src={img}
+                        src={formatImageUrl(img)}
                         alt={`${product.name} view ${absoluteIndex + 1}`}
                         className="w-[55px] h-[55px] object-cover"
                       />
@@ -287,7 +309,7 @@ const ProductDetail: React.FC = () => {
             {[...Array(5)].map((_, i) => (
               <span
                 key={i}
-                className={`text-lg ${i < product.reviewsAvg.rating
+                className={`text-lg ${i < getRating(product.reviewsAvg)
                   ? "text-[#FF9017]"
                   : "text-gray-300"}`}
               >
@@ -296,10 +318,10 @@ const ProductDetail: React.FC = () => {
             ))}
             <div className="flex items-center">
               <span className="flex items-center h-[28px] ml-2 text-cyprus text-sm font-bold">
-                {product.reviewsAvg.rating} Star Rating
+                {getRating(product.reviewsAvg).toFixed(1)} Star Rating
               </span>
               <span className="text-gray-500 text-sm ml-2">
-                ({product.reviewsAvg.count} Users feedback )
+                ({getReviewCount(product.reviewsAvg)} Users feedback)
               </span>
             </div>
           </div>
@@ -435,7 +457,7 @@ const ProductDetail: React.FC = () => {
           name={product.name}
           description={product.description}
           price={product.price}
-          imageUrl={product.imageUrl}
+          imageUrl={formatImageUrl(product.imageUrl)}
           categoryId={product.categoryId}
           type="normal"
           id={product.id}
@@ -458,7 +480,7 @@ const ProductDetail: React.FC = () => {
         <ProductComments
           productId={product.id.toString()}
           productName={product.name}
-          productImage={product.imageUrl}
+          productImage={formatImageUrl(product.imageUrl)}
         />
       </div>
     </div>

@@ -65,13 +65,13 @@ const DashboardAdmin: React.FC = () => {
         setProductCategories(categories);
         setNewProducts(latestProducts);
 
-        console.log('Dashboard data loaded successfully', {
-          dashboardSummary,
-          transactions: transactionData.transactions,
-          bestSellingProducts: topSellingProducts,
-          categories,
-          latestProducts
-        });
+        //  console.log('Dashboard data loaded successfully', {
+          //dashboardSummary,
+          //transactions: transactionData.transactions,
+          //bestSellingProducts: topSellingProducts,
+          //categories,
+          //latestProducts
+        //});
       } catch (error) {
         console.error("Error fetching dashboard data:", error);
       } finally {

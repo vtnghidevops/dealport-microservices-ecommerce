@@ -203,6 +203,9 @@ func (e *Emitter) EmitUserRegistered(user UserRegisteredData) error {
 
 // EmitOTPGenerated emits an auth.otp_generated event
 func (e *Emitter) EmitOTPGenerated(email, otp, purpose string, expiresIn int, message, actionText string) error {
+	// Tạo messageID duy nhất dựa trên email, purpose và timestamp
+	messageID := uuid.New().String()
+
 	data := OTPGeneratedData{
 		Email:      email,
 		OTP:        otp,
@@ -213,7 +216,7 @@ func (e *Emitter) EmitOTPGenerated(email, otp, purpose string, expiresIn int, me
 	}
 
 	event := StandardEvent{
-		ID:         uuid.New().String(),
+		ID:         messageID,
 		Name:       "auth.otp_generated",
 		Data:       data,
 		DataSchema: "v1",
@@ -222,40 +225,24 @@ func (e *Emitter) EmitOTPGenerated(email, otp, purpose string, expiresIn int, me
 		Version:    "1.0",
 	}
 
-	return e.publish("email.send", event)
+	return e.publish("auth.otp_generated", event)
 }
 
 // EmitPasswordChanged emits a user.password_changed event
 func (e *Emitter) EmitPasswordChanged(email string) error {
-	// First emit the log event for user activity
-	logData := map[string]interface{}{
-		"email":      email,
-		"action":     "password_changed",
-		"message":    fmt.Sprintf("Password changed for user %s", email),
-		"level":      "INFO",
-		"service":    "authentication-service",
-		"created_at": time.Now().Format(time.RFC3339),
-		"metadata":   map[string]interface{}{},
-	}
+	// Tạo messageID duy nhất dựa trên email và timestamp
+	messageID := uuid.New().String()
 
-	logEvent := StandardEvent{
-		ID:         uuid.New().String(),
-		Name:       "log.INFO.user.password_changed",
-		Data:       logData,
-		DataSchema: "v1",
-		Source:     "authentication-service",
-		CreatedAt:  time.Now(),
-		Version:    "1.0",
-	}
-
-	// Also emit original event format for backward compatibility
-	data := map[string]string{
+	// Tạo dữ liệu sự kiện với ID duy nhất
+	data := map[string]interface{}{
 		"email":      email,
 		"changed_at": time.Now().Format(time.RFC3339),
+		"message_id": messageID, // Thêm ID vào data để listener-service có thể sử dụng
 	}
 
+	// Tạo sự kiện chính - chỉ gửi một sự kiện với mục đích rõ ràng
 	event := StandardEvent{
-		ID:         uuid.New().String(),
+		ID:         messageID,
 		Name:       "user.password_changed",
 		Data:       data,
 		DataSchema: "v1",
@@ -264,52 +251,25 @@ func (e *Emitter) EmitPasswordChanged(email string) error {
 		Version:    "1.0",
 	}
 
-	// Publish both events
-	go func() {
-		if err := e.publish("log.INFO.user.password_changed", logEvent); err != nil {
-			e.logger.Printf("Failed to publish log.INFO.user.password_changed event: %v", err)
-		}
-	}()
-
+	// Chỉ sử dụng một event thay vì gửi nhiều sự kiện song song
 	return e.publish("user.password_changed", event)
 }
 
 // EmitPasswordResetRequested emits a auth.password_reset_requested event
 func (e *Emitter) EmitPasswordResetRequested(email, tokenHash string, expiresAt time.Time) error {
-	// First prepare the password reset data
+	// Tạo messageID duy nhất
+	messageID := uuid.New().String()
+
+	// Chuẩn bị dữ liệu đặt lại mật khẩu với ID duy nhất
 	passwordResetData := PasswordResetData{
 		Email:     email,
 		TokenHash: tokenHash,
 		ExpiresAt: expiresAt.Format(time.RFC3339),
 	}
 
-	// Emit log event for user activity
-	logData := map[string]interface{}{
-		"email":      email,
-		"action":     "password_reset_requested",
-		"message":    fmt.Sprintf("Password reset requested for user %s", email),
-		"level":      "INFO",
-		"service":    "authentication-service",
-		"created_at": time.Now().Format(time.RFC3339),
-		"metadata": map[string]interface{}{
-			"token_hash": tokenHash,
-			"expires_at": expiresAt.Format(time.RFC3339),
-		},
-	}
-
-	logEvent := StandardEvent{
-		ID:         uuid.New().String(),
-		Name:       "log.INFO.user.password_reset_requested",
-		Data:       logData,
-		DataSchema: "v1",
-		Source:     "authentication-service",
-		CreatedAt:  time.Now(),
-		Version:    "1.0",
-	}
-
-	// Also emit original event format for backward compatibility
+	// Tạo một event duy nhất với ID
 	event := StandardEvent{
-		ID:         uuid.New().String(),
+		ID:         messageID,
 		Name:       "auth.password_reset_requested",
 		Data:       passwordResetData,
 		DataSchema: "v1",
@@ -318,13 +278,10 @@ func (e *Emitter) EmitPasswordResetRequested(email, tokenHash string, expiresAt 
 		Version:    "1.0",
 	}
 
-	// Publish both events
-	go func() {
-		if err := e.publish("log.INFO.user.password_reset_requested", logEvent); err != nil {
-			e.logger.Printf("Failed to publish log.INFO.user.password_reset_requested event: %v", err)
-		}
-	}()
+	// Thêm thông tin gỡ lỗi
+	e.logger.Printf("Emitting auth.password_reset_requested event with ID %s for email %s", messageID, email)
 
+	// Chỉ gửi một event với routing key phù hợp
 	return e.publish("auth.password_reset_requested", event)
 }
 

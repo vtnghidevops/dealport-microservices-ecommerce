@@ -20,17 +20,17 @@ const LoggedInUserMenu: React.FC = () => {
   const headerContext = useContext(HeaderContext);
 
   const user = authState.user;
-  const isAdmin = user?.role === 'admin';
 
-  // console.log("LoggedInUserMenu - User data:", user);
-  // console.log("LoggedInUserMenu - Is admin:", isAdmin);
-  // console.log("LoggedInUserMenu - User profile structure:", user?.profile);
+  // Add safeguards for role display
+  const userRole = user?.role || 'user';
+  const isAdmin = userRole === 'admin';
 
-  // Add debugging log for component rendering
-  // useEffect(() => {
-  //   console.log("LoggedInUserMenu rendered - User data:", user);
-  //   console.log("LoggedInUserMenu - Component mounted with auth state:", authState);
-  // }, []);
+  // Log role information for debugging
+  useEffect(() => {
+    console.log("LoggedInUserMenu - User data:", user);
+    console.log("LoggedInUserMenu - User role:", userRole);
+    console.log("LoggedInUserMenu - Is admin:", isAdmin);
+  }, [user, userRole, isAdmin]);
 
   // Handle click outside to close menu
   useEffect(() => {
@@ -52,9 +52,9 @@ const LoggedInUserMenu: React.FC = () => {
   }, []);
 
   const handleLogout = () => {
-    console.log("LoggedInUserMenu: handleLogout called");
+    // console.log("LoggedInUserMenu: handleLogout called");
     logout();
-    console.log("LoggedInUserMenu: logout function completed");
+    // console.log("LoggedInUserMenu: logout function completed");
     toast({
       variant: "success",
       title: "Success",
@@ -71,9 +71,9 @@ const LoggedInUserMenu: React.FC = () => {
   };
 
   const handleLogoutAllDevices = () => {
-    console.log("LoggedInUserMenu: handleLogoutAllDevices called");
+    // console.log("LoggedInUserMenu: handleLogoutAllDevices called");
     logoutFromAllDevices();
-    console.log("LoggedInUserMenu: logoutFromAllDevices function completed");
+    // console.log("LoggedInUserMenu: logoutFromAllDevices function completed");
     toast({
       variant: "success",
       title: "Success",
@@ -130,7 +130,9 @@ const LoggedInUserMenu: React.FC = () => {
           <div className="border-b border-gray-200 w-full py-3 px-5 text-center">
             <p className="font-medium text-[15px]">Welcome, <span className="text-success">{user?.profile?.firstName || "User"}</span></p>
             <p className="text-xs text-gray-500">{user?.email || ""}</p>
-            <p className="text-xs text-gray-500">Role: <span className="font-semibold">{user?.role || "user"}</span></p>
+            {isAdmin && (
+              <p className="text-xs text-gray-500">Role: <span className="font-semibold text-blue-600">admin</span></p>
+            )}
           </div>
 
           <Link

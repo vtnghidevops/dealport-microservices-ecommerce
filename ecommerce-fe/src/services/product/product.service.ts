@@ -4,6 +4,48 @@ import { TopProductItem } from "@/components/homepage/BestSelling/models/topProd
 import { Product, ProductReview } from "@/types/product.model";
 import { Banner, BannerType, SliderBannerItem, BannerResponse } from '@/types/banner.model';
 import { TestimonialItem } from "@/components/homepage/HappyCustomers/models/testimonial.model";
+import { getApiUrl } from '@/utils/api-config';
+
+// Additional interface definitions to fix type errors
+interface BestSellingProduct extends Omit<Product, 'originalPrice' | 'orders'> {
+  sold: number;
+  onSale: boolean;
+  originalPrice: number | null;
+  orders?: number;
+  discount_percent: number;
+}
+
+interface NewProduct extends Omit<Product, 'originalPrice'> {
+  onSale: boolean;
+  originalPrice: number | null;
+  discount_percent: number;
+}
+
+interface ProductCategory {
+  id: string;
+  name: string;
+  slug: string;
+  description?: string;
+  imageUrl?: string;
+  parentId?: string;
+  children?: ProductCategory[];
+  level?: number;
+  isActive?: boolean;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+interface ProductBrand {
+  id: string;
+  name: string;
+  slug: string;
+  description?: string;
+  logoUrl?: string;
+  websiteUrl?: string;
+  isActive?: boolean;
+  createdAt?: string;
+  updatedAt?: string;
+}
 
 /**
  * Product Service
@@ -16,9 +58,6 @@ import { TestimonialItem } from "@/components/homepage/HappyCustomers/models/tes
  * - getTopSaleProducts: Get top-sale products with UI metadata (type="top-sale") (lấy sản phẩm top-sale với metadata UI)
  * - getLimitedProducts: Get limited edition products (type="limited") (lấy sản phẩm limited edition)
  */
-
-// Base URL for product service API from environment variables
-const API_BASE_URL = import.meta.env.VITE_PUBLIC_BROKER_API_URL || "http://localhost:8082/api/v1";
 
 // API Response interfaces
 export interface PaginationMeta {
@@ -63,7 +102,7 @@ const ProductService = {
       });
 
       const response = await axios.get<ApiResponse<Product[]>>(
-        `${API_BASE_URL}/products?${params.toString()}`
+        `${getApiUrl('products')}?${params.toString()}`
       );
 
       return {
@@ -78,7 +117,7 @@ const ProductService = {
   getProductById: async (id: string): Promise<Product> => {
     try {
       const response = await axios.get<ApiResponse<Product>>(
-        `${API_BASE_URL}/products/${id}`
+        `${getApiUrl(`products/${id}`)}`
       );
       return response.data.data;
     } catch (error) {
@@ -89,7 +128,7 @@ const ProductService = {
   getProductBySlug: async (slug: string): Promise<Product> => {
     try {
       const response = await axios.get<ApiResponse<Product>>(
-        `${API_BASE_URL}/products/slug/${slug}`
+        `${getApiUrl(`products/slug/${slug}`)}`
       );
       return response.data.data;
     } catch (error) {
@@ -100,7 +139,7 @@ const ProductService = {
   createProduct: async (product: Omit<Product, "id">): Promise<Product> => {
     try {
       const response = await axios.post<ApiResponse<Product>>(
-        `${API_BASE_URL}/products`,
+        getApiUrl('products'),
         product
       );
       return response.data.data;
@@ -112,7 +151,7 @@ const ProductService = {
   updateProduct: async (id: string, product: Partial<Product>): Promise<Product> => {
     try {
       const response = await axios.put<ApiResponse<Product>>(
-        `${API_BASE_URL}/products/${id}`,
+        getApiUrl(`products/${id}`),
         product
       );
       return response.data.data;
@@ -125,7 +164,7 @@ const ProductService = {
   patchProduct: async (id: string, partialProduct: Partial<Product>): Promise<Product> => {
     try {
       const response = await axios.patch<ApiResponse<Product>>(
-        `${API_BASE_URL}/products/${id}`,
+        getApiUrl(`products/${id}`),
         partialProduct
       );
       return response.data.data;
@@ -136,7 +175,7 @@ const ProductService = {
 
   deleteProduct: async (id: string): Promise<boolean> => {
     try {
-      await axios.delete(`${API_BASE_URL}/products/${id}`);
+      await axios.delete(getApiUrl(`products/${id}`));
       return true;
     } catch (error) {
       return handleApiError(error);
@@ -151,7 +190,7 @@ const ProductService = {
   ): Promise<{ reviews: ProductReview[], pagination: PaginationMeta }> => {
     try {
       const response = await axios.get<ApiResponse<ProductReview[]>>(
-        `${API_BASE_URL}/products/${productId}/reviews?page=${page}&limit=${pageSize}`
+        `${getApiUrl(`products/${productId}/reviews`)}?page=${page}&limit=${pageSize}`
       );
 
       return {
@@ -166,7 +205,7 @@ const ProductService = {
   addProductReview: async (review: Omit<ProductReview, "id">): Promise<ProductReview> => {
     try {
       const response = await axios.post<ApiResponse<ProductReview>>(
-        `${API_BASE_URL}/products/${review.productId}/reviews`,
+        getApiUrl(`products/${review.productId}/reviews`),
         review
       );
       return response.data.data;
@@ -174,8 +213,6 @@ const ProductService = {
       return handleApiError(error);
     }
   },
-
-
 
   // Generic method to get products by type
   getProductsByType: async (type: string, page = 1, pageSize = 10, additionalFilters?: Record<string, string>): Promise<Product[]> => {
@@ -193,7 +230,6 @@ const ProductService = {
     }
   },
 
-
   // Get trending products
   getTrendingProducts: async (page = 1, pageSize = 10): Promise<Product[]> => {
     return ProductService.getProductsByType("trending", page, pageSize);
@@ -209,37 +245,136 @@ const ProductService = {
     try {
       // Get top-sale products
       const response = await axios.get<ApiResponse<TopProductItem[]>>(
-        `${API_BASE_URL}/products?page=${page}&limit=${pageSize}&type=top-sale`
+        `${getApiUrl('products')}?page=${page}&limit=${pageSize}&type=top-sale`
       );
 
-      return response.data.data.map(product => {
-        // Parse the uiMetadata if it's a string
-        let metadata = product.uiMetadata;
-        if (typeof product.uiMetadata === 'string') {
-          try {
-            metadata = JSON.parse(product.uiMetadata);
-          } catch (err) {
-            console.error("Error parsing uiMetadata:", err);
+      // Process and return the data
+      if (response.data && response.data.data) {
+        return response.data.data.map(product => {
+          // Parse the uiMetadata if it's a string
+          let metadata = product.uiMetadata || {};
+          if (typeof product.uiMetadata === 'string') {
+            try {
+              metadata = JSON.parse(product.uiMetadata);
+            } catch (err) {
+              console.error("Error parsing uiMetadata:", err);
+            }
           }
-        }
 
-        return {
-          ...product,
-          uiMetadata: {
-            setUpDesign: metadata.setUpDesign || 'row',
-            isCommingSoon: metadata.isCommingSoon || false
-          }
-        };
-      });
+          return {
+            ...product,
+            uiMetadata: {
+              setUpDesign: metadata.setUpDesign || 'row',
+              isCommingSoon: metadata.isCommingSoon || false
+            }
+          };
+        });
+      }
+
+      return [];
     } catch (error) {
-      console.error("Error fetching top-sale products:", error);
+      console.error('Error fetching top sale products:', error);
       return [];
     }
   },
 
-  // Get limited edition products
+  // Get Limited Edition Products
   getLimitedProducts: async (page = 1, pageSize = 10): Promise<Product[]> => {
     return ProductService.getProductsByType("limited", page, pageSize);
+  },
+
+  // Get Best Selling Products
+  getBestSellingProducts: async (page = 1, pageSize = 10): Promise<BestSellingProduct[]> => {
+    try {
+      const response = await axios.get<ApiResponse<BestSellingProduct[]>>(
+        `${getApiUrl('products')}?page=${page}&limit=${pageSize}&sort_by=orders&sort_dir=desc`
+      );
+
+      // Type cast to BestSellingProduct and add some additional UI fields
+      return (response.data.data || []).map(product => ({
+        ...product,
+        sold: product.orders || 0,
+        onSale: product.discount_percent > 0,
+        originalPrice: product.discount_percent > 0 ? product.price / (1 - product.discount_percent / 100) : null
+      }));
+    } catch (error) {
+      console.error('Error fetching best selling products:', error);
+      return [];
+    }
+  },
+
+  // Get new products (most recently added)
+  getNewProducts: async (page = 1, pageSize = 10): Promise<NewProduct[]> => {
+    try {
+      const response = await axios.get<ApiResponse<NewProduct[]>>(
+        `${getApiUrl('products')}?page=${page}&limit=${pageSize}&sort_by=created_at&sort_dir=desc`
+      );
+
+      // Return the data with some additional UI fields
+      return (response.data.data || []).map(product => ({
+        ...product,
+        onSale: product.discount_percent > 0,
+        originalPrice: product.discount_percent > 0 ? product.price / (1 - product.discount_percent / 100) : null
+      }));
+    } catch (error) {
+      console.error('Error fetching new products:', error);
+      return [];
+    }
+  },
+
+  // Get product categories with optional parent ID filter
+  getProductCategories: async (parentId?: string): Promise<ProductCategory[]> => {
+    try {
+      let url = getApiUrl('categories');
+      if (parentId) {
+        url += `?parent_id=${parentId}`;
+      }
+
+      const response = await axios.get<ApiResponse<ProductCategory[]>>(url);
+      return response.data.data || [];
+    } catch (error) {
+      console.error('Error fetching product categories:', error);
+      return [];
+    }
+  },
+
+  // Get category tree (hierarchical structure)
+  getCategoryTree: async (): Promise<ProductCategory[]> => {
+    try {
+      const response = await axios.get<ApiResponse<ProductCategory[]>>(
+        getApiUrl('categories/tree')
+      );
+      return response.data.data || [];
+    } catch (error) {
+      console.error('Error fetching category tree:', error);
+      return [];
+    }
+  },
+
+  // Get all product brands
+  getProductBrands: async (): Promise<ProductBrand[]> => {
+    try {
+      const response = await axios.get<ApiResponse<ProductBrand[]>>(
+        getApiUrl('brands')
+      );
+      return response.data.data || [];
+    } catch (error) {
+      console.error('Error fetching product brands:', error);
+      return [];
+    }
+  },
+
+  // Product Health Check
+  getProductHealth: async (): Promise<boolean> => {
+    try {
+      const response = await axios.get(
+        getApiUrl('products/health')
+      );
+      return response.status === 200;
+    } catch (error) {
+      console.error('Product service health check failed:', error);
+      return false;
+    }
   },
 
   // Get products by category slug
@@ -274,7 +409,7 @@ const CategoryService = {
     try {
       const params = new URLSearchParams(filters);
       const response = await axios.get<ApiResponse<Category[]>>(
-        `${API_BASE_URL}/categories?${params.toString()}`
+        `${getApiUrl('categories')}?${params.toString()}`
       );
       return response.data.data;
     } catch (error) {
@@ -285,7 +420,7 @@ const CategoryService = {
   getCategoryById: async (id: string): Promise<Category> => {
     try {
       const response = await axios.get<ApiResponse<Category>>(
-        `${API_BASE_URL}/categories/${id}`
+        getApiUrl(`categories/${id}`)
       );
       return response.data.data;
     } catch (error) {
@@ -296,7 +431,7 @@ const CategoryService = {
   getCategoryBySlug: async (slug: string): Promise<Category> => {
     try {
       const response = await axios.get<ApiResponse<Category>>(
-        `${API_BASE_URL}/categories/slug/${slug}`
+        getApiUrl(`categories/slug/${slug}`)
       );
       return response.data.data;
     } catch (error) {
@@ -309,7 +444,7 @@ const BannerService = {
   // Slider banner methods
   getSliderBanners: async (): Promise<SliderBannerItem[]> => {
     try {
-      const response = await axios.get(`${API_BASE_URL}/banners`, {
+      const response = await axios.get(getApiUrl('banners'), {
         params: {
           type: 'hero',
           is_active: true,
@@ -343,7 +478,7 @@ const BannerService = {
 
   getSliderBannerById: async (id: number): Promise<SliderBannerItem | undefined> => {
     try {
-      const response = await axios.get(`${API_BASE_URL}/banners/${id}`);
+      const response = await axios.get(getApiUrl(`banners/${id}`));
       const banner = response.data.data;
       return {
         id: banner.id,
@@ -384,7 +519,7 @@ const BannerService = {
         params.page_size = limit;
       }
 
-      const response = await axios.get(`${API_BASE_URL}/banners`, { params });
+      const response = await axios.get(getApiUrl('banners'), { params });
       return response.data.data;
     } catch (error) {
       console.error('Error fetching banners:', error);
@@ -394,7 +529,7 @@ const BannerService = {
 
   getBannerById: async (id: number): Promise<Banner | undefined> => {
     try {
-      const response = await axios.get(`${API_BASE_URL}/banners/${id}`);
+      const response = await axios.get(getApiUrl(`banners/${id}`));
       return response.data.data;
     } catch (error) {
       console.error(`Error fetching banner with ID ${id}:`, error);
@@ -407,7 +542,7 @@ const TestimonialService = {
   getTestimonials: async (limit: number = 7): Promise<TestimonialItem[]> => {
     try {
       // Try to fetch from API (cố gắng lấy dữ liệu từ API)
-      const response = await axios.get(`${API_BASE_URL}/testimonials`, {
+      const response = await axios.get(getApiUrl('testimonials'), {
         params: { limit }
       });
 

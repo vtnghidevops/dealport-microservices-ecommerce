@@ -1,6 +1,5 @@
 import axios from 'axios';
-
-const VITE_PUBLIC_BROKER_API_URL = import.meta.env.VITE_PUBLIC_BROKER_API_URL || 'http://localhost:8080';
+import { getApiUrl, getAuthHeader } from '@/utils/api-config';
 
 // Frontend interface using camelCase (dữ liệu đến từ API đã ở dạng camelCase)
 export interface Coupon {
@@ -58,28 +57,18 @@ const prepareCouponForAPI = (coupon: Partial<Coupon>): Partial<Coupon> => {
   return result;
 };
 
-// Get authentication header from localStorage
-const getAuthHeader = () => {
-  const token = localStorage.getItem('token');
-  console.log('Current auth token:', token ? `${token.substring(0, 15)}...` : 'No token found');
-  if (!token) return {};
-  return { Authorization: `Bearer ${token}` };
-};
-
 class CouponService {
-  private baseUrl = `${VITE_PUBLIC_BROKER_API_URL}/coupons`;
-
   /**
    * Get all coupons with optional pagination
    */
   async getCoupons(page: number = 1, limit: number = 10): Promise<{ coupons: Coupon[], total: number }> {
     try {
-      const response = await axios.get<CouponResponseData>(`${this.baseUrl}`, {
+      const response = await axios.get<CouponResponseData>(getApiUrl('coupons'), {
         headers: getAuthHeader(),
         params: { page, limit }
       });
 
-      console.log('API Response:', response.data);
+      // console.log('API Response:', response.data);
 
       // Get coupons array
       let coupons: Coupon[] = [];
@@ -102,7 +91,7 @@ class CouponService {
    */
   async getCoupon(id: string): Promise<Coupon> {
     try {
-      const response = await axios.get<CouponResponseData>(`${this.baseUrl}/${id}`, {
+      const response = await axios.get<CouponResponseData>(getApiUrl(`coupons/${id}`), {
         headers: getAuthHeader()
       });
 
@@ -122,7 +111,7 @@ class CouponService {
    */
   async getCouponByCode(code: string): Promise<Coupon> {
     try {
-      const response = await axios.get<CouponResponseData>(`${this.baseUrl}/code/${code}`, {
+      const response = await axios.get<CouponResponseData>(getApiUrl(`coupons/code/${code}`), {
         headers: getAuthHeader()
       });
 
@@ -142,21 +131,21 @@ class CouponService {
    */
   async createCoupon(coupon: Omit<Coupon, 'id' | 'usageCount'>): Promise<Coupon> {
     try {
-      console.log('Creating coupon with data:', coupon);
-      console.log('API URL:', `${this.baseUrl}`);
+      //console.log('Creating coupon with data:', coupon);
+      //console.log('API URL:', getApiUrl('coupons'));
 
       // Prepare coupon data for API (keep camelCase, format dates)
       const payload = prepareCouponForAPI(coupon);
-      console.log('Sending payload:', payload);
+      //console.log('Sending payload:', payload);
 
-      const response = await axios.post<CouponResponseData>(`${this.baseUrl}`, payload, {
+      const response = await axios.post<CouponResponseData>(getApiUrl('coupons'), payload, {
         headers: {
           ...getAuthHeader(),
           'Content-Type': 'application/json'
         }
       });
 
-      console.log('API response:', response.data);
+      //console.log('API response:', response.data);
 
       if (!response.data.data) {
         throw new Error('No coupon data returned from API');
@@ -169,14 +158,14 @@ class CouponService {
 
       return response.data.data as Coupon;
     } catch (error) {
-      console.error('Error creating coupon:', error);
+      //console.error('Error creating coupon:', error);
       if (axios.isAxiosError(error)) {
-        console.error('API Error details:', {
-          status: error.response?.status,
-          statusText: error.response?.statusText,
-          data: error.response?.data,
-          headers: error.response?.headers
-        });
+        //console.error('API Error details:', {
+          //status: error.response?.status,
+          //statusText: error.response?.statusText,
+          //data: error.response?.data,
+          //headers: error.response?.headers
+        //}); 
       }
       throw this.handleError(error);
     }
@@ -190,7 +179,7 @@ class CouponService {
       // Prepare coupon data for API (keep camelCase, format dates)
       const payload = prepareCouponForAPI(coupon);
 
-      const response = await axios.put<CouponResponseData>(`${this.baseUrl}/${id}`, payload, {
+      const response = await axios.put<CouponResponseData>(getApiUrl(`coupons/${id}`), payload, {
         headers: {
           ...getAuthHeader(),
           'Content-Type': 'application/json'
@@ -203,7 +192,7 @@ class CouponService {
 
       return response.data.data as Coupon;
     } catch (error) {
-      console.error(`Error updating coupon ${id}:`, error);
+      //console.error(`Error updating coupon ${id}:`, error);
       throw this.handleError(error);
     }
   }
@@ -213,7 +202,7 @@ class CouponService {
    */
   async deleteCoupon(id: string): Promise<{ success: boolean, message: string }> {
     try {
-      const response = await axios.delete(`${this.baseUrl}/${id}`, {
+      const response = await axios.delete(getApiUrl(`coupons/${id}`), {
         headers: getAuthHeader()
       });
 
@@ -222,7 +211,7 @@ class CouponService {
         message: response.data.message || 'Coupon deleted successfully'
       };
     } catch (error) {
-      console.error(`Error deleting coupon ${id}:`, error);
+      //console.error(`Error deleting coupon ${id}:`, error);
       throw this.handleError(error);
     }
   }
@@ -232,7 +221,7 @@ class CouponService {
    */
   async applyCoupon(couponCode: string): Promise<any> {
     try {
-      const response = await axios.post(`${VITE_PUBLIC_BROKER_API_URL}/cart/coupon`,
+      const response = await axios.post(getApiUrl('cart/coupon'),
         { coupon_code: couponCode },
         {
           headers: {
@@ -244,7 +233,7 @@ class CouponService {
 
       return response.data;
     } catch (error) {
-      console.error(`Error applying coupon ${couponCode}:`, error);
+      //console.error(`Error applying coupon ${couponCode}:`, error);
       throw this.handleError(error);
     }
   }
@@ -254,40 +243,33 @@ class CouponService {
    */
   async removeCoupon(): Promise<any> {
     try {
-      const response = await axios.delete(`${VITE_PUBLIC_BROKER_API_URL}/cart/coupon`, {
+      const response = await axios.delete(getApiUrl('cart/coupon'), {
         headers: getAuthHeader()
       });
 
       return response.data;
     } catch (error) {
-      console.error('Error removing coupon:', error);
+      //console.error('Error removing coupon:', error);
       throw this.handleError(error);
     }
   }
 
-  /**
-   * Handle API errors
-   */
   private handleError(error: any): Error {
     if (axios.isAxiosError(error)) {
-      // Handle specific error cases
-      if (error.response?.status === 401) {
-        return new Error('Unauthorized: Please login to manage coupons');
-      } else if (error.response?.status === 403) {
-        return new Error('Forbidden: You do not have permission to access this resource');
-      } else if (error.response?.status === 404) {
-        return new Error('Coupon not found');
-      } else if (error.response?.data?.error) {
-        return new Error(error.response.data.error);
-      } else if (error.response?.data?.message) {
-        return new Error(error.response.data.message);
+      // Detailed error handling for Axios errors
+      if (error.response) {
+        // The request was made and the server responded with a status code
+        // that falls out of the range of 2xx
+        const message = error.response.data?.message || error.response.statusText;
+        return new Error(message);
+      } else if (error.request) {
+        // The request was made but no response was received
+        return new Error('No response received from server. Please check your internet connection.');
       }
     }
-
-    return new Error('An error occurred while processing your request');
+    // Something happened in setting up the request that triggered an Error
+    return error instanceof Error ? error : new Error('An unexpected error occurred');
   }
 }
 
-// Export a singleton instance
-const couponService = new CouponService();
-export default couponService; 
+export default new CouponService(); 

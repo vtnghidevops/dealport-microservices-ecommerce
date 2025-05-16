@@ -33,8 +33,7 @@ import UserDashboard from "@/pages/user/Dashboard";
 import ProductPage from "@/pages/admin/product";
 import AdminLogin from '@/pages/admin/login/login' // Fix import path to correct location
 import ProtectedAdminRoute from "@/components/admin/auth/ProtectedAdminRoute";
-// import SkeletonDemoLive from "@/pages/SkeletonDemoLive";
-// import SkeletonDemo from "@/pages/SkeletonDemo";
+
 
 const AppRouters: React.FC = () => {
   return (
@@ -74,9 +73,7 @@ const AppRouters: React.FC = () => {
             <Route path="payment/result" element={<PaymentResult />} />
           </Route>
 
-          {/* Skeleton Demo Routes */}
-          {/* <Route path="/skeleton-demo-live" element={<SkeletonDemoLive />} />
-          <Route path="/skeleton-demo" element={<SkeletonDemo />} /> */}
+          
         </Route>
 
         {/* Admin Login Route */}

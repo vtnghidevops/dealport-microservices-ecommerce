@@ -1,14 +1,5 @@
 import axios from 'axios';
-
-// Base API URL already includes the /api/v1 prefix
-const VITE_PUBLIC_BROKER_API_URL = import.meta.env.VITE_PUBLIC_BROKER_API_URL || 'http://localhost:8080/api/v1';
-
-// Get auth header for authenticated requests
-const getAuthHeader = () => {
-  const token = localStorage.getItem('token');
-  if (!token) return {};
-  return { Authorization: `Bearer ${token}` };
-};
+import { getApiUrl, getAuthHeader } from '@/utils/api-config';
 
 // Interface for generic payment requests
 interface PaymentRequest {
@@ -29,9 +20,9 @@ interface PaymentResult {
 }
 
 class PaymentService {
-  // The base URL should just add the payments path without double adding /api/v1
-  private baseUrl = `${VITE_PUBLIC_BROKER_API_URL}/payments`;
-  private checkoutBaseUrl = `${VITE_PUBLIC_BROKER_API_URL}/checkout/payments`;
+  // Use the utility to get consistent API URLs
+  private baseUrl = getApiUrl('payments');
+  private checkoutBaseUrl = getApiUrl('checkout/payments');
 
   /**
    * Generic method to process a payment for an order with any payment method
@@ -42,8 +33,8 @@ class PaymentService {
     try {
       const headers = getAuthHeader();
 
-      console.log('Processing payment for order:', paymentRequest.orderId);
-      console.log('Payment details:', paymentRequest);
+      // console.log('Processing payment for order:', paymentRequest.orderId);
+      // console.log('Payment details:', paymentRequest);
 
       // Default currency to USD if not provided
       if (!paymentRequest.currency) {
@@ -56,7 +47,7 @@ class PaymentService {
         { headers }
       );
 
-      console.log('Payment response:', response.data);
+      // console.log('Payment response:', response.data);
 
       if (response.data && response.data.success) {
         return {
@@ -105,7 +96,7 @@ class PaymentService {
         { headers }
       );
 
-      console.log('Payment status response:', response.data);
+      //console.log('Payment status response:', response.data);
 
       if (response.data && response.data.success) {
         return {
@@ -165,10 +156,10 @@ class PaymentService {
       };
 
       // Log payment request details
-      console.log('Creating MoMo ATM payment with details:', {
-        url: `${this.baseUrl}/momo/create`,
-        payload
-      });
+      // console.log('Creating MoMo ATM payment with details:', {
+      //   url: `${this.baseUrl}/momo/create`,
+      //   payload
+      // });
 
       const response = await axios.post(
         `${this.baseUrl}/momo/create`,
@@ -177,7 +168,7 @@ class PaymentService {
       );
 
       // Log successful response
-      console.log('MoMo ATM payment created successfully:', response.data);
+      // console.log('MoMo ATM payment created successfully:', response.data);
 
       if (!response.data.data) {
         throw new Error('Invalid response format from payment service');
@@ -219,7 +210,7 @@ class PaymentService {
       const headers = getAuthHeader();
 
       // Log verification request
-      console.log('Verifying MoMo payment with params:', params);
+      // console.log('Verifying MoMo payment with params:', params);
 
       const response = await axios.post(
         `${this.baseUrl}/momo/verify`,
@@ -228,7 +219,7 @@ class PaymentService {
       );
 
       // Log successful verification
-      console.log('MoMo payment verification result:', response.data);
+      // console.log('MoMo payment verification result:', response.data);
 
       if (!response.data.data) {
         throw new Error('Invalid response format from verification service');

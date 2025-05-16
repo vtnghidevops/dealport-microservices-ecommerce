@@ -290,7 +290,7 @@ const Header: React.FC = () => {
   const { cartItems } = useCart();
   const cartItemCount = cartItems.length;
   const { authState } = useAuth();
-  const { isAuthenticated, isLoading, user } = authState;
+  const { isAuthenticated, isLoading } = authState;
   const [forceRerender, setForceRerender] = useState(0);
   // const [showDebug, setShowDebug] = useState(false);
   // const navigate = useNavigate();
@@ -301,7 +301,7 @@ const Header: React.FC = () => {
 
     // Listen for storage events which might indicate login state changes
     const handleStorageChange = () => {
-      console.log("Storage change detected - refreshing header");
+      // console.log("Storage change detected - refreshing header");
       setForceRerender(prev => prev + 1);
       checkLoginStatus();
     };
@@ -316,17 +316,17 @@ const Header: React.FC = () => {
 
     // If we have a token in localStorage but isAuthenticated is false, force a reload
     if (token && userString && !isAuthenticated) {
-      console.log("Header detected token in localStorage but not in context - forcing context update");
+     // console.log("Header detected token in localStorage but not in context - forcing context update");
       // Instead of reload, try to update the auth state context by dispatching an event
       window.dispatchEvent(new Event('storage'));
     }
 
-    console.log("Header directly checking localStorage:", {
-      hasToken: !!token,
-      hasUser: !!userString,
-      isAuthenticated,
-      userData: userString ? JSON.parse(userString) : null
-    });
+    // console.log("Header directly checking localStorage:", {
+    //   hasToken: !!token,
+    //   hasUser: !!userString,
+    //   isAuthenticated,
+    //   userData: userString ? JSON.parse(userString) : null
+    // });
 
     setForceRerender(prev => prev + 1);
   };
@@ -346,15 +346,15 @@ const Header: React.FC = () => {
   const isLoggedIn = isAuthenticated || (!!token && !!userString);
 
   // If we have data in localStorage but auth context hasn't updated yet, parse from localStorage
-  let parsedUser = user;
-  if (!user && userString) {
-    try {
-      parsedUser = JSON.parse(userString);
-      console.log("Using user data from localStorage:", parsedUser);
-    } catch (e) {
-      console.error("Failed to parse user from localStorage:", e);
-    }
-  }
+  // let parsedUser = user;
+  // if (!user && userString) {
+  //   try {
+  //     parsedUser = JSON.parse(userString);
+  //    // console.log("Using user data from localStorage:", parsedUser);
+  //   } catch (e) {
+  //     console.error("Failed to parse user from localStorage:", e);
+  //   }
+  // }
 
   // Debug the menu state
   // console.log("Menu rendering state:", {

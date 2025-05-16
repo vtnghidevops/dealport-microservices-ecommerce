@@ -20,6 +20,10 @@ export interface Product {
   shippingInfo: ShippingInfo;
   uiMetadata?: any;
   images?: ProductImage[];
+  // Admin-specific fields
+  discountPrice?: number;
+  categories?: any[];
+  mainCategory?: any;
 }
 
 export interface ProductImage {

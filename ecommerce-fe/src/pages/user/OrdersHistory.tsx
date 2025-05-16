@@ -111,10 +111,10 @@ const OrdersHistory: React.FC = () => {
   // Fetch orders function
   const fetchOrders = async () => {
     try {
-      console.log('Fetching orders...');
+      // console.log('Fetching orders...');
       setIsLoading(true);
       const result = await listOrders();
-      console.log('Orders fetched:', result.orders.length);
+      // console.log('Orders fetched:', result.orders.length);
       setCheckoutOrders(result.orders);
     } catch (error) {
       console.error('Error fetching orders:', error);
@@ -127,11 +127,11 @@ const OrdersHistory: React.FC = () => {
   useEffect(() => {
     // Only fetch if we haven't fetched before
     if (!hasOrdersBeenFetched.current) {
-      console.log('Initiating first order fetch');
+      // console.log('Initiating first order fetch');
       hasOrdersBeenFetched.current = true;
       fetchOrders();
     } else {
-      console.log('Orders already fetched, skipping fetch');
+      // console.log('Orders already fetched, skipping fetch');
       setIsLoading(false);
     }
     // No dependencies to prevent re-fetch

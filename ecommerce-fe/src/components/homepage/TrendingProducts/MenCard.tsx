@@ -2,7 +2,7 @@ import React from "react";
 import { getButtonClass } from "../../../utils/buttonUtils";
 import { Product } from "@/types/product.model";
 
-const MenCard: React.FC<Product> = ({ imageUrl  , price, discount }) => {
+const MenCard: React.FC<Product> = ({ imageUrl, price, discount }) => {
   return (
     <div
       className="bg-white rounded-xl overflow-hidden relative w-[166px] h-[171px] 
@@ -18,12 +18,12 @@ const MenCard: React.FC<Product> = ({ imageUrl  , price, discount }) => {
       <a href="#" className="flex justify-center items-center w-full h-full">
         <img
           src={imageUrl}
-          alt="Black pants"
+          alt="Product image"
           className="w-full h-full object-contain "
         />
       </a>
       <div className="absolute top-4 right-0 ">
-        {(price != 0 )&& (
+        {(price != 0) && (
           <span className="text-ocean-green p-[10px] text-[12px] z-10">
             ${price}
           </span>

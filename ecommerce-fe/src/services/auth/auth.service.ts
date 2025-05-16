@@ -1,16 +1,14 @@
 import axios from 'axios';
 import { UserLoginCredentials, UserRegistrationData, UserRole } from '@/types/user.model';
 import { formatErrorMessage } from '@/utils/error-handler';
-
-// Base URL for API requests - thay bằng URL thực tế của broker-service
-const API_BASE_URL = import.meta.env.VITE_PUBLIC_BROKER_API_URL || 'http://localhost:8080';
+import { BASE_API_URL } from '@/utils/api-config';
 
 // Thêm log để kiểm tra API_BASE_URL
-console.log("Auth Service API URL:", API_BASE_URL);
+// console.log("Auth Service API URL:", BASE_API_URL);
 
 // Axios instance với cấu hình chung
 const apiClient = axios.create({
-  baseURL: API_BASE_URL,
+  baseURL: BASE_API_URL,
   headers: {
     'Content-Type': 'application/json'
   }
@@ -69,7 +67,7 @@ apiClient.interceptors.response.use(
 
       // If we're already refreshing the token, wait for the new token
       if (isRefreshing) {
-        console.log("Another request is already refreshing the token, waiting...");
+        // console.log("Another request is already refreshing the token, waiting...");
         try {
           // Wait for the new token
           const newToken = await new Promise<string>((resolve, reject) => {
@@ -87,7 +85,7 @@ apiClient.interceptors.response.use(
           originalRequest.headers['Authorization'] = `Bearer ${newToken}`;
           return axios(originalRequest);
         } catch (subscribeError) {
-          console.error("Error waiting for token refresh:", subscribeError);
+          // console.error("Error waiting for token refresh:", subscribeError);
           return Promise.reject(error);
         }
       }
@@ -96,7 +94,7 @@ apiClient.interceptors.response.use(
       isRefreshing = true;
 
       try {
-        console.log("Token expired. Attempting to refresh...");
+        // console.log("Token expired. Attempting to refresh...");
 
         const refreshToken = localStorage.getItem('refreshToken');
         if (!refreshToken) {
@@ -104,14 +102,14 @@ apiClient.interceptors.response.use(
         }
 
         // Trực tiếp gọi API refresh thay vì tạo instance AuthService mới
-        const response = await axios.post(`${API_BASE_URL}/auth/refresh`, {
+        const response = await axios.post(`${BASE_API_URL}/auth/refresh`, {
           refresh_token: refreshToken
         });
 
         const responseData = response.data.data || response.data;
 
         if (responseData.access_token) {
-          console.log("Token refreshed successfully, updating all pending requests");
+          // console.log("Token refreshed successfully, updating all pending requests");
 
           // Update token in localStorage
           localStorage.setItem('token', responseData.access_token);
@@ -148,7 +146,7 @@ apiClient.interceptors.response.use(
 
         // Only redirect if it's a navigation-capable environment (browser)
         if (typeof window !== 'undefined' && !window.location.pathname.includes('/login')) {
-          console.log("Redirecting to login page");
+          // console.log("Redirecting to login page");
           // Use a small delay to allow the current code to complete
           setTimeout(() => {
             window.location.href = '/login';
@@ -175,14 +173,14 @@ class AuthService {
    */
   async login(credentials: UserLoginCredentials) {
     try {
-      console.log("Login attempt with:", credentials.email);
+      // console.log("Login attempt with:", credentials.email);
       const response = await apiClient.post('/auth/login', credentials);
-      console.log("Login response:", response.data);
+      // console.log("Login response:", response.data);
 
       // Kiểm tra cấu trúc response từ server
       const responseData = response.data.data || response.data;
-      console.log("Login response data parsed:", responseData);
-      console.log("User info from response:", responseData.user_info);
+      // console.log("Login response data parsed:", responseData);
+      // console.log("User info from response:", responseData.user_info);
 
       if (responseData.access_token) {
         // Lưu token vào localStorage
@@ -191,11 +189,11 @@ class AuthService {
 
         // Giải mã JWT token để lấy role
         const tokenData = this.parseJwt(responseData.access_token);
-        console.log("Token data extracted:", tokenData);
+        // console.log("Token data extracted:", tokenData);
 
         // Explicitly check and log the role from token
         const tokenRole: UserRole = tokenData?.role === 'admin' ? 'admin' : 'user';
-        console.log("Role from JWT token:", tokenRole);
+        // console.log("Role from JWT token:", tokenRole);
 
         // Nếu broker trả về thông tin user cơ bản, lưu tạm để hiển thị ngay
         if (responseData.user_info) {
@@ -210,7 +208,7 @@ class AuthService {
               lastName: responseData.user_info.last_name
             }
           };
-          console.log("Saving user info to localStorage with role from token:", basicUserInfo);
+          // console.log("Saving user info to localStorage with role from token:", basicUserInfo);
           localStorage.setItem('user', JSON.stringify(basicUserInfo));
         }
       }
@@ -224,7 +222,7 @@ class AuthService {
         message: responseData.message || response.data.message || "Login successful"
       };
     } catch (error: any) {
-      console.error('Login error:', error);
+      // console.error('Login error:', error);
       if (error.response && error.response.data) {
         throw new Error(formatErrorMessage(error.response.data.message || error.response.data.error || "Login failed"));
       }
@@ -249,16 +247,16 @@ class AuthService {
       };
 
       // Log registration data for debugging (without password)
-      const debugData = {
-        email: userData.email,
-        first_name: userData.firstName,
-        last_name: userData.lastName,
-        username: userData.username
-      };
-      console.log("Sending registration data:", debugData);
+      // const debugData = {
+      //   email: userData.email,
+      //   first_name: userData.firstName,
+      //   last_name: userData.lastName,
+      //   username: userData.username
+      // };
+      // console.log("Sending registration data:", debugData);
 
       const response = await apiClient.post('/auth/register', registerData);
-      console.log("Register response:", response.data);
+      // console.log("Register response:", response.data);
 
       // Handle both data.data and direct data formats
       const responseData = response.data.data || response.data;
@@ -269,7 +267,7 @@ class AuthService {
         user_id: responseData.user_id
       };
     } catch (error: any) {
-      console.error('Registration error:', error);
+      // console.error('Registration error:', error);
       if (error.response && error.response.data) {
         throw new Error(error.response.data.message || error.response.data.error || "Registration failed");
       }
@@ -282,14 +280,14 @@ class AuthService {
    * @param logoutFromAllDevices Nếu true, sẽ đăng xuất khỏi tất cả các thiết bị
    */
   logout(logoutFromAllDevices = false) {
-    console.log("Logging out user...", logoutFromAllDevices ? "from all devices" : "from current session");
+    // console.log("Logging out user...", logoutFromAllDevices ? "from all devices" : "from current session");
 
     // Lấy thông tin user trước khi xóa localStorage
     const token = localStorage.getItem('token');
     const userId = token ? this.getUserIdFromToken(token) : null;
     const userEmail = localStorage.getItem('user') ? JSON.parse(localStorage.getItem('user') || '{}').email : '';
 
-    console.log(`DEBUG logout: userId=${userId}, email=${userEmail}, logoutFromAllDevices=${logoutFromAllDevices}`);
+    // console.log(`DEBUG logout: userId=${userId}, email=${userEmail}, logoutFromAllDevices=${logoutFromAllDevices}`);
 
     // Xóa thông tin trong localStorage
     localStorage.removeItem('token');
@@ -302,11 +300,11 @@ class AuthService {
     // Gửi request đến server để vô hiệu hóa token
     // Đảm bảo request này được gửi dù có user hay không
     if (userId && userEmail) {
-      console.log(`DEBUG logout: Sending logout request to server for user ${userId}`);
+      // console.log(`DEBUG logout: Sending logout request to server for user ${userId}`);
 
       // Sử dụng axios trực tiếp thay vì apiClient để tránh interceptor
       // và đảm bảo request được gửi dù đã xóa token
-      const logoutUrl = `${API_BASE_URL}/auth/logout`;
+      const logoutUrl = `${BASE_API_URL}/auth/logout`;
       const logoutData = {
         user_id: userId,
         email: userEmail,
@@ -375,16 +373,16 @@ class AuthService {
       const minRefreshInterval = 60 * 1000; // Ít nhất 1 phút giữa các lần refresh
 
       if (currentTime - lastRefreshTime < minRefreshInterval) {
-        console.log("Skipping refresh due to rate limiting");
+        // console.log("Skipping refresh due to rate limiting");
         throw new Error('Rate limit exceeded for token refresh');
       }
 
       // Lưu thời gian refresh
       localStorage.setItem('lastTokenRefresh', currentTime.toString());
 
-      console.log("Attempting to refresh token with refresh token:", refreshToken.substring(0, 15) + "...");
+      //console.log("Attempting to refresh token with refresh token:", refreshToken.substring(0, 15) + "...");
       const response = await apiClient.post('/auth/refresh', { refresh_token: refreshToken });
-      console.log("Refresh token response:", response.data);
+      // console.log("Refresh token response:", response.data);
 
       const responseData = response.data.data || response.data;
 
@@ -392,7 +390,7 @@ class AuthService {
         throw new Error('Invalid response: No access token in refresh response');
       }
 
-      console.log("Successfully refreshed token");
+      // console.log("Successfully refreshed token");
 
       // Always update localStorage with new tokens
       localStorage.setItem('token', responseData.access_token);
@@ -468,13 +466,13 @@ class AuthService {
 
     const tokenData = token ? this.parseJwt(token) : null;
 
-    console.log("=== AUTH DEBUG ===");
-    console.log("API Base URL:", API_BASE_URL);
-    console.log("Has token:", !!token);
-    console.log("Has refresh token:", !!refreshToken);
-    console.log("Has user data:", !!user);
-    console.log("Token data:", tokenData);
-    console.log("User data:", user);
+    // console.log("=== AUTH DEBUG ===");
+    // console.log("API Base URL:", BASE_API_URL);
+    // console.log("Has token:", !!token);
+    // console.log("Has refresh token:", !!refreshToken);
+    // console.log("Has user data:", !!user);
+    // console.log("Token data:", tokenData);
+    // console.log("User data:", user);
 
     if (token) {
       const expiryTime = tokenData?.exp ? new Date(tokenData.exp * 1000) : 'unknown';
@@ -551,7 +549,7 @@ class AuthService {
       if (timeUntilExpiry <= 0) {
         // Token đã hết hạn
         if (currentTime - lastRefreshCheck > minRefreshInterval) {
-          console.log("Token expired, attempting refresh");
+          // console.log("Token expired, attempting refresh");
           localStorage.setItem('lastTokenRefreshCheck', currentTime.toString());
           await this.refreshToken();
           return true;
@@ -562,12 +560,12 @@ class AuthService {
       } else if (timeUntilExpiry <= expiryThresholdMs) {
         // Token sắp hết hạn
         if (currentTime - lastRefreshCheck > minRefreshInterval) {
-          console.log(`Token will expire in ${Math.floor(timeUntilExpiry / 60000)} minutes, refreshing proactively`);
+          // console.log(`Token will expire in ${Math.floor(timeUntilExpiry / 60000)} minutes, refreshing proactively`);
           localStorage.setItem('lastTokenRefreshCheck', currentTime.toString());
           await this.refreshToken();
           return true;
         } else {
-          console.log("Token expiring soon but skipping refresh due to rate limiting");
+          // console.log("Token expiring soon but skipping refresh due to rate limiting");
           return true; // Vẫn trả về true vì token vẫn còn hiệu lực
         }
       }
@@ -617,7 +615,7 @@ class AuthService {
 
     // Lưu ID interval để có thể hủy khi cần
     (window as any).__authRefreshInterval = intervalId;
-    console.log(`Auto refresh set up with interval of ${checkIntervalMinutes} minutes`);
+    //console.log(`Auto refresh set up with interval of ${checkIntervalMinutes} minutes`);
 
     // Thêm event listener cho việc thay đổi visibility tab
     document.addEventListener('visibilitychange', () => {
@@ -712,10 +710,10 @@ export const forgotPassword = async (email: string) => {
 
     // Yêu cầu password reset thông qua API password-reset của broker
     const response = await apiClient.post("auth/password-reset", { email });
-    console.log("Password reset response:", response.data);
+    // console.log("Password reset response:", response.data);
     return response.data;
   } catch (error: any) {
-    console.error('Error initiating password reset:', error);
+    // console.error('Error initiating password reset:', error);
     throw error;
   }
 };
@@ -729,7 +727,7 @@ export const resetPassword = async (email: string, password: string, token: stri
     await checkAccountExists(normalizedEmail);
 
     // Log debug info about token without revealing sensitive details
-    console.log(`Token provided (length: ${token.length})`);
+    // console.log(`Token provided (length: ${token.length})`);
 
     // Prepare the request payload
     const payload = {
@@ -738,12 +736,12 @@ export const resetPassword = async (email: string, password: string, token: stri
       email: normalizedEmail // Use normalized email
     };
 
-    console.log("Sending password update request with payload:",
-      { ...payload, password: "[MASKED]", token: `${token.substring(0, 10)}...` });
+    // console.log("Sending password update request with payload:",
+    //   { ...payload, password: "[MASKED]", token: `${token.substring(0, 10)}...` });
 
     // Sử dụng API password-update để cập nhật mật khẩu
     const response = await apiClient.post("/auth/password-update", payload);
-    console.log("Password update response:", response.data);
+    // console.log("Password update response:", response.data);
 
     // Ensure we return a consistent response format
     return {
@@ -768,10 +766,10 @@ export const requestOTP = async (email: string, purpose: string) => {
       email,
       purpose
     });
-    console.log("Request OTP response:", response.data);
+    // console.log("Request OTP response:", response.data);
     return response.data;
   } catch (error: any) {
-    console.error('Error requesting OTP:', error);
+    // console.error('Error requesting OTP:', error);
     throw error;
   }
 };
@@ -788,7 +786,7 @@ export const verifyOTP = async (email: string, otp: string, purpose: string) => 
         otp,
         purpose
       });
-      console.log("Verify password reset OTP response:", response.data);
+      // console.log("Verify password reset OTP response:", response.data);
       return response.data;
     } else {
       // Sử dụng API verify-registration để xác minh OTP cho đăng ký
@@ -797,11 +795,11 @@ export const verifyOTP = async (email: string, otp: string, purpose: string) => 
         otp,
         purpose
       });
-      console.log("Verify registration OTP response:", response.data);
+      // console.log("Verify registration OTP response:", response.data);
       return response.data;
     }
   } catch (error: any) {
-    console.error('Error verifying OTP:', error);
+    // console.error('Error verifying OTP:', error);
     throw error;
   }
 };
@@ -816,10 +814,10 @@ export const resendOTP = async (email: string, purpose: string) => {
       email,
       purpose
     });
-    console.log("Resend OTP response:", response.data);
+    // console.log("Resend OTP response:", response.data);
     return response.data;
   } catch (error: any) {
-    console.error('Error resending OTP:', error);
+    // console.error('Error resending OTP:', error);
     throw error;
   }
 };
@@ -829,7 +827,7 @@ export const checkAccountExists = async (email: string): Promise<boolean> => {
   try {
     // Gọi API kiểm tra tài khoản
     const response = await apiClient.post("/auth/check-account", { email });
-    console.log("Check account response:", response.data);
+    // console.log("Check account response:", response.data);
 
     const exists = response.data.exists || response.data.data?.exists || false;
 
@@ -874,10 +872,10 @@ export const changePassword = async (currentPassword: string, newPassword: strin
       token: token  // Send the token explicitly in the request body
     });
 
-    console.log("Change password response:", response.data);
+    // console.log("Change password response:", response.data);
     return response.data;
   } catch (error: any) {
-    console.error('Error changing password:', error);
+    //  console.error('Error changing password:', error);
 
     // Handle specific error messages from backend
     if (error.response && error.response.data) {

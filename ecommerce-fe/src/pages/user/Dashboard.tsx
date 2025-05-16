@@ -4,6 +4,9 @@ import UserLayout from '@/components/layouts/UserLayout';
 import { Link } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import UserAvatar from '@/components/user/UserAvatar';
+import orderService, { Order as ApiOrder, OrderStatus } from '@/services/user/order.service';
+import UserService from '@/services/user/user.service';
+import { format } from 'date-fns';
 
 // Types for user dashboard data
 interface UserData {
@@ -27,14 +30,6 @@ interface OrderStats {
   completed: number;
 }
 
-  // interface PaymentCard {
-  //   id: string;
-  //   last4: string;
-  //   cardHolder: string;
-  //   type: 'visa' | 'mastercard';
-  //   balance?: number;
-  // }
-
 interface Order {
   id: string;
   status: 'IN PROGRESS' | 'COMPLETED' | 'CANCELED';
@@ -42,6 +37,19 @@ interface Order {
   total: number;
   productCount: number;
 }
+
+// Map API order status to UI status
+const mapOrderStatus = (status: OrderStatus): 'IN PROGRESS' | 'COMPLETED' | 'CANCELED' => {
+  switch (status) {
+    case OrderStatus.Delivered:
+    case OrderStatus.Shipped:
+      return 'COMPLETED';
+    case OrderStatus.Cancelled:
+      return 'CANCELED';
+    default:
+      return 'IN PROGRESS';
+  }
+};
 
 const UserDashboard: React.FC = () => {
   const { authState } = useAuth();
@@ -64,17 +72,14 @@ const UserDashboard: React.FC = () => {
     pending: 0,
     completed: 0,
   });
-  // const [paymentCards, setPaymentCards] = useState<PaymentCard[]>([]);
   const [recentOrders, setRecentOrders] = useState<Order[]>([]);
 
   useEffect(() => {
     const fetchDashboardData = async () => {
       setIsLoading(true);
       try {
-        // In a real app, this would fetch data from your API
-        // For now, we'll use mock data based on the authenticated user
+        // Extract user data from auth state
         if (authState.user) {
-          // Extract user data from auth state
           const firstName = authState.user.profile?.firstName || '';
           const lastName = authState.user.profile?.lastName || '';
           const fullName = `${firstName} ${lastName}`.trim() || authState.user.username || 'User';
@@ -87,54 +92,65 @@ const UserDashboard: React.FC = () => {
             location: 'No location set',
           });
 
-          // Mock address data - in a real app, this would come from API
-          // Try to get the first address if exists
-          const userAddress = authState.user.addresses && authState.user.addresses.length > 0
-            ? authState.user.addresses[0]
-            : null;
+          // Get user address data
+          try {
+            const addresses = await UserService.getUserAddresses();
+            const userAddress = addresses.length > 0 ? addresses[0] : null;
 
-          setBillingAddress({
-            address: userAddress?.street || 'No address provided',
-            city: userAddress?.city || '',
-            zipCode: userAddress?.zipCode || '',
-            country: userAddress?.country || 'Vietnam',
-          });
+            if (userAddress) {
+              setBillingAddress({
+                address: userAddress.line1 || 'No address provided',
+                city: userAddress.city || '',
+                zipCode: userAddress.postal_code || '',
+                country: userAddress.country || 'Vietnam',
+              });
+            }
+          } catch (error) {
+            console.error('Error fetching user addresses:', error);
+          }
 
-          // Mock order stats - in a real app, this would come from API
-          setOrderStats({
-            total: 5,
-            pending: 2,
-            completed: 3,
-          });
+          // Get orders data
+          try {
+            const orders = await orderService.getOrders();
 
-          // Mock recent orders - in a real app, this would come from API
-          setRecentOrders([
-            {
-              id: 'ORD-12345',
-              status: 'COMPLETED',
-              date: '2023-05-15',
-              total: 129.99,
-              productCount: 2,
-            },
-            {
-              id: 'ORD-12346',
-              status: 'IN PROGRESS',
-              date: '2023-05-20',
-              total: 59.99,
-              productCount: 1,
-            },
-            {
-              id: 'ORD-12347',
-              status: 'CANCELED',
-              date: '2023-05-25',
-              total: 89.99,
-              productCount: 3,
-            },
-          ]);
+            // Calculate order statistics
+            const totalOrders = orders.length;
+            const pendingOrders = orders.filter((order: ApiOrder) =>
+              order.status !== OrderStatus.Delivered &&
+              order.status !== OrderStatus.Shipped &&
+              order.status !== OrderStatus.Cancelled
+            ).length;
+            const completedOrders = orders.filter((order: ApiOrder) =>
+              order.status === OrderStatus.Delivered ||
+              order.status === OrderStatus.Shipped
+            ).length;
+
+            setOrderStats({
+              total: totalOrders,
+              pending: pendingOrders,
+              completed: completedOrders
+            });
+
+            // Set recent orders (latest 3)
+            const mappedOrders = orders
+              .slice(0, 3)
+              .map((order: ApiOrder) => ({
+                id: order.orderNumber || order.id,
+                status: mapOrderStatus(order.status),
+                date: order.createdAt ? format(new Date(order.createdAt), 'yyyy-MM-dd') : 'Unknown',
+                total: order.total || 0,
+                productCount: order.items?.length || 0
+              }));
+
+            setRecentOrders(mappedOrders);
+          } catch (error) {
+            console.error('Error fetching orders:', error);
+            // Fallback to empty orders if API fails
+            setRecentOrders([]);
+          }
         }
       } catch (error) {
         console.error('Error fetching dashboard data:', error);
-        // In a real app, you'd show an error message to the user
       } finally {
         setIsLoading(false);
       }
@@ -252,7 +268,7 @@ const UserDashboard: React.FC = () => {
                   </div>
 
                   <div className='w-1/2'>
-                    <p className="text-2xl font-bold">{orderStats.pending.toString().padStart(2, '0')}</p>
+                    <p className="text-2xl font-bold">{orderStats.pending}</p>
                     <h3 className="text-sm text-neutral-600 font-medium">Pending Orders</h3>
                   </div>
 
@@ -306,32 +322,40 @@ const UserDashboard: React.FC = () => {
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
-                {recentOrders.map(order => (
-                  <tr key={order.id} className='font-sans h-[50px]'>
-                    <td className="pl-5 px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                      #{order.id}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
-                        ${order.status === 'COMPLETED' ? 'bg-green-100 text-success' :
-                          order.status === 'IN PROGRESS' ? 'bg-yellow-100 text-yellow-800' :
-                            'bg-red-100 text-red-800'}`}>
-                        {order.status}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {order.date}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      ${order.total.toLocaleString()} ({order.productCount} {order.productCount === 1 ? 'Product' : 'Products'})
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      <Link to={`/user/order-history/${order.id}`} className="text-blue-600 hover:text-blue-900 flex items-center">
-                        <FiEye className="mr-1" /> View Details
-                      </Link>
+                {recentOrders.length > 0 ? (
+                  recentOrders.map(order => (
+                    <tr key={order.id} className='font-sans h-[50px]'>
+                      <td className="pl-5 px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                        #{order.id}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
+                          ${order.status === 'COMPLETED' ? 'bg-green-100 text-success' :
+                            order.status === 'IN PROGRESS' ? 'bg-yellow-100 text-yellow-800' :
+                              'bg-red-100 text-red-800'}`}>
+                          {order.status}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        {order.date}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        ${order.total.toLocaleString()} ({order.productCount} {order.productCount === 1 ? 'Product' : 'Products'})
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        <Link to={`/user/order-history/${order.id}`} className="text-blue-600 hover:text-blue-900 flex items-center">
+                          <FiEye className="mr-1" /> View Details
+                        </Link>
+                      </td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td colSpan={5} className="px-6 py-4 text-center text-sm text-gray-500">
+                      No orders found. Start shopping to see your orders here!
                     </td>
                   </tr>
-                ))}
+                )}
               </tbody>
             </table>
           </div>

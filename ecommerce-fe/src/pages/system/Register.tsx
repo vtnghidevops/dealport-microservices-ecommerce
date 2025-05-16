@@ -1,4 +1,4 @@
-import { useState, FormEvent } from "react";
+import { useState, FormEvent, useCallback, useMemo } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { FcGoogle } from "react-icons/fc";
@@ -27,14 +27,53 @@ const Register: React.FC = () => {
   // const [errors, setErrors] = useState<Record<string, string>>({});
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [isPasswordFocused, setIsPasswordFocused] = useState(false);
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>): void => {
+  // Memoize the input change handler to prevent recreating on every render
+  const handleInputChange = useCallback((e: React.ChangeEvent<HTMLInputElement>): void => {
     const { name, value, type, checked } = e.target;
     setFormData(prev => ({
       ...prev,
       [name]: type === 'checkbox' ? checked : value
     }));
-  };
+  }, []);
+
+  // Memoize password validation function
+  const validatePassword = useCallback((password: string): boolean => {
+    const hasUpperCase = /[A-Z]/.test(password);
+    const hasLowerCase = /[a-z]/.test(password);
+    const hasNumbers = /\d/.test(password);
+    const hasSpecialChar = /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(password);
+
+    return hasUpperCase && hasLowerCase && hasNumbers && hasSpecialChar;
+  }, []);
+
+  // Memoize social signup handler
+  const handleSocialSignup = useCallback((provider: string) => {
+    toast({
+      title: "Coming Soon",
+      description: `${provider.charAt(0).toUpperCase() + provider.slice(1)} signup will be available soon!`,
+      variant: "default"
+    });
+  }, [toast]);
+
+  // Memoize toggle password visibility handlers
+  const togglePasswordVisibility = useCallback(() => {
+    setShowPassword(prev => !prev);
+  }, []);
+
+  const toggleConfirmPasswordVisibility = useCallback(() => {
+    setShowConfirmPassword(prev => !prev);
+  }, []);
+
+  // Memoize focus handlers
+  const handlePasswordFocus = useCallback(() => {
+    setIsPasswordFocused(true);
+  }, []);
+
+  const handlePasswordBlur = useCallback(() => {
+    setIsPasswordFocused(false);
+  }, []);
 
   const handleRegister = async (e: FormEvent): Promise<void> => {
     e.preventDefault();
@@ -64,6 +103,16 @@ const Register: React.FC = () => {
       });
       return;
     }
+
+    if (!validatePassword(formData.password)) {
+      toast({
+        variant: "destructive",
+        title: "Password Format Error",
+        description: "Password must contain uppercase, lowercase, numbers, and special characters"
+      });
+      return;
+    }
+
     if (!formData.email || !formData.firstName || !formData.lastName || !formData.username) {
       toast({
         variant: "destructive",
@@ -112,25 +161,14 @@ const Register: React.FC = () => {
     }
   };
 
-  // const validate = () => {
-  //   const errors: Record<string, string> = {};
-  //   if (!formData.firstName) {
-  //     errors.firstName = 'First name is required';
-  //   }
-  //   if (!formData.lastName) {
-  //     errors.lastName = 'Last name is required';
-  //   }
-  //   if (!formData.username) {
-  //     errors.username = 'Username is required';
-  //   }
-  //   if (!formData.email) {
-  //     errors.email = 'Email is required';
-  //   } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
-  //     errors.email = 'Email is invalid';
-  //   }
-  //   setErrors(errors);
-  //   return Object.keys(errors).length === 0;
-  // };
+  // Memoize the password requirements text to prevent recreation on each render
+  const passwordRequirementsText = useMemo(() => (
+    isPasswordFocused && (
+      <div className="text-xs text-gray-600 mt-1 mb-2">
+        Password must contain at least 8 characters with uppercase (viết hoa), lowercase (viết thường), numbers (số), and special characters (ký tự đặc biệt).
+      </div>
+    )
+  ), [isPasswordFocused]);
 
   return (
     <div className="my-[2rem] max-w-sm mx-auto p-[2rem] shadow-lg rounded-xl border w-[424px]">
@@ -183,7 +221,7 @@ const Register: React.FC = () => {
         />
         <Input
           name="phone"
-          placeholder="Phone Number (Optional)"
+          placeholder="Phone Number"
           value={formData.phone || ""}
           onChange={handleInputChange}
           className="!mb-3 h-[44px] focus:border-2 focus:border-blue-400"
@@ -193,23 +231,26 @@ const Register: React.FC = () => {
           <Input
             name="password"
             type={showPassword ? "text" : "password"}
-            placeholder="8+ characters"
+            placeholder="Enter Your Password (8+ characters)"
             value={formData.password}
             onChange={handleInputChange}
             className="h-[44px] focus:border-2 focus:border-blue-400 pr-10"
             disabled={isSubmitting}
             required
             minLength={8}
+            onFocus={handlePasswordFocus}
+            onBlur={handlePasswordBlur}
           />
           <button
             type="button"
             className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-700"
             tabIndex={-1}
-            onClick={() => setShowPassword((v) => !v)}
+            onClick={togglePasswordVisibility}
           >
             {showPassword ? <FiEyeOff /> : <FiEye />}
           </button>
         </div>
+        {passwordRequirementsText}
         <div className="relative mb-3 !mt-3">
           <Input
             name="confirmPassword"
@@ -225,7 +266,7 @@ const Register: React.FC = () => {
             type="button"
             className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-700"
             tabIndex={-1}
-            onClick={() => setShowConfirmPassword((v) => !v)}
+            onClick={toggleConfirmPasswordVisibility}
           >
             {showConfirmPassword ? <FiEyeOff /> : <FiEye />}
           </button>
@@ -263,6 +304,7 @@ const Register: React.FC = () => {
           variant="outline"
           className="!mb-5 h-[44px] w-full flex items-center gap-2 justify-center hover:bg-gray-100 transition-colors"
           disabled={isSubmitting}
+          onClick={() => handleSocialSignup('google')}
         >
           <FcGoogle className="!h-[20px] !w-[20px]" /> Sign up with Google
         </Button>
@@ -272,6 +314,7 @@ const Register: React.FC = () => {
           variant="outline"
           className="w-full h-[44px] flex items-center gap-2 justify-center hover:bg-gray-100 transition-colors"
           disabled={isSubmitting}
+          onClick={() => handleSocialSignup('apple')}
         >
           <FaApple className="!h-[20px] !w-[20px]" /> Sign up with Apple
         </Button>

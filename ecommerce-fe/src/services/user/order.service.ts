@@ -1,14 +1,5 @@
 import axios from 'axios';
-
-// Base API URL already includes the /api/v1 prefix
-const VITE_PUBLIC_BROKER_API_URL = import.meta.env.VITE_PUBLIC_BROKER_API_URL || 'http://localhost:8080/api/v1';
-
-// Get auth header for authenticated requests
-const getAuthHeader = () => {
-  const token = localStorage.getItem('token');
-  if (!token) return {};
-  return { Authorization: `Bearer ${token}` };
-};
+import { getApiUrl, getAuthHeader } from '@/utils/api-config';
 
 // Order status types
 export enum OrderStatus {
@@ -187,7 +178,7 @@ const adaptOrder = (backendOrder: BackendOrder): Order => {
 };
 
 class OrderService {
-  private baseUrl = `${VITE_PUBLIC_BROKER_API_URL}/checkout/orders`;
+  private baseUrl = getApiUrl('checkout/orders');
 
   /**
    * Fetch all orders for the authenticated user
@@ -196,43 +187,43 @@ class OrderService {
     try {
       const headers = getAuthHeader();
 
-      console.log('----------- ORDER SERVICE DEBUG -----------');
-      console.log('Fetching orders from:', this.baseUrl);
-      console.log('Authorization token present:', !!headers.Authorization);
+      // console.log('----------- ORDER SERVICE DEBUG -----------');
+      // console.log('Fetching orders from:', this.baseUrl);
+      // console.log('Authorization token present:', !!headers.Authorization);
 
       // Add cache-busting timestamp parameter to prevent browser caching
       const timestamp = new Date().getTime();
       const response = await axios.get<ApiResponse<BackendOrder[]>>(`${this.baseUrl}?t=${timestamp}`, { headers });
 
-      console.log('API Response received, status:', response.status);
-      console.log('Response headers:', response.headers);
-      console.log('Raw response data type:', typeof response.data);
-      console.log('Raw response data:', JSON.stringify(response.data, null, 2));
+      // console.log('API Response received, status:', response.status);
+      // console.log('Response headers:', response.headers);
+      // console.log('Raw response data type:', typeof response.data);
+      // console.log('Raw response data:', JSON.stringify(response.data, null, 2));
 
       // Process different response formats and convert to frontend order format
       let backendOrders: BackendOrder[] = [];
 
       // Check different possible formats
       if (Array.isArray(response.data)) {
-        console.log('Response is an array with', response.data.length, 'orders');
+        // console.log('Response is an array with', response.data.length, 'orders');
         backendOrders = response.data;
       } else if (typeof response.data === 'object' && response.data !== null) {
-        console.log('Response is an object with keys:', Object.keys(response.data));
+        // console.log('Response is an object with keys:', Object.keys(response.data));
 
         // Check for data property
         if (response.data.data !== undefined) {
-          console.log('Data property exists, type:', typeof response.data.data);
+          // console.log('Data property exists, type:', typeof response.data.data);
 
           if (Array.isArray(response.data.data)) {
-            console.log('Data property is an array with', response.data.data.length, 'items');
+           // console.log('Data property is an array with', response.data.data.length, 'items');
             backendOrders = response.data.data;
           } else if (typeof response.data.data === 'object' && response.data.data !== null) {
-            console.log('Data property is an object with keys:', Object.keys(response.data.data));
+            // console.log('Data property is an object with keys:', Object.keys(response.data.data));
 
             // Check for orders array inside data object (nested structure)
             const dataWrapper = response.data.data as DataWrapper<BackendOrder[]>;
             if (Array.isArray(dataWrapper.orders)) {
-              console.log('Found orders array inside data object with', dataWrapper.orders.length, 'orders');
+              // console.log('Found orders array inside data object with', dataWrapper.orders.length, 'orders');
               backendOrders = dataWrapper.orders;
             }
           }
@@ -240,14 +231,14 @@ class OrderService {
 
         // Check for orders property directly on response.data
         if (Array.isArray(response.data.orders)) {
-          console.log('Orders property is an array with', response.data.orders.length, 'items');
+        //  console.log('Orders property is an array with', response.data.orders.length, 'items');
           backendOrders = response.data.orders;
         }
       }
 
       // If we still don't have orders, check if the entire response might be the orders array
       if (backendOrders.length === 0 && typeof response.data === 'object' && response.data !== null) {
-        console.log('No orders found in data or orders properties, trying to adapt the entire response');
+        //Console.log('No orders found in data or orders properties, trying to adapt the entire response');
 
         // Log the top level data structure for debugging
         if (typeof response.data.data === 'object') {
@@ -255,13 +246,13 @@ class OrderService {
         }
       }
 
-      console.log('Final extracted backend orders count:', backendOrders.length);
+      // console.log('Final extracted backend orders count:', backendOrders.length);
 
       // Convert to frontend format
       const frontendOrders = backendOrders.map(order => adaptOrder(order));
-      console.log('Final frontend orders count:', frontendOrders.length);
-      console.log('Sample order (if available):', frontendOrders.length > 0 ? frontendOrders[0].id : 'No orders');
-      console.log('----------- END ORDER SERVICE DEBUG -----------');
+      // console.log('Final frontend orders count:', frontendOrders.length);
+      // console.log('Sample order (if available):', frontendOrders.length > 0 ? frontendOrders[0].id : 'No orders');
+      // console.log('----------- END ORDER SERVICE DEBUG -----------');
 
       return frontendOrders;
     } catch (error) {

@@ -1,14 +1,8 @@
 // src/services/comment.service.ts
 
 import { Comment, Reply, CommentPaginatedResponse } from '@/types/comment.model';
-// import axios from 'axios';
 import { ProductReview } from '@/types/product.model';
 import ProductService from './product.service';
-
-
-
-// Get API base URL from environment variables
-// const API_BASE_URL = import.meta.env.VITE_PUBLIC_BROKER_API_URL || "http://localhost:8082/api/v1";
 
 // Convert ProductReview from API to Comment type for frontend
 const convertProductReviewToComment = (review: ProductReview): Comment => {
@@ -57,22 +51,6 @@ export const commentService = {
       };
     } catch (error) {
       console.error("Error fetching comments from API:", error);
-      // Fallback to mock data in case of error
-      // let filteredMockComments = mockComments
-      //   .filter((c) => c.productId === productId)
-      //   .sort(
-      //     (a, b) =>
-      //       new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-      //   );
-
-      // if (rating !== undefined) {
-      //   filteredMockComments = filteredMockComments.filter((c) => c.rating === rating);
-      // }
-
-      // const total = filteredMockComments.length;
-      // const startIndex = (page - 1) * limit;
-      // const endIndex = startIndex + limit;
-
       return {
         data: [],
         pagination: {

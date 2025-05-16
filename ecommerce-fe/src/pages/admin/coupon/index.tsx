@@ -26,11 +26,11 @@ const CouponManagement: React.FC = () => {
 
       try {
         const response = await couponService.getCoupons(currentPage, 10);
-        console.log('Coupon data from service:', response.coupons);
+        //console.log('Coupon data from service:', response.coupons);
         setCoupons(response.coupons);
         setTotalPages(Math.ceil(response.total / 10));
       } catch (error) {
-        console.error('Error fetching coupons:', error);
+        //console.error('Error fetching coupons:', error);
         setApiError('Unable to load coupons. Please try again later.');
         toast({
           title: 'Error',

@@ -1,7 +1,6 @@
 import axios from 'axios';
 import { CartItem, CartTotalsData } from '@/types/cart.model';
-
-const VITE_PUBLIC_BROKER_API_URL = import.meta.env.VITE_VITE_PUBLIC_BROKER_API_URL || 'http://localhost:8080';
+import { getApiUrl, getAuthHeader } from '@/utils/api-config';
 
 export interface CartItemRequest {
   productId: number;
@@ -29,19 +28,6 @@ export interface StatusResponse {
   message: string;
 }
 
-/**
- * Get authentication headers for API requests
- * @returns Authentication headers object
- */
-const getAuthHeader = () => {
-  const token = localStorage.getItem('token');
-  if (!token) {
-    console.warn('No token found for authenticated request');
-    return {};
-  }
-  return { Authorization: `Bearer ${token}` };
-};
-
 // Helper function to get current user ID from localStorage
 // const getCurrentUserId = (): string | null => {
 //   const userStr = localStorage.getItem('user');
@@ -58,7 +44,7 @@ const getAuthHeader = () => {
 
 // Singleton instance of cart service
 class CartService {
-  private baseUrl = `${VITE_PUBLIC_BROKER_API_URL}/api/v1/cart`;
+  private baseUrl = getApiUrl('cart');
 
   // Get the user's cart
   async getCart(): Promise<CartResponse> {

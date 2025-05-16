@@ -9,6 +9,7 @@ const OTPVerification: React.FC = () => {
   const [otp, setOtp] = useState("");
   const [email, setEmail] = useState("");
   const [remainingTime, setRemainingTime] = useState(0);
+  const [resendCooldown, setResendCooldown] = useState(0);
   const [purpose, setPurpose] = useState<string>(""); // registration or password_reset
   const [loading, setLoading] = useState(false);
   const [resending, setResending] = useState(false);
@@ -49,6 +50,16 @@ const OTPVerification: React.FC = () => {
     return () => clearInterval(timer);
   }, [remainingTime]);
 
+  useEffect(() => {
+    if (resendCooldown <= 0) return;
+
+    const timer = setInterval(() => {
+      setResendCooldown(prev => Math.max(0, prev - 1));
+    }, 1000); // giảm mỗi giây
+
+    return () => clearInterval(timer);
+  }, [resendCooldown]);
+
   const handleVerify = async () => {
     if (otp.length !== 6) {
       toast({
@@ -62,7 +73,7 @@ const OTPVerification: React.FC = () => {
     setLoading(true);
     try {
       const response = await verifyOTP(email, otp, purpose);
-      console.log("OTP Verification Response:", response);
+     //  console.log("OTP Verification Response:", response);
 
       if (response.success || response.data?.success) {
         toast({
@@ -89,7 +100,7 @@ const OTPVerification: React.FC = () => {
             token = response.reset_token;
           }
 
-          console.log("Token from verify OTP:", token);
+         // console.log("Token from verify OTP:", token);
 
           if (!token) {
             console.error("No token returned from verification!");
@@ -123,7 +134,7 @@ const OTPVerification: React.FC = () => {
           });
         }
       } else {
-        console.error("OTP verification failed", response);
+       // console.error("OTP verification failed", response);
         toast({
           variant: "destructive",
           title: "Verification Failed",
@@ -131,7 +142,7 @@ const OTPVerification: React.FC = () => {
         });
       }
     } catch (error: any) {
-      console.error("OTP verification failed", error);
+      //console.error("OTP verification failed", error);
       toast({
         variant: "destructive",
         title: "Verification Failed",
@@ -148,13 +159,15 @@ const OTPVerification: React.FC = () => {
       const response = await resendOTP(email, purpose);
       setRemainingTime(response.expiresIn || 10);
 
+      setResendCooldown(60);
+
       toast({
         variant: "success",
         title: "OTP Resent",
         description: "A new verification code has been sent to your email"
       });
     } catch (error: any) {
-      console.error("Failed to resend OTP", error);
+      //  console.error("Failed to resend OTP", error);
       toast({
         variant: "destructive",
         title: "Failed to Resend OTP",
@@ -205,9 +218,9 @@ const OTPVerification: React.FC = () => {
           <button
             onClick={handleResendOTP}
             className="text-blue-500 hover:text-blue-700 text-sm disabled:text-gray-400"
-            disabled={remainingTime > 0 || resending}
+            disabled={resendCooldown > 0 || resending}
           >
-            {resending ? "Sending..." : "Resend Code"}
+            {resending ? "Sending..." : resendCooldown > 0 ? `Resend in ${resendCooldown}s` : "Resend Code"}
           </button>
 
           <Link

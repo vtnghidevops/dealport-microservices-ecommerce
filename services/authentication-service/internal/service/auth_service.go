@@ -47,7 +47,7 @@ func NewAuthService(
 	accessSecret, refreshSecret string,
 	accessDuration, refreshDuration time.Duration,
 	otpManager *util.OTPManager,
-	mailClient *util.MailClient,
+	//mailClient *util.MailClient,
 	eventEmitter *event.Emitter,
 ) AuthService {
 	return &authService{
@@ -57,7 +57,7 @@ func NewAuthService(
 		accessDuration:  accessDuration,
 		refreshDuration: refreshDuration,
 		otpManager:      otpManager,
-		mailClient:      mailClient,
+		//mailClient:      mailClient,
 		eventEmitter:    eventEmitter,
 	}
 }

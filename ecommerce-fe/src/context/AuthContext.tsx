@@ -44,7 +44,13 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     if (token && userStr) {
       try {
         const user = JSON.parse(userStr);
-        console.log("Found existing session in localStorage:", { user, hasToken: !!token });
+        // Make sure role is defined with a fallback to 'user'
+        if (!user.role) {
+          user.role = 'user';
+          console.log("Fixed missing role in user data from localStorage");
+        }
+
+        // console.log("Found existing session in localStorage:", { user, hasToken: !!token });
         return {
           user: user,
           accessToken: token,
@@ -53,7 +59,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           error: null
         };
       } catch (error) {
-        console.error('Error parsing stored user data:', error);
+        // console.error('Error parsing stored user data:', error);
         return initialState;
       }
     }
@@ -61,7 +67,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     return initialState;
   });
 
-  // Thêm helper function to parse JWT token
+  // Helper function to parse JWT token
   const parseJwt = (token: string) => {
     try {
       const base64Url = token.split('.')[1];
@@ -75,6 +81,20 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       console.error("Failed to parse JWT token:", e);
       return null;
     }
+  };
+
+  // Improved function to extract role from token
+  const getRoleFromToken = (token: string): UserRole => {
+    try {
+      const tokenData = parseJwt(token);
+      if (tokenData && tokenData.role) {
+        // Make sure tokenRole is a valid UserRole value
+        return tokenData.role === 'admin' ? 'admin' : 'user';
+      }
+    } catch (error) {
+      console.error("Error extracting role from token:", error);
+    }
+    return 'user'; // Default role if extraction fails
   };
 
   // Kiểm tra token khi component mount
@@ -106,12 +126,12 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       const minValidationInterval = 2 * 60 * 1000; // 2 phút
 
       if (currentTime - lastValidationTime < minValidationInterval) {
-        console.log("Skipping validation due to rate limiting");
+        // console.log("Skipping validation due to rate limiting");
         setSessionValidated(true);
         return;
       }
 
-      console.log("Validating session on app load...");
+      // console.log("Validating session on app load...");
       localStorage.setItem('lastTokenValidation', currentTime.toString());
 
       // Nếu đã có token, kiểm tra tính hợp lệ
@@ -119,25 +139,16 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         try {
           setAuthState(prev => ({ ...prev, isLoading: true }));
 
-          // Extract role directly from JWT token
-          let tokenRole: UserRole = 'user';
-          try {
-            const tokenData = parseJwt(authState.accessToken);
-            if (tokenData && tokenData.role) {
-              // Make sure tokenRole is a valid UserRole value
-              tokenRole = tokenData.role === 'admin' ? 'admin' : 'user';
-              console.log("Role extracted from JWT token during validation:", tokenRole);
-            }
-          } catch (jwtError) {
-            console.error("Error parsing JWT during validation:", jwtError);
-          }
+          // Extract role from token
+          const tokenRole = getRoleFromToken(authState.accessToken);
+          console.log("Role extracted from JWT token during validation:", tokenRole);
 
           // Kiểm tra token
           const validateResult = await authService.validateToken();
 
           // Kiểm tra các claims để debug
           if (validateResult.claims) {
-            console.log("Claims from validation:", validateResult.claims);
+            // console.log("Claims from validation:", validateResult.claims);
             // Nếu có role trong claims, lưu tạm vào localStorage
             if (validateResult.claims.role) {
               const userStr = localStorage.getItem('user');
@@ -197,6 +208,9 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
               const refreshResult = await authService.refreshToken();
               // console.log("Token refresh successful:", refreshResult);
 
+              // Extract role from new token
+              const newTokenRole = getRoleFromToken(refreshResult.access_token);
+
               // Get user again with the new token
               try {
                 // Use a safe fallback for userId since refreshResult.user_id might not exist
@@ -208,6 +222,9 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                 // console.log("Fetching user data after token refresh for ID:", userId);
                 const userData = await userService.getUserById() as User;
 
+                // Apply role from token
+                userData.role = newTokenRole;
+
                 setAuthState({
                   user: userData,
                   accessToken: refreshResult.access_token,
@@ -218,22 +235,41 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
                 // Update user in localStorage
                 localStorage.setItem('user', JSON.stringify(userData));
-                console.log("Auth state updated after token refresh");
+                console.log("Auth state updated after token refresh with role:", newTokenRole);
               } catch (userError) {
-                console.error('Error fetching user data after token refresh:', userError);
-                // Keep using existing user data
-                setAuthState({
-                  user: authState.user,
-                  accessToken: refreshResult.access_token,
-                  isAuthenticated: true,
-                  isLoading: false,
-                  error: null
-                });
+                // console.error('Error fetching user data after token refresh:', userError);
+                // Keep using existing user data with updated role
+                if (authState.user) {
+                  const updatedUser = {
+                    ...authState.user,
+                    role: newTokenRole
+                  };
+
+                  setAuthState({
+                    user: updatedUser,
+                    accessToken: refreshResult.access_token,
+                    isAuthenticated: true,
+                    isLoading: false,
+                    error: null
+                  });
+
+                  // Update localStorage
+                  localStorage.setItem('user', JSON.stringify(updatedUser));
+                  console.log("Updated role in existing user data to:", newTokenRole);
+                } else {
+                  setAuthState({
+                    user: { role: newTokenRole } as User,
+                    accessToken: refreshResult.access_token,
+                    isAuthenticated: true,
+                    isLoading: false,
+                    error: null
+                  });
+                }
               }
             } catch (refreshError) {
               console.error('Error refreshing token:', refreshError);
               // Nếu không làm mới được, đăng xuất
-              console.log("Token refresh failed, logging out");
+              // console.log("Token refresh failed, logging out");
               authService.logout();
               setAuthState(initialState);
             }
@@ -242,34 +278,59 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           console.error('Session validation error:', error);
           // Nếu kiểm tra token thất bại, thử làm mới token trước khi đăng xuất
           try {
-            console.log("Validation failed, attempting token refresh as fallback");
+            // console.log("Validation failed, attempting token refresh as fallback");
             const refreshResult = await authService.refreshToken();
-            console.log("Emergency token refresh successful");
+            // console.log("Emergency token refresh successful");
 
-            setAuthState(prev => ({
-              ...prev,
-              accessToken: refreshResult.access_token,
-              isAuthenticated: true,
-              isLoading: false
-            }));
+            // Extract role from new token
+            const newTokenRole = getRoleFromToken(refreshResult.access_token);
+            console.log("Role extracted from emergency token refresh:", newTokenRole);
+
+            // Do the best we can to preserve state
+            if (authState.user) {
+              const updatedUser = {
+                ...authState.user,
+                role: newTokenRole
+              };
+
+              setAuthState({
+                ...authState,
+                user: updatedUser,
+                accessToken: refreshResult.access_token,
+                isLoading: false
+              });
+
+              localStorage.setItem('user', JSON.stringify(updatedUser));
+            } else {
+              setAuthState(prev => ({
+                ...prev,
+                accessToken: refreshResult.access_token,
+                isLoading: false
+              }));
+            }
           } catch (refreshError) {
             console.error('Emergency token refresh also failed:', refreshError);
             // Now we finally log out
-            console.log("All authentication recovery attempts failed, logging out");
+            // console.log("All authentication recovery attempts failed, logging out");
             authService.logout();
             setAuthState(initialState);
           }
         }
       } else {
-        console.log("No token found in state, checking localStorage directly");
+        // console.log("No token found in state, checking localStorage directly");
         // Double-check localStorage directly in case state wasn't initialized properly
         const token = localStorage.getItem('token');
         const userStr = localStorage.getItem('user');
 
         if (token && userStr) {
           try {
-            console.log("Found token in localStorage but not in state, reinitializing");
+            // console.log("Found token in localStorage but not in state, reinitializing");
             const user = JSON.parse(userStr);
+
+            // Extract role from token as a safeguard
+            const tokenRole = getRoleFromToken(token);
+            user.role = tokenRole; // Ensure role is set from token
+
             setAuthState({
               user: user,
               accessToken: token,
@@ -277,6 +338,10 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
               isLoading: false,
               error: null
             });
+
+            // Update localStorage with fixed role
+            localStorage.setItem('user', JSON.stringify(user));
+            console.log("Reinitialized auth state with role from token:", tokenRole);
 
             // Now we have a token in state, so we'll re-run this effect
             // No need to validate here as the effect will run again
@@ -305,22 +370,8 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         try {
           // Extract role from JWT token directly
           const token = loginResult.access_token;
-          let tokenRole: UserRole = 'user'; // Default role
-
-          // Parse JWT to extract role claim
-          try {
-            const base64Url = token.split('.')[1];
-            const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
-            const jsonPayload = decodeURIComponent(atob(base64).split('').map(function (c) {
-              return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
-            }).join(''));
-            const tokenData = JSON.parse(jsonPayload);
-            // Ensure it's a valid UserRole
-            tokenRole = tokenData.role === 'admin' ? 'admin' : 'user';
-            console.log("Role extracted from JWT token:", tokenRole);
-          } catch (jwtError) {
-            console.error("Error parsing JWT token:", jwtError);
-          }
+          const tokenRole = getRoleFromToken(token);
+          console.log("Role extracted from JWT token during login:", tokenRole);
 
           const userData = await userService.getUserById();
           const userWithProfile = {
@@ -333,7 +384,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             }
           };
 
-          console.log("Setting user role from token:", tokenRole);
+          //console.log("Setting user role from token:", tokenRole);
 
           setAuthState({
             user: userWithProfile as User,
@@ -345,26 +396,12 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           localStorage.setItem('user', JSON.stringify(userWithProfile));
           window.dispatchEvent(new Event('storage'));
         } catch (userError) {
-          console.error("Error getting user details:", userError);
+          //console.error("Error getting user details:", userError);
 
           // Extract role from JWT token directly
           const token = loginResult.access_token;
-          let tokenRole: UserRole = 'user'; // Default role
-
-          // Parse JWT to extract role claim
-          try {
-            const base64Url = token.split('.')[1];
-            const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
-            const jsonPayload = decodeURIComponent(atob(base64).split('').map(function (c) {
-              return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
-            }).join(''));
-            const tokenData = JSON.parse(jsonPayload);
-            // Ensure it's a valid UserRole
-            tokenRole = tokenData.role === 'admin' ? 'admin' : 'user';
-            console.log("Fallback: Role extracted from JWT token:", tokenRole);
-          } catch (jwtError) {
-            console.error("Error parsing JWT token:", jwtError);
-          }
+          const tokenRole = getRoleFromToken(token);
+          console.log("Fallback: Role extracted from JWT token:", tokenRole);
 
           const basicUserInfo = {
             id: loginResult.user_id,
@@ -378,7 +415,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             }
           };
 
-          console.log("Setting basic user info with role from token:", tokenRole);
+          //console.log("Setting basic user info with role from token:", tokenRole);
 
           setAuthState({
             user: basicUserInfo as unknown as User,
@@ -450,7 +487,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   // Logout function
   const logout = (logoutFromAllDevices = false) => {
-    console.log("AuthContext: Calling logout with logoutFromAllDevices =", logoutFromAllDevices);
+    // console.log("AuthContext: Calling logout with logoutFromAllDevices =", logoutFromAllDevices);
     authService.logout(logoutFromAllDevices);
 
     // Update auth state with initialState
@@ -462,12 +499,12 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       error: null
     });
 
-    console.log("AuthContext: Auth state updated after logout");
+    //  console.log("AuthContext: Auth state updated after logout");
   };
 
   // Specialized function to logout from all devices
   const logoutFromAllDevices = () => {
-    console.log("AuthContext: Calling logoutFromAllDevices");
+    //console.log("AuthContext: Calling logoutFromAllDevices");
     logout(true);
   };
 
@@ -483,11 +520,23 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       // Gọi API cập nhật thông tin
       const updatedUser = await userService.updateProfile(userData);
 
+      // Preserve role from token if user data doesn't include it
+      let finalUser = updatedUser as User;
+      if (!updatedUser.role && authState.user?.role) {
+        finalUser = {
+          ...finalUser,
+          role: authState.user.role
+        };
+      }
+
       setAuthState(prev => ({
         ...prev,
-        user: updatedUser as User,
+        user: finalUser,
         isLoading: false
       }));
+
+      // Update localStorage
+      localStorage.setItem('user', JSON.stringify(finalUser));
     } catch (error: any) {
       setAuthState(prev => ({
         ...prev,
@@ -498,7 +547,14 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   };
 
   return (
-    <AuthContext.Provider value={{ authState, login, register, logout, logoutFromAllDevices, updateProfile }}>
+    <AuthContext.Provider value={{
+      authState,
+      login,
+      register,
+      logout,
+      logoutFromAllDevices,
+      updateProfile
+    }}>
       {children}
     </AuthContext.Provider>
   );

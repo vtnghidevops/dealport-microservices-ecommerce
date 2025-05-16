@@ -32,7 +32,7 @@ const PaymentCallback: React.FC = () => {
         // Check payment provider
         if (paramMap.partnerCode || paramMap.orderId) {
           // This appears to be a MoMo callback
-          console.log('Detected MoMo payment callback');
+          // console.log('Detected MoMo payment callback');
 
           // Get orderId from the params
           const { orderId } = paramMap;

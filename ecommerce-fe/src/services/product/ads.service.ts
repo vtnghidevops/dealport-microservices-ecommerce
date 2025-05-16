@@ -3,8 +3,7 @@ import { DisplayItem } from "../../components/homepage/Ads/models/ads.model";
 import { GamingItem } from "../../components/homepage/Ads/models/ads.model";
 import { NewFashionItem } from "../../components/homepage/Ads/models/ads.model";
 import axios from "axios";
-
-const VITE_PUBLIC_BROKER_API_URL = import.meta.env.VITE_PUBLIC_BROKER_API_URL || "http://localhost:8082/api/v1";
+import { getApiUrl } from '@/utils/api-config';
 
 // Helper function to parse UI settings JSON safely
 function parseUISettings(data: any): any {
@@ -25,7 +24,7 @@ function parseUISettings(data: any): any {
 export const BannerService = {
   getBannerData: async (): Promise<BannerShowCaseItem[]> => {
     try {
-      const response = await axios.get(`${VITE_PUBLIC_BROKER_API_URL}/ads/placement/banner`);
+      const response = await axios.get(getApiUrl('ads/placement/banner'));
       // console.log("item banner....:", response.data.data)
 
       // Transform API data to match frontend models
@@ -53,7 +52,7 @@ export const BannerService = {
 export const DisplayService = {
   getDataDisplay: async (): Promise<DisplayItem[]> => {
     try {
-      const response = await axios.get(`${VITE_PUBLIC_BROKER_API_URL}/ads/placement/display`);
+      const response = await axios.get(getApiUrl('ads/placement/display'));
       // Transform API data to match frontend models
       return response.data.data.map((item: any) => {
         // Parse uiSettings if it's a string
@@ -66,15 +65,15 @@ export const DisplayService = {
             uiSettings = {};
           }
         }
-        console.log("-----------------------")
-        console.log("Button type:", uiSettings.button_type);
-        console.log("Discount img:", uiSettings.discount_img);
-        console.log("Price:", item.price);
-        console.log("Custom title:", item.customTitle);
-        console.log("Name:", item.name);
-        console.log("Type:", item.type);
-        console.log("Product slug:", item.slug);
-        console.log("-----------------------")
+        // console.log("-----------------------")
+        // console.log("Button type:", uiSettings.button_type);
+        // console.log("Discount img:", uiSettings.discount_img);
+        // console.log("Price:", item.price);
+        // console.log("Custom title:", item.customTitle);
+        // console.log("Name:", item.name);
+        // console.log("Type:", item.type);
+        // console.log("Product slug:", item.slug);
+        // console.log("-----------------------")
 
         return {
           id: item.id,
@@ -99,7 +98,7 @@ export const DisplayService = {
 export const GamingService = {
   getDataGaming: async (): Promise<GamingItem[]> => {
     try {
-      const response = await axios.get(`${VITE_PUBLIC_BROKER_API_URL}/ads/placement/gaming`);
+      const response = await axios.get(getApiUrl('ads/placement/gaming'));
 
       // Transform API data to match frontend models
       return response.data.data.map((item: any) => {
@@ -124,7 +123,7 @@ export const GamingService = {
 export const NewFashionService = {
   getDataNewFashion: async (): Promise<NewFashionItem> => {
     try {
-      const response = await axios.get(`${VITE_PUBLIC_BROKER_API_URL}/ads/placement/new_fashion`);
+      const response = await axios.get(getApiUrl('ads/placement/new_fashion'));
 
       if (response.data && response.data.data && response.data.data.length > 0) {
         const item = response.data.data[0];

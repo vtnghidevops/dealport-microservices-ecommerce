@@ -9,19 +9,11 @@ import {
   CheckoutValidationResponse,
   PaymentResponse
 } from '@/types/checkout.model';
-
-const VITE_PUBLIC_BROKER_API_URL = import.meta.env.VITE_VITE_PUBLIC_BROKER_API_URL || 'http://localhost:8080';
-
-// Lấy token xác thực từ localStorage
-const getAuthHeader = () => {
-  const token = localStorage.getItem('token');
-  if (!token) return {};
-  return { Authorization: `Bearer ${token}` };
-};
+import { getApiUrl, getAuthHeader } from '@/utils/api-config';
 
 // Singleton instance of checkout service
 class CheckoutService {
-  private baseUrl = `${VITE_PUBLIC_BROKER_API_URL}/api/v1/checkout`;
+  private baseUrl = getApiUrl('checkout');
 
   // Validate checkout data before placing order
   async validateCheckout(

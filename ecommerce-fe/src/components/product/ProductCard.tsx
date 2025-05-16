@@ -2,6 +2,7 @@ import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useWishlist } from '@/hooks/useWishList';
 import { Product } from '@/types/product.model';
+import { formatImageUrl } from '@/utils/api-config';
 
 interface ProductCardProps {
   product: Product;
@@ -15,25 +16,25 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onClick }) => {
   // const [liked, setLiked] = useState<boolean>(false); // State to manage like button
   // console.log("product in product card", product.name)
   // Calculate discount percentage if not provided directly
-  const discountPercentage = product.discount ? product.discount : 
+  const discountPercentage = product.discount ? product.discount :
     product.originalPrice ? Math.round(((product.originalPrice - product.price) / product.originalPrice) * 100) : 0;
-  
+
   const handleLikeClick = (e: React.MouseEvent) => {
     e.preventDefault(); // Prevent event bubbling
     e.stopPropagation(); // Stop the event from propagating to parent elements
     // setLiked(!liked);
     if (isLiked) {
       removeFromWishlist(product.id.toString());
-      
+
     } else {
       addToWishlist(product);
-     
+
     }
   };
 
   const handleProductClick = (e: React.MouseEvent) => {
     e.preventDefault();
-    
+
     // If parent provided onClick, use it
     if (onClick) {
       onClick(e);
@@ -41,7 +42,7 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onClick }) => {
       // Otherwise handle navigation ourselves
       const productUrl = `/category/${product.categorySlug}/${product.slug}`;
       navigate(productUrl);
-      
+
       // Scroll to top after navigation
       window.scrollTo({
         top: 0,
@@ -108,7 +109,7 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onClick }) => {
         <div onClick={handleProductClick} className="cursor-pointer">
           <div className="p-2 flex justify-center items-center relative h-[180px] w-[190px] overflow-hidden">
             <img
-              src={product.imageUrl}
+              src={formatImageUrl(product.imageUrl)}
               alt={product.name}
               className="max-w-[150px] h-full object-contain transition-transform hover:scale-105"
             />
@@ -143,29 +144,28 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onClick }) => {
         </div>
 
         {/* Rating */}
-          <div className="mt-2 flex items-center">
-            <div className="flex">
-              {[...Array(5)].map((_, i) => (
-                <span
-                  key={i}
-                  className={`text-[16px] ${
-                    i < product.reviewsAvg.rating
-                      ? "text-[#FF9017]"  
-                      : "text-gray-300"
+        <div className="mt-2 flex items-center">
+          <div className="flex">
+            {[...Array(5)].map((_, i) => (
+              <span
+                key={i}
+                className={`text-[16px] ${i < product.reviewsAvg.rating
+                  ? "text-[#FF9017]"
+                  : "text-gray-300"
                   }`}
-                >
-                  ★
-                </span>
-              ))}
-            </div>
-            <span className="ml-1 mr-2 text-sm text-[#FF9017]">
-              ({product.reviewsAvg.rating})
-            </span>
-            <div className="mr-1 w-1 h-1 rounded-full border border-neutral-400 bg-neutral-400"></div>
-            <span className="ml-1 text-sm text-neutral-500">
-              {product.orders} orders
-            </span>
+              >
+                ★
+              </span>
+            ))}
           </div>
+          <span className="ml-1 mr-2 text-sm text-[#FF9017]">
+            ({product.reviewsAvg.rating})
+          </span>
+          <div className="mr-1 w-1 h-1 rounded-full border border-neutral-400 bg-neutral-400"></div>
+          <span className="ml-1 text-sm text-neutral-500">
+            {product.orders} orders
+          </span>
+        </div>
       </div>
     </div>
   );

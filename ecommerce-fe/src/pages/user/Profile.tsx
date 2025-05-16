@@ -179,19 +179,19 @@ const Profile: React.FC = () => {
           if (formData.addressId) {
             // Update existing address
             updatedAddress = await userService.updateAddress(formData.addressId, addressData);
-            console.log('Address updated:', updatedAddress);
+           console.log('Address updated:', updatedAddress);
           } else {
             // Create new address
             updatedAddress = await userService.createAddress(addressData);
-            console.log('New address created:', updatedAddress);
+           console.log('New address created:', updatedAddress);
           }
 
           // Refresh user data to get updated addresses
           const userId = userService.getUserIdFromStorage();
           if (userId) {
             try {
-              const updatedUser = await userService.getUserById();
-              console.log('User data refreshed:', updatedUser);
+              // const updatedUser = await userService.getUserById();
+              // console.log('User data refreshed:', updatedUser);
 
               // If the function call didn't update the global state, we could manually update it here
               // This depends on how your auth context is set up

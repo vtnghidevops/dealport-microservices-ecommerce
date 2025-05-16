@@ -1,13 +1,11 @@
 import axios from 'axios';
 import { User } from '@/types/user.model';
 import api from '@/services/user';
-
-// Base URL cho API requests đã được định nghĩa trong api/index.ts
-const API_BASE_URL = import.meta.env.VITE_PUBLIC_BROKER_API_URL || 'http://localhost:8080/api/v1';
+import { BASE_API_URL } from '@/utils/api-config';
 
 // Axios instance với cấu hình  
 const apiClient = axios.create({
-  baseURL: API_BASE_URL,
+  baseURL: BASE_API_URL,
   headers: {
     'Content-Type': 'application/json',
   }

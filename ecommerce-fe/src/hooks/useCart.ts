@@ -1,4 +1,4 @@
-import { useContext, useEffect, useState } from 'react';
+import { useContext, useEffect, useState, useRef } from 'react';
 import { CartContext, defaultCartTotals } from '@/context/CartContext';
 // import { CartItem } from '@/components/cart/models/cart.model';
 import { CartItem } from '@/types/cart.model';
@@ -25,6 +25,8 @@ export const useCart = (): UseCartReturn => {
   const [isLoading, setIsLoading] = useState(false);
   const { authState } = useAuth();
   const isAuthenticated = authState.isAuthenticated;
+  const cartFetchedRef = useRef(false);
+  const debouncedFetchRef = useRef<NodeJS.Timeout | null>(null);
 
   if (!context) {
     throw new Error('useCart must be used within a CartProvider');
@@ -34,9 +36,31 @@ export const useCart = (): UseCartReturn => {
 
   // Lấy giỏ hàng từ server khi user đăng nhập
   useEffect(() => {
+    // Chỉ gọi fetchCart khi user đăng nhập và cart chưa được tải
     if (isAuthenticated) {
-      fetchCart();
+      // Xóa timeout cũ nếu có
+      if (debouncedFetchRef.current) {
+        clearTimeout(debouncedFetchRef.current);
+      }
+
+      // Debounce 100ms để tránh gọi API nhiều lần
+      debouncedFetchRef.current = setTimeout(() => {
+        // Kiểm tra xem đã tải cart trong session này chưa
+        if (!cartFetchedRef.current) {
+          fetchCart();
+          cartFetchedRef.current = true;
+        }
+      }, 100);
+    } else {
+      // Reset flag khi logout
+      cartFetchedRef.current = false;
     }
+
+    return () => {
+      if (debouncedFetchRef.current) {
+        clearTimeout(debouncedFetchRef.current);
+      }
+    };
   }, [isAuthenticated]);
 
   // Tính toán tổng tiền dựa trên cart items
@@ -272,6 +296,8 @@ export const useCart = (): UseCartReturn => {
           // Cập nhật state
           setCartItems([]);
           setCartTotals(defaultCartTotals);
+          // Reset flag để cho phép tải lại giỏ hàng
+          cartFetchedRef.current = false;
 
           toast({
             title: response.message || 'Cart cleared successfully',
@@ -288,6 +314,8 @@ export const useCart = (): UseCartReturn => {
         // Xử lý local
         setCartItems([]);
         setCartTotals(defaultCartTotals);
+        // Reset flag để cho phép tải lại giỏ hàng
+        cartFetchedRef.current = false;
 
         toast({
           title: 'Cart cleared successfully',

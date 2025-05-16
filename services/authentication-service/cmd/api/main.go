@@ -152,8 +152,8 @@ func main() {
 	logger.Printf("Initialized OTP manager with expiry: %v", cfg.OTP.Expiry)
 
 	// Initialize mail client
-	mailClient := util.NewMailClient(cfg.MailClient.BaseURL)
-	logger.Printf("Initialized mail client with base URL: %s", cfg.MailClient.BaseURL)
+	//mailClient := util.NewMailClient(cfg.MailClient.BaseURL)
+	//logger.Printf("Initialized mail client with base URL: %s", cfg.MailClient.BaseURL)
 
 	// Start a periodic cleanup routine for expired OTPs
 	go func() {
@@ -175,7 +175,7 @@ func main() {
 		cfg.JWT.AccessDuration,
 		cfg.JWT.RefreshDuration,
 		otpManager,
-		mailClient,
+		//mailClient,
 		eventEmitter,
 	)
 

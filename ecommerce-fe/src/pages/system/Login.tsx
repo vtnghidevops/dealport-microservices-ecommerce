@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useCallback } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { FcGoogle } from "react-icons/fc";
@@ -25,13 +25,28 @@ const Login: React.FC = () => {
   const { toast } = useToast();
   const [showPassword, setShowPassword] = useState(false);
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>): void => {
+  // Memoize input change handler
+  const handleChange = useCallback((e: React.ChangeEvent<HTMLInputElement>): void => {
     const { name, value } = e.target;
     setFormData(prev => ({
       ...prev,
       [name]: value
     }));
-  };
+  }, []);
+
+  // Memoize toggle password visibility handler
+  const togglePasswordVisibility = useCallback(() => {
+    setShowPassword(prev => !prev);
+  }, []);
+
+  // Memoize social login handler
+  const handleSocialLogin = useCallback((provider: string) => {
+    toast({
+      title: "Coming Soon",
+      description: `${provider.charAt(0).toUpperCase() + provider.slice(1)} login will be available soon!`,
+      variant: "default"
+    });
+  }, [toast]);
 
   const handleLogin = async (e: React.FormEvent): Promise<void> => {
     e.preventDefault();
@@ -109,7 +124,7 @@ const Login: React.FC = () => {
             type="button"
             className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-700"
             tabIndex={-1}
-            onClick={() => setShowPassword((v) => !v)}
+            onClick={togglePasswordVisibility}
           >
             {showPassword ? <FiEyeOff /> : <FiEye />}
           </button>
@@ -136,6 +151,7 @@ const Login: React.FC = () => {
           variant="outline"
           className="!mb-5 h-[44px] w-full flex items-center gap-2 justify-center hover:bg-gray-100 transition-colors"
           disabled={isLoading}
+          onClick={() => handleSocialLogin('google')}
         >
           <FcGoogle className="!h-[20px] !w-[20px]" /> Login with Google
         </Button>
@@ -145,6 +161,7 @@ const Login: React.FC = () => {
           variant="outline"
           className="w-full h-[44px] flex items-center gap-2 justify-center hover:bg-gray-100 transition-colors"
           disabled={isLoading}
+          onClick={() => handleSocialLogin('apple')}
         >
           <FaApple className="!h-[20px] !w-[20px]" /> Login with Apple
         </Button>
