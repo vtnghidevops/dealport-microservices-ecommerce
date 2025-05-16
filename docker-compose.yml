@@ -19,7 +19,7 @@ services:
       context: ./services/broker-service
     restart: on-failure
     ports:
-      - "8080:8080"
+      - "58080:8080"
     environment:
       AUTH_SERVICE_HOST: ${AUTH_SERVICE_HOST}
       USER_SERVICE_HOST: ${USER_SERVICE_HOST}
@@ -45,8 +45,6 @@ services:
       REDIS_PORT: ${REDIS_CART_PORT}
       REDIS_PASSWORD: ${REDIS_CART_PASSWORD}
       AUTO_REDIS_INIT: "true"
-    # Run the cart service directly - the init script will be executed by the auto init
-    command: [ "./cartService" ]
     networks:
       - net
 
@@ -132,7 +130,7 @@ services:
       AUTO_MIGRATE: "true"
     # Add delay to ensure database is fully initialized, use force flag to fix dirty database
     command: >
-      sh -c "sleep 30 && ./authService migrate && ./authService"
+      sh -c "sleep 30 && ./authentication-service migrate && ./authentication-service"
     networks:
       - net
 
@@ -211,10 +209,10 @@ services:
       context: ./services/product-service
     restart: on-failure
     ports:
-      - "8082:8082"
+      - "58082:8082"
       - "50053:50053"
     environment:
-      DSN: ${PRODUCT_DSN}
+      # DSN: ${PRODUCT_DSN}
       PRODUCT_DB_HOST: postgres-products
       PRODUCT_DB_PORT: 5432
       PRODUCT_DB_USER: ${PRODUCT_DB_USER}
@@ -223,6 +221,7 @@ services:
       PRODUCT_DB_SSLMODE: disable
       MIGRATION_PATH: file:///app/migrations
       AUTO_MIGRATE: "true"
+      ECOMMERCE_IMG_URL: ${ECOMMERCE_IMG_URL}
     # Add delay to ensure database is fully initialized, use force flag to fix dirty database
     command: >
       sh -c "sleep 30 && ./product-service migrate -force=2 && ./product-service"
@@ -273,7 +272,7 @@ services:
       mongo-logger:
         condition: service_healthy
     # Run directly with automatic migration  
-    command: [ "./loggerService" ]
+    command: [ "./logger-service" ]
     networks:
       - net
 
@@ -328,6 +327,9 @@ services:
     depends_on:
       - rabbitmq
       - mail-service
+    environment:
+      MAIL_SERVICE_HOST: ${MAIL_SERVICE_HOST}
+      LOGGER_SERVICE_HOST: ${LOGGER_SERVICE_HOST}
     networks:
       - net
 
