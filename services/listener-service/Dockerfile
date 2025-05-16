@@ -12,7 +12,7 @@ COPY . .
 RUN go mod download
 
 # Build the application
-RUN CGO_ENABLED=0 GOOS=linux go build -o listenerService .
+RUN CGO_ENABLED=0 GOOS=linux go build -o listener-service .
 
 # final stage with tiny img
 FROM alpine:latest
@@ -20,7 +20,7 @@ FROM alpine:latest
 WORKDIR /app
 
 # Copy the binary from the builder stage
-COPY --from=builder /app/listenerService .
+COPY --from=builder /app/listener-service .
 
-CMD ["./listenerService"]
+CMD ["./listener-service"]
 

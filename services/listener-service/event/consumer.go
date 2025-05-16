@@ -10,6 +10,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/google/uuid"
 	amqp "github.com/rabbitmq/amqp091-go"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
@@ -131,21 +132,33 @@ type OTPGeneratedData struct {
 
 // Consumer handles message consumption from RabbitMQ
 type Consumer struct {
-	conn       *amqp.Connection
-	queueName  string
-	logger     *log.Logger
-	userClient userpb.UserServiceClient
-	userConn   *grpc.ClientConn
-	userMutex  sync.Mutex
+	conn             *amqp.Connection
+	queueName        string
+	logger           *log.Logger
+	userClient       userpb.UserServiceClient
+	userConn         *grpc.ClientConn
+	userMutex        sync.Mutex
+	messageProcessor *MessageProcessor
 }
 
 // Create a new consumer
 func NewConsumer(conn *amqp.Connection) (Consumer, error) {
-	logger := log.New(os.Stdout, "[LISTENER] ", log.LstdFlags)
+	// Get logger configuration from environment variables
+	loggerPrefix := os.Getenv("LOGGER_PREFIX")
+	if loggerPrefix == "" {
+		loggerPrefix = "[LISTENER] "
+	}
+
+	logger := log.New(os.Stdout, loggerPrefix, log.LstdFlags)
 
 	consumer := Consumer{
 		conn:   conn,
 		logger: logger,
+		messageProcessor: &MessageProcessor{
+			processedMessages: make(map[string]time.Time),
+			mutex:             sync.RWMutex{},
+			maxAge:            15 * time.Minute,
+		},
 	}
 
 	err := consumer.setup()
@@ -346,7 +359,7 @@ func (consumer *Consumer) Listen(topics []string) error {
 
 						err := consumer.handleStandardEvent(stdEvent, d.RoutingKey)
 						if err != nil {
-							consumer.logger.Printf("❌ Error processing standard event: %v", err)
+							consumer.logger.Printf("Error processing standard event: %v", err)
 							// Nack and don't requeue to avoid infinite loop - goes to DLQ
 							d.Nack(false, false)
 						} else {
@@ -391,8 +404,8 @@ func (consumer *Consumer) Listen(topics []string) error {
 
 // handleStandardEvent processes standardized event format based on event name
 func (consumer *Consumer) handleStandardEvent(event StandardEvent, routingKey string) error {
-	// Log dạng đơn giản khi nhận được event
-	// consumer.logger.Printf("Received event: %s", event.Name)
+	// Log ID của event để dễ dàng theo dõi
+	consumer.logger.Printf("Received event: %s, ID: %s, Routing key: %s", event.Name, event.ID, routingKey)
 
 	// Ghi log sự kiện vào logger-service
 	err := consumer.logStandardEvent(event)
@@ -400,7 +413,20 @@ func (consumer *Consumer) handleStandardEvent(event StandardEvent, routingKey st
 		consumer.logger.Printf("Warning: Failed to log event: %v", err)
 	}
 
-	// Process based on event name
+	// Process based on event name and routing key
+	// Ưu tiên kiểm tra routing key trước vì đây là cách RabbitMQ định tuyến tin nhắn
+	if routingKey == "auth.otp_generated" || event.Name == "auth.otp_generated" {
+		// Send OTP verification email
+		consumer.logger.Printf("Sending OTP verification email (from routing key: %s)", routingKey)
+		err := consumer.sendOTPEmail(event)
+		if err != nil {
+			consumer.logger.Printf("Error sending OTP email: %v", err)
+			return err
+		}
+		return nil
+	}
+
+	// Process based on event name if routing key handling didn't match
 	switch event.Name {
 	case "log.INFO.user.login_success":
 		// Hiển thị thông báo đăng nhập thành công
@@ -553,15 +579,6 @@ func (consumer *Consumer) handleStandardEvent(event StandardEvent, routingKey st
 		err := consumer.sendPasswordChangedEmail(event)
 		if err != nil {
 			consumer.logger.Printf("Error sending password changed email: %v", err)
-			return err
-		}
-
-	case "auth.otp_generated":
-		// Send OTP verification email
-		consumer.logger.Printf("Sending OTP verification email")
-		err := consumer.sendOTPEmail(event)
-		if err != nil {
-			consumer.logger.Printf("Error sending OTP email: %v", err)
 			return err
 		}
 
@@ -841,66 +858,33 @@ func (consumer *Consumer) handleLegacyEvent(payload Payload) error {
 			return err
 		}
 
-	case "user.registered":
-		// Handle user registration event - send welcome email
-		// First, log the event
+	case "user.registered", "auth.password_reset_requested", "user.password_changed", "order.created":
+		// Log sự kiện
 		err := logEvent(payload)
 		if err != nil {
-			consumer.logger.Println("Error logging registration event:", err)
+			consumer.logger.Println("Error logging event:", err)
 			return err
 		}
 
-		// Then publish email.send event
-		err = publishEmailEvent("registration", payload.Data)
+		// Chuyển đổi và xử lý giống như StandardEvent để đảm bảo tính nhất quán
+		// Tạo một StandardEvent từ payload legacy
+		data := map[string]interface{}{}
+		err = json.Unmarshal([]byte(payload.Data), &data)
 		if err != nil {
-			consumer.logger.Println("Error publishing registration email event:", err)
+			consumer.logger.Printf("Error parsing legacy event data: %v", err)
 			return err
 		}
 
-	case "auth.password_reset_requested":
-		// Handle password reset request - send password reset email
-		err := logEvent(payload)
-		if err != nil {
-			consumer.logger.Println("Error logging password reset request event:", err)
-			return err
+		// Tạo một StandardEvent từ payload
+		stdEvent := StandardEvent{
+			ID:        fmt.Sprintf("converted_%s", uuid.New().String()),
+			Name:      payload.Name,
+			Data:      data,
+			CreatedAt: time.Now(),
 		}
 
-		// Publish email.send event
-		err = publishEmailEvent("reset_password", payload.Data)
-		if err != nil {
-			consumer.logger.Println("Error publishing password reset email event:", err)
-			return err
-		}
-
-	case "user.password_changed":
-		// Handle password change - send notification email
-		err := logEvent(payload)
-		if err != nil {
-			consumer.logger.Println("Error logging password change event:", err)
-			return err
-		}
-
-		// Publish email.send event
-		err = publishEmailEvent("password_change", payload.Data)
-		if err != nil {
-			consumer.logger.Println("Error publishing password change email event:", err)
-			return err
-		}
-
-	case "order.created":
-		// Handle order creation - send order confirmation
-		err := logEvent(payload)
-		if err != nil {
-			consumer.logger.Println("Error logging order creation event:", err)
-			return err
-		}
-
-		// Publish email.send event
-		err = publishEmailEvent("order_confirmation", payload.Data)
-		if err != nil {
-			consumer.logger.Println("Error publishing order confirmation email event:", err)
-			return err
-		}
+		// Xử lý thông qua StandardEvent handler để đồng nhất cách xử lý
+		return consumer.handleStandardEvent(stdEvent, payload.Name)
 
 	default:
 		err := logEvent(payload)
@@ -917,7 +901,11 @@ func (consumer *Consumer) handleLegacyEvent(payload Payload) error {
 func (consumer *Consumer) logStandardEvent(event StandardEvent) error {
 	// Tạo LoggerClient với địa chỉ localhost mặc định
 	consumer.logger.Printf("Creating logger client connection...")
-	loggerClient, err := NewLoggerClient("logger-service:50056")
+	logHost := os.Getenv("LOGGER_SERVICE_HOST")
+	if logHost == "" {
+		logHost = "logger-service:50056"
+	}
+	loggerClient, err := NewLoggerClient(logHost)
 	if err != nil {
 		consumer.logger.Printf("Error creating logger client: %v", err)
 		return err
@@ -978,25 +966,6 @@ func (consumer *Consumer) forwardToUserService(event StandardEvent) error {
 			userData["id"], userData["email"], userData["first_name"], userData["last_name"], userData["username"])
 	}
 
-	// Set up gRPC connection to user service
-	userServiceURL := "user-service:50052" // Default for docker environment
-
-	// Try multiple service discovery patterns
-	userServiceOptions := []string{
-		"user-service:50052",
-		"localhost:50052",
-		"user-service.default.svc.cluster.local:50052",
-	}
-
-	// Allow override from environment
-	if envURL := os.Getenv("USER_SERVICE_URL"); envURL != "" {
-		userServiceURL = envURL
-		// consumer.logger.Printf("DEBUG: Using USER_SERVICE_URL from environment: %s", userServiceURL)
-	} else if os.Getenv("USE_LOCAL_SERVICES") == "true" || os.Getenv("LOCAL_DEVELOPMENT") == "true" {
-		userServiceURL = "user-service:50052"
-		// consumer.logger.Printf("DEBUG: Using localhost for user-service due to local environment")
-	}
-
 	// Add connection timeout with longer duration for reliability
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
@@ -1008,16 +977,16 @@ func (consumer *Consumer) forwardToUserService(event StandardEvent) error {
 	maxRetries := 5
 	connected := false
 
+	userServiceURL := os.Getenv("USER_SERVICE_HOST")
+	// Set default URL if environment variable is not set or empty
+	if userServiceURL == "" || userServiceURL == " " {
+		userServiceURL = "user-service:50052"
+	}
+
 	// Try service discovery patterns if explicit URL fails
 	for attempt := 0; attempt < maxRetries && !connected; attempt++ {
-		// On first attempt, use the configured URL
-		// On subsequent attempts, try other service discovery patterns
+		// Use the configured URL for all attempts
 		currentURL := userServiceURL
-		if attempt > 0 && attempt-1 < len(userServiceOptions) {
-			currentURL = userServiceOptions[attempt-1]
-			consumer.logger.Printf("DEBUG: Retrying with alternative service URL: %s (attempt %d/%d)",
-				currentURL, attempt+1, maxRetries)
-		}
 
 		consumer.logger.Printf("DEBUG: Attempting to connect to user service at %s (attempt %d/%d)",
 			currentURL, attempt+1, maxRetries)
@@ -1090,7 +1059,11 @@ func (consumer *Consumer) forwardToUserService(event StandardEvent) error {
 // logEvent logs a legacy event to the logger service
 func logEvent(entry Payload) error {
 	// Tạo LoggerClient với địa chỉ localhost mặc định
-	loggerClient, err := NewLoggerClient("logger-service:50056")
+	logHost := os.Getenv("LOGGER_SERVICE_HOST")
+	if logHost == "" {
+		logHost = "logger-service:50056"
+	}
+	loggerClient, err := NewLoggerClient(logHost)
 	if err != nil {
 		log.Printf("Error creating logger client: %v", err)
 		return err
@@ -1112,121 +1085,6 @@ func logEvent(entry Payload) error {
 	}
 
 	log.Printf("Legacy event logged: %s", entry.Name)
-	return nil
-}
-
-// publishEmailEvent publishes an email.send event to RabbitMQ
-func publishEmailEvent(emailType, data string) error {
-	// Parse the original data to extract email and other information
-	var originalData map[string]interface{}
-	err := json.Unmarshal([]byte(data), &originalData)
-	if err != nil {
-		return fmt.Errorf("error unmarshalling original data: %w", err)
-	}
-
-	// Ensure we have an email address
-	email, ok := originalData["email"].(string)
-	if !ok {
-		return fmt.Errorf("email address not found in event data")
-	}
-
-	// Create email payload
-	emailPayload := map[string]interface{}{
-		"type":      emailType,
-		"to":        email,
-		"from":      "", // Will use default from mail-service
-		"from_name": "", // Will use default from mail-service
-	}
-
-	// Set subject based on email type
-	switch emailType {
-	case "registration":
-		emailPayload["subject"] = "Welcome to our platform!"
-		// Add any registration-specific data
-		if name, ok := originalData["name"].(string); ok {
-			emailPayload["name"] = name
-		}
-		if username, ok := originalData["username"].(string); ok {
-			emailPayload["username"] = username
-		}
-		if verificationToken, ok := originalData["verification_token"].(string); ok {
-			emailPayload["token"] = verificationToken
-		}
-
-	case "reset_password":
-		emailPayload["subject"] = "Password Reset Request"
-		// Add reset token if available
-		if resetToken, ok := originalData["reset_token"].(string); ok {
-			emailPayload["token"] = resetToken
-		}
-
-	case "password_change":
-		emailPayload["subject"] = "Your Password Has Been Changed"
-		// No additional data needed
-
-	case "order_confirmation":
-		emailPayload["subject"] = "Order Confirmation"
-		// Add order details if available
-		if orderID, ok := originalData["order_id"].(string); ok {
-			emailPayload["order_id"] = orderID
-		}
-		if total, ok := originalData["total"].(float64); ok {
-			emailPayload["total"] = total
-		}
-		// Add items if available
-		if items, ok := originalData["items"].([]interface{}); ok {
-			emailPayload["items"] = items
-		}
-
-	default:
-		emailPayload["subject"] = "Notification from Our Platform"
-	}
-
-	// Convert to JSON for RabbitMQ
-	jsonData, err := json.Marshal(map[string]interface{}{
-		"name": "email.send",
-		"data": emailPayload,
-	})
-	if err != nil {
-		return fmt.Errorf("error marshalling email payload: %w", err)
-	}
-
-	// Determine RabbitMQ connection URL
-	rabbitURL := "amqp://guest:guest@rabbitmq:5672"
-
-	if os.Getenv("RABBITMQ_URL") != "" {
-		rabbitURL = os.Getenv("RABBITMQ_URL")
-	}
-
-	// Connect to RabbitMQ
-	conn, err := amqp.Dial(rabbitURL)
-	if err != nil {
-		return fmt.Errorf("error connecting to RabbitMQ: %w", err)
-	}
-	defer conn.Close()
-
-	// Create channel
-	ch, err := conn.Channel()
-	if err != nil {
-		return fmt.Errorf("error creating RabbitMQ channel: %w", err)
-	}
-	defer ch.Close()
-
-	// Publish to RabbitMQ
-	err = ch.Publish(
-		"logs_topic", // exchange
-		"email.send", // routing key
-		false,        // mandatory
-		false,        // immediate
-		amqp.Publishing{
-			ContentType: "application/json",
-			Body:        jsonData,
-		},
-	)
-	if err != nil {
-		return fmt.Errorf("error publishing to RabbitMQ: %w", err)
-	}
-
 	return nil
 }
 
@@ -1271,9 +1129,22 @@ func (consumer *Consumer) sendWelcomeEmail(event StandardEvent) error {
 	return nil
 }
 
-// Send password reset email
+// sendPasswordResetEmail sends a password reset email based on an event
 func (consumer *Consumer) sendPasswordResetEmail(event StandardEvent) error {
-	// Extract reset data
+	// Kiểm tra ID sự kiện đã được xử lý chưa
+	eventID := event.ID
+	if eventID == "" {
+		consumer.logger.Printf("Warning: Password reset event has no ID, will process anyway")
+	} else {
+		// Kiểm tra xem sự kiện này đã được xử lý chưa
+		processor := consumer.getMessageProcessor()
+		if processor != nil && processor.IsProcessed(eventID) {
+			consumer.logger.Printf("Skipping duplicate password reset email event with ID: %s", eventID)
+			return nil
+		}
+	}
+
+	// Extract password reset data
 	var resetData PasswordResetRequested
 
 	// Handle different data formats
@@ -1308,7 +1179,12 @@ func (consumer *Consumer) sendPasswordResetEmail(event StandardEvent) error {
 		return fmt.Errorf("failed to send password reset email: %w", err)
 	}
 
-	consumer.logger.Printf("Password reset email sent to %s", resetData.Email)
+	// Đánh dấu sự kiện đã được xử lý
+	if eventID != "" && consumer.getMessageProcessor() != nil {
+		consumer.getMessageProcessor().MarkProcessed(eventID)
+	}
+
+	consumer.logger.Printf("Password reset email sent to %s with event ID: %s", resetData.Email, eventID)
 	return nil
 }
 
@@ -1680,6 +1556,20 @@ func (consumer *Consumer) sendPaymentSuccessEmail(event StandardEvent) error {
 
 // Send OTP verification email
 func (consumer *Consumer) sendOTPEmail(event StandardEvent) error {
+	// Kiểm tra ID sự kiện đã được xử lý chưa
+	eventID := event.ID
+	if eventID == "" {
+		consumer.logger.Printf("Warning: OTP event has no ID, will process anyway")
+	} else {
+		// Kiểm tra xem sự kiện này đã được xử lý chưa
+		// Lưu ý: Đây là triển khai đơn giản, trong thực tế nên dùng Redis hoặc DB để lưu trữ ID đã xử lý
+		processor := consumer.getMessageProcessor()
+		if processor != nil && processor.IsProcessed(eventID) {
+			consumer.logger.Printf("Skipping duplicate OTP email event with ID: %s", eventID)
+			return nil
+		}
+	}
+
 	// Extract OTP data
 	var otpData OTPGeneratedData
 
@@ -1722,8 +1612,67 @@ func (consumer *Consumer) sendOTPEmail(event StandardEvent) error {
 		return fmt.Errorf("failed to send OTP email: %w", err)
 	}
 
-	consumer.logger.Printf("OTP email sent to %s", otpData.Email)
+	// Đánh dấu sự kiện đã được xử lý
+	if eventID != "" && consumer.getMessageProcessor() != nil {
+		consumer.getMessageProcessor().MarkProcessed(eventID)
+	}
+
+	consumer.logger.Printf("OTP email sent to %s with event ID: %s", otpData.Email, eventID)
 	return nil
+}
+
+// MessageProcessor xử lý theo dõi tin nhắn đã được xử lý
+type MessageProcessor struct {
+	processedMessages map[string]time.Time
+	mutex             sync.RWMutex
+	maxAge            time.Duration
+}
+
+// getMessageProcessor trả về message processor hoặc tạo mới nếu chưa có
+func (consumer *Consumer) getMessageProcessor() *MessageProcessor {
+	// Return the message processor stored in the consumer
+	if consumer.messageProcessor == nil {
+		consumer.messageProcessor = &MessageProcessor{
+			processedMessages: make(map[string]time.Time),
+			mutex:             sync.RWMutex{},
+			maxAge:            15 * time.Minute,
+		}
+	}
+	return consumer.messageProcessor
+}
+
+// IsProcessed kiểm tra xem một tin nhắn đã được xử lý chưa
+func (mp *MessageProcessor) IsProcessed(messageID string) bool {
+	mp.mutex.RLock()
+	defer mp.mutex.RUnlock()
+
+	processTime, exists := mp.processedMessages[messageID]
+	if !exists {
+		return false
+	}
+
+	// Nếu tin nhắn đã quá cũ, xem như chưa xử lý
+	if time.Since(processTime) > mp.maxAge {
+		delete(mp.processedMessages, messageID)
+		return false
+	}
+
+	return true
+}
+
+// MarkProcessed đánh dấu tin nhắn đã được xử lý
+func (mp *MessageProcessor) MarkProcessed(messageID string) {
+	mp.mutex.Lock()
+	defer mp.mutex.Unlock()
+
+	mp.processedMessages[messageID] = time.Now()
+
+	// Dọn dẹp các tin nhắn cũ
+	for id, t := range mp.processedMessages {
+		if time.Since(t) > mp.maxAge {
+			delete(mp.processedMessages, id)
+		}
+	}
 }
 
 // updateUserOrderData updates the user's order count and total spend in the user service

@@ -24,9 +24,16 @@ type MailClient struct {
 func NewMailClient(host string) (*MailClient, error) {
 	logger := log.New(os.Stdout, "[MAIL-CLIENT] ", log.LstdFlags)
 
-	// If no host is provided, use the default
+	// If no host is provided, use environment variable or default
 	if host == "" {
-		host = "mail-service:50057"
+		// Get mail service host from environment variable
+		mailServiceHost := os.Getenv("MAIL_SERVICE_HOST")
+
+		// Use defaults if not provided
+		if mailServiceHost == "" {
+			mailServiceHost = "mail-service"
+		}
+		host = fmt.Sprintf("%s", mailServiceHost)
 	}
 
 	// Connect to the mail service

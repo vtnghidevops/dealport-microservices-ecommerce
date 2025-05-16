@@ -23,7 +23,7 @@ func NewLoggerClient(loggerServiceAddress string) (*LoggerClient, error) {
 	// Set default address if not provided
 	if loggerServiceAddress == "" {
 		// Check environment variable first
-		loggerServiceAddress = os.Getenv("LOGGER_SERVICE_ADDRESS")
+		loggerServiceAddress = os.Getenv("LOGGER_SERVICE_HOST")
 		if loggerServiceAddress == "" {
 			loggerServiceAddress = "logger-service:50056"
 		}

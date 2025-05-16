@@ -11,8 +11,14 @@ import (
 )
 
 func main() {
+	// Get logger configuration from environment variables
+	loggerPrefix := os.Getenv("LOGGER_PREFIX")
+	if loggerPrefix == "" {
+		loggerPrefix = "listener-service "
+	}
+
 	// Create a logger
-	logger := log.New(os.Stdout, "listener-service ", log.LstdFlags)
+	logger := log.New(os.Stdout, loggerPrefix, log.LstdFlags)
 	logger.Println("Starting listener service...")
 
 	// Connect to RabbitMQ
