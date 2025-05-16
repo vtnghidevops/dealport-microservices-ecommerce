@@ -12,7 +12,7 @@ COPY . .
 RUN go mod download
 
 # Build the application
-RUN CGO_ENABLED=0 GOOS=linux go build -o brokerService ./cmd/api
+RUN CGO_ENABLED=0 GOOS=linux go build -o broker-service ./cmd/api
 
 # Use a minimal alpine image for the final stage
 FROM alpine:latest
@@ -20,9 +20,9 @@ FROM alpine:latest
 WORKDIR /app
 
 # Copy the binary from the builder stage
-COPY --from=builder /app/brokerService .
+COPY --from=builder /app/broker-service .
 
 EXPOSE 8080
 
-CMD ["./brokerService"]
+CMD ["./broker-service"]
 

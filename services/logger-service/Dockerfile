@@ -12,7 +12,7 @@ COPY . .
 RUN go mod download
 
 # Build the application
-RUN CGO_ENABLED=0 GOOS=linux go build -o loggerService ./cmd/api
+RUN CGO_ENABLED=0 GOOS=linux go build -o logger-service ./cmd/api
 
 # final stage with tiny img
 FROM alpine:latest
@@ -27,7 +27,7 @@ RUN apk add --no-cache mongodb-tools nodejs npm curl bash \
 ENV PATH="/usr/local/share/.config/yarn/global/node_modules/.bin:${PATH}"
 
 # Copy the binary from the builder stage
-COPY --from=builder /app/loggerService .
+COPY --from=builder /app/logger-service .
 
 # Copy migration files
 COPY --from=builder /app/migrations/ ./migrations/
@@ -38,5 +38,5 @@ RUN chmod +x /app/migrations/*.js
 EXPOSE 50056
 
 # Default command
-CMD ["./loggerService"]
+CMD ["./logger-service"]
 

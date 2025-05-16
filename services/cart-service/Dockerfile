@@ -11,7 +11,7 @@ COPY . .
 RUN go mod download
 
 # Build the application
-RUN CGO_ENABLED=0 GOOS=linux go build -o cartService ./cmd/api
+RUN CGO_ENABLED=0 GOOS=linux go build -o cart-service ./cmd/api
 
 # Use a minimal alpine image for the final stage
 FROM alpine:latest
@@ -19,7 +19,7 @@ FROM alpine:latest
 WORKDIR /app
 
 # Copy the binary from the builder stage
-COPY --from=builder /app/cartService .
+COPY --from=builder /app/cart-service .
 # Copy the migrations directory
 COPY --from=builder /app/migrations /app/migrations
 
@@ -33,4 +33,4 @@ RUN apk add --no-cache redis bash
 EXPOSE 50054
 
 # Command to run the application
-CMD ["./cartService"] 
+CMD ["./cart-service"] 
