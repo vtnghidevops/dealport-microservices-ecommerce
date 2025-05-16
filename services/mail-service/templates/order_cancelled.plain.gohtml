@@ -1,0 +1,37 @@
+YOUR ORDER HAS BEEN CANCELLED
+
+Hi {{if .first_name}}{{.first_name}}{{else}}there{{end}},
+
+We're writing to confirm that your order #{{.order_number}} has been cancelled{{if .cancellation_reason}} due to
+{{.cancellation_reason}}{{end}}.
+
+ORDER DETAILS:
+Order Number: {{.order_number}}
+Order Date: {{.order_date}}
+Cancellation Date: {{.cancellation_date}}
+Total Amount: {{.currency_symbol}}{{.total}}
+Status: Cancelled
+
+{{if .refund_amount}}
+REFUND INFORMATION:
+A refund of {{.currency_symbol}}{{.refund_amount}} has been initiated to your original payment method. Please allow 3-5
+business days for the refund to appear in your account.
+{{if .refund_id}}Refund Reference: {{.refund_id}}{{end}}
+{{end}}
+
+{{if .cancellation_details}}
+CANCELLATION DETAILS:
+{{.cancellation_details}}
+{{end}}
+
+To view your order details, please visit: {{.order_url}}
+
+{{if .shop_url}}
+If you'd like to make another purchase, please visit our store: {{.shop_url}}
+{{end}}
+
+If you have any questions about this cancellation, please don't hesitate to contact our customer service team.
+
+Thank you for your understanding.
+
+© {{.year}} Your Company Name. All rights reserved.

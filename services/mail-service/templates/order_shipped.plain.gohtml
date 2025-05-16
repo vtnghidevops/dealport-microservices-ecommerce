@@ -1,0 +1,32 @@
+YOUR ORDER HAS SHIPPED!
+
+Hi {{if .first_name}}{{.first_name}}{{else}}there{{end}},
+
+Great news! Your order #{{.order_number}} has been shipped and is on its way to you.
+
+{{if .tracking_number}}
+TRACKING INFORMATION:
+Tracking Number: {{.tracking_number}}
+{{if .carrier}}Carrier: {{.carrier}}{{end}}
+{{if .tracking_url}}Track Your Package: {{.tracking_url}}{{end}}
+{{if .estimated_delivery}}Estimated Delivery: {{.estimated_delivery}}{{end}}
+{{end}}
+
+ORDER DETAILS:
+Order Number: {{.order_number}}
+Order Date: {{.order_date}}
+Total Amount: {{.currency_symbol}}{{.total}}
+Status: Shipped
+
+{{if .shipping_address}}
+SHIPPING ADDRESS:
+{{.shipping_address}}
+{{end}}
+
+To view your order, please visit: {{.order_url}}
+
+If you have any questions about your shipment or delivery, please don't hesitate to contact our customer service team.
+
+Thank you for shopping with us!
+
+© {{.year}} Your Company Name. All rights reserved.

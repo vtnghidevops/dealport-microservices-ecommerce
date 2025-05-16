@@ -1,0 +1,25 @@
+ORDER PROCESSING
+
+Hi {{if .first_name}}{{.first_name}}{{else}}there{{end}},
+
+We're pleased to inform you that your order #{{.order_number}} is now being processed. Our team is working diligently to
+prepare your items.
+
+ORDER DETAILS:
+Order Number: {{.order_number}}
+Order Date: {{.order_date}}
+Total Amount: {{.currency_symbol}}{{.total}}
+Status: Processing
+
+WHAT HAPPENS NEXT?
+- We'll complete processing your order
+- You'll receive a shipping confirmation email once your order has been shipped
+- Your order will be delivered according to the shipping method selected
+
+To view your order, please visit: {{.order_url}}
+
+If you have any questions about your order, please don't hesitate to contact our customer service team.
+
+Thank you for shopping with us!
+
+© {{.year}} Your Company Name. All rights reserved.
