@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: ecommerce-user-service
+  namespace: ecommerce
+spec:
+  selector:
+    app: ecommerce-user-app
+  ports:
+    - name: tcp-grpc
+      protocol: TCP
+      port: 50052
+      targetPort: 50052
+  type: ClusterIP 

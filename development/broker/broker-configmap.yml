@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: ecommerce-broker-configmap
+  namespace: ecommerce
+data:
+  AUTH_SERVICE_HOST: "ecommerce-auth-service:50051"
+  USER_SERVICE_HOST: "ecommerce-user-service:50052"
+  PRODUCT_SERVICE_HOST: "ecommerce-product-service:50053"
+  CART_SERVICE_HOST: "ecommerce-cart-service:50054"
+  CHECKOUT_SERVICE_HOST: "ecommerce-checkout-service:50055"
+  

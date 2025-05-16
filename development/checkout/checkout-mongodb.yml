@@ -1,0 +1,52 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: mongo-checkout
+  namespace: ecommerce
+spec:
+  serviceName: mongo-checkout
+  replicas: 1
+  selector:
+    matchLabels:
+      app: mongo-checkout
+  template:
+    metadata:
+      labels:
+        app: mongo-checkout
+    spec:
+      containers:
+        - name: mongo-checkout
+          image: mongo:4.2.16-bionic
+          ports:
+            - containerPort: 27017
+          env:
+            - name: MONGO_INITDB_DATABASE
+              valueFrom:
+                secretKeyRef:
+                  name: ecommerce-checkout-secret
+                  key: MONGO_DATABASE
+            - name: MONGO_INITDB_ROOT_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: ecommerce-checkout-secret
+                  key: MONGO_USERNAME
+            - name: MONGO_INITDB_ROOT_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: ecommerce-checkout-secret
+                  key: MONGO_PASSWORD
+          volumesMounts:
+              - name: mongo-checkout-data
+                mountPath: /data/db
+      volumes:
+        - name: mongo-checkout-data
+          persistentVolumeClaim:
+            claimName: mongo-checkout-pvc
+
+                  
+                  
+                  
+
+
+
+

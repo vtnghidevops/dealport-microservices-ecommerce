@@ -1,0 +1,13 @@
+apiVersion: autoscaling/v1
+kind: HorizontalPodAutoscaler
+metadata:
+  name: ecommerce-product-autoscaling
+  namespace: ecommerce
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: deployment
+    name: ecommerce-product-deployment
+  minReplicas: 2
+  maxReplicas: 4
+  targetCPUUtilizationPercentage: 50 # Over 50% use CPU -> Scaling 

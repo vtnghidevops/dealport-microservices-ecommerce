@@ -1,0 +1,57 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: checkout-service-db-migration
+  namespace: ecommerce
+  annotations:
+    "helm.sh/hook": pre-install
+    "helm.sh/hook-weight": "-5"
+    "helm.sh/hook-delete-policy": before-hook-creation,hook-succeeded
+spec:
+  backoffLimit: 3  # try 3 times if failed
+  ttlSecondsAfterFinished: 3600  # auto delete job after 1 hour
+  template:
+    spec:
+      initContainers:
+        - name: wait-for-mongo-checkout-db
+          image: busybox:1.28
+          command: ['sh', '-c', 'until nslookup mongo-checkout.ecommerce.svc.cluster.local && nc -z mongo-checkout 27017; do echo waiting for mongo; sleep 2; done;']
+      containers:
+      - name: migrations
+        image: tannghidevops/checkout-service:v2
+        imagePullPolicy: IfNotPresent
+        command: ["/bin/sh", "-c"]
+        args:
+          - |
+            echo "Waiting for MongoDB to be ready..."
+            sleep 5
+            echo "Running database migration once..."
+            /app/checkout-service migrate
+            echo "Migration completed!"
+        env:
+        - name: MONGO_HOST
+          valueFrom:
+            secretKeyRef:
+              name: ecommerce-checkout-secret
+              key: MONGO_HOST
+        - name: MONGO_PORT
+          valueFrom:
+            secretKeyRef:
+              name: ecommerce-checkout-secret
+              key: MONGO_PORT
+        - name: MONGO_DATABASE
+          valueFrom:
+            secretKeyRef:
+              name: ecommerce-checkout-secret
+              key: MONGO_DATABASE
+        - name: MONGO_USERNAME
+          valueFrom:
+            secretKeyRef:
+              name: ecommerce-checkout-secret
+              key: MONGO_USERNAME
+        - name: MONGO_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: ecommerce-checkout-secret
+              key: MONGO_PASSWORD
+      restartPolicy: OnFailure 

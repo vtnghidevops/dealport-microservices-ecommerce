@@ -1,0 +1,18 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: ecommerce-product-service
+  namespace: ecommerce
+spec:
+  selector:
+    app: ecommerce-product-app
+  ports:
+    - name: tcp-grpc
+      protocol: TCP
+      port: 50053
+      targetPort: 50053
+    - name: tcp-http
+      protocol: TCP
+      port: 8082
+      targetPort: 8082
+  type: ClusterIP

@@ -1,0 +1,45 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ecommerce-auth-development
+  namespace: ecommerce
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: ecommerce-auth-app
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 2
+      maxSurge: 2
+  template:
+      metadata:
+        labels:
+          app: ecommerce-auth-app
+      spec:
+        initContainers:
+          - name: wait-for-postgres-auth-db
+            image: busybox:1.28
+            command: ['sh', '-c', 'until nslookup postgres-auth.ecommerce.svc.cluster.local; do echo waiting for postgres; sleep 2; done;']
+        containers:
+          - name: ecommerce-auth-app
+            image: tannghidevops/authentication-service:v1
+            ports: 
+              - containerPort: 50052
+                name: tcp
+                protocol: TCP
+            resources:
+              requests:
+                cpu: "125m"
+                memory: "250Mi"
+              limits:
+                cpu: "250m"
+                memory: "500Mi"
+            envFrom:
+              - secretRef:
+                  name: ecommerce-auth-secret
+        # imagePullSecrets:
+        #   - name: auth-registry
+        
+

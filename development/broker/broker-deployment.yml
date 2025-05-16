@@ -1,0 +1,41 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ecommerce-broker-development
+  namespace: ecommerce
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: ecommerce-broker-app
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 2
+      maxSurge: 2
+  template:
+      metadata:
+        labels:
+          app: ecommerce-broker-app
+      spec:
+        containers:
+          - name: ecommerce-broker-app
+            image: tannghidevops/broker-service:v1
+            ports: 
+              - containerPort: 8080
+                name: tcp
+                protocol: TCP
+            resources:
+              requests:
+                cpu: "125m"
+                memory: "250Mi"
+              limits:
+                cpu: "250m"
+                memory: "500Mi"
+            envFrom:
+              - configMapRef:
+                  name: ecommerce-broker-configmap
+        # imagePullSecrets:
+        #   - name: auth-registry
+        
+

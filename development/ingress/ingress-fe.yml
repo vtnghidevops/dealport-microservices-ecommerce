@@ -1,0 +1,19 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: ecommerce-frontend-ingress
+  namespace: ecommerce
+spec:
+  ingressClassName: nginx
+  rules:
+    - host: lnshop.vntech.id.vn
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: ecommerce-frontend-service
+                port:
+                  number: 80
+

@@ -1,0 +1,37 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ecommerce-mail-development
+  namespace: ecommerce
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: ecommerce-mail-app
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 1
+      maxSurge: 1
+  template:
+    metadata:
+      labels:
+        app: ecommerce-mail-app
+    spec:
+      containers:
+        - name: ecommerce-mail-app
+          image: tannghidevops/mail-service:v3
+          ports:
+            - containerPort: 50057
+              name: tcp
+              protocol: TCP
+          resources:
+            requests:
+              cpu: "50m"
+              memory: "128Mi"
+            limits:
+              cpu: "100m"
+              memory: "256Mi"
+          envFrom:
+            - secretRef:
+                name: ecommerce-mail-secret 

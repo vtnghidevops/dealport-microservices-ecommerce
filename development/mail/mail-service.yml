@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: ecommerce-mail-service
+  namespace: ecommerce
+spec:
+  selector:
+    app: ecommerce-mail-app
+  ports:
+    - name: tcp
+      protocol: TCP
+      port: 50057
+      targetPort: 50057
+  type: ClusterIP 

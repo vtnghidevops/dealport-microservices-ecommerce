@@ -1,0 +1,47 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: cart-service-redis-init
+  namespace: ecommerce
+  annotations:
+    "helm.sh/hook": pre-install
+    "helm.sh/hook-weight": "-5"
+    "helm.sh/hook-delete-policy": before-hook-creation,hook-succeeded
+spec:
+  backoffLimit: 3  # try 3 times if failed
+  ttlSecondsAfterFinished: 3600  # auto delete job after 1 hour
+  template:
+    spec:
+      initContainers:
+        - name: wait-for-redis-cart-db
+          image: busybox:1.28
+          command: ['sh', '-c', 'until nslookup redis-cart.ecommerce.svc.cluster.local; do echo waiting for redis; sleep 2; done;']
+      containers:
+      - name: redis-init
+        image: tannghidevops/cart-service:v2
+        imagePullPolicy: IfNotPresent
+        command: ["/bin/sh", "-c"]
+        args:
+          - |
+            echo "Waiting for Redis to be ready..."
+            sleep 5
+            echo "Running Redis initialization script..."
+            /app/cart-service migrations/init_redis.sh
+        env:
+        - name: REDIS_HOST
+          valueFrom:
+            secretKeyRef:
+              name: ecommerce-cart-secret
+              key: REDIS_HOST
+        - name: REDIS_PORT
+          valueFrom:
+            secretKeyRef:
+              name: ecommerce-cart-secret
+              key: REDIS_PORT
+        - name: REDIS_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: ecommerce-cart-secret
+              key: REDIS_PASSWORD
+              optional: true
+      restartPolicy: OnFailure 
