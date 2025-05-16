@@ -21,6 +21,8 @@ export interface CategoryFilter {
  */
 export interface CategoryFilterCounts {
   all: number;
+  active: number;
+  inactive: number;
   featured: number;
   onSale: number;
   outOfStock: number;

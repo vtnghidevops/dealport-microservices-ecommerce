@@ -3,9 +3,7 @@ import { CategorySummaryData } from '../cards/models/card.model';
 import { CategoryService as GlobalCategoryService } from "@/services/product/product.service";
 import { Category as GlobalCategory } from '@/types/category.model';
 import axios from 'axios';
-
-// Base URL for product service API from environment variables
-const API_BASE_URL = import.meta.env.VITE_PUBLIC_BROKER_API_URL || "http://localhost:8082/api/v1";
+import { getApiUrl, getAuthHeader } from '@/utils/api-config';
 
 /**
  * Helper function to convert a global category to admin category format
@@ -18,17 +16,6 @@ const convertToAdminCategory = (globalCategory: GlobalCategory): Category => {
     updatedAt: new Date(), // Add updatedAt if missing
   };
 };
-
-/**
- * Helper function to convert an admin category to global category format
- */
-const convertToGlobalCategory = (adminCategory: Category): GlobalCategory => {
-  return {
-    ...adminCategory,
-    id: Number(adminCategory.id), // Convert ID to number
-  };
-};
-
 /**
  * CategoryService class containing all category-related API calls
  * Uses the global CategoryService for real API integration
@@ -186,24 +173,19 @@ export class CategoryService {
   static createCategory = async (category: Omit<Category, "id">): Promise<Category> => {
     try {
       // Use the API to create a category
-      const token = localStorage.getItem('token');
-      if (!token) {
-        throw new Error('Authentication token is missing');
-      }
+      const headers = getAuthHeader();
 
       const response = await axios.post(
-        `${API_BASE_URL}/categories`,
+        getApiUrl('categories', true),
         category,
-        {
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`
-          }
-        }
+        { headers }
       );
 
-      const createdCategory = response.data.data;
-      return convertToAdminCategory(createdCategory);
+      const newCategory = response.data.data || response.data;
+      return convertToAdminCategory({
+        ...newCategory,
+        id: Number(newCategory.id),
+      });
     } catch (error) {
       console.error("Error creating category:", error);
       throw error;
@@ -216,98 +198,82 @@ export class CategoryService {
   static updateCategory = async (category: Category): Promise<Category> => {
     try {
       // Use the API to update a category
-      const token = localStorage.getItem('token');
-      if (!token) {
-        throw new Error('Authentication token is missing');
-      }
-
-      // Convert to global category format for API
-      const globalCategory = convertToGlobalCategory(category);
+      const headers = getAuthHeader();
 
       const response = await axios.put(
-        `${API_BASE_URL}/categories/${globalCategory.id}`,
-        globalCategory,
+        getApiUrl(`categories/${category.id}`, true),
         {
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`
-          }
-        }
+          ...category,
+          id: Number(category.id),
+        },
+        { headers }
       );
 
-      const updatedCategory = response.data.data;
+      const updatedCategory = response.data.data || response.data;
       return convertToAdminCategory(updatedCategory);
     } catch (error) {
-      console.error("Error updating category:", error);
+      console.error(`Error updating category ${category.id}:`, error);
       throw error;
     }
   };
 
   /**
-   * Delete a category by ID
+   * Delete a category
    */
   static deleteCategory = async (id: string): Promise<boolean> => {
     try {
       // Use the API to delete a category
-      const token = localStorage.getItem('token');
-      if (!token) {
-        throw new Error('Authentication token is missing');
-      }
+      const headers = getAuthHeader();
 
       await axios.delete(
-        `${API_BASE_URL}/categories/${id}`,
-        {
-          headers: {
-            'Authorization': `Bearer ${token}`
-          }
-        }
+        getApiUrl(`categories/${id}`, true),
+        { headers }
       );
 
       return true;
     } catch (error) {
-      console.error(`Error deleting category with ID ${id}:`, error);
+      console.error(`Error deleting category ${id}:`, error);
       return false;
     }
   };
 
   /**
-   * Get counts for each filter type
+   * Get counts for each category filter
    */
   static getCategoryFilterCounts = async (): Promise<CategoryFilterCounts> => {
     try {
       const globalCategories = await GlobalCategoryService.getAllCategories();
-
-      // Convert global categories to admin categories
       const categories: Category[] = globalCategories.map(convertToAdminCategory);
 
-      // Count for all categories
-      const all = categories.length;
+      // Count categories by status
+      const activeCount = categories.filter(cat => cat.isActive).length;
+      const inactiveCount = categories.length - activeCount;
 
-      // Count for categories with more products (featured)
-      const featured = categories.filter(cat => (cat.productCount || 0) > 20).length;
-
-      // Count for categories with medium products (on sale)
-      const onSale = categories.filter(cat => {
+      // Count categories by product count
+      const featuredCount = categories.filter(cat => (cat.productCount || 0) > 20).length;
+      const onSaleCount = categories.filter(cat => {
         const count = cat.productCount || 0;
         return count >= 10 && count <= 30;
       }).length;
-
-      // Count for categories with low products (out of stock)
-      const outOfStock = categories.filter(cat => (cat.productCount || 0) < 10).length;
+      const outOfStockCount = categories.filter(cat => (cat.productCount || 0) < 10).length;
 
       return {
-        all,
-        featured,
-        onSale,
-        outOfStock
+        all: categories.length,
+        active: activeCount,
+        inactive: inactiveCount,
+        featured: featuredCount,
+        onSale: onSaleCount,
+        outOfStock: outOfStockCount,
       };
     } catch (error) {
-      console.error("Error fetching filter counts:", error);
+      console.error("Error getting category filter counts:", error);
       return {
         all: 0,
+        active: 0,
+        inactive: 0,
         featured: 0,
         onSale: 0,
-        outOfStock: 0
+        outOfStock: 0,
       };
     }
   };

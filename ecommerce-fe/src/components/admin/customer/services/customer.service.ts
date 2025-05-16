@@ -6,23 +6,7 @@ import {
   CustomerFilterParams
 } from '../models/customer.model';
 import axios from 'axios';
-
-// Base URL for API requests
-const API_BASE_URL = import.meta.env.VITE_PUBLIC_BROKER_API_URL || 'http://localhost:8080/api/v1';
-const USER_ENDPOINT = `${API_BASE_URL}/users`;
-const ADMIN_ENDPOINT = `${USER_ENDPOINT}/admin`;
-
-// Create an axios instance with authorization configuration
-const getAuthClient = () => {
-  const token = localStorage.getItem('token');
-  return axios.create({
-    baseURL: API_BASE_URL,
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${token}`
-    }
-  });
-};
+import { getApiUrl, getAuthHeader } from '@/utils/api-config';
 
 // Helper function to convert API data to Customer object
 const mapApiDataToCustomer = (userData: any): Customer => {
@@ -39,7 +23,7 @@ const mapApiDataToCustomer = (userData: any): Customer => {
 export const CustomerService = {
   getCustomers: async (params: CustomerFilterParams = { page: 1, limit: 10 }): Promise<{ customers: Customer[], total: number }> => {
     try {
-      const api = getAuthClient();
+      const headers = getAuthHeader();
 
       // Build filter parameters based on CustomerFilterParams
       const requestData: any = {
@@ -58,7 +42,11 @@ export const CustomerService = {
       }
 
       // Call the customer list API (sử dụng endpoint admin mới)
-      const response = await api.post(`${ADMIN_ENDPOINT}/list`, requestData);
+      const response = await axios.post(
+        getApiUrl('users/admin/list'),
+        requestData,
+        { headers }
+      );
 
       if (response.data && !response.data.error && response.data.data) {
         const { customers, total } = response.data.data;
@@ -82,10 +70,14 @@ export const CustomerService = {
 
   getCustomerOverview: async (): Promise<CustomerOverview> => {
     try {
-      const api = getAuthClient();
+      const headers = getAuthHeader();
 
       // Call the customer statistics API (sử dụng endpoint admin mới)
-      const response = await api.post(`${ADMIN_ENDPOINT}/statistics`);
+      const response = await axios.post(
+        getApiUrl('users/admin/statistics'),
+        {},
+        { headers }
+      );
 
       if (response.data && !response.data.error && response.data.data) {
         // Trích xuất dữ liệu thống kê từ API response
@@ -137,10 +129,14 @@ export const CustomerService = {
 
   getCustomerChartData: async (): Promise<CustomerChartData[]> => {
     try {
-      const api = getAuthClient();
+      const headers = getAuthHeader();
 
       // Call the customer activity chart API (sử dụng endpoint admin mới)
-      const response = await api.post(`${ADMIN_ENDPOINT}/activity-chart`);
+      const response = await axios.post(
+        getApiUrl('users/admin/activity-chart'),
+        {},
+        { headers }
+      );
 
       if (response.data && !response.data.error && response.data.data) {
         const chartData = response.data.data.chart_data || [];
@@ -162,7 +158,7 @@ export const CustomerService = {
 
   updateCustomerStatus: async (customerId: string, status: CustomerStatus): Promise<boolean> => {
     try {
-      const api = getAuthClient();
+      const headers = getAuthHeader();
 
       // Prepare update data based on status
       const updateData: any = {
@@ -170,7 +166,11 @@ export const CustomerService = {
       };
 
       // Gọi API cập nhật trạng thái người dùng
-      const response = await api.put(`${USER_ENDPOINT}/${customerId}/status`, updateData);
+      const response = await axios.put(
+        getApiUrl(`users/${customerId}/status`),
+        updateData,
+        { headers }
+      );
 
       return response.data && !response.data.error;
     } catch (error) {
@@ -181,10 +181,13 @@ export const CustomerService = {
 
   deleteCustomer: async (customerId: string): Promise<boolean> => {
     try {
-      const api = getAuthClient();
+      const headers = getAuthHeader();
 
       // Gọi API xóa người dùng
-      const response = await api.delete(`${USER_ENDPOINT}/${customerId}`);
+      const response = await axios.delete(
+        getApiUrl(`users/${customerId}`),
+        { headers }
+      );
 
       return response.data && !response.data.error;
     } catch (error) {

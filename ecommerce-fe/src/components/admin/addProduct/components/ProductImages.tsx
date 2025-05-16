@@ -22,7 +22,7 @@ const getDisplayImageUrl = (url: string): string => {
 
   // Nếu URL là đường dẫn tương đối của product image
   if (url && url.startsWith('/api/products/images/')) {
-    return `http://localhost:8080${url}`;
+    return `https://testapi.deploy.io.vn${url}`;
   }
 
   // Trường hợp khác - giữ nguyên URL

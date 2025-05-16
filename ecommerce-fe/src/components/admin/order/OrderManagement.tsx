@@ -7,8 +7,8 @@ import { FiPlusCircle } from "react-icons/fi";
 
 // Import from services
 import { Order, OrderStatus } from '@/services/user/order.service';
-import { adminOrderService, OrderSummary } from '@/services/admin/order.service';
-
+import adminOrderService from '@/services/admin/order.service';
+import { OrderSummary } from '@/services/admin/order.service';
 import { AddOrderModal, NewOrderData } from "./modals/AddOrderModal";
 import { useToast } from "@/hooks/use-toast";
 import Pagination from "../../common/Pagination";
@@ -69,7 +69,7 @@ export const OrderManagement: React.FC = () => {
 
   // Fetch orders - not memoized to avoid dependencies in useEffect
   const fetchOrders = async () => {
-    console.log("Fetching admin orders...");
+   // console.log("Fetching admin orders...");
     try {
       // Fetch all orders (we'll filter client-side)
       const { orders: fetchedOrders } = await adminOrderService.fetchOrders({
@@ -82,7 +82,7 @@ export const OrderManagement: React.FC = () => {
         ? fetchedOrders.filter(order => order && typeof order === 'object' && order.id)
         : [];
 
-      console.log(`Fetched ${validOrders.length} valid orders`);
+      //console.log(`Fetched ${validOrders.length} valid orders`);
 
       // Save all orders for client-side filtering
       setAllOrders(validOrders);
@@ -107,12 +107,12 @@ export const OrderManagement: React.FC = () => {
   // Load order summary data
   const fetchOrderSummary = async () => {
     try {
-      console.log("Fetching order summary...");
+     // console.log("Fetching order summary...");
       const summaryData = await adminOrderService.fetchOrderSummary();
       setOrderSummary(summaryData);
       return summaryData;
     } catch (error) {
-      console.error("Failed to load order summary:", error);
+      // console.error("Failed to load order summary:", error);
       toast({
         title: "Failed to load order summary",
         description: error instanceof Error ? error.message : "Unknown error",
@@ -126,12 +126,12 @@ export const OrderManagement: React.FC = () => {
   useEffect(() => {
     const loadAllData = async () => {
       if (dataHasBeenLoaded.current) {
-        console.log("Data already loaded, skipping fetch");
+        // console.log("Data already loaded, skipping fetch");
         setInitialLoading(false);
         return;
       }
 
-      console.log("Loading order data for the first time");
+      // console.log("Loading order data for the first time");
       setInitialLoading(true);
 
       try {
@@ -143,7 +143,7 @@ export const OrderManagement: React.FC = () => {
           fetchOrders()
         ]);
       } catch (error) {
-        console.error("Failed to load order data:", error);
+       // console.error("Failed to load order data:", error);
         toast({
           title: "Failed to load order data",
           description: error instanceof Error ? error.message : "Unknown error",
@@ -163,7 +163,7 @@ export const OrderManagement: React.FC = () => {
   useEffect(() => {
     if (!allOrders.length) return; // Skip if no orders loaded
 
-    console.log("Applying filters to orders");
+    // console.log("Applying filters to orders");
     setLoading(true);
 
     // Apply filters (status and search term)
@@ -226,7 +226,7 @@ export const OrderManagement: React.FC = () => {
       });
     }
 
-    console.log(`Filter applied: ${filtered.length} orders match criteria`);
+    // console.log(`Filter applied: ${filtered.length} orders match criteria`);
     setFilteredOrders(filtered);
     setTotalItems(filtered.length);
     setCurrentPage(1); // Reset to first page when filter changes
@@ -244,7 +244,7 @@ export const OrderManagement: React.FC = () => {
       setOrders([]);
     } else {
       const paginatedOrders = filteredOrders.slice(startIndex, endIndex);
-      console.log(`Displaying orders ${startIndex + 1}-${endIndex} of ${filteredOrders.length}`);
+      // console.log(`Displaying orders ${startIndex + 1}-${endIndex} of ${filteredOrders.length}`);
       setOrders(paginatedOrders);
     }
   }, [currentPage, itemsPerPage, filteredOrders]);
@@ -283,7 +283,7 @@ export const OrderManagement: React.FC = () => {
         paymentStatus: orderData.paymentStatus,
       });
 
-      console.log("New order created:", newOrder.id);
+      // console.log("New order created:", newOrder.id);
 
       // Add the new order to our data
       const updatedOrders = [newOrder, ...allOrders];
@@ -298,7 +298,7 @@ export const OrderManagement: React.FC = () => {
         variant: "success",
       });
     } catch (error) {
-      console.error("Error creating order:", error);
+      //    console.error("Error creating order:", error);
       toast({
         title: "Failed to create order",
         variant: "destructive",
@@ -360,7 +360,7 @@ export const OrderManagement: React.FC = () => {
         });
       }
     } catch (error) {
-      console.error("Error updating order status:", error);
+      // console.error("Error updating order status:", error);
       toast({
         title: "Error updating order status",
         variant: "destructive",
@@ -370,12 +370,12 @@ export const OrderManagement: React.FC = () => {
     }
   };
 
-  const handleViewDetails = (orderId: string) => {
-    const order = orders.find(o => o.id === orderId);
-    const orderIdentifier = order?.orderNumber || orderId.substring(0, 8);
-    console.log(`View details for order: ${orderIdentifier}`);
-    // Implement view details functionality
-  };
+  // const handleViewDetails = (orderId: string) => {
+  //   // const order = orders.find(o => o.id === orderId);
+  //   // const orderIdentifier = order?.orderNumber || orderId.substring(0, 8);
+  //   // console.log(`View details for order: ${orderIdentifier}`);
+  //   // Implement view details functionality
+  // };
 
   const handleSearch = (term: string) => {
     setSearchTerm(term);
@@ -469,7 +469,7 @@ export const OrderManagement: React.FC = () => {
                   <OrderTable
                     orders={orders}
                     onStatusChange={handleStatusChange}
-                    onViewDetails={handleViewDetails}
+                    // onViewDetails={handleViewDetails}
                   />
                   <div className="mt-[3rem]">
                     <Pagination

@@ -1,13 +1,20 @@
 import { Transaction, TransactionListResponse } from '../models/transaction.model';
 import axios from 'axios';
-
-const API_BASE_URL = import.meta.env.VITE_PUBLIC_BROKER_VITE_PUBLIC_BROKER_API_URL || 'http://localhost:8080/api/v1';
+import { getApiUrl, getAdminHeaders } from '@/utils/api-config';
 
 export const TransactionService = {
   getTransactions: async (page: number = 1, limit: number = 10): Promise<TransactionListResponse> => {
     try {
-      // Get recent orders from the order service
-      const response = await axios.get(`${API_BASE_URL}/orders/recent?page=${page}&limit=${limit}`);
+      const headers = getAdminHeaders();
+
+      // Get recent orders from the order service with admin access
+      const response = await axios.get(
+        getApiUrl('orders/recent', true), // Using isAdmin=true parameter 
+        {
+          headers,
+          params: { page, limit }
+        }
+      );
 
       if (response.data && response.data.data) {
         const transactions: Transaction[] = response.data.data.map((order: any) => ({

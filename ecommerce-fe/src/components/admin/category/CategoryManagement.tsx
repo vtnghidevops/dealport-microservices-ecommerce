@@ -41,6 +41,8 @@ export const CategoryManagement: React.FC = () => {
     featured: 0,
     onSale: 0,
     outOfStock: 0,
+    active: 0,
+    inactive: 0,
   });
   const { toast } = useToast();
 
@@ -142,10 +144,10 @@ export const CategoryManagement: React.FC = () => {
   }, [filter, activeFilterTab, toast]);
 
   // Handle editing a category
-  const handleEditCategory = (category: Category) => {
-    console.log("Edit category:", category);
-    // Implement edit functionality here
-  };
+  // const handleEditCategory = (category: Category) => {
+  //   console.log("Edit category:", category);
+  //   // Implement edit functionality here
+  // };
 
   // Handle deleting a category
   const handleDeleteCategory = async (id: string) => {
@@ -182,10 +184,10 @@ export const CategoryManagement: React.FC = () => {
   };
 
   // Handle adding a product
-  const handleAddProduct = () => {
-    console.log("Add product clicked");
-    // Implement add product functionality
-  };
+  // const handleAddProduct = () => {
+  //   console.log("Add product clicked");
+  //   // Implement add product functionality
+  // };
 
   // Handle page change
   const handlePageChange = (page: number) => {
@@ -220,7 +222,7 @@ export const CategoryManagement: React.FC = () => {
                 <h2 className="text-[22px] font-bold text-cyprus">Discover</h2>
                 <div className="flex gap-[12px] h-[48px]">
                   <button
-                    onClick={handleAddProduct}
+                    //onClick={handleAddProduct}
                     className="gap-4 flex justify-center items-center w-[142px] py-6 px-12  bg-ocean-green text-white rounded-lg hover:bg-green-600 transition-colors"
                   >
                     <LuCirclePlus className=""></LuCirclePlus>
@@ -290,7 +292,7 @@ export const CategoryManagement: React.FC = () => {
               ) : (
                 <CategoryTable
                   categories={categories}
-                  onEdit={handleEditCategory}
+                  onEdit={() => { }}
                   onDelete={handleDeleteCategory}
                 />
               )}

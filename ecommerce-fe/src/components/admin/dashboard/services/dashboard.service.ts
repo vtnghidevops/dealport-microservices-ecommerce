@@ -1,7 +1,6 @@
 import { DashboardSummary } from '../models/dashboard.model';
 import axios from 'axios';
-
-const API_BASE_URL = import.meta.env.VITE_PUBLIC_BROKER_VITE_PUBLIC_BROKER_API_URL || 'http://localhost:8080/api/v1';
+import { getApiUrl, getAdminHeaders } from '@/utils/api-config';
 
 interface ChartDataPoint {
   day: string;
@@ -13,23 +12,35 @@ interface ChartDataPoint {
 export const DashboardService = {
   getDashboardSummary: async (): Promise<DashboardSummary> => {
     try {
+      const headers = getAdminHeaders();
+
       // Parallel requests to backend services for statistics data
       const [userStats, orderStats, productStats] = await Promise.all([
-        axios.get(`${API_BASE_URL}/users/statistics`).then(res => res.data.data),
-        axios.get(`${API_BASE_URL}/orders/statistics`).then(res => res.data.data).catch(() => null),
-        axios.get(`${API_BASE_URL}/products/statistics`).then(res => res.data.data).catch(() => null)
+        axios.get(getApiUrl('users/statistics', true), { headers }).then(res => res.data.data),
+        axios.get(getApiUrl('orders/statistics', true), { headers }).then(res => res.data.data).catch(() => null),
+        axios.get(getApiUrl('products/statistics', true), { headers }).then(res => res.data.data).catch(() => null)
       ]);
 
-      console.log('Dashboard data loaded from backend:', { userStats, orderStats, productStats });
+      //('Dashboard data loaded from backend:', { userStats, orderStats, productStats });
 
       // User activity data
-      const userActivity = await axios.get(`${API_BASE_URL}/users/activity-chart?days=7&chart_type=activity`)
-        .then(res => res.data.data)
+      const userActivity = await axios.get(
+        getApiUrl('users/activity-chart', true),
+        {
+          headers,
+          params: { days: 7, chart_type: 'activity' }
+        }
+      ).then(res => res.data.data)
         .catch(() => ({ chart_data: [] }));
 
       // Order data by date for weekly report
-      const orderChart = await axios.get(`${API_BASE_URL}/orders/activity-chart?days=7&chart_type=orders`)
-        .then(res => res.data.data)
+      const orderChart = await axios.get(
+        getApiUrl('orders/activity-chart', true),
+        {
+          headers,
+          params: { days: 7, chart_type: 'orders' }
+        }
+      ).then(res => res.data.data)
         .catch(() => ({
           chart_data: Array.from({ length: 7 }, (_, i) => ({
             day: ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'][i],

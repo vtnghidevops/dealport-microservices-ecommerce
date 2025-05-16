@@ -35,15 +35,21 @@ class ProductService {
   private apiUrl = '/products';
   private categoryUrl = '/categories';
   // Base URL for images
-  private brokerBaseUrl = 'http://localhost:8080';
+  private brokerBaseUrl = import.meta.env.VITE_PUBLIC_BROKER_API_URL?.replace('/api/v1', '') || 'http://localhost:8080';
 
   // Helper method to convert relative URLs to absolute URLs
   private getAbsoluteUrl(url: string): string {
     if (!url) return '';
 
-    // If it's already an absolute URL, return it as is
+    // If it's already an absolute URL (includes http:// or https://), return it as is
     if (url.startsWith('http://') || url.startsWith('https://') || url.startsWith('data:')) {
       return url;
+    }
+
+    // If URL includes "localhost" with port, it might be an absolute URL missing the protocol
+    if (url.includes('localhost:')) {
+      // Add http:// if missing
+      return url.startsWith('//') ? `http:${url}` : `http://${url}`;
     }
 
     // If it's a relative URL starting with '/', add the broker service base URL
@@ -926,12 +932,19 @@ class ProductService {
       return url;
     }
 
-    // Handle localhost URLs with different ports (8080, 8082, etc.)
-    const localhostPattern = /http:\/\/localhost:\d+(\/api\/products\/images\/.*)/;
+    // Handle localhost URLs with different ports (8080, 8082, 50080, etc.)
+    const localhostPattern = /https?:\/\/localhost:\d+(\/api\/products\/images\/.*)/;
     const localhostMatch = url.match(localhostPattern);
     if (localhostMatch && localhostMatch[1]) {
       // console.log('Converted localhost URL to relative path:', url, '→', localhostMatch[1]);
       return localhostMatch[1];
+    }
+
+    // Handle full domain URLs (including deploy.io.vn, etc.)
+    const fullDomainPattern = /https?:\/\/[^\/]+(\/api\/products\/images\/.*)/;
+    const fullDomainMatch = url.match(fullDomainPattern);
+    if (fullDomainMatch && fullDomainMatch[1]) {
+      return fullDomainMatch[1];
     }
 
     // If it's an absolute URL from broker-service, convert to relative

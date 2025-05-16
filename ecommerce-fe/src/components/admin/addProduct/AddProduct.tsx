@@ -111,7 +111,7 @@ export const AddProduct: React.FC = () => {
       setIsUploading(true);
 
       // 3. First, create a basic product without images to get a valid product ID
-     // console.log("🔄 Creating initial product without images to get an ID...");
+      // console.log("🔄 Creating initial product without images to get an ID...");
 
       // Make a copy of the product and set imgSlider to empty for initial creation
       // const initialProduct = {
@@ -159,11 +159,11 @@ export const AddProduct: React.FC = () => {
           try {
             // Upload images with the valid product ID
             const serverImageUrls = await prepareImagesForSubmit(productId);
-           // console.log("✅ Local images uploaded successfully, received URLs:", serverImageUrls);
+            // console.log("✅ Local images uploaded successfully, received URLs:", serverImageUrls);
 
             // Update the product with server URLs
             if (serverImageUrls.length > 0) {
-             // console.log("🔄 Updating product with image URLs...");
+              // console.log("🔄 Updating product with image URLs...");
 
               // Important: Update local product state with images
               setProduct(prev => ({
@@ -178,7 +178,7 @@ export const AddProduct: React.FC = () => {
               });
 
               if (result) {
-               // console.log("✅ Product updated with images successfully!");
+                // console.log("✅ Product updated with images successfully!");
                 toast({
                   variant: "success",
                   title: "Success",
@@ -194,7 +194,7 @@ export const AddProduct: React.FC = () => {
               }
             }
           } catch (uploadError: any) {
-           //  console.error("❌ Error during image upload:", uploadError);
+            //  console.error("❌ Error during image upload:", uploadError);
             toast({
               title: "Image Upload Failed",
               description: "Product was created but image upload failed: " + (uploadError.message || "Unknown error"),
@@ -210,7 +210,7 @@ export const AddProduct: React.FC = () => {
           });
         }
       } catch (createError: any) {
-       // console.error("❌ Error creating product:", createError);
+        // console.error("❌ Error creating product:", createError);
         toast({
           title: "Create Product Failed",
           description: createError.message || "Unknown error creating product",
@@ -231,7 +231,7 @@ export const AddProduct: React.FC = () => {
 
   // Handle category selection and update categorySlug
   const handleCategoryChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    const categoryId = e.target.value;  // Giữ là string
+    const categoryId = e.target.value;  // Lấy giá trị từ select (Get value from select)
     const selectedCategory = categories.find(cat => cat.id === parseInt(categoryId));
 
     if (selectedCategory) {
@@ -239,7 +239,7 @@ export const AddProduct: React.FC = () => {
 
       setProduct(prev => ({
         ...prev,
-        categoryId: categoryId,
+        categoryId: categoryId, // Giữ là string vì model định nghĩa là string (Keep as string as per model definition)
         categorySlug: selectedCategory.slug || ""
       }));
     } else {
@@ -247,7 +247,7 @@ export const AddProduct: React.FC = () => {
 
       setProduct(prev => ({
         ...prev,
-        categoryId: categoryId,
+        categoryId: categoryId, // Giữ là string vì model định nghĩa là string (Keep as string as per model definition)
         categorySlug: ""
       }));
     }

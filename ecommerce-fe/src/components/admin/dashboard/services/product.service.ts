@@ -42,8 +42,7 @@
 import axios from 'axios';
 import { Product } from '@/types/product.model';
 import { TopProductItem } from '@/components/homepage/BestSelling/models/topProducts.model';
-
-const API_BASE_URL = import.meta.env.VITE_PUBLIC_BROKER_VITE_PUBLIC_BROKER_API_URL || 'http://localhost:8080/api/v1';
+import { getApiUrl, getAdminHeaders } from '@/utils/api-config';
 
 // Types for product dashboard data
 export interface ProductStatistics {
@@ -68,7 +67,11 @@ export const ProductDashboardService = {
   // Get product statistics for dashboard
   getProductStatistics: async (): Promise<ProductStatistics> => {
     try {
-      const response = await axios.get(`${API_BASE_URL}/products/statistics`);
+      const headers = getAdminHeaders();
+      const response = await axios.get(
+        getApiUrl('products/statistics', true),
+        { headers }
+      );
 
       if (response.data && response.data.data) {
         return {
@@ -105,15 +108,20 @@ export const ProductDashboardService = {
   // Get top selling products for dashboard
   getTopSellingProducts: async (limit: number = 5): Promise<BestSellingProductStats[]> => {
     try {
+      const headers = getAdminHeaders();
       // Get products sorted by order count (sold)
-      const response = await axios.get(`${API_BASE_URL}/products`, {
-        params: {
-          page: 1,
-          limit,
-          sort_by: 'orders',
-          sort_dir: 'desc'
+      const response = await axios.get(
+        getApiUrl('products', true),
+        {
+          headers,
+          params: {
+            page: 1,
+            limit,
+            sort_by: 'orders',
+            sort_dir: 'desc'
+          }
         }
-      });
+      );
 
       if (response.data && response.data.data && Array.isArray(response.data.data)) {
         return response.data.data.map((product: any) => ({
@@ -138,15 +146,20 @@ export const ProductDashboardService = {
   // Get new products for dashboard (recently added)
   getNewProducts: async (limit: number = 5): Promise<Product[]> => {
     try {
+      const headers = getAdminHeaders();
       // Get products sorted by creation date
-      const response = await axios.get(`${API_BASE_URL}/products`, {
-        params: {
-          page: 1,
-          limit,
-          sort_by: 'created_at',
-          sort_dir: 'desc'
+      const response = await axios.get(
+        getApiUrl('products', true),
+        {
+          headers,
+          params: {
+            page: 1,
+            limit,
+            sort_by: 'created_at',
+            sort_dir: 'desc'
+          }
         }
-      });
+      );
 
       if (response.data && response.data.data && Array.isArray(response.data.data)) {
         return response.data.data;
@@ -163,14 +176,19 @@ export const ProductDashboardService = {
   // Get top sale products (featured products)
   getTopSaleProducts: async (limit: number = 5): Promise<TopProductItem[]> => {
     try {
+      const headers = getAdminHeaders();
       // Get top-sale products
-      const response = await axios.get(`${API_BASE_URL}/products`, {
-        params: {
-          page: 1,
-          limit,
-          type: 'top-sale'
+      const response = await axios.get(
+        getApiUrl('products', true),
+        {
+          headers,
+          params: {
+            page: 1,
+            limit,
+            type: 'top-sale'
+          }
         }
-      });
+      );
 
       if (response.data && response.data.data && Array.isArray(response.data.data)) {
         return response.data.data.map((product: any) => {
