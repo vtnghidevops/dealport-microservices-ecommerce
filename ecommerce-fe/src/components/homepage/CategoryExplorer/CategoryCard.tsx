@@ -44,7 +44,7 @@ const CategoryCard: React.FC<CategoryExplorerCard> = ({
           <img
             src={category.imageUrl}
             alt={category.name}
-            className="w-[148px] h-[140px] object-cover transition-transform duration-300 ease-out hover:scale-110"
+            className="rounded-2xl w-[148px] h-[140px] object-cover transition-transform duration-300 ease-out hover:scale-110"
           />
         </div>
         <div className="p-2 text-center absolute bottom-0 flex justify-center w-full bg-white">

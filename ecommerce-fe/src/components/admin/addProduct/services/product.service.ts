@@ -43,13 +43,32 @@ class ProductService {
 
     // If it's already an absolute URL (includes http:// or https://), return it as is
     if (url.startsWith('http://') || url.startsWith('https://') || url.startsWith('data:')) {
+      // Extract the path portion from URLs with any domain that contain /images/
+      const anyDomainImagePattern = /https?:\/\/[^\/]+(\/images\/.*)/;
+      const domainMatch = url.match(anyDomainImagePattern);
+      if (domainMatch && domainMatch[1]) {
+        return domainMatch[1];  // Return just the /images/... part
+      }
+
       return url;
     }
 
     // If URL includes "localhost" with port, it might be an absolute URL missing the protocol
     if (url.includes('localhost:')) {
+      // Check if it contains /images/ path
+      const localhostNoProtocolPattern = /localhost:\d+(\/images\/.*)/;
+      const localhostMatch = url.match(localhostNoProtocolPattern);
+      if (localhostMatch && localhostMatch[1]) {
+        return localhostMatch[1];  // Return just the /images/... part
+      }
+
       // Add http:// if missing
       return url.startsWith('//') ? `http:${url}` : `http://${url}`;
+    }
+
+    // Special case: If URL starts with /images/, return as is
+    if (url.startsWith('/images/')) {
+      return url;
     }
 
     // If it's a relative URL starting with '/', add the broker service base URL
@@ -928,30 +947,28 @@ class ProductService {
     if (!url) return '';
 
     // If already a relative URL, keep as is
-    if (url.startsWith('/api/products/images/')) {
+    if (url.startsWith('/api/products/images/') || url.startsWith('/images/')) {
       return url;
     }
 
-    // Handle localhost URLs with different ports (8080, 8082, 50080, etc.)
-    const localhostPattern = /https?:\/\/localhost:\d+(\/api\/products\/images\/.*)/;
-    const localhostMatch = url.match(localhostPattern);
-    if (localhostMatch && localhostMatch[1]) {
-      // console.log('Converted localhost URL to relative path:', url, '→', localhostMatch[1]);
-      return localhostMatch[1];
+    // Handle any domain URLs with /images/ path, not just localhost
+    const imagePathPattern = /https?:\/\/[^\/]+(\/images\/.*)/;
+    const imagePathMatch = url.match(imagePathPattern);
+    if (imagePathMatch && imagePathMatch[1]) {
+      return imagePathMatch[1];
     }
 
-    // Handle full domain URLs (including deploy.io.vn, etc.)
-    const fullDomainPattern = /https?:\/\/[^\/]+(\/api\/products\/images\/.*)/;
-    const fullDomainMatch = url.match(fullDomainPattern);
-    if (fullDomainMatch && fullDomainMatch[1]) {
-      return fullDomainMatch[1];
+    // Handle URLs with /api/products/images path from any domain
+    const apiProductsPattern = /https?:\/\/[^\/]+(\/api\/products\/images\/.*)/;
+    const apiProductsMatch = url.match(apiProductsPattern);
+    if (apiProductsMatch && apiProductsMatch[1]) {
+      return apiProductsMatch[1];
     }
 
     // If it's an absolute URL from broker-service, convert to relative
     const apiPattern = /\/api\/products\/images\/[^/]+\.\w+/;
     const apiMatch = url.match(apiPattern);
     if (apiMatch) {
-      // console.log('Extracted API path from URL:', url, '→', apiMatch[0]);
       return apiMatch[0];
     }
 

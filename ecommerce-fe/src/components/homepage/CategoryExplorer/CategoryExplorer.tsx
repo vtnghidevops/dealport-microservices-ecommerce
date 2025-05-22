@@ -138,6 +138,7 @@ const CategoryExplorer: React.FC = () => {
         >
           {categories.map((category) => (
             <CategoryCard
+              key={category.id}
               category={category}
               itemWidth={categoryExplore.itemWidth}
               itemHeight={categoryExplore.itemHeight}

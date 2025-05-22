@@ -1,1 +1,1 @@
-export {default as HeroBanner} from './SliderBanner'
+export { default as HeroBanner } from './SliderBanner'

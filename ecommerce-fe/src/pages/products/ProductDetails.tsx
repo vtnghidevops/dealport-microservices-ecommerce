@@ -28,6 +28,8 @@ const ProductDetail: React.FC = () => {
   const maxVisibleThumbnails = 5; // Maximum number of visible thumbnails
   const commentsRef = useRef<HTMLDivElement>(null);
   const { addToCart } = useCart();
+  const [slideDirection, setSlideDirection] = useState<'next' | 'prev' | null>(null);
+  const [isAnimating, setIsAnimating] = useState(false);
 
   useEffect(() => {
     const fetchProduct = async () => {
@@ -37,6 +39,10 @@ const ProductDetail: React.FC = () => {
           setProduct(data || null);
           if (data) {
             setSelectedImage(data.imageUrl);
+            console.log("Product data received:", {
+              imageUrl: data.imageUrl,
+              imgSlider: data.imgSlider
+            });
             // console.log("reviewsAvg data:", data.reviewsAvg);
           }
         }
@@ -63,8 +69,20 @@ const ProductDetail: React.FC = () => {
     return <NotFound />;
   }
 
-  // Create an array of all images for the slider
-  const allImages = [product.imageUrl, ...(product.imgSlider || [])];
+  // Đơn giản hóa xử lý hình ảnh - chỉ sử dụng imgSlider nếu có
+  const allImages = (() => {
+    // Nếu có imgSlider và không rỗng, chỉ sử dụng imgSlider
+    if (product.imgSlider && Array.isArray(product.imgSlider) && product.imgSlider.length > 0) {
+      // Lấy tất cả ảnh từ imgSlider
+      return product.imgSlider.slice(0); // tạo bản sao mảng
+    }
+
+    // Nếu không có imgSlider, sử dụng imageUrl
+    return product.imageUrl ? [product.imageUrl] : [];
+  })();
+
+  // console.log('Image source used:', allImages.length > 0 ? 'imgSlider' : 'imageUrl');
+  // console.log('Total images:', allImages.length);
 
   // Calculate the end index for visible thumbnails
   const thumbnailEndIndex = Math.min(thumbnailStartIndex + maxVisibleThumbnails, allImages.length);
@@ -96,29 +114,57 @@ const ProductDetail: React.FC = () => {
 
   // Navigation functions for main image slider
   const goToPreviousImage = () => {
-    const newIndex = currentImageIndex > 0 ? currentImageIndex - 1 : allImages.length - 1;
-    setCurrentImageIndex(newIndex);
-    setSelectedImage(allImages[newIndex]);
+    if (isAnimating) return; // Ngăn chặn click liên tục trong khi đang animate
 
-    // Make sure the thumbnail for the current image is visible
-    if (newIndex < thumbnailStartIndex) {
-      setThumbnailStartIndex(Math.max(0, newIndex));
-    } else if (newIndex >= thumbnailStartIndex + maxVisibleThumbnails) {
-      setThumbnailStartIndex(Math.max(0, newIndex - maxVisibleThumbnails + 1));
-    }
+    setSlideDirection('prev');
+    setIsAnimating(true);
+
+    // Đặt hẹn giờ ngắn để thấy hiệu ứng transition
+    setTimeout(() => {
+      const newIndex = currentImageIndex > 0 ? currentImageIndex - 1 : allImages.length - 1;
+      setCurrentImageIndex(newIndex);
+      setSelectedImage(allImages[newIndex]);
+
+      // Make sure the thumbnail for the current image is visible
+      if (newIndex < thumbnailStartIndex) {
+        setThumbnailStartIndex(Math.max(0, newIndex));
+      } else if (newIndex >= thumbnailStartIndex + maxVisibleThumbnails) {
+        setThumbnailStartIndex(Math.max(0, newIndex - maxVisibleThumbnails + 1));
+      }
+
+      // Reset animation sau khi đã chuyển ảnh
+      setTimeout(() => {
+        setSlideDirection(null);
+        setIsAnimating(false);
+      }, 300);
+    }, 10);
   };
 
   const goToNextImage = () => {
-    const newIndex = currentImageIndex < allImages.length - 1 ? currentImageIndex + 1 : 0;
-    setCurrentImageIndex(newIndex);
-    setSelectedImage(allImages[newIndex]);
+    if (isAnimating) return; // Ngăn chặn click liên tục trong khi đang animate
 
-    // Make sure the thumbnail for the current image is visible
-    if (newIndex < thumbnailStartIndex) {
-      setThumbnailStartIndex(Math.max(0, newIndex));
-    } else if (newIndex >= thumbnailStartIndex + maxVisibleThumbnails) {
-      setThumbnailStartIndex(Math.max(0, newIndex - maxVisibleThumbnails + 1));
-    }
+    setSlideDirection('next');
+    setIsAnimating(true);
+
+    // Đặt hẹn giờ ngắn để thấy hiệu ứng transition
+    setTimeout(() => {
+      const newIndex = currentImageIndex < allImages.length - 1 ? currentImageIndex + 1 : 0;
+      setCurrentImageIndex(newIndex);
+      setSelectedImage(allImages[newIndex]);
+
+      // Make sure the thumbnail for the current image is visible
+      if (newIndex < thumbnailStartIndex) {
+        setThumbnailStartIndex(Math.max(0, newIndex));
+      } else if (newIndex >= thumbnailStartIndex + maxVisibleThumbnails) {
+        setThumbnailStartIndex(Math.max(0, newIndex - maxVisibleThumbnails + 1));
+      }
+
+      // Reset animation sau khi đã chuyển ảnh
+      setTimeout(() => {
+        setSlideDirection(null);
+        setIsAnimating(false);
+      }, 300);
+    }, 10);
   };
 
   // Select a specific image
@@ -211,11 +257,14 @@ const ProductDetail: React.FC = () => {
             </button>
 
             {/* Main Image */}
-            <div className="w-full h-full flex items-center justify-center">
+            <div className="w-full h-full flex items-center justify-center overflow-hidden">
               <img
                 src={formatImageUrl(selectedImage || product.imageUrl)}
                 alt={product.name}
-                className="w-full h-full object-contain max-h-[15rem] max-w-[30rem]"
+                className={`w-full h-full object-contain max-h-[15rem] max-w-[30rem] transition-all duration-300 ease-in-out
+                  ${slideDirection === 'next' ? 'animate-slide-next' : ''}
+                  ${slideDirection === 'prev' ? 'animate-slide-prev' : ''}
+                `}
               />
             </div>
 
@@ -321,7 +370,7 @@ const ProductDetail: React.FC = () => {
                 {getRating(product.reviewsAvg).toFixed(1)} Star Rating
               </span>
               <span className="text-gray-500 text-sm ml-2">
-                ({getReviewCount(product.reviewsAvg)} Users feedback)
+                {getReviewCount(product.reviewsAvg)} Users feedback
               </span>
             </div>
           </div>

@@ -19,7 +19,7 @@ const MenCard: React.FC<Product> = ({ imageUrl, price, discount }) => {
         <img
           src={imageUrl}
           alt="Product image"
-          className="w-full h-full object-contain "
+          className="w-full h-full object-cover "
         />
       </a>
       <div className="absolute top-4 right-0 ">

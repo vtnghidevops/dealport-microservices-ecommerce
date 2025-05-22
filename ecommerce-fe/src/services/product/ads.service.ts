@@ -27,6 +27,11 @@ export const BannerService = {
       const response = await axios.get(getApiUrl('ads/placement/banner'));
       // console.log("item banner....:", response.data.data)
 
+      // Check if data exists before mapping
+      if (!response.data || !response.data.data) {
+        return [];
+      }
+
       // Transform API data to match frontend models
       return response.data.data.map((item: any) => {
         const uiSettings = parseUISettings(item);
@@ -53,6 +58,12 @@ export const DisplayService = {
   getDataDisplay: async (): Promise<DisplayItem[]> => {
     try {
       const response = await axios.get(getApiUrl('ads/placement/display'));
+
+      // Check if data exists before mapping
+      if (!response.data || !response.data.data) {
+        return [];
+      }
+
       // Transform API data to match frontend models
       return response.data.data.map((item: any) => {
         // Parse uiSettings if it's a string
@@ -99,6 +110,11 @@ export const GamingService = {
   getDataGaming: async (): Promise<GamingItem[]> => {
     try {
       const response = await axios.get(getApiUrl('ads/placement/gaming'));
+
+      // Check if data exists before mapping
+      if (!response.data || !response.data.data) {
+        return [];
+      }
 
       // Transform API data to match frontend models
       return response.data.data.map((item: any) => {

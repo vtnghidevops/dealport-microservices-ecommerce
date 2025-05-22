@@ -21,8 +21,26 @@ export const formatImageUrl = (url: string): string => {
   // If the URL is empty, return empty string
   if (!url) return '';
 
+  // Fix common typo in protocol (htpp:// -> http://)
+  if (url.startsWith('htpp://')) {
+    url = url.replace('htpp://', 'http://');
+  }
+
+  // If URL has any domain with /images/ path, extract just the /images/ path
+  // This works for any domain, not just localhost
+  const anyDomainImagePattern = /https?:\/\/[^\/]+(\/images\/.*)/;
+  const domainMatch = url.match(anyDomainImagePattern);
+  if (domainMatch && domainMatch[1]) {
+    return domainMatch[1];
+  }
+
   // If URL already has http:// or https://, it's already a complete URL
   if (url.startsWith('http://') || url.startsWith('https://')) {
+    return url;
+  }
+
+  // If URL starts with /images/, return as is without adding domain
+  if (url.startsWith('/images/')) {
     return url;
   }
 
@@ -32,7 +50,7 @@ export const formatImageUrl = (url: string): string => {
     baseImageUrl = baseImageUrl.substring(0, baseImageUrl.length - `/api/${API_VERSION}`.length);
   }
 
-  // For all image URLs, just add the domain without /api/v1
+  // For all other URLs starting with /, add the domain without /api/v1
   if (url.startsWith('/')) {
     return `${baseImageUrl}${url}`;
   }
@@ -48,11 +66,30 @@ export const formatImageUrl = (url: string): string => {
  * @returns Complete API URL string
  */
 export const getApiUrl = (path: string, isAdmin = false): string => {
-  // If path starts with /images, keep it as is and just append to base URL
-  // This special case is for image URLs that should not have /api/v1 added
-  if (path.startsWith('/images')) {
-    return `${BASE_API_URL}${path}`;
+  // Fix common typo in protocol (htpp:// -> http://)
+  if (path.startsWith('htpp://')) {
+    path = path.replace('htpp://', 'http://');
   }
+
+  // If path has any domain with /images/ path, extract just the /images/ path
+  const anyDomainImagePattern = /https?:\/\/[^\/]+(\/images\/.*)/;
+  const domainMatch = path.match(anyDomainImagePattern);
+  if (domainMatch && domainMatch[1]) {
+    return domainMatch[1];
+  }
+
+  // If path already has a protocol, return as is
+  if (path.startsWith('http://') || path.startsWith('https://')) {
+    return path;
+  }
+
+  // If path starts with /images/, keep it as is without adding any domain
+  if (path.startsWith('/images/')) {
+    return path;
+  }
+
+  // Special handling for API paths that include /images/ but not at the start
+  // For example /api/products/images/... should get domain added
 
   // Remove leading slash from path if it exists
   const cleanPath = path.startsWith('/') ? path.substring(1) : path;

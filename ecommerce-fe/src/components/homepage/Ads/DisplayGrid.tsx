@@ -155,7 +155,7 @@ const CardFirst: React.FC<CardFirst> = ({ imageUrl, type, productSlug, categoryS
   }
 
   return (
-    <Link to={navigationPath} className="relative h-[100%] block">
+    <Link to={navigationPath} className="relative h-[100%] block border border-gray-300 rounded-xl">
       <img src={imageUrl} className="absolute rounded-xl" alt="Banner" />
       <span className="absolute text-white text-[10px] bottom-0 ml-[1rem] mb-[0.5rem]">
         More Detail
@@ -178,7 +178,7 @@ const CardSecond: React.FC<CardSecond> = ({ imageUrl, buttonType, type, productS
   }
 
   return (
-    <Link to={navigationPath} className="block relative">
+    <Link to={navigationPath} className="block relative border border-gray-300 rounded-xl">
       <img src={imageUrl} alt="Product" />
       <div className="absolute bottom-2 left-1">
         <div className="rounded-3xl">
@@ -225,7 +225,7 @@ const CardMain: React.FC<CardMain> = ({
       <div className="absolute max-w-[60px] top-[10%] left-[42%]">
         {discountImg && <img src={discountImg} alt="Discount" />}
       </div>
-      <div className="absolute top-[27%] right-[8%]">
+      <div className="absolute top-[27%] right-[6%] max-w-[10rem]">
         <h3>{title}</h3>
         <span>${price}</span>
       </div>

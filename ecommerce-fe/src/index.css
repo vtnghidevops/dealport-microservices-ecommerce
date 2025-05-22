@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Lato:wght@400;500;700&display=swap'); 
+@import url('https://fonts.googleapis.com/css2?family=Lato:wght@400;500;700&display=swap');
 
 @tailwind base;
 @tailwind components;
@@ -7,19 +7,22 @@
 @layer base {
   body {
     /* font-family: 'Lato', sans-serif; */
-    font-family:   "Lato", ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+    font-family: "Lato", ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
     line-height: 1.4;
   }
 }
+
 /* Custom utility for hiding scrollbar */
 @layer utilities {
   .scrollbar-hide {
     -ms-overflow-style: none;
     scrollbar-width: none;
   }
+
   .scrollbar-hide::-webkit-scrollbar {
     display: none;
   }
+
   .transparent-autofill:-webkit-autofill,
   .transparent-autofill:-webkit-autofill:hover,
   .transparent-autofill:-webkit-autofill:focus {
@@ -29,38 +32,38 @@
 
 @layer components {
   .btn-primary {
-    @apply bg-ocean-green text-white px-4 py-2 rounded-[22px] font-bold w-[181px] h-[42px]  ;
+    @apply bg-ocean-green text-white px-4 py-2 rounded-[22px] font-bold w-[181px] h-[42px];
   }
 
-  
+
   .btn-primary-cy {
     @apply bg-cyprus text-white px-4 py-2 rounded-[22px] font-bold w-[181px] h-[42px];
   }
-  
+
   .btn-accent {
-    @apply bg-white border border-gray-300 text-black px-4 py-2 rounded-[22px] w-[181px] h-[42px] ;
+    @apply bg-white border border-gray-300 text-black px-4 py-2 rounded-[22px] w-[181px] h-[42px];
   }
-  
+
   .btn-secondary {
-    @apply bg-aqua-spring text-black px-4 py-2 rounded-[22px] w-[181px] h-[42px] ;
+    @apply bg-aqua-spring text-black px-4 py-2 rounded-[22px] w-[181px] h-[42px];
   }
-  
+
   .btn-gradient {
     @apply px-4 py-2 text-white rounded-[22px] w-[181px] h-[42px] bg-gradient-to-r from-[#173FAB] to-[#8E3A9A];
   }
 
   .btn-gray {
-    @apply px-4 py-2  text-white bg-grey rounded-[22px] w-[181px] h-[42px] ;
+    @apply px-4 py-2 text-white bg-grey rounded-[22px] w-[181px] h-[42px];
   }
 
   .btn-black {
-    @apply bg-dark-gray text-white py-2 px-4 hover:bg-opacity-90 transition-all duration-200 rounded-[22px] w-[181px] h-[42px] ;
+    @apply bg-dark-gray text-white py-2 px-4 hover:bg-opacity-90 transition-all duration-200 rounded-[22px] w-[181px] h-[42px];
   }
 
   .card {
     @apply bg-white p-4 rounded-default shadow-ambient-1;
   }
-  
+
   .search-field {
     @apply bg-aqua-spring rounded-full px-4 py-2 w-full;
   }
@@ -68,19 +71,19 @@
   .header-1 {
     @apply font-lato font-bold text-[57px] tracking-[-0.25px];
   }
-  
+
   .header-2 {
     @apply font-lato font-normal text-[32px] tracking-[0px];
   }
-  
+
   .title-dashboard {
     @apply font-lato font-bold text-[18px] tracking-[-2px];
   }
-  
+
   .title {
     @apply font-lato font-normal text-[22px];
   }
-  
+
   .body-text {
     @apply font-lato font-normal text-base leading-[1.4];
   }
@@ -97,6 +100,7 @@
     transform: translateX(100%);
     opacity: 0;
   }
+
   to {
     transform: translateX(0);
     opacity: 1;
@@ -105,4 +109,51 @@
 
 .animate-slideRightIn {
   animation: slideRightIn 0.5s ease forwards;
+}
+
+/* Animations cho slider */
+@keyframes slideInNext {
+  0% {
+    opacity: 0;
+    transform: translateX(30%);
+  }
+
+  100% {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes slideInPrev {
+  0% {
+    opacity: 0;
+    transform: translateX(-30%);
+  }
+
+  100% {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes fadeIn {
+  0% {
+    opacity: 0;
+  }
+
+  100% {
+    opacity: 1;
+  }
+}
+
+.animate-slide-next {
+  animation: slideInNext 0.3s ease-out forwards;
+}
+
+.animate-slide-prev {
+  animation: slideInPrev 0.3s ease-out forwards;
+}
+
+.animate-fade {
+  animation: fadeIn 0.3s ease-out forwards;
 }

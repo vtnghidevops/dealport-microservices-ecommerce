@@ -454,6 +454,10 @@ const BannerService = {
       });
 
       const { data } = response.data as BannerResponse;
+      if (!data) {
+        return [];
+      }
+
       return data.filter(banner => banner.type === 'hero').map(banner => ({
         id: banner.id,
         title: banner.title,
@@ -553,7 +557,30 @@ const TestimonialService = {
       throw new Error('Invalid API response format');
     } catch (error) {
       console.error('Error fetching testimonials from API, using fallback data:', error);
-      return []
+      // Return fallback hardcoded testimonials 
+      return [
+        {
+          id: "1",
+          userName: "Sarah Johnson",
+          avatar: "/images/testimonials/avatar1.jpg",
+          reviewText: "I've been shopping here for years. The quality and style are unmatched!",
+          rating: 5
+        },
+        {
+          id: "2",
+          userName: "Michael Chen",
+          avatar: "/images/testimonials/avatar2.jpg",
+          reviewText: "Amazing electronics section. Great prices and fast shipping every time.",
+          rating: 5
+        },
+        {
+          id: "3",
+          userName: "Emma Rodriguez",
+          avatar: "/images/testimonials/avatar3.jpg",
+          reviewText: "The home decor collection is simply stunning. My go-to for all my projects.",
+          rating: 4
+        }
+      ];
     }
   }
 };
