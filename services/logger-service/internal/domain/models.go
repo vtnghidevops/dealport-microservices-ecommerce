@@ -7,6 +7,8 @@ import (
 	"log"
 	"time"
 
+	"logger-service/tests/mocks"
+
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -14,6 +16,9 @@ import (
 )
 
 var client *mongo.Client
+
+// For testing purposes
+var GetMockCollection func() interface{}
 
 func New(mongo *mongo.Client) Models {
 	client = mongo
@@ -79,8 +84,16 @@ func (l *LogEntry) ExtractFromData() {
 	}
 }
 
+// Insert inserts a new log entry
 func (l *LogEntry) Insert(entry LogEntry) error {
-	collection := client.Database("logs").Collection("logs")
+	var collection interface{}
+
+	// Check if we're in test mode with a mock collection
+	if GetMockCollection != nil {
+		collection = GetMockCollection()
+	} else {
+		collection = client.Database("logs").Collection("logs")
+	}
 
 	// Extract structured data if available
 	entry.ExtractFromData()
@@ -89,7 +102,8 @@ func (l *LogEntry) Insert(entry LogEntry) error {
 	log.Printf("Inserting log entry: Name=%s, Level=%s, Service=%s, Action=%s, UserID=%s",
 		entry.Name, entry.Level, entry.Service, entry.Action, entry.UserID)
 
-	result, err := collection.InsertOne(context.TODO(), LogEntry{
+	// Prepare log document
+	logDoc := LogEntry{
 		Name:      entry.Name,
 		Data:      entry.Data,
 		Level:     entry.Level,
@@ -101,7 +115,22 @@ func (l *LogEntry) Insert(entry LogEntry) error {
 		Metadata:  entry.Metadata,
 		CreatedAt: time.Now(),
 		UpdatedAt: time.Now(),
-	})
+	}
+
+	var result *mongo.InsertOneResult
+	var err error
+
+	// Check the type of collection
+	if mockColl, ok := collection.(*mocks.MockMongoCollection); ok {
+		// We're in test mode with a mock collection
+		result, err = mockColl.InsertOne(context.TODO(), logDoc, nil)
+	} else if realColl, ok := collection.(*mongo.Collection); ok {
+		// We're using a real MongoDB collection
+		result, err = realColl.InsertOne(context.TODO(), logDoc)
+	} else {
+		return fmt.Errorf("unknown collection type: %T", collection)
+	}
+
 	if err != nil {
 		log.Println("Error inserting into logs:", err)
 		return err
@@ -116,29 +145,69 @@ func (l *LogEntry) All() ([]*LogEntry, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
 	defer cancel()
 
-	collection := client.Database("logs").Collection("logs")
+	var collection interface{}
+
+	// Check if we're in test mode with a mock collection
+	if GetMockCollection != nil {
+		collection = GetMockCollection()
+	} else {
+		collection = client.Database("logs").Collection("logs")
+	}
 
 	opts := options.Find()
 	opts.SetSort(bson.D{{"created_at", -1}})
 
-	cursor, err := collection.Find(context.TODO(), bson.D{}, opts)
+	var cursor interface{}
+	var err error
+
+	// Check the type of collection
+	if mockColl, ok := collection.(*mocks.MockMongoCollection); ok {
+		// We're in test mode with a mock collection
+		cursor, err = mockColl.Find(context.TODO(), bson.D{}, opts)
+	} else if realColl, ok := collection.(*mongo.Collection); ok {
+		// We're using a real MongoDB collection
+		cursor, err = realColl.Find(context.TODO(), bson.D{}, opts)
+	} else {
+		return nil, fmt.Errorf("unknown collection type: %T", collection)
+	}
+
 	if err != nil {
 		log.Println("Finding all docs error:", err)
 		return nil, err
 	}
-	defer cursor.Close(ctx)
 
 	var logs []*LogEntry
 
-	for cursor.Next(ctx) {
-		var item LogEntry
+	// Handle different cursor types
+	if mockCursor, ok := cursor.(*mocks.MockMongoCursor); ok {
+		// Close the mock cursor when done
+		defer mockCursor.Close(ctx)
 
-		err := cursor.Decode(&item)
-		if err != nil {
-			log.Print("Error decoding log into slice:", err)
-			return nil, err
-		} else {
-			logs = append(logs, &item)
+		// Iterate through mock cursor
+		for mockCursor.Next(ctx) {
+			var item LogEntry
+			err := mockCursor.Decode(&item)
+			if err != nil {
+				log.Print("Error decoding log into slice:", err)
+				return nil, err
+			} else {
+				logs = append(logs, &item)
+			}
+		}
+	} else if realCursor, ok := cursor.(*mongo.Cursor); ok {
+		// Close the real cursor when done
+		defer realCursor.Close(ctx)
+
+		// Iterate through real cursor
+		for realCursor.Next(ctx) {
+			var item LogEntry
+			err := realCursor.Decode(&item)
+			if err != nil {
+				log.Print("Error decoding log into slice:", err)
+				return nil, err
+			} else {
+				logs = append(logs, &item)
+			}
 		}
 	}
 

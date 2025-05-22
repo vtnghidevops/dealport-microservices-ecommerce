@@ -18,17 +18,27 @@ type JsonResponse struct {
 func ReadJSON(w http.ResponseWriter, r *http.Request, data interface{}) error {
 	maxBytes := 1048576 // 1MB
 
+	// Check if body is nil
+	if r.Body == nil {
+		w.WriteHeader(http.StatusBadRequest)
+		return errors.New("request body is empty")
+	}
+
 	r.Body = http.MaxBytesReader(w, r.Body, int64(maxBytes))
 
 	dec := json.NewDecoder(r.Body)
 	err := dec.Decode(data)
 	if err != nil {
+		// Return error without writing to response writer
+		// Instead set status code to 400 for bad request
+		w.WriteHeader(http.StatusBadRequest)
 		return err
 	}
 
 	// Check if there is any additional data in the request body
 	err = dec.Decode(&struct{}{})
 	if err != io.EOF {
+		w.WriteHeader(http.StatusBadRequest)
 		return errors.New("request body must only contain a single JSON object")
 	}
 

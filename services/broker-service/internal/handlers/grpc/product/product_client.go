@@ -276,8 +276,17 @@ func (c *ProductClient) SetPrimaryProductImage(productID, imageID int) (*pb.Stat
 	return resp, nil
 }
 
+// GetProductImageFileFunc is used for testing to override the real gRPC call
+var GetProductImageFileFunc func(filename string) ([]byte, string, error)
+
 // GetProductImageFile retrieves image file data by filename
 func (c *ProductClient) GetProductImageFile(filename string) ([]byte, string, error) {
+	// If we're in a test environment and the mock function is set, use it
+	if GetProductImageFileFunc != nil {
+		return GetProductImageFileFunc(filename)
+	}
+
+	// Otherwise make the real gRPC call
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second) // Longer timeout for image data
 	defer cancel()
 

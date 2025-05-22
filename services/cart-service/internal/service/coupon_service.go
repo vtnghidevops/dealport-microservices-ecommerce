@@ -135,7 +135,9 @@ func (s *CouponService) GetCouponByID(ctx context.Context, id string) (*domain.C
 
 // GetCouponByCode returns a coupon by its code
 func (s *CouponService) GetCouponByCode(ctx context.Context, code string) (*domain.Coupon, error) {
-	return s.couponRepo.GetCouponByCode(ctx, code)
+	// Normalize code to uppercase
+	normalizedCode := strings.ToUpper(code)
+	return s.couponRepo.GetCouponByCode(ctx, normalizedCode)
 }
 
 // CreateCoupon creates a new coupon

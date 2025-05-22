@@ -88,10 +88,26 @@ func (s *CartService) UpdateCartItem(ctx context.Context, userID, itemID string,
 		return nil, ErrInvalidQuantity
 	}
 
-	cart, err := s.cartRepo.GetCart(ctx, userID)
+	// Retrieve the original cart
+	origCart, err := s.cartRepo.GetCart(ctx, userID)
 	if err != nil {
 		return nil, err
 	}
+
+	// Make a deep copy of the cart to avoid modifying the original
+	cart := &domain.Cart{
+		ID:             origCart.ID,
+		UserID:         origCart.UserID,
+		Items:          make([]domain.CartItem, len(origCart.Items)),
+		CouponCode:     origCart.CouponCode,
+		DiscountAmount: origCart.DiscountAmount,
+		Totals:         origCart.Totals,
+		CreatedAt:      origCart.CreatedAt,
+		UpdatedAt:      origCart.UpdatedAt,
+	}
+
+	// Copy each item
+	copy(cart.Items, origCart.Items)
 
 	// Find the item in the cart
 	found := false

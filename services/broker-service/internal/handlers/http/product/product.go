@@ -17,9 +17,9 @@ type Config struct {
 	ProductClient *productGrpc.ProductClient
 }
 
-const (
-	ProductServiceURL = "http://product-service:8082"
-)
+// ProductServiceURL is the URL for the product service
+// Making it a var instead of const allows tests to override it
+var ProductServiceURL = "http://product-service:8082"
 
 // ProxyRequest forwards the request to the product service
 func ProxyRequest(w http.ResponseWriter, r *http.Request, endpoint string) {
@@ -27,6 +27,7 @@ func ProxyRequest(w http.ResponseWriter, r *http.Request, endpoint string) {
 	chiParams := chi.RouteContext(r.Context()).URLParams
 
 	// Build the target URL
+	// Use the global ProductServiceURL, which might be overridden in tests
 	targetURL := ProductServiceURL + endpoint
 
 	// Replace path parameters in the URL

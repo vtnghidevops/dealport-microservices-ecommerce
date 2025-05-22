@@ -32,30 +32,19 @@ type CreateMomoPaymentRequest struct {
 
 // HandleMomoCallback processes MoMo payment callbacks
 func (c *Config) HandleMomoCallback(w http.ResponseWriter, r *http.Request) {
-	log.Printf("MOMO-CALLBACK: Received MoMo payment callback at %s", time.Now().Format(time.RFC3339))
-	log.Printf("MOMO-CALLBACK: Request URL: %s", r.URL.String())
-	log.Printf("MOMO-CALLBACK: Request Method: %s", r.Method)
-	log.Printf("MOMO-CALLBACK: Content-Type: %s", r.Header.Get("Content-Type"))
-	log.Printf("MOMO-CALLBACK: User-Agent: %s", r.Header.Get("User-Agent"))
-
 	// Parse the query parameters from MoMo
 	err := r.ParseForm()
 	if err != nil {
-		log.Printf("MOMO-CALLBACK-ERROR: Failed to parse callback parameters: %v", err)
+		log.Printf("Failed to parse MoMo callback parameters: %v", err)
 		sendMomoCallbackResponse(w, http.StatusBadRequest, "Failed to parse parameters", "")
 		return
 	}
-
-	// Log raw request
-	log.Printf("MOMO-CALLBACK: Raw Form Data: %v", r.Form)
-	log.Printf("MOMO-CALLBACK: Raw Query: %v", r.URL.Query())
 
 	// Extract MoMo callback parameters
 	params := make(map[string]string)
 	for key, values := range r.Form {
 		if len(values) > 0 {
 			params[key] = values[0]
-			log.Printf("MOMO-CALLBACK-DEBUG: Param %s = %s", key, values[0])
 		}
 	}
 
@@ -63,48 +52,36 @@ func (c *Config) HandleMomoCallback(w http.ResponseWriter, r *http.Request) {
 	for key, values := range r.URL.Query() {
 		if len(values) > 0 && params[key] == "" { // Add only if not already in form data
 			params[key] = values[0]
-			log.Printf("MOMO-CALLBACK-DEBUG: URL Query Param %s = %s", key, values[0])
 		}
 	}
 
 	if len(params) == 0 {
-		log.Printf("MOMO-CALLBACK-ERROR: No callback parameters received")
+		// log.Printf("No MoMo callback parameters received")
 		sendMomoCallbackResponse(w, http.StatusBadRequest, "No callback parameters received", "")
 		return
 	}
-
-	// Log important parameters
-	log.Printf("MOMO-CALLBACK-DEBUG: OrderId = %s", params["orderId"])
-	log.Printf("MOMO-CALLBACK-DEBUG: TransId = %s", params["transId"])
-	log.Printf("MOMO-CALLBACK-DEBUG: ResultCode = %s", params["resultCode"])
-	log.Printf("MOMO-CALLBACK-DEBUG: Message = %s", params["message"])
 
 	// Create context with timeout for gRPC call
 	ctx, cancel := context.WithTimeout(r.Context(), 15*time.Second) // Increased timeout
 	defer cancel()
 
 	// Forward callback to checkout service for processing
-	log.Printf("MOMO-CALLBACK: Calling checkout service ProcessMomoCallback with %d parameters", len(params))
 	result, err := c.CheckoutClient.ProcessMomoCallback(ctx, &pb.MomoCallbackRequest{
 		Params: params,
 	})
 
 	if err != nil {
-		log.Printf("MOMO-CALLBACK-ERROR: Failed to process callback via gRPC: %v", err)
+		log.Printf("Failed to process MoMo callback via gRPC: %v", err)
 		sendMomoCallbackResponse(w, http.StatusInternalServerError, "Internal server error processing callback", "")
 		return
 	}
 
-	log.Printf("MOMO-CALLBACK: Received response from checkout service: success=%t, message=%s, orderId=%s",
-		result.Success, result.Message, result.OrderId)
-
 	if !result.Success {
-		log.Printf("MOMO-CALLBACK-ERROR: Payment verification failed: %s", result.Message)
+		log.Printf("MoMo payment verification failed for order %s: %s", result.OrderId, result.Message)
 		sendMomoCallbackResponse(w, http.StatusBadRequest, result.Message, result.OrderId)
 		return
 	}
 
-	log.Printf("MOMO-CALLBACK-SUCCESS: Payment verified successfully for order %s", result.OrderId)
 	sendMomoCallbackResponse(w, http.StatusOK, "Payment processed successfully", result.OrderId)
 }
 
@@ -126,25 +103,19 @@ func (c *Config) CreateMomoPayment(w http.ResponseWriter, r *http.Request) {
 	// Parse request
 	var req CreateMomoPaymentRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		log.Printf("Error parsing CreateMomoPayment request: %v", err)
+		// log.Printf("Error parsing CreateMomoPayment request: %v", err)
 		jsonResponse(w, http.StatusBadRequest, jsonError("Invalid request format"))
 		return
 	}
 
-	// Log the incoming request for debugging
-	reqBytes, _ := json.Marshal(req)
-	log.Printf("CreateMomoPayment request: %s", string(reqBytes))
-
 	// Validate request
 	if req.OrderID == "" || req.Amount <= 0 || req.ReturnURL == "" {
-		log.Printf("Invalid CreateMomoPayment request: OrderID=%s, Amount=%d, ReturnURL=%s",
-			req.OrderID, req.Amount, req.ReturnURL)
 		jsonResponse(w, http.StatusBadRequest, jsonError("Missing required fields"))
 		return
 	}
 
 	// Set timeout context
-	ctx, cancel := context.WithTimeout(r.Context(), 15*time.Second) // Increase timeout
+	ctx, cancel := context.WithTimeout(r.Context(), 15*time.Second)
 	defer cancel()
 
 	// Build gRPC request
@@ -157,10 +128,6 @@ func (c *Config) CreateMomoPayment(w http.ResponseWriter, r *http.Request) {
 		OrderInfo: req.OrderInfo,
 	}
 
-	// Log the gRPC request being sent
-	log.Printf("Sending CreateMomoPayment gRPC request to checkout service: OrderID=%s, Amount=%d",
-		grpcReq.PaymentInfo.OrderId, grpcReq.PaymentInfo.Amount)
-
 	// Call service
 	resp, err := c.CheckoutClient.CreateMomoPayment(ctx, grpcReq)
 	if err != nil {
@@ -169,12 +136,8 @@ func (c *Config) CreateMomoPayment(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Log the checkout service response
-	log.Printf("Received MoMo payment response: Success=%t, Message=%s", resp.Success, resp.Message)
-
 	// Check response
 	if !resp.Success {
-		log.Printf("MoMo payment creation failed: %s", resp.Message)
 		jsonResponse(w, http.StatusBadRequest, jsonError(resp.Message))
 		return
 	}
@@ -187,10 +150,6 @@ func (c *Config) CreateMomoPayment(w http.ResponseWriter, r *http.Request) {
 		"transactionId": resp.TransactionId,
 		"amount":        grpcReq.PaymentInfo.Amount, // Include amount in response
 	}
-
-	// Log the successful response we're sending back
-	log.Printf("Sending successful MoMo payment response: PaymentURL=%s, OrderID=%s",
-		resp.PaymentUrl, resp.OrderId)
 
 	// Return success response
 	jsonResponse(w, http.StatusOK, jsonSuccess(responseData))
@@ -206,38 +165,24 @@ func (c *Config) VerifyMomoPayment(w http.ResponseWriter, r *http.Request) {
 	// Parse request
 	var req VerifyMomoPaymentRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		log.Printf("Error parsing VerifyMomoPayment request: %v", err)
 		jsonResponse(w, http.StatusBadRequest, jsonError("Invalid request format"))
 		return
 	}
 
-	// Log the incoming request for debugging
-	log.Printf("VerifyMomoPayment request received with %d parameters", len(req.Params))
-	for key, value := range req.Params {
-		// Don't log sensitive data like signature
-		if key != "signature" {
-			log.Printf("  Param %s: %s", key, value)
-		}
-	}
-
 	// Validate request
 	if req.Params == nil || len(req.Params) == 0 {
-		log.Printf("Missing callback parameters in VerifyMomoPayment request")
 		jsonResponse(w, http.StatusBadRequest, jsonError("Missing callback parameters"))
 		return
 	}
 
 	// Set timeout context
-	ctx, cancel := context.WithTimeout(r.Context(), 15*time.Second) // Increase timeout
+	ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
 	defer cancel()
 
 	// Build gRPC request
 	grpcReq := &pb.MomoVerifyRequest{
 		Params: req.Params,
 	}
-
-	// Log that we're making the gRPC call
-	log.Printf("Sending VerifyMomoPayment gRPC request to checkout service")
 
 	// Call service
 	resp, err := c.CheckoutClient.VerifyMomoPayment(ctx, grpcReq)
@@ -246,10 +191,6 @@ func (c *Config) VerifyMomoPayment(w http.ResponseWriter, r *http.Request) {
 		jsonResponse(w, http.StatusInternalServerError, jsonError("Failed to verify payment: "+err.Error()))
 		return
 	}
-
-	// Log the verification result
-	log.Printf("MoMo payment verification result: Success=%t, OrderID=%s, TransactionID=%s, Message=%s",
-		resp.Success, resp.OrderId, resp.TransactionId, resp.Message)
 
 	// Create response data
 	responseData := map[string]interface{}{
@@ -318,7 +259,7 @@ func (c *Config) CreateVnpayPayment(w http.ResponseWriter, r *http.Request) {
 	// Call service
 	resp, err := c.CheckoutClient.CreateVnpayPayment(ctx, grpcReq)
 	if err != nil {
-		log.Printf("Error calling checkout service: %v", err)
+		log.Printf("Error calling checkout service for VNPAY payment: %v", err)
 		jsonResponse(w, http.StatusInternalServerError, jsonError("Failed to process payment"))
 		return
 	}
@@ -535,7 +476,7 @@ func jsonResponse(w http.ResponseWriter, status int, data interface{}) {
 
 	// Write JSON response
 	if _, err := w.Write(jsonData); err != nil {
-		log.Printf("Error writing JSON response: %v", err)
+		// log.Printf("Error writing JSON response: %v", err)
 	}
 }
 
