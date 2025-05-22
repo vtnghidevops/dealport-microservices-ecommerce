@@ -71,7 +71,7 @@ CREATE TABLE IF NOT EXISTS product_tags (
 CREATE TABLE IF NOT EXISTS product_reviews (
     id SERIAL PRIMARY KEY,
     product_id INTEGER REFERENCES products(id) ON DELETE CASCADE,
-    user_id VARCHAR(36) NOT NULL,
+    user_id UUID NOT NULL,
     user_name VARCHAR(100),
     rating DECIMAL(3, 1) NOT NULL CHECK (rating >= 1 AND rating <= 5),
     comment TEXT,
