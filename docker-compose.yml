@@ -53,7 +53,7 @@ services:
     container_name: redis-cart
     image: "redis:alpine"
     ports:
-      - "6379:6379"
+      - "56379:6379"
     volumes:
       - ./db-data/redis-cart:/data
       # - ./services/cart-service/internal/repository/redis/db:/docker-entrypoint-initdb.d
@@ -220,7 +220,7 @@ services:
       PRODUCT_DB_NAME: ${PRODUCT_DB_NAME}
       PRODUCT_DB_SSLMODE: disable
       MIGRATION_PATH: file:///app/migrations
-      AUTO_MIGRATE: "true"
+      AUTO_MIGRATE: "false"
       ECOMMERCE_IMG_URL: ${ECOMMERCE_IMG_URL}
     # Add delay to ensure database is fully initialized, use force flag to fix dirty database
     command: >
@@ -337,7 +337,7 @@ services:
     container_name: rabbitmq
     image: "rabbitmq:3.9-alpine"
     ports:
-      - "5672:5672"
+      - "55672:5672"
     volumes:
       - ./db-data/rabbitmq/:/var/lib/rabbitmq/
     networks:
