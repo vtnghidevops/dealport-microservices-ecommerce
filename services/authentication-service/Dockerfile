@@ -1,4 +1,4 @@
-FROM golang:1.24.1-alpine AS builder
+FROM golang:1.24.3-alpine3.21 AS builder
 
 WORKDIR /app
 
@@ -25,6 +25,13 @@ COPY --from=builder /app/migrations /app/migrations
 
 # Install necessary tools for migrations
 RUN apk add --no-cache postgresql-client bash
+
+# Create non-root user and set permissions
+RUN adduser -D authentication-user && \
+    chmod +x /app/authentication-service && \
+    chown -R authentication-user:authentication-user /app
+
+USER authentication-user
 
 EXPOSE 50051
 # Command to run the application

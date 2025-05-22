@@ -275,11 +275,11 @@ func contains(s, substr string) bool {
 }
 
 // Simple string indexOf helper
-func indexOf(s, substr string) int {
-	for i := 0; i <= len(s)-len(substr); i++ {
-		if s[i:i+len(substr)] == substr {
-			return i
-		}
-	}
-	return -1
-}
+// func indexOf(s, substr string) int {
+// 	for i := 0; i <= len(s)-len(substr); i++ {
+// 		if s[i:i+len(substr)] == substr {
+// 			return i
+// 		}
+// 	}
+// 	return -1
+// }

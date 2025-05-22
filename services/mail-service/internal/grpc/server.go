@@ -213,7 +213,7 @@ func (s *MailServer) handleGenericEmail(data map[string]string) error {
 	// Set default template if not specified
 	template := data["template"]
 	if template == "" {
-		template = "mail.html.gohtml"
+		template = "welcome.html.gohtml"
 	}
 
 	msg := mailer.Message{
@@ -597,8 +597,3 @@ func (s *MailServer) handlePaymentSuccessEmail(email string, data map[string]str
 	// Send email
 	return s.Config.Mailer.SendSMTPMessage(msg)
 }
-
-
-
-
-

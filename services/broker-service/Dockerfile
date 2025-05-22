@@ -1,5 +1,5 @@
 # base image
-FROM golang:1.24.1-alpine AS builder
+FROM golang:1.24.3-alpine3.21 AS builder
 
 WORKDIR /app
 
@@ -21,6 +21,13 @@ WORKDIR /app
 
 # Copy the binary from the builder stage
 COPY --from=builder /app/broker-service .
+
+# Create non-root user and set permissions
+RUN adduser -D broker-user && \
+    chmod +x /app/broker-service && \
+    chown -R broker-user:broker-user /app
+
+USER broker-user
 
 EXPOSE 8080
 

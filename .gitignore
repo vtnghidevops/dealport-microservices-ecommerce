@@ -12,3 +12,4 @@ tree.txt
 uploads/products/
 *.DS_Store
 *.log
+"scripts/" 

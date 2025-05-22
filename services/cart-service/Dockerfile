@@ -1,4 +1,4 @@
-FROM golang:1.24.1-alpine AS builder
+FROM golang:1.24.3-alpine3.21 AS builder
 
 WORKDIR /app
 
@@ -23,11 +23,16 @@ COPY --from=builder /app/cart-service .
 # Copy the migrations directory
 COPY --from=builder /app/migrations /app/migrations
 
-# Make the init script executable
-RUN chmod +x /app/migrations/init_redis.sh
-
 # Install necessary tools for Redis
 RUN apk add --no-cache redis bash
+
+# Create non-root user and set permissions
+RUN adduser -D cart-user && \
+    chmod +x /app/cart-service && \
+    chmod +x /app/migrations/init_redis.sh && \
+    chown -R cart-user:cart-user /app
+
+USER cart-user
 
 # Expose the port the app runs on
 EXPOSE 50054

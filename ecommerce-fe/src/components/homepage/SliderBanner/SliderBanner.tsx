@@ -1,6 +1,6 @@
 import React from "react";
 import { useState, useEffect, useRef } from "react";
-import { getButtonClass } from "@/utils/buttonUtils";
+// import { getButtonClass } from "@/utils/buttonUtils";
 import { FaArrowLeft } from "react-icons/fa6";
 import { FaArrowRight } from "react-icons/fa6";
 import { BannerService } from "@/services/product/product.service";
