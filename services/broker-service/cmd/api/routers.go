@@ -92,6 +92,7 @@ func (app *Config) routers() http.Handler {
 				r.Delete("/", app.CartHandler.ClearCart)
 				r.Post("/coupon", app.CartHandler.ApplyCoupon)
 				r.Delete("/coupon", app.CartHandler.RemoveCoupon)
+				r.Post("/refresh-ttl", app.CartHandler.RefreshCartTTL)
 			})
 		})
 
@@ -163,8 +164,7 @@ func (app *Config) routers() http.Handler {
 			r.Get("/{id}", app.ProductHandler.GetProductByID)
 			r.Get("/slug/{slug}", app.ProductHandler.GetProductBySlug)
 			r.Put("/{id}", app.ProductHandler.UpdateProduct)
-			// r.Patch("/{id}", app.ProductHandler.PatchProduct)
-			r.Patch("/{id}", app.httpProductHandler.PatchProduct) // using http handler to patch product for flexibilty
+			r.Patch("/{id}", app.ProductHandler.PatchProduct)
 			r.Delete("/{id}", app.ProductHandler.DeleteProduct)
 
 			// Product reviews

@@ -288,6 +288,37 @@ func (c *Config) RemoveCoupon(w http.ResponseWriter, r *http.Request) {
 	util.WriteJSON(w, http.StatusOK, responseData)
 }
 
+// RefreshCartTTL refreshes the expiration time of a user's cart in Redis
+func (c *Config) RefreshCartTTL(w http.ResponseWriter, r *http.Request) {
+	// Get user ID from context - would be set by auth middleware
+	userID, ok := r.Context().Value("user_id").(string)
+	if !ok || userID == "" {
+		util.ErrorJSON(w, errors.New("unauthorized"), http.StatusUnauthorized)
+		return
+	}
+
+	// Call cart service via gRPC
+	res, err := c.CartClient.RefreshCartTTL(r.Context(), &cartpb.RefreshCartTTLRequest{
+		UserId: userID,
+	})
+
+	if err != nil {
+		util.ErrorJSON(w, err, http.StatusInternalServerError)
+		return
+	}
+
+	responseData := util.JsonResponse{
+		Error:   false,
+		Message: "Cart TTL refreshed successfully",
+		Data: map[string]interface{}{
+			"success": res.Success,
+			"message": res.Message,
+		},
+	}
+
+	util.WriteJSON(w, http.StatusOK, responseData)
+}
+
 // Helper function to format cart response for the frontend
 func formatCartResponse(cart *cartpb.Cart) map[string]interface{} {
 	// Format cart items
