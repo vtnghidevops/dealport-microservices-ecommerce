@@ -221,7 +221,16 @@ services:
       PRODUCT_DB_SSLMODE: disable
       MIGRATION_PATH: file:///app/migrations
       AUTO_MIGRATE: "false"
-      ECOMMERCE_IMG_URL: ${ECOMMERCE_IMG_URL}
+      MINIO_ACCESS_KEY_ID: ${MINIO_ACCESS_KEY_ID}
+      MINIO_SECRET_ACCESS_KEY: ${MINIO_SECRET_ACCESS_KEY}
+      STORAGE_PROVIDER: ${STORAGE_PROVIDER}
+      MINIO_ENDPOINT: ${MINIO_ENDPOINT}
+      MINIO_USE_SSL: ${MINIO_USE_SSL}
+      MINIO_BUCKET_NAME: ${MINIO_BUCKET_NAME}
+      MINIO_BASE_URL: ${MINIO_BASE_URL}
+      MINIO_PRESIGNED_TTL: ${MINIO_PRESIGNED_TTL}
+      MINIO_LOCATION: ${MINIO_LOCATION}
+
     # Add delay to ensure database is fully initialized, use force flag to fix dirty database
     command: >
       sh -c "sleep 30 && ./product-service migrate -force=2 && ./product-service"

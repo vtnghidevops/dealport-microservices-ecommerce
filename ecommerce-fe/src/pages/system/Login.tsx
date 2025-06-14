@@ -5,9 +5,10 @@ import { FcGoogle } from "react-icons/fc";
 import { FaApple } from "react-icons/fa";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
+import { useCart } from "@/hooks/useCart";
 import { useToast } from "@/hooks/use-toast";
 import { FiEye, FiEyeOff } from "react-icons/fi";
-import { extractErrorMessage } from '@/utils/error-handler';
+import { extractErrorMessage } from "@/utils/error-handler";
 
 interface LoginFormData {
   email: string;
@@ -17,36 +18,45 @@ interface LoginFormData {
 const Login: React.FC = () => {
   const navigate = useNavigate();
   const { login } = useAuth();
+  const { refreshCartTTL } = useCart();
   const [formData, setFormData] = useState<LoginFormData>({
     email: "",
-    password: ""
+    password: "",
   });
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
   const [showPassword, setShowPassword] = useState(false);
 
   // Memoize input change handler
-  const handleChange = useCallback((e: React.ChangeEvent<HTMLInputElement>): void => {
-    const { name, value } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: value
-    }));
-  }, []);
+  const handleChange = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>): void => {
+      const { name, value } = e.target;
+      setFormData((prev) => ({
+        ...prev,
+        [name]: value,
+      }));
+    },
+    []
+  );
 
   // Memoize toggle password visibility handler
   const togglePasswordVisibility = useCallback(() => {
-    setShowPassword(prev => !prev);
+    setShowPassword((prev) => !prev);
   }, []);
 
   // Memoize social login handler
-  const handleSocialLogin = useCallback((provider: string) => {
-    toast({
-      title: "Coming Soon",
-      description: `${provider.charAt(0).toUpperCase() + provider.slice(1)} login will be available soon!`,
-      variant: "default"
-    });
-  }, [toast]);
+  const handleSocialLogin = useCallback(
+    (provider: string) => {
+      toast({
+        title: "Coming Soon",
+        description: `${
+          provider.charAt(0).toUpperCase() + provider.slice(1)
+        } login will be available soon!`,
+        variant: "default",
+      });
+    },
+    [toast]
+  );
 
   const handleLogin = async (e: React.FormEvent): Promise<void> => {
     e.preventDefault();
@@ -56,7 +66,7 @@ const Login: React.FC = () => {
       toast({
         variant: "destructive",
         title: "Error",
-        description: "Please fill in all required fields"
+        description: "Please fill in all required fields",
       });
       return;
     }
@@ -66,10 +76,17 @@ const Login: React.FC = () => {
     const result = await login(formData.email, formData.password);
 
     if (result.success) {
+      // Sau khi đăng nhập thành công, refresh cart TTL
+      try {
+        await refreshCartTTL();
+      } catch (err) {
+        console.error("Failed to refresh cart TTL after login:", err);
+      }
+
       toast({
         variant: "success",
         title: "Success",
-        description: "Login successful!"
+        description: "Login successful!",
       });
       navigate("/");
     } else {
@@ -77,7 +94,7 @@ const Login: React.FC = () => {
       toast({
         variant: "destructive",
         title: "Login Failed",
-        description: friendlyMsg
+        description: friendlyMsg,
       });
     }
     setIsLoading(false);
@@ -151,7 +168,7 @@ const Login: React.FC = () => {
           variant="outline"
           className="!mb-5 h-[44px] w-full flex items-center gap-2 justify-center hover:bg-gray-100 transition-colors"
           disabled={isLoading}
-          onClick={() => handleSocialLogin('google')}
+          onClick={() => handleSocialLogin("google")}
         >
           <FcGoogle className="!h-[20px] !w-[20px]" /> Login with Google
         </Button>
@@ -161,7 +178,7 @@ const Login: React.FC = () => {
           variant="outline"
           className="w-full h-[44px] flex items-center gap-2 justify-center hover:bg-gray-100 transition-colors"
           disabled={isLoading}
-          onClick={() => handleSocialLogin('apple')}
+          onClick={() => handleSocialLogin("apple")}
         >
           <FaApple className="!h-[20px] !w-[20px]" /> Login with Apple
         </Button>

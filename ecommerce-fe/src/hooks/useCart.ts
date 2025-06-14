@@ -1,10 +1,10 @@
-import { useContext, useEffect, useState, useRef } from 'react';
-import { CartContext, defaultCartTotals } from '@/context/CartContext';
+import { useContext, useEffect, useState, useRef } from "react";
+import { CartContext, defaultCartTotals } from "@/context/CartContext";
 // import { CartItem } from '@/components/cart/models/cart.model';
-import { CartItem } from '@/types/cart.model';
-import { useToast } from '@/hooks/use-toast';
-import cartService from '@/services/user/cart.service';
-import { useAuth } from './useAuth';
+import { CartItem } from "@/types/cart.model";
+import { useToast } from "@/hooks/use-toast";
+import cartService from "@/services/user/cart.service";
+import { useAuth } from "./useAuth";
 
 export interface UseCartReturn {
   cartItems: CartItem[];
@@ -15,8 +15,12 @@ export interface UseCartReturn {
   removeFromCart: (id: string) => void;
   applyCoupon: (couponCode: string) => Promise<boolean>;
   removeCoupon: () => Promise<boolean>;
-  addToCart: (product: Omit<Omit<CartItem, 'quantity'>, 'id'>, quantity?: number) => void;
+  addToCart: (
+    product: Omit<Omit<CartItem, "quantity">, "id">,
+    quantity?: number
+  ) => void;
   clearCart: () => void;
+  refreshCartTTL: () => Promise<boolean>;
 }
 
 export const useCart = (): UseCartReturn => {
@@ -29,10 +33,17 @@ export const useCart = (): UseCartReturn => {
   const debouncedFetchRef = useRef<NodeJS.Timeout | null>(null);
 
   if (!context) {
-    throw new Error('useCart must be used within a CartProvider');
+    throw new Error("useCart must be used within a CartProvider");
   }
 
-  const { cartItems, setCartItems, cartTotals, setCartTotals, error, setError } = context;
+  const {
+    cartItems,
+    setCartItems,
+    cartTotals,
+    setCartTotals,
+    error,
+    setError,
+  } = context;
 
   // Lấy giỏ hàng từ server khi user đăng nhập
   useEffect(() => {
@@ -49,6 +60,11 @@ export const useCart = (): UseCartReturn => {
         if (!cartFetchedRef.current) {
           fetchCart();
           cartFetchedRef.current = true;
+        } else {
+          // Nếu cart đã được tải, chỉ refresh TTL
+          refreshCartTTL().catch((err) =>
+            console.error("Failed to refresh cart TTL:", err)
+          );
         }
       }, 100);
     } else {
@@ -86,7 +102,7 @@ export const useCart = (): UseCartReturn => {
         shipping: cartData.totals.shipping,
         discount: cartData.totals.discount,
         tax: cartData.totals.tax,
-        total: cartData.totals.total
+        total: cartData.totals.total,
       });
     } catch (error: unknown) {
       handleApiError(error);
@@ -101,30 +117,37 @@ export const useCart = (): UseCartReturn => {
       return;
     }
 
-    const subtotal = items.reduce((total, item) => total + (item.price * item.quantity), 0);
+    const subtotal = items.reduce(
+      (total, item) => total + item.price * item.quantity,
+      0
+    );
     const tax = Number((subtotal * 0.18).toFixed(2));
     const discount = items.length > 0 ? 24 : 0;
 
     setCartTotals({
       subtotal,
-      shipping: 'Free',
+      shipping: "Free",
       discount,
       tax,
-      total: Number((subtotal - discount + tax).toFixed(2))
+      total: Number((subtotal - discount + tax).toFixed(2)),
     });
   };
 
   const handleApiError = (error: unknown) => {
-    const errorMessage = error instanceof Error ? error.message : 'Error with cart operation';
+    const errorMessage =
+      error instanceof Error ? error.message : "Error with cart operation";
     setError(errorMessage);
     toast({
-      title: 'Error',
+      title: "Error",
       description: errorMessage,
-      variant: 'destructive'
+      variant: "destructive",
     });
   };
 
-  const addToCart = async (product: Omit<Omit<CartItem, 'quantity'>, 'id'>, quantity: number = 1) => {
+  const addToCart = async (
+    product: Omit<Omit<CartItem, "quantity">, "id">,
+    quantity: number = 1
+  ) => {
     try {
       setIsLoading(true);
 
@@ -136,7 +159,7 @@ export const useCart = (): UseCartReturn => {
           price: product.price,
           originalPrice: product.originalPrice,
           quantity: quantity,
-          imageUrl: product.imageUrl
+          imageUrl: product.imageUrl,
         });
 
         // Cập nhật state từ response
@@ -146,18 +169,20 @@ export const useCart = (): UseCartReturn => {
           shipping: response.totals.shipping,
           discount: response.totals.discount,
           tax: response.totals.tax,
-          total: response.totals.total
+          total: response.totals.total,
         });
 
         toast({
           title: `Added ${product.name} to cart`,
-          description: 'You can now proceed to checkout',
-          variant: 'success'
+          description: "You can now proceed to checkout",
+          variant: "success",
         });
       } else {
         // Xử lý cart local khi chưa đăng nhập
-        setCartItems(prevItems => {
-          const existingItemIndex = prevItems.findIndex(item => item.productId === product.productId);
+        setCartItems((prevItems) => {
+          const existingItemIndex = prevItems.findIndex(
+            (item) => item.productId === product.productId
+          );
 
           let newItems;
           if (existingItemIndex !== -1) {
@@ -165,7 +190,7 @@ export const useCart = (): UseCartReturn => {
             newItems[existingItemIndex].quantity += quantity;
             toast({
               title: `Updated ${product.name} quantity in cart`,
-              variant: 'success'
+              variant: "success",
             });
           } else {
             // Tạo ID tạm thời cho cart item khi lưu local
@@ -173,8 +198,8 @@ export const useCart = (): UseCartReturn => {
             newItems = [...prevItems, { ...product, id: tempId, quantity }];
             toast({
               title: `Added ${product.name} to cart`,
-              description: 'You can now proceed to checkout',
-              variant: 'success'
+              description: "You can now proceed to checkout",
+              variant: "success",
             });
           }
 
@@ -191,9 +216,9 @@ export const useCart = (): UseCartReturn => {
   const updateQuantity = async (id: string, quantity: number) => {
     if (quantity < 1) {
       toast({
-        title: 'Warning',
-        description: 'Quantity cannot be less than 1',
-        variant: 'success'
+        title: "Warning",
+        description: "Quantity cannot be less than 1",
+        variant: "success",
       });
       return;
     }
@@ -212,12 +237,12 @@ export const useCart = (): UseCartReturn => {
           shipping: response.totals.shipping,
           discount: response.totals.discount,
           tax: response.totals.tax,
-          total: response.totals.total
+          total: response.totals.total,
         });
       } else {
         // Xử lý local
-        setCartItems(prevItems => {
-          const newItems = prevItems.map(item =>
+        setCartItems((prevItems) => {
+          const newItems = prevItems.map((item) =>
             item.id === id ? { ...item, quantity } : item
           );
           return newItems;
@@ -225,8 +250,8 @@ export const useCart = (): UseCartReturn => {
       }
 
       toast({
-        title: 'Cart quantity updated successfully',
-        variant: 'success'
+        title: "Cart quantity updated successfully",
+        variant: "success",
       });
     } catch (error: unknown) {
       handleApiError(error);
@@ -244,7 +269,7 @@ export const useCart = (): UseCartReturn => {
         const response = await cartService.removeCartItem(id);
 
         // Lấy tên sản phẩm trước khi xóa
-        const itemToRemove = cartItems.find(item => item.id === id);
+        const itemToRemove = cartItems.find((item) => item.id === id);
 
         // Cập nhật state từ response
         setCartItems(response.items);
@@ -253,24 +278,24 @@ export const useCart = (): UseCartReturn => {
           shipping: response.totals.shipping,
           discount: response.totals.discount,
           tax: response.totals.tax,
-          total: response.totals.total
+          total: response.totals.total,
         });
 
         if (itemToRemove) {
           toast({
             title: `Removed ${itemToRemove.name} from cart`,
-            variant: 'success'
+            variant: "success",
           });
         }
       } else {
         // Xử lý local
-        setCartItems(prevItems => {
-          const itemToRemove = prevItems.find(item => item.id === id);
-          const newItems = prevItems.filter(item => item.id !== id);
+        setCartItems((prevItems) => {
+          const itemToRemove = prevItems.find((item) => item.id === id);
+          const newItems = prevItems.filter((item) => item.id !== id);
           if (itemToRemove) {
             toast({
               title: `Removed ${itemToRemove.name} from cart`,
-              variant: 'success'
+              variant: "success",
             });
           }
           return newItems;
@@ -300,14 +325,14 @@ export const useCart = (): UseCartReturn => {
           cartFetchedRef.current = false;
 
           toast({
-            title: response.message || 'Cart cleared successfully',
-            variant: 'success'
+            title: response.message || "Cart cleared successfully",
+            variant: "success",
           });
         } else {
           toast({
-            title: 'Failed to clear cart',
-            description: response.message || 'An error occurred',
-            variant: 'destructive'
+            title: "Failed to clear cart",
+            description: response.message || "An error occurred",
+            variant: "destructive",
           });
         }
       } else {
@@ -318,8 +343,8 @@ export const useCart = (): UseCartReturn => {
         cartFetchedRef.current = false;
 
         toast({
-          title: 'Cart cleared successfully',
-          variant: 'success'
+          title: "Cart cleared successfully",
+          variant: "success",
         });
       }
     } catch (error: unknown) {
@@ -332,9 +357,9 @@ export const useCart = (): UseCartReturn => {
   const applyCoupon = async (couponCode: string): Promise<boolean> => {
     if (!couponCode) {
       toast({
-        title: 'Error',
-        description: 'Please enter a coupon code',
-        variant: 'destructive'
+        title: "Error",
+        description: "Please enter a coupon code",
+        variant: "destructive",
       });
       return false;
     }
@@ -353,16 +378,16 @@ export const useCart = (): UseCartReturn => {
           shipping: response.totals.shipping,
           discount: response.totals.discount,
           tax: response.totals.tax,
-          total: response.totals.total
+          total: response.totals.total,
         });
 
         // Store coupon code in localStorage for checkout
-        localStorage.setItem('appliedCoupon', couponCode);
+        localStorage.setItem("appliedCoupon", couponCode);
 
         toast({
-          title: 'Coupon Applied',
+          title: "Coupon Applied",
           description: `You saved ${response.totals.discount} with this coupon`,
-          variant: 'success'
+          variant: "success",
         });
         return true;
       } else {
@@ -372,16 +397,16 @@ export const useCart = (): UseCartReturn => {
         setCartTotals((prev: typeof defaultCartTotals) => ({
           ...prev,
           discount,
-          total: prev.total - discount
+          total: prev.total - discount,
         }));
 
         // Store coupon code in localStorage for checkout
-        localStorage.setItem('appliedCoupon', couponCode);
+        localStorage.setItem("appliedCoupon", couponCode);
 
         toast({
-          title: 'Coupon Applied',
+          title: "Coupon Applied",
           description: `You saved $${discount} with this coupon`,
-          variant: 'success'
+          variant: "success",
         });
         return true;
       }
@@ -408,15 +433,15 @@ export const useCart = (): UseCartReturn => {
           shipping: response.totals.shipping,
           discount: response.totals.discount,
           tax: response.totals.tax,
-          total: response.totals.total
+          total: response.totals.total,
         });
 
         // Remove coupon code from localStorage
-        localStorage.removeItem('appliedCoupon');
+        localStorage.removeItem("appliedCoupon");
 
         toast({
-          title: 'Coupon Removed',
-          variant: 'success'
+          title: "Coupon Removed",
+          variant: "success",
         });
         return true;
       } else {
@@ -424,15 +449,46 @@ export const useCart = (): UseCartReturn => {
         setCartTotals((prev: typeof defaultCartTotals) => ({
           ...prev,
           discount: 0,
-          total: prev.subtotal + prev.tax
+          total: prev.subtotal + prev.tax,
         }));
 
         // Remove coupon code from localStorage
-        localStorage.removeItem('appliedCoupon');
+        localStorage.removeItem("appliedCoupon");
 
         toast({
-          title: 'Coupon Removed',
-          variant: 'success'
+          title: "Coupon Removed",
+          variant: "success",
+        });
+        return true;
+      }
+    } catch (error: unknown) {
+      handleApiError(error);
+      return false;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const refreshCartTTL = async (): Promise<boolean> => {
+    try {
+      setIsLoading(true);
+
+      if (isAuthenticated) {
+        // Refresh cart TTL via API
+        await cartService.refreshCartTTL();
+
+        toast({
+          title: "Cart TTL refreshed",
+          variant: "success",
+        });
+        return true;
+      } else {
+        // Handle local cart
+        // This is just a simulation for local cart
+        // Refresh TTL is not applicable for local cart
+        toast({
+          title: "Local cart TTL refresh not applicable",
+          variant: "success",
         });
         return true;
       }
@@ -454,6 +510,7 @@ export const useCart = (): UseCartReturn => {
     removeFromCart,
     applyCoupon,
     removeCoupon,
-    clearCart
+    clearCart,
+    refreshCartTTL,
   };
 };

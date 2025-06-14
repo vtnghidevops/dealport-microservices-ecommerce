@@ -4,6 +4,8 @@
  * Includes Vietnamese translations for B1 level vocabulary
  */
 
+import { AxiosError } from "axios";
+
 /**
  * Maps common RPC error messages to user-friendly messages with Vietnamese translations
  * @param errorMsg - The original error message
@@ -128,7 +130,7 @@ export const formatErrorMessage = (errorMsg: string): string => {
  * @param error - The error object from API calls
  * @returns A formatted error message
  */
-export const extractErrorMessage = (error: any): string => {
+export const extractErrorMessage = (error: unknown): string => {
   if (!error) return 'An unknown error occurred'; // Một lỗi không xác định đã xảy ra
 
   // Handle Error objects
@@ -137,8 +139,8 @@ export const extractErrorMessage = (error: any): string => {
   }
 
   // Handle Axios errors
-  if (error.response && error.response.data) {
-    const responseData = error.response.data;
+  if (error instanceof AxiosError && error.response && error.response.data) {
+    const responseData = error.response.data as { message?: string; error?: string };
 
     // Try to extract error message from response data
     if (responseData.message) {

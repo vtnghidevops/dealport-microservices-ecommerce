@@ -109,7 +109,8 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen = true, onToggle }) => {
 
     // Check subpath match
     // Example: /admin/orders/123 will also activate /admin/orders
-    if (link !== "/admin/dashboard" && location.pathname.startsWith(link)) return true;
+    if (link !== "/admin/dashboard" && location.pathname.startsWith(link))
+      return true;
 
     return false;
   };
@@ -124,13 +125,14 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen = true, onToggle }) => {
   };
 
   const handleLogoClick = () => {
-    navigate('/');
+    navigate("/");
   };
 
   return (
     <aside
-      className={`bg-white w-[260px] border-r border-t border-gray-300 shadow-lg transition-all duration-300 ease-in-out flex flex-col ${sidebarOpen ? "translate-x-0" : "-translate-x-[200px] w-[60px]"
-        } md:translate-x-0 fixed md:relative z-10`}
+      className={`bg-white w-[260px] border-r border-t border-gray-300 shadow-lg transition-all duration-300 ease-in-out flex flex-col ${
+        sidebarOpen ? "translate-x-0" : "-translate-x-[200px] w-[60px]"
+      } md:translate-x-0 fixed md:relative z-10`}
     >
       <div
         className={`flex mt-[1rem] items-center justify-between h-16 w-full px-3 py-5 flex-shrink-0
@@ -139,13 +141,15 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen = true, onToggle }) => {
         <img
           src="/images/common/logo.png"
           alt="Logo"
-          className={`text-2xl font-bold text-gray-800 max-w-[8rem] cursor-pointer transition-opacity duration-300 ${!sidebarOpen && "opacity-0"
-            }`}
+          className={`text-2xl font-bold text-gray-800 max-w-[8rem] cursor-pointer transition-opacity duration-300 ${
+            !sidebarOpen && "opacity-0"
+          }`}
           onClick={handleLogoClick}
         />
         <span
-          className={`cursor-pointer text-2xl ${!sidebarOpen ? "absolute left-[30%]" : ""
-            }`}
+          className={`cursor-pointer text-2xl ${
+            !sidebarOpen ? "absolute left-[30%]" : ""
+          }`}
           onClick={toggleSidebar}
         >
           {sidebarOpen ? <BsArrowBarLeft /> : <BsArrowBarRight />}
@@ -161,8 +165,9 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen = true, onToggle }) => {
               className="flex justify-center flex-col px-[1rem] mt-5"
             >
               <div
-                className={`flex items-center text-gray-600 hover:text-blue-500 ${!sidebarOpen && "hidden"
-                  }`}
+                className={`flex items-center text-gray-600 hover:text-blue-500 ${
+                  !sidebarOpen && "hidden"
+                }`}
               >
                 <span className="text-[15px] text-neutral-500">
                   {item.name}
@@ -175,22 +180,22 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen = true, onToggle }) => {
                     return (
                       <li
                         key={childIndex}
-                        className={`py-1 my-3 mb-0 w-full justify-center items-center flex ${sidebarOpen
-                          ? "h-[2.5rem] rounded-[8px]"
-                          : "h-[1.8rem] rounded-[10px]"
-                          } ${isActive
-                            ? "bg-ocean-green text-white"
-                            : ""
-                          }`}
+                        className={`py-1 my-3 mb-0 w-full justify-center items-center flex ${
+                          sidebarOpen
+                            ? "h-[2.5rem] rounded-[8px]"
+                            : "h-[1.8rem] rounded-[10px]"
+                        } ${isActive ? "bg-ocean-green text-white" : ""}`}
                         title={!sidebarOpen ? child.name : ""}
                       >
                         <NavLink
                           to={child.link}
-                          className={`w-full flex items-center px-[0.5rem] ${!sidebarOpen ? "justify-center" : "justify-start"
-                            } ${isActive
+                          className={`w-full flex items-center px-[0.5rem] ${
+                            !sidebarOpen ? "justify-center" : "justify-start"
+                          } ${
+                            isActive
                               ? "text-white"
                               : "text-neutral-500 hover:text-blue-500"
-                            }`}
+                          }`}
                         >
                           <span className="text-[18px] body-text flex items-center justify-center">
                             {child.icon}
@@ -215,16 +220,17 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen = true, onToggle }) => {
             <img
               src="/images/common/avatars/admin.png"
               alt="Admin"
-              className={`object-cover border border-gray-300 rounded-full ${sidebarOpen
-                ? "h-[40px] w-[40px] mr-3"
-                : "h-[1.8rem] w-[1.8rem] mx-auto"
-                }`}
+              className={`object-cover border border-gray-300 rounded-full ${
+                sidebarOpen
+                  ? "h-[40px] w-[40px] mr-3"
+                  : "h-[1.8rem] w-[1.8rem] mx-auto"
+              }`}
             />
             {sidebarOpen && (
               <div className="w-[80%] flex justify-between items-center">
                 <div className="flex flex-col justify-center w-[80%]">
                   <p className="font-medium text-[16px] text-gray-800">
-                    Dealport
+                    SapoGo
                   </p>
                   <p className="text-xs text-[16px] text-[#737373] truncate">
                     tannghi.devops@example.com
@@ -242,8 +248,9 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen = true, onToggle }) => {
 
           {/* Your Shop Section */}
           <div
-            className={`flex items-center ${sidebarOpen ? "px-[20px]" : ""
-              } py-[12px] w-full h-[48px] rounded-md border shadow-[0_-6px_10px_-4px_rgba(209,213,219,0.3)] drop-shadow-lg mt-[1rem]`}
+            className={`flex items-center ${
+              sidebarOpen ? "px-[20px]" : ""
+            } py-[12px] w-full h-[48px] rounded-md border shadow-[0_-6px_10px_-4px_rgba(209,213,219,0.3)] drop-shadow-lg mt-[1rem]`}
           >
             <div
               className={`text-[#0F3641] text-xl ${!sidebarOpen && "mx-auto"}`}

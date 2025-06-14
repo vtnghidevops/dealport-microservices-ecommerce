@@ -5,6 +5,7 @@ import { Link, useNavigate, useLocation } from "react-router-dom";
 import { resetPassword } from "@/services/auth/auth.service";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2, Eye, EyeOff } from "lucide-react";
+import { extractErrorMessage } from "@/utils/error-handler";
 
 interface LocationState {
   email?: string;
@@ -47,8 +48,14 @@ const ResetPassword: React.FC = () => {
       setToken(state.token);
     }
 
-    console.log("Reset Password Component - Email:", emailParam || state?.email);
-    console.log("Reset Password Component - Token exists:", !!tokenParam || !!state?.token);
+    console.log(
+      "Reset Password Component - Email:",
+      emailParam || state?.email
+    );
+    console.log(
+      "Reset Password Component - Token exists:",
+      !!tokenParam || !!state?.token
+    );
 
     // Check if we have both email and token
     const hasToken = !!tokenParam || !!state?.token;
@@ -58,7 +65,7 @@ const ResetPassword: React.FC = () => {
       toast({
         title: "Invalid Reset Link",
         description: "The password reset link is invalid or expired.",
-        variant: "destructive"
+        variant: "destructive",
       });
     }
   }, [location, toast]);
@@ -69,7 +76,7 @@ const ResetPassword: React.FC = () => {
       toast({
         title: "Password too short",
         description: "Password must be at least 8 characters long.",
-        variant: "destructive"
+        variant: "destructive",
       });
       return false;
     }
@@ -79,7 +86,7 @@ const ResetPassword: React.FC = () => {
       toast({
         title: "Password too weak",
         description: "Password must contain at least one number.",
-        variant: "destructive"
+        variant: "destructive",
       });
       return false;
     }
@@ -89,7 +96,7 @@ const ResetPassword: React.FC = () => {
       toast({
         title: "Password too weak",
         description: "Password must contain at least one uppercase letter.",
-        variant: "destructive"
+        variant: "destructive",
       });
       return false;
     }
@@ -102,7 +109,7 @@ const ResetPassword: React.FC = () => {
       toast({
         title: "Passwords do not match",
         description: "Please make sure both passwords are identical.",
-        variant: "destructive"
+        variant: "destructive",
       });
       return;
     }
@@ -115,7 +122,7 @@ const ResetPassword: React.FC = () => {
       toast({
         title: "Missing information",
         description: "Reset link is invalid or expired.",
-        variant: "destructive"
+        variant: "destructive",
       });
       return;
     }
@@ -128,17 +135,20 @@ const ResetPassword: React.FC = () => {
       toast({
         variant: "success",
         title: "Password updated",
-        description: "Your password has been reset successfully. You can now log in with your new password.",
+        description:
+          "Your password has been reset successfully. You can now log in with your new password.",
       });
 
       // Redirect to login page after successful password reset
-      navigate('/login');
-    } catch (error: any) {
+      navigate("/login");
+    } catch (error: unknown) {
       console.error("Password reset failed:", error);
       toast({
         title: "Password reset failed",
-        description: error.message || "An error occurred during password reset. Please try again.",
-        variant: "destructive"
+        description:
+          extractErrorMessage(error) ||
+          "An error occurred during password reset. Please try again.",
+        variant: "destructive",
       });
     } finally {
       setLoading(false);
@@ -149,8 +159,8 @@ const ResetPassword: React.FC = () => {
     <div className="my-[2rem] max-w-sm mx-auto p-[2rem] shadow-lg rounded-xl border w-[424px]">
       <h2 className="text-[22px] font-semibold mb-4">Reset Password</h2>
       <p className="text-sm text-gray-600 mb-[1rem]">
-        Create a new password for your Dealport account.
-        Please choose a strong password to protect your account.
+        Create a new password for your SapoGo account. Please choose a strong
+        password to protect your account.
       </p>
 
       <div className="space-y-4">
@@ -176,7 +186,8 @@ const ResetPassword: React.FC = () => {
             </button>
           </div>
           <p className="text-xs text-gray-500 mt-1">
-            Password must be at least 8 characters with one number and one uppercase letter.
+            Password must be at least 8 characters with one number and one
+            uppercase letter.
           </p>
         </div>
 
@@ -226,5 +237,5 @@ const ResetPassword: React.FC = () => {
       </div>
     </div>
   );
-}
+};
 export default ResetPassword;

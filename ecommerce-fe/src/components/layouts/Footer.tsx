@@ -100,8 +100,8 @@ const Footer: React.FC = () => {
             <a href="/">
               <img
                 src="/images/common/logo.png"
-                alt="Dealport"
-                className="flex justify-center items-center h-[35px] w-[240px]"
+                alt="SapoGo"
+                className="flex justify-center items-center h-[4rem] w-[240px]"
               />
             </a>
           </div>
@@ -271,7 +271,7 @@ const Footer: React.FC = () => {
         {/* Social Media and Copyright */}
         <div className="relative mt-10 flex flex-col md:flex-row justify-between items-center border-t border-green-200 pt-6">
           <div className="ml-[8rem] text-sm text-[16px] text-gray-600">
-            © 2025 Dealport. All rights reserved
+            © 2025 SapoGo. All rights reserved
           </div>
 
           <div className="mr-[8rem] mt-4 md:mt-0 text-[16px] text-sm text-gray-600">

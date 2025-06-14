@@ -1,13 +1,26 @@
-import React from 'react';
-import ShoppingCartTable from '../../components/cart/ShoppingCartTable';
-import CartTotals from '../../components/cart/CartTotals';
-import CouponCode from '../../components/cart/CouponCode';
-import { useCart } from '@/hooks/useCart';
-import EmptyCart from '../system/EmptyCart';
+import React, { useEffect } from "react";
+import ShoppingCartTable from "../../components/cart/ShoppingCartTable";
+import CartTotals from "../../components/cart/CartTotals";
+import CouponCode from "../../components/cart/CouponCode";
+import { useCart } from "@/hooks/useCart";
+import { useAuth } from "@/hooks/useAuth";
+import EmptyCart from "../system/EmptyCart";
 // import Loading from '@/components/shared/Loading';
 
 const Cart: React.FC = () => {
-  const { cartItems, error, updateQuantity, removeFromCart } = useCart();
+  const { cartItems, error, updateQuantity, removeFromCart, refreshCartTTL } =
+    useCart();
+  const { authState } = useAuth();
+  const isAuthenticated = authState.isAuthenticated;
+
+  // Refresh cart TTL khi người dùng truy cập trang cart và đã đăng nhập
+  useEffect(() => {
+    if (isAuthenticated) {
+      refreshCartTTL().catch((err) =>
+        console.error("Failed to refresh cart TTL on cart page:", err)
+      );
+    }
+  }, [isAuthenticated, refreshCartTTL]);
 
   // if (isLoading) return <Loading size="large" fullscreen />;
   if (error) return <div className="text-red-500 p-8">{error}</div>;
@@ -19,9 +32,9 @@ const Cart: React.FC = () => {
           <h1 className="text-[18px] font-bold mb-5">Shopping Cart</h1>
           <ShoppingCartTable
             key={cartItems.length}
-            cartItems={cartItems} 
-            updateQuantity={updateQuantity} 
-            removeFromCart={removeFromCart} 
+            cartItems={cartItems}
+            updateQuantity={updateQuantity}
+            removeFromCart={removeFromCart}
           />
         </div>
 

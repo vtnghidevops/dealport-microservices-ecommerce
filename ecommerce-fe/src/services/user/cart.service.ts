@@ -1,6 +1,6 @@
-import axios from 'axios';
-import { CartItem, CartTotalsData } from '@/types/cart.model';
-import { getApiUrl, getAuthHeader } from '@/utils/api-config';
+import axios from "axios";
+import { CartItem, CartTotalsData } from "@/types/cart.model";
+import { getApiUrl, getAuthHeader } from "@/utils/api-config";
 
 export interface CartItemRequest {
   productId: number;
@@ -44,7 +44,7 @@ export interface StatusResponse {
 
 // Singleton instance of cart service
 class CartService {
-  private baseUrl = getApiUrl('cart');
+  private baseUrl = getApiUrl("cart");
 
   // Get the user's cart
   async getCart(): Promise<CartResponse> {
@@ -53,7 +53,7 @@ class CartService {
       const response = await axios.get(this.baseUrl, { headers });
       return response.data.data;
     } catch (error) {
-      this.handleError('Error getting cart', error);
+      this.handleError("Error getting cart", error);
       throw error;
     }
   }
@@ -62,29 +62,40 @@ class CartService {
   async addCartItem(item: CartItemRequest): Promise<CartResponse> {
     try {
       const headers = getAuthHeader();
-      const response = await axios.post(`${this.baseUrl}/items`, {
-        productId: item.productId,
-        name: item.name,
-        price: item.price,
-        originalPrice: item.originalPrice,
-        quantity: item.quantity,
-        imageUrl: item.imageUrl
-      }, { headers });
+      const response = await axios.post(
+        `${this.baseUrl}/items`,
+        {
+          productId: item.productId,
+          name: item.name,
+          price: item.price,
+          originalPrice: item.originalPrice,
+          quantity: item.quantity,
+          imageUrl: item.imageUrl,
+        },
+        { headers }
+      );
       return response.data.data;
     } catch (error) {
-      this.handleError('Error adding item to cart', error);
+      this.handleError("Error adding item to cart", error);
       throw error;
     }
   }
 
   // Update an item in the cart
-  async updateCartItem(itemId: string, quantity: number): Promise<CartResponse> {
+  async updateCartItem(
+    itemId: string,
+    quantity: number
+  ): Promise<CartResponse> {
     try {
       const headers = getAuthHeader();
-      const response = await axios.put(`${this.baseUrl}/items/${itemId}`, { quantity }, { headers });
+      const response = await axios.put(
+        `${this.baseUrl}/items/${itemId}`,
+        { quantity },
+        { headers }
+      );
       return response.data.data;
     } catch (error) {
-      this.handleError('Error updating cart item', error);
+      this.handleError("Error updating cart item", error);
       throw error;
     }
   }
@@ -93,10 +104,12 @@ class CartService {
   async removeCartItem(itemId: string): Promise<CartResponse> {
     try {
       const headers = getAuthHeader();
-      const response = await axios.delete(`${this.baseUrl}/items/${itemId}`, { headers });
+      const response = await axios.delete(`${this.baseUrl}/items/${itemId}`, {
+        headers,
+      });
       return response.data.data;
     } catch (error) {
-      this.handleError('Error removing cart item', error);
+      this.handleError("Error removing cart item", error);
       throw error;
     }
   }
@@ -108,7 +121,7 @@ class CartService {
       const response = await axios.delete(this.baseUrl, { headers });
       return response.data.data;
     } catch (error) {
-      this.handleError('Error clearing cart', error);
+      this.handleError("Error clearing cart", error);
       throw error;
     }
   }
@@ -117,10 +130,14 @@ class CartService {
   async applyCoupon(couponCode: string): Promise<CartResponse> {
     try {
       const headers = getAuthHeader();
-      const response = await axios.post(`${this.baseUrl}/coupon`, { couponCode }, { headers });
+      const response = await axios.post(
+        `${this.baseUrl}/coupon`,
+        { couponCode },
+        { headers }
+      );
       return response.data.data;
     } catch (error) {
-      this.handleError('Error applying coupon', error);
+      this.handleError("Error applying coupon", error);
       throw error;
     }
   }
@@ -129,10 +146,28 @@ class CartService {
   async removeCoupon(): Promise<CartResponse> {
     try {
       const headers = getAuthHeader();
-      const response = await axios.delete(`${this.baseUrl}/coupon`, { headers });
+      const response = await axios.delete(`${this.baseUrl}/coupon`, {
+        headers,
+      });
       return response.data.data;
     } catch (error) {
-      this.handleError('Error removing coupon', error);
+      this.handleError("Error removing coupon", error);
+      throw error;
+    }
+  }
+
+  // Refresh cart TTL (time-to-live)
+  async refreshCartTTL(): Promise<StatusResponse> {
+    try {
+      const headers = getAuthHeader();
+      const response = await axios.post(
+        `${this.baseUrl}/refresh-ttl`,
+        {},
+        { headers }
+      );
+      return response.data.data;
+    } catch (error) {
+      this.handleError("Error refreshing cart TTL", error);
       throw error;
     }
   }
@@ -141,29 +176,35 @@ class CartService {
   async syncCart(items: CartItem[]): Promise<CartResponse> {
     try {
       const headers = getAuthHeader();
-      const response = await axios.post(`${this.baseUrl}/sync`, { items }, { headers });
+      const response = await axios.post(
+        `${this.baseUrl}/sync`,
+        { items },
+        { headers }
+      );
       return response.data.data;
     } catch (error) {
-      this.handleError('Error syncing cart', error);
+      this.handleError("Error syncing cart", error);
       throw error;
     }
   }
 
   // Handle API errors
-  private handleError(message: string, error: any): void {
+  private handleError(message: string, error: unknown): void {
     console.error(`${message}:`, error);
 
     if (axios.isAxiosError(error)) {
       // Handle specific error cases
       if (error.response?.status === 401) {
         // Unauthorized error
-        throw new Error('Please login to manage your cart');
+        throw new Error("Please login to manage your cart");
       } else if (error.response?.status === 400) {
         // Bad request
-        throw new Error(error.response.data.message || 'Invalid cart operation');
+        throw new Error(
+          error.response.data.message || "Invalid cart operation"
+        );
       } else if (error.response?.status === 404) {
         // Not found
-        throw new Error('Cart item not found');
+        throw new Error("Cart item not found");
       } else if (error.response?.data?.message) {
         // Server provided an error message
         throw new Error(error.response.data.message);
@@ -171,7 +212,7 @@ class CartService {
     }
 
     // Default error message
-    throw new Error('Failed to process cart operation. Please try again.');
+    throw new Error("Failed to process cart operation. Please try again.");
   }
 }
 

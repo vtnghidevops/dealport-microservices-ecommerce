@@ -21,7 +21,7 @@ import { extractErrorMessage } from '@/utils/error-handler';
 const Logo: React.FC = () => {
   return (
     <a href="/">
-      <img src="/images/common/logo.png" alt="logo" className="h-7" />
+      <img src="/images/common/logo.png" alt="logo" className="h-[3rem]" />
     </a>
   );
 };

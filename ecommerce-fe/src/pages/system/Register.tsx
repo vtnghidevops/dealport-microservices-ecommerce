@@ -14,13 +14,13 @@ const Register: React.FC = () => {
   const { register, authState } = useAuth();
   const { toast } = useToast();
   const [formData, setFormData] = useState<UserRegistrationData>({
-    firstName: '',
-    lastName: '',
-    username: '',
-    email: '',
-    phone: '',
-    password: '',
-    confirmPassword: '',
+    firstName: "",
+    lastName: "",
+    username: "",
+    email: "",
+    phone: "",
+    password: "",
+    confirmPassword: "",
     acceptTerms: false,
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -30,40 +30,50 @@ const Register: React.FC = () => {
   const [isPasswordFocused, setIsPasswordFocused] = useState(false);
 
   // Memoize the input change handler to prevent recreating on every render
-  const handleInputChange = useCallback((e: React.ChangeEvent<HTMLInputElement>): void => {
-    const { name, value, type, checked } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: type === 'checkbox' ? checked : value
-    }));
-  }, []);
+  const handleInputChange = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>): void => {
+      const { name, value, type, checked } = e.target;
+      setFormData((prev) => ({
+        ...prev,
+        [name]: type === "checkbox" ? checked : value,
+      }));
+    },
+    []
+  );
 
   // Memoize password validation function
   const validatePassword = useCallback((password: string): boolean => {
     const hasUpperCase = /[A-Z]/.test(password);
     const hasLowerCase = /[a-z]/.test(password);
     const hasNumbers = /\d/.test(password);
-    const hasSpecialChar = /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(password);
+    const hasSpecialChar = /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(
+      password
+    );
 
     return hasUpperCase && hasLowerCase && hasNumbers && hasSpecialChar;
   }, []);
 
   // Memoize social signup handler
-  const handleSocialSignup = useCallback((provider: string) => {
-    toast({
-      title: "Coming Soon",
-      description: `${provider.charAt(0).toUpperCase() + provider.slice(1)} signup will be available soon!`,
-      variant: "default"
-    });
-  }, [toast]);
+  const handleSocialSignup = useCallback(
+    (provider: string) => {
+      toast({
+        title: "Coming Soon",
+        description: `${
+          provider.charAt(0).toUpperCase() + provider.slice(1)
+        } signup will be available soon!`,
+        variant: "default",
+      });
+    },
+    [toast]
+  );
 
   // Memoize toggle password visibility handlers
   const togglePasswordVisibility = useCallback(() => {
-    setShowPassword(prev => !prev);
+    setShowPassword((prev) => !prev);
   }, []);
 
   const toggleConfirmPasswordVisibility = useCallback(() => {
-    setShowConfirmPassword(prev => !prev);
+    setShowConfirmPassword((prev) => !prev);
   }, []);
 
   // Memoize focus handlers
@@ -83,7 +93,7 @@ const Register: React.FC = () => {
       toast({
         variant: "destructive",
         title: "Error",
-        description: "Please agree to terms and conditions"
+        description: "Please agree to terms and conditions",
       });
       return;
     }
@@ -91,7 +101,7 @@ const Register: React.FC = () => {
       toast({
         variant: "destructive",
         title: "Error",
-        description: "Passwords do not match"
+        description: "Passwords do not match",
       });
       return;
     }
@@ -99,7 +109,7 @@ const Register: React.FC = () => {
       toast({
         variant: "destructive",
         title: "Error",
-        description: "Password must be at least 8 characters"
+        description: "Password must be at least 8 characters",
       });
       return;
     }
@@ -108,16 +118,22 @@ const Register: React.FC = () => {
       toast({
         variant: "destructive",
         title: "Password Format Error",
-        description: "Password must contain uppercase, lowercase, numbers, and special characters"
+        description:
+          "Password must contain uppercase, lowercase, numbers, and special characters",
       });
       return;
     }
 
-    if (!formData.email || !formData.firstName || !formData.lastName || !formData.username) {
+    if (
+      !formData.email ||
+      !formData.firstName ||
+      !formData.lastName ||
+      !formData.username
+    ) {
       toast({
         variant: "destructive",
         title: "Error",
-        description: "Please fill in all required fields"
+        description: "Please fill in all required fields",
       });
       return;
     }
@@ -132,7 +148,8 @@ const Register: React.FC = () => {
         toast({
           variant: "success",
           title: "Registration Submitted",
-          description: "Please verify your email with the OTP code sent to your inbox."
+          description:
+            "Please verify your email with the OTP code sent to your inbox.",
         });
 
         // Redirect to OTP verification page instead of login
@@ -140,21 +157,21 @@ const Register: React.FC = () => {
           state: {
             email: formData.email,
             purpose: "registration",
-            expiresIn: 10 // 10 minutes
-          }
+            expiresIn: 10, // 10 minutes
+          },
         });
       } else if (authState.error) {
         toast({
           variant: "destructive",
           title: "Registration Failed",
-          description: authState.error || "Please try again."
+          description: authState.error || "Please try again.",
         });
       }
     } catch (error: any) {
       toast({
         variant: "destructive",
         title: "Registration Failed",
-        description: error.message || "Please try again."
+        description: error.message || "Please try again.",
       });
     } finally {
       setIsSubmitting(false);
@@ -162,18 +179,25 @@ const Register: React.FC = () => {
   };
 
   // Memoize the password requirements text to prevent recreation on each render
-  const passwordRequirementsText = useMemo(() => (
-    isPasswordFocused && (
-      <div className="text-xs text-gray-600 mt-1 mb-2">
-        Password must contain at least 8 characters with uppercase (viết hoa), lowercase (viết thường), numbers (số), and special characters (ký tự đặc biệt).
-      </div>
-    )
-  ), [isPasswordFocused]);
+  const passwordRequirementsText = useMemo(
+    () =>
+      isPasswordFocused && (
+        <div className="text-xs text-gray-600 mt-1 mb-2">
+          Password must contain at least 8 characters with uppercase (viết hoa),
+          lowercase (viết thường), numbers (số), and special characters (ký tự
+          đặc biệt).
+        </div>
+      ),
+    [isPasswordFocused]
+  );
 
   return (
     <div className="my-[2rem] max-w-sm mx-auto p-[2rem] shadow-lg rounded-xl border w-[424px]">
       <div className="flex justify-between items-center pb-2 mb-4">
-        <Link to="/login" className="flex text-[18px] pb-3 items-center justify-center text-neutral-500 w-1/2 hover:text-neutral-800">
+        <Link
+          to="/login"
+          className="flex text-[18px] pb-3 items-center justify-center text-neutral-500 w-1/2 hover:text-neutral-800"
+        >
           Sign In
         </Link>
         <button className="w-1/2 text-[18px] pb-3 border-b-4 border-orange-500">
@@ -282,10 +306,15 @@ const Register: React.FC = () => {
             disabled={isSubmitting}
           />
           <span className="text-gray-600">
-            Are you agree to Dealport{" "}
-            <a className="text-blue-500 cursor-pointer hover:text-blue-700">Terms of Condition</a>{" "}
+            Are you agree to SapoGo{" "}
+            <a className="text-blue-500 cursor-pointer hover:text-blue-700">
+              Terms of Condition
+            </a>{" "}
             and{" "}
-            <a className="text-blue-500 cursor-pointer hover:text-blue-700">Privacy Policy</a>.
+            <a className="text-blue-500 cursor-pointer hover:text-blue-700">
+              Privacy Policy
+            </a>
+            .
           </span>
         </label>
 
@@ -304,7 +333,7 @@ const Register: React.FC = () => {
           variant="outline"
           className="!mb-5 h-[44px] w-full flex items-center gap-2 justify-center hover:bg-gray-100 transition-colors"
           disabled={isSubmitting}
-          onClick={() => handleSocialSignup('google')}
+          onClick={() => handleSocialSignup("google")}
         >
           <FcGoogle className="!h-[20px] !w-[20px]" /> Sign up with Google
         </Button>
@@ -314,13 +343,13 @@ const Register: React.FC = () => {
           variant="outline"
           className="w-full h-[44px] flex items-center gap-2 justify-center hover:bg-gray-100 transition-colors"
           disabled={isSubmitting}
-          onClick={() => handleSocialSignup('apple')}
+          onClick={() => handleSocialSignup("apple")}
         >
           <FaApple className="!h-[20px] !w-[20px]" /> Sign up with Apple
         </Button>
       </form>
     </div>
   );
-}
+};
 
 export default Register;
