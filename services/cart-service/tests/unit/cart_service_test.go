@@ -586,3 +586,44 @@ func TestClearCart(t *testing.T) {
 		mockCartRepo.AssertExpectations(t)
 	})
 }
+
+// TestRefreshCartTTL tests the RefreshCartTTL function
+func TestRefreshCartTTL(t *testing.T) {
+	// Setup
+	mockCartRepo := new(mocks.MockCartRepository)
+	mockCouponService := new(mocks.MockCouponService)
+
+	// Initialize the service
+	cartService := service.NewCartService(mockCartRepo, mockCouponService)
+
+	// Test case 1: Successfully refresh cart TTL
+	t.Run("Successfully refresh cart TTL", func(t *testing.T) {
+		// Setup expectations
+		mockCartRepo.On("RefreshCartTTL", mock.Anything, "user123").Return(nil).Once()
+
+		// Execute
+		err := cartService.RefreshCartTTL(context.Background(), "user123")
+
+		// Assert
+		assert.NoError(t, err)
+
+		// Verify expectations
+		mockCartRepo.AssertExpectations(t)
+	})
+
+	// Test case 2: Error refreshing cart TTL
+	t.Run("Error refreshing cart TTL", func(t *testing.T) {
+		// Setup expectations
+		mockCartRepo.On("RefreshCartTTL", mock.Anything, "unknown_user").Return(errors.New("failed to refresh cart TTL")).Once()
+
+		// Execute
+		err := cartService.RefreshCartTTL(context.Background(), "unknown_user")
+
+		// Assert
+		assert.Error(t, err)
+		assert.Contains(t, err.Error(), "failed to refresh cart TTL")
+
+		// Verify expectations
+		mockCartRepo.AssertExpectations(t)
+	})
+}

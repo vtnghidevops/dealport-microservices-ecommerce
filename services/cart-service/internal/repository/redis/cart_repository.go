@@ -71,10 +71,36 @@ func (r *CartRepository) SaveCart(ctx context.Context, cart *domain.Cart) error 
 	// Define key for the cart in Redis
 	key := fmt.Sprintf("cart:%s", cart.UserID)
 
-	// Save to Redis with 24-hour expiration
-	err = r.client.Set(ctx, key, cartJSON, 24*time.Hour).Err()
+	// Save to Redis with 90-day expiration
+	err = r.client.Set(ctx, key, cartJSON, 90*24*time.Hour).Err()
 	if err != nil {
 		return fmt.Errorf("failed to save cart: %w", err)
+	}
+
+	return nil
+}
+
+// RefreshCartTTL refreshes the expiration time of a cart in Redis
+// without modifying its data
+func (r *CartRepository) RefreshCartTTL(ctx context.Context, userID string) error {
+	// Define key for the cart in Redis
+	key := fmt.Sprintf("cart:%s", userID)
+
+	// Check if the cart exists
+	exists, err := r.client.Exists(ctx, key).Result()
+	if err != nil {
+		return fmt.Errorf("failed to check if cart exists: %w", err)
+	}
+
+	if exists == 0 {
+		// Cart doesn't exist, nothing to refresh
+		return nil
+	}
+
+	// Refresh TTL to 90 days
+	err = r.client.Expire(ctx, key, 90*24*time.Hour).Err()
+	if err != nil {
+		return fmt.Errorf("failed to refresh cart TTL: %w", err)
 	}
 
 	return nil
@@ -93,4 +119,3 @@ func (r *CartRepository) DeleteCart(ctx context.Context, userID string) error {
 
 	return nil
 }
- 

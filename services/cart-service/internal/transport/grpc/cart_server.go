@@ -191,6 +191,26 @@ func (s *Server) RemoveCoupon(ctx context.Context, req *pb.RemoveCouponRequest) 
 	return domainCartToProto(cart), nil
 }
 
+// RefreshCartTTL refreshes the expiration time of a cart in Redis
+func (s *Server) RefreshCartTTL(ctx context.Context, req *pb.RefreshCartTTLRequest) (*pb.StatusResponse, error) {
+	// Validate request
+	if req.UserId == "" {
+		return nil, status.Error(codes.InvalidArgument, "user ID is required")
+	}
+
+	// Refresh cart TTL
+	err := s.cartService.RefreshCartTTL(ctx, req.UserId)
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "failed to refresh cart TTL: %v", err)
+	}
+
+	// Return success response
+	return &pb.StatusResponse{
+		Success: true,
+		Message: "Cart TTL refreshed successfully",
+	}, nil
+}
+
 // GetHealth returns the health status of the service
 func (s *Server) GetHealth(ctx context.Context, req *pb.HealthRequest) (*pb.HealthResponse, error) {
 	return &pb.HealthResponse{
@@ -293,4 +313,3 @@ func protoCartToDomain(cart *pb.Cart) (*domain.Cart, error) {
 		UpdatedAt:      updatedAt,
 	}, nil
 }
- 

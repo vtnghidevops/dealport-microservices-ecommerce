@@ -36,6 +36,12 @@ func (m *MockCartRepository) DeleteCart(ctx context.Context, userID string) erro
 	return args.Error(0)
 }
 
+// RefreshCartTTL mocks the RefreshCartTTL method
+func (m *MockCartRepository) RefreshCartTTL(ctx context.Context, userID string) error {
+	args := m.Called(ctx, userID)
+	return args.Error(0)
+}
+
 // MockCouponRepository is a mock implementation of domain.CouponRepository
 type MockCouponRepository struct {
 	mock.Mock

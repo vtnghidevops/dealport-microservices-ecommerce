@@ -255,6 +255,13 @@ func (s *CartService) RemoveCoupon(ctx context.Context, userID string) (*domain.
 	return cart, nil
 }
 
+// RefreshCartTTL refreshes the expiration time of a cart in Redis
+// without modifying the cart data
+func (s *CartService) RefreshCartTTL(ctx context.Context, userID string) error {
+	// Use the repository's RefreshCartTTL method
+	return s.cartRepo.RefreshCartTTL(ctx, userID)
+}
+
 // calculateTotals recalculates the cart totals
 func (s *CartService) calculateTotals(cart *domain.Cart) *domain.Cart {
 	// Calculate subtotal

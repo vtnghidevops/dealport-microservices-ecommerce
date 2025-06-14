@@ -30,6 +30,7 @@ type CartServiceClient interface {
 	ClearCart(ctx context.Context, in *ClearCartRequest, opts ...grpc.CallOption) (*StatusResponse, error)
 	ApplyCoupon(ctx context.Context, in *ApplyCouponRequest, opts ...grpc.CallOption) (*Cart, error)
 	RemoveCoupon(ctx context.Context, in *RemoveCouponRequest, opts ...grpc.CallOption) (*Cart, error)
+	RefreshCartTTL(ctx context.Context, in *RefreshCartTTLRequest, opts ...grpc.CallOption) (*StatusResponse, error)
 	// Health check
 	GetHealth(ctx context.Context, in *HealthRequest, opts ...grpc.CallOption) (*HealthResponse, error)
 }
@@ -105,6 +106,15 @@ func (c *cartServiceClient) RemoveCoupon(ctx context.Context, in *RemoveCouponRe
 	return out, nil
 }
 
+func (c *cartServiceClient) RefreshCartTTL(ctx context.Context, in *RefreshCartTTLRequest, opts ...grpc.CallOption) (*StatusResponse, error) {
+	out := new(StatusResponse)
+	err := c.cc.Invoke(ctx, "/cart.CartService/RefreshCartTTL", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *cartServiceClient) GetHealth(ctx context.Context, in *HealthRequest, opts ...grpc.CallOption) (*HealthResponse, error) {
 	out := new(HealthResponse)
 	err := c.cc.Invoke(ctx, "/cart.CartService/GetHealth", in, out, opts...)
@@ -126,6 +136,7 @@ type CartServiceServer interface {
 	ClearCart(context.Context, *ClearCartRequest) (*StatusResponse, error)
 	ApplyCoupon(context.Context, *ApplyCouponRequest) (*Cart, error)
 	RemoveCoupon(context.Context, *RemoveCouponRequest) (*Cart, error)
+	RefreshCartTTL(context.Context, *RefreshCartTTLRequest) (*StatusResponse, error)
 	// Health check
 	GetHealth(context.Context, *HealthRequest) (*HealthResponse, error)
 	mustEmbedUnimplementedCartServiceServer()
@@ -155,6 +166,9 @@ func (UnimplementedCartServiceServer) ApplyCoupon(context.Context, *ApplyCouponR
 }
 func (UnimplementedCartServiceServer) RemoveCoupon(context.Context, *RemoveCouponRequest) (*Cart, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method RemoveCoupon not implemented")
+}
+func (UnimplementedCartServiceServer) RefreshCartTTL(context.Context, *RefreshCartTTLRequest) (*StatusResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method RefreshCartTTL not implemented")
 }
 func (UnimplementedCartServiceServer) GetHealth(context.Context, *HealthRequest) (*HealthResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetHealth not implemented")
@@ -298,6 +312,24 @@ func _CartService_RemoveCoupon_Handler(srv interface{}, ctx context.Context, dec
 	return interceptor(ctx, in, info, handler)
 }
 
+func _CartService_RefreshCartTTL_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(RefreshCartTTLRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(CartServiceServer).RefreshCartTTL(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/cart.CartService/RefreshCartTTL",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(CartServiceServer).RefreshCartTTL(ctx, req.(*RefreshCartTTLRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _CartService_GetHealth_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(HealthRequest)
 	if err := dec(in); err != nil {
@@ -350,6 +382,10 @@ var CartService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "RemoveCoupon",
 			Handler:    _CartService_RemoveCoupon_Handler,
+		},
+		{
+			MethodName: "RefreshCartTTL",
+			Handler:    _CartService_RefreshCartTTL_Handler,
 		},
 		{
 			MethodName: "GetHealth",

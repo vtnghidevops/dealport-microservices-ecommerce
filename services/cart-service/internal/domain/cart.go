@@ -71,6 +71,7 @@ type CartRepository interface {
 	GetCart(ctx context.Context, userID string) (*Cart, error)
 	SaveCart(ctx context.Context, cart *Cart) error
 	DeleteCart(ctx context.Context, userID string) error
+	RefreshCartTTL(ctx context.Context, userID string) error
 }
 
 // CartService defines the interface for cart business logic
@@ -82,6 +83,7 @@ type CartService interface {
 	ClearCart(ctx context.Context, userID string) error
 	ApplyCoupon(ctx context.Context, userID, couponCode string) (*Cart, error)
 	RemoveCoupon(ctx context.Context, userID string) (*Cart, error)
+	RefreshCartTTL(ctx context.Context, userID string) error
 }
 
 // CouponRepository defines the interface for coupon data persistence
