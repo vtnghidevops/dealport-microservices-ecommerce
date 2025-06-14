@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"product-service/internal/domain"
 	"product-service/internal/handler"
+	"regexp"
 	"strconv"
 	"strings"
 	"time"
@@ -467,22 +468,36 @@ func Patch(app *handler.Config) http.HandlerFunc {
 					// Process each image URL
 					for i, imgVal := range imageURLs {
 						if url, ok := imgVal.(string); ok && url != "" {
+							// Chuẩn hóa URL: nếu URL là presigned URL từ MinIO, lấy phần đường dẫn tương đối
+							normalizedURL := url
+							if strings.HasPrefix(url, "http://") || strings.HasPrefix(url, "https://") {
+								// Kiểm tra xem có phải URL từ MinIO không
+								if strings.Contains(url, "/images/products/") {
+									// Lấy phần /images/products/filename.jpg từ URL
+									pattern := regexp.MustCompile(`(/images/products/[^?]+)`)
+									matches := pattern.FindStringSubmatch(url)
+									if len(matches) > 0 {
+										normalizedURL = matches[1]
+									}
+								}
+							}
+
 							// Check if this image already exists
 							var imageID int
 
-							// If we already have this image, reuse its ID
-							if existingImg, found := existingImagesByURL[url]; found {
+							// Tìm kiếm ảnh trong database bằng URL đã chuẩn hóa
+							if existingImg, found := existingImagesByURL[normalizedURL]; found {
 								imageID = existingImg.ID
 							} else {
 								// New image ID will be assigned by database (AUTO_INCREMENT)
 								imageID = 0
 							}
 
-							// Create new image object
+							// Create new image object with normalized URL
 							images = append(images, domain.ProductImage{
 								ID:           imageID,
 								ProductID:    id,
-								URL:          url,
+								URL:          normalizedURL,
 								IsPrimary:    i == 0, // First image is primary
 								DisplayOrder: i,
 								CreatedAt:    time.Now(),
