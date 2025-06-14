@@ -9,6 +9,7 @@ import (
 	"log"
 	"net/http"
 	"reflect"
+	"regexp"
 	"strconv"
 	"strings"
 	"time"
@@ -255,14 +256,27 @@ func (h *ProductHandler) CreateProduct(w http.ResponseWriter, r *http.Request) {
 	if imgSlider, ok := productRequest["imgSlider"].([]interface{}); ok {
 		for _, img := range imgSlider {
 			if imgStr, ok := img.(string); ok {
-				// Không remove domain - giữ nguyên URL
+				// Lọc bỏ blob URLs và data URLs
+				if strings.HasPrefix(imgStr, "blob:") || strings.HasPrefix(imgStr, "data:") {
+					log.Println("WARNING: Removing blob/data URL from PATCH request:", imgStr[:15]+"...")
+					continue
+				}
+
+				// Giữ nguyên URL hợp lệ (non-blob)
 				product.ImgSlider = append(product.ImgSlider, imgStr)
 				log.Println("DEBUG PATCH: Added image URL (keeping domain):", imgStr)
 			} else {
-				// Cần type assertion khi append interface{} vào []string
-				product.ImgSlider = append(product.ImgSlider, fmt.Sprintf("%v", img))
-				log.Println("DEBUG PATCH: Added non-string image value:", img)
+				// Bỏ qua các giá trị không phải string
+				log.Println("WARNING: Ignoring non-string image value:", img)
 			}
+		}
+	}
+
+	// Kiểm tra imageUrl cũng là blob URL hay không
+	if imageUrl, ok := productRequest["imageUrl"].(string); ok {
+		if strings.HasPrefix(imageUrl, "blob:") || strings.HasPrefix(imageUrl, "data:") {
+			log.Println("WARNING: Removing blob/data imageUrl from PATCH request:", imageUrl[:15]+"...")
+			delete(productRequest, "imageUrl")
 		}
 	}
 
@@ -418,17 +432,47 @@ func (h *ProductHandler) PatchProduct(w http.ResponseWriter, r *http.Request) {
 	// DEBUG: Log all update fields
 	log.Println("DEBUG PATCH: Received updates with fields:", getMapKeys(updates))
 
-	// Log updates for debugging
+	// Filter imgSlider URLs - remove blob: URLs
 	if imgSlider, ok := updates["imgSlider"]; ok {
 		log.Println("DEBUG PATCH: Updating imgSlider for product", id, "with value: ", imgSlider)
 
-		// Normalize image URLs in imgSlider by removing domain if present
 		if imgSliderArr, ok := imgSlider.([]interface{}); ok {
 			log.Println("DEBUG PATCH: Original imgSlider array length:", len(imgSliderArr))
 			normalizedSlider := make([]interface{}, 0, len(imgSliderArr))
 			for _, img := range imgSliderArr {
 				if imgStr, ok := img.(string); ok {
-					// Không remove domain - giữ nguyên URL
+					// Lọc bỏ blob URLs và data URLs
+					if strings.HasPrefix(imgStr, "blob:") || strings.HasPrefix(imgStr, "data:") {
+						log.Println("WARNING: Removing blob/data URL from PATCH request:", imgStr[:15]+"...")
+						continue
+					}
+
+					// Nếu URL chứa tham số truy vấn (presigned URL), cắt bỏ tất cả tham số truy vấn
+					if strings.Contains(imgStr, "?") {
+						// Nếu URL chứa đường dẫn /images/products-api/, lấy chỉ đường dẫn cơ bản (MinIO)
+						if strings.Contains(imgStr, "/images/products-api/") {
+							urlPattern := regexp.MustCompile(`(/images/products-api/[^?]+)`)
+							matches := urlPattern.FindStringSubmatch(imgStr)
+							if len(matches) > 0 {
+								imgStr = matches[1]
+								log.Println("DEBUG PATCH: Normalized MinIO presigned URL to:", imgStr)
+							}
+							// Nếu URL chứa đường dẫn /images/products/ (local storage), giữ nguyên đường dẫn
+						} else if strings.Contains(imgStr, "/images/products/") {
+							urlPattern := regexp.MustCompile(`(/images/products/[^?]+)`)
+							matches := urlPattern.FindStringSubmatch(imgStr)
+							if len(matches) > 0 {
+								imgStr = matches[1]
+								log.Println("DEBUG PATCH: Normalized local storage URL to:", imgStr)
+							}
+						} else {
+							// Cắt bỏ tất cả tham số truy vấn
+							imgStr = strings.Split(imgStr, "?")[0]
+							log.Println("DEBUG PATCH: Removed query parameters from URL:", imgStr)
+						}
+					}
+
+					// Giữ nguyên URL hợp lệ (non-blob) đã được chuẩn hóa
 					normalizedSlider = append(normalizedSlider, imgStr)
 					log.Println("DEBUG PATCH: Added image URL (keeping domain):", imgStr)
 				} else {
@@ -443,6 +487,82 @@ func (h *ProductHandler) PatchProduct(w http.ResponseWriter, r *http.Request) {
 		}
 	} else {
 		log.Println("DEBUG PATCH: No imgSlider field in updates")
+	}
+
+	// Process images array if present
+	if images, ok := updates["images"].([]interface{}); ok {
+		log.Println("DEBUG PATCH: Found images array in request with length:", len(images))
+		normalizedImages := make([]interface{}, 0, len(images))
+
+		for _, imgData := range images {
+			if imgObj, ok := imgData.(map[string]interface{}); ok {
+				// Process each image object
+				if url, ok := imgObj["url"].(string); ok {
+					// Filter out blob URLs
+					if strings.HasPrefix(url, "blob:") || strings.HasPrefix(url, "data:") {
+						log.Println("WARNING: Removing blob/data URL from images array:", url[:15]+"...")
+						continue
+					}
+
+					// Normalize presigned URLs
+					if strings.Contains(url, "?") {
+						if strings.Contains(url, "/images/products-api/") {
+							urlPattern := regexp.MustCompile(`(/images/products-api/[^?]+)`)
+							matches := urlPattern.FindStringSubmatch(url)
+							if len(matches) > 0 {
+								imgObj["url"] = matches[1]
+								log.Println("DEBUG PATCH: Normalized MinIO image URL in images array to:", matches[1])
+							}
+						} else if strings.Contains(url, "/images/products/") {
+							urlPattern := regexp.MustCompile(`(/images/products/[^?]+)`)
+							matches := urlPattern.FindStringSubmatch(url)
+							if len(matches) > 0 {
+								imgObj["url"] = matches[1]
+								log.Println("DEBUG PATCH: Normalized local storage image URL in images array to:", matches[1])
+							}
+						} else {
+							imgObj["url"] = strings.Split(url, "?")[0]
+							log.Println("DEBUG PATCH: Removed query parameters from image URL in images array:", imgObj["url"])
+						}
+					}
+				}
+				normalizedImages = append(normalizedImages, imgObj)
+			} else {
+				normalizedImages = append(normalizedImages, imgData)
+			}
+		}
+
+		updates["images"] = normalizedImages
+		log.Println("DEBUG PATCH: Normalized images array length:", len(normalizedImages))
+	}
+
+	// Kiểm tra imageUrl cũng là blob URL hay không
+	if imageUrl, ok := updates["imageUrl"].(string); ok {
+		if strings.HasPrefix(imageUrl, "blob:") || strings.HasPrefix(imageUrl, "data:") {
+			log.Println("WARNING: Removing blob/data imageUrl from PATCH request:", imageUrl[:15]+"...")
+			delete(updates, "imageUrl")
+		} else if strings.Contains(imageUrl, "?") {
+			// Nếu URL chứa tham số truy vấn (presigned URL), cắt bỏ tất cả tham số truy vấn
+			if strings.Contains(imageUrl, "/images/products-api/") {
+				urlPattern := regexp.MustCompile(`(/images/products-api/[^?]+)`)
+				matches := urlPattern.FindStringSubmatch(imageUrl)
+				if len(matches) > 0 {
+					updates["imageUrl"] = matches[1]
+					log.Println("DEBUG PATCH: Normalized imageUrl MinIO presigned URL to:", matches[1])
+				}
+			} else if strings.Contains(imageUrl, "/images/products/") {
+				urlPattern := regexp.MustCompile(`(/images/products/[^?]+)`)
+				matches := urlPattern.FindStringSubmatch(imageUrl)
+				if len(matches) > 0 {
+					updates["imageUrl"] = matches[1]
+					log.Println("DEBUG PATCH: Normalized imageUrl local storage URL to:", matches[1])
+				}
+			} else {
+				// Cắt bỏ tất cả tham số truy vấn
+				updates["imageUrl"] = strings.Split(imageUrl, "?")[0]
+				log.Println("DEBUG PATCH: Removed query parameters from imageUrl:", updates["imageUrl"])
+			}
+		}
 	}
 
 	// Call the gRPC client's PatchProduct method directly
@@ -946,11 +1066,18 @@ func (h *ProductHandler) ProxyProductImage(w http.ResponseWriter, r *http.Reques
 	// Get the image filename from URL
 	imageFile := chi.URLParam(r, "imageFile")
 
-	// Call the gRPC client to get the image data
-	imageData, contentType, err := h.client.GetProductImageFile(imageFile)
+	// Call the gRPC client to get the image data or presigned URL
+	imageData, contentType, presignedURL, redirectToURL, err := h.client.GetProductImageFile(imageFile)
 	if err != nil {
 		// If there's an error, return a 404 Not Found
 		http.NotFound(w, r)
+		return
+	}
+
+	// If we should redirect to a presigned URL
+	if redirectToURL && presignedURL != "" {
+		log.Printf("Redirecting to MinIO presigned URL: %s", presignedURL)
+		http.Redirect(w, r, presignedURL, http.StatusFound)
 		return
 	}
 

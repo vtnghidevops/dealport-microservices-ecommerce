@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"reflect"
 	"sync"
 	"time"
 
@@ -277,10 +278,10 @@ func (c *ProductClient) SetPrimaryProductImage(productID, imageID int) (*pb.Stat
 }
 
 // GetProductImageFileFunc is used for testing to override the real gRPC call
-var GetProductImageFileFunc func(filename string) ([]byte, string, error)
+var GetProductImageFileFunc func(filename string) ([]byte, string, string, bool, error)
 
-// GetProductImageFile retrieves image file data by filename
-func (c *ProductClient) GetProductImageFile(filename string) ([]byte, string, error) {
+// GetProductImageFile retrieves image file data by filename or returns a presigned URL
+func (c *ProductClient) GetProductImageFile(filename string) ([]byte, string, string, bool, error) {
 	// If we're in a test environment and the mock function is set, use it
 	if GetProductImageFileFunc != nil {
 		return GetProductImageFileFunc(filename)
@@ -294,10 +295,30 @@ func (c *ProductClient) GetProductImageFile(filename string) ([]byte, string, er
 		Filename: filename,
 	})
 	if err != nil {
-		return nil, "", fmt.Errorf("failed to get product image file: %w", err)
+		return nil, "", "", false, fmt.Errorf("failed to get product image file: %w", err)
 	}
 
-	return resp.ImageData, resp.ContentType, nil
+	// Log the response for debugging
+	log.Printf("GetProductImageFile response: %+v", resp)
+
+	// Return all fields from the response, including presigned URL if available
+	// Check if the fields exist in the generated protobuf code
+	presignedURL := ""
+	redirectToURL := false
+
+	// Use reflection to check for the presence of the fields
+	respVal := reflect.ValueOf(resp).Elem()
+	presignedField := respVal.FieldByName("PresignedUrl")
+	if presignedField.IsValid() {
+		presignedURL = presignedField.String()
+	}
+
+	redirectField := respVal.FieldByName("RedirectToUrl")
+	if redirectField.IsValid() {
+		redirectToURL = redirectField.Bool()
+	}
+
+	return resp.ImageData, resp.ContentType, presignedURL, redirectToURL, nil
 }
 
 // GetTopRatedTestimonials gets top rated testimonials

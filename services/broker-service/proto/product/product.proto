@@ -78,7 +78,7 @@ service AdsService {
 // Product object
 message Product {
   int32 id = 1;
-  string type = 2;  // normal, trending, top-sale, new, limited
+  string type = 2; // normal, trending, top-sale, new, limited
   string name = 3;
   string description = 4;
   string slug = 5;
@@ -101,7 +101,7 @@ message Product {
 
   repeated string features = 20;
   ShippingInfo shippingInfo = 21;
-  string uiMetadata = 22;  // JSON as string
+  string uiMetadata = 22; // JSON as string
 
   string createdAt = 23;
   string updatedAt = 24;
@@ -137,7 +137,7 @@ message Banner {
   string animationType = 12;
   bool isActive = 13;
   int32 priority = 14;
-  string type = 15;  // hero, promotional, category, seasonal, product
+  string type = 15; // hero, promotional, category, seasonal, product
   int32 productId = 16;
   int32 categoryId = 17;
   string createdAt = 18;
@@ -153,7 +153,7 @@ message AdsPlacement {
   int32 displayOrder = 5;
   string customTitle = 6;
   string customImageUrl = 7;
-  string uiSettings = 8;  // JSON as string
+  string uiSettings = 8; // JSON as string
   bool isActive = 9;
   string createdAt = 10;
   string updatedAt = 11;
@@ -162,7 +162,7 @@ message AdsPlacement {
 // AdsData object
 message AdsData {
   int32 id = 1;
-  string type = 2;  // "product" or "category"
+  string type = 2; // "product" or "category"
   string name = 3;
   string slug = 4;
   string imageUrl = 5;
@@ -170,7 +170,7 @@ message AdsData {
   int32 categoryId = 7;
   string categorySlug = 8;
   string customTitle = 9;
-  string uiSettings = 10;  // JSON as string
+  string uiSettings = 10; // JSON as string
 }
 
 // ShippingInfo object
@@ -224,13 +224,9 @@ message Testimonial {
 }
 
 // Request and Response messages - Product Service
-message GetProductRequest {
-  int32 id = 1;
-}
+message GetProductRequest { int32 id = 1; }
 
-message GetProductBySlugRequest {
-  string slug = 1;
-}
+message GetProductBySlugRequest { string slug = 1; }
 
 message ListProductsRequest {
   int32 page = 1;
@@ -248,9 +244,7 @@ message CreateProductResponse {
   Product product = 2;
 }
 
-message DeleteProductRequest {
-  int32 id = 1;
-}
+message DeleteProductRequest { int32 id = 1; }
 
 message GetProductReviewsRequest {
   int32 productId = 1;
@@ -263,17 +257,11 @@ message GetProductReviewsResponse {
   int32 total = 2;
 }
 
-message AddProductReviewResponse {
-  int32 id = 1;
-}
+message AddProductReviewResponse { int32 id = 1; }
 
-message GetProductImagesRequest {
-  int32 productId = 1;
-}
+message GetProductImagesRequest { int32 productId = 1; }
 
-message GetProductImagesResponse {
-  repeated ProductImage images = 1;
-}
+message GetProductImagesResponse { repeated ProductImage images = 1; }
 
 message UploadProductImageRequest {
   int32 productId = 1;
@@ -283,78 +271,58 @@ message UploadProductImageRequest {
   bool isPrimary = 5;
 }
 
-message UploadProductImageResponse {
-  string url = 1;
-}
+message UploadProductImageResponse { string url = 1; }
 
-message DeleteProductImageRequest {
-  int32 imageId = 1;
-}
+message DeleteProductImageRequest { int32 imageId = 1; }
 
 message SetPrimaryProductImageRequest {
   int32 productId = 1;
   int32 imageId = 2;
 }
 
-message GetTopRatedTestimonialsRequest {
-  int32 limit = 1;
-}
+message GetTopRatedTestimonialsRequest { int32 limit = 1; }
 
 message GetTopRatedTestimonialsResponse {
   repeated Testimonial testimonials = 1;
 }
 
 // New messages for getting product image files
-message GetProductImageFileRequest {
-  string filename = 1;
-}
+message GetProductImageFileRequest { string filename = 1; }
 
 message GetProductImageFileResponse {
   bytes image_data = 1;
   string content_type = 2;
+  string presigned_url = 3; // URL presigned do MinIO
+  bool redirect_to_url = 4; // Indica se o cliente deve redirecionar para a URL
 }
 
 // Request and Response messages - Category Service
-message GetCategoryByIDRequest {
-  int32 id = 1;
-}
+message GetCategoryByIDRequest { int32 id = 1; }
 
-message GetCategoryBySlugRequest {
-  string slug = 1;
-}
+message GetCategoryBySlugRequest { string slug = 1; }
 
-message ListCategoriesRequest {
-  map<string, string> filters = 1;
-}
+message ListCategoriesRequest { map<string, string> filters = 1; }
 
-message ListCategoriesResponse {
-  repeated Category categories = 1;
-}
+message ListCategoriesResponse { repeated Category categories = 1; }
 
 message CreateCategoryResponse {
   int32 id = 1;
   Category category = 2;
 }
 
-message DeleteCategoryRequest {
-  int32 id = 1;
-}
+message DeleteCategoryRequest { int32 id = 1; }
 
 message SyncProductCountsRequest {}
 
 // Request and Response messages - Banner Service
-message GetBannerByIDRequest {
-  int32 id = 1;
-}
+message GetBannerByIDRequest { int32 id = 1; }
 
 message GetBannersByTypeRequest {
   string type = 1;
   int32 limit = 2;
 }
 
-message GetBannersByTypeResponse {
-  repeated Banner banners = 1;
-}
+message GetBannersByTypeResponse { repeated Banner banners = 1; }
 
 message ListBannersRequest {
   int32 page = 1;
@@ -372,22 +340,14 @@ message CreateBannerResponse {
   Banner banner = 2;
 }
 
-message DeleteBannerRequest {
-  int32 id = 1;
-}
+message DeleteBannerRequest { int32 id = 1; }
 
 // Request and Response messages - Ads Service
-message GetAdsByLocationRequest {
-  string location = 1;
-}
+message GetAdsByLocationRequest { string location = 1; }
 
-message GetAdsByLocationResponse {
-  repeated AdsData ads = 1;
-}
+message GetAdsByLocationResponse { repeated AdsData ads = 1; }
 
-message GetAdsPlacementByIDRequest {
-  int32 id = 1;
-}
+message GetAdsPlacementByIDRequest { int32 id = 1; }
 
 message ListAdsPlacementsRequest {
   int32 page = 1;
@@ -404,9 +364,7 @@ message CreateAdsPlacementResponse {
   AdsPlacement placement = 2;
 }
 
-message DeleteAdsPlacementRequest {
-  int32 id = 1;
-}
+message DeleteAdsPlacementRequest { int32 id = 1; }
 
 // Common messages
 message StatusResponse {
@@ -424,5 +382,5 @@ message HealthResponse {
 // New message for partial updates
 message PatchProductRequest {
   int32 id = 1;
-  string updates_json = 2;  // JSON representation of updates
+  string updates_json = 2; // JSON representation of updates
 }
