@@ -33,6 +33,9 @@ service ProductService {
   rpc GetProductImageFile(GetProductImageFileRequest)
       returns (GetProductImageFileResponse);
 
+  // New method for generating presigned URLs
+  rpc GetPresignedURL(PresignedURLRequest) returns (PresignedURLResponse);
+
   // Testimonials
   rpc GetTopRatedTestimonials(GetTopRatedTestimonialsRequest)
       returns (GetTopRatedTestimonialsResponse);
@@ -78,7 +81,7 @@ service AdsService {
 // Product object
 message Product {
   int32 id = 1;
-  string type = 2;  // normal, trending, top-sale, new, limited
+  string type = 2; // normal, trending, top-sale, new, limited
   string name = 3;
   string description = 4;
   string slug = 5;
@@ -101,7 +104,7 @@ message Product {
 
   repeated string features = 20;
   ShippingInfo shipping_info = 21;
-  string ui_metadata = 22;  // JSON as string
+  string ui_metadata = 22; // JSON as string
 
   string created_at = 23;
   string updated_at = 24;
@@ -137,7 +140,7 @@ message Banner {
   string animation_type = 12;
   bool is_active = 13;
   int32 priority = 14;
-  string type = 15;  // hero, promotional, category, seasonal, product
+  string type = 15; // hero, promotional, category, seasonal, product
   int32 product_id = 16;
   int32 category_id = 17;
   string created_at = 18;
@@ -153,7 +156,7 @@ message AdsPlacement {
   int32 display_order = 5;
   string custom_title = 6;
   string custom_image_url = 7;
-  string ui_settings = 8;  // JSON as string
+  string ui_settings = 8; // JSON as string
   bool is_active = 9;
   string created_at = 10;
   string updated_at = 11;
@@ -162,7 +165,7 @@ message AdsPlacement {
 // AdsData object
 message AdsData {
   int32 id = 1;
-  string type = 2;  // "product" or "category"
+  string type = 2; // "product" or "category"
   string name = 3;
   string slug = 4;
   string image_url = 5;
@@ -170,7 +173,7 @@ message AdsData {
   int32 category_id = 7;
   string category_slug = 8;
   string custom_title = 9;
-  string ui_settings = 10;  // JSON as string
+  string ui_settings = 10; // JSON as string
 }
 
 // ShippingInfo object
@@ -224,13 +227,9 @@ message Testimonial {
 }
 
 // Request and Response messages - Product Service
-message GetProductRequest {
-  int32 id = 1;
-}
+message GetProductRequest { int32 id = 1; }
 
-message GetProductBySlugRequest {
-  string slug = 1;
-}
+message GetProductBySlugRequest { string slug = 1; }
 
 message ListProductsRequest {
   int32 page = 1;
@@ -248,9 +247,7 @@ message CreateProductResponse {
   Product product = 2;
 }
 
-message DeleteProductRequest {
-  int32 id = 1;
-}
+message DeleteProductRequest { int32 id = 1; }
 
 message GetProductReviewsRequest {
   int32 product_id = 1;
@@ -263,17 +260,11 @@ message GetProductReviewsResponse {
   int32 total = 2;
 }
 
-message AddProductReviewResponse {
-  int32 id = 1;
-}
+message AddProductReviewResponse { int32 id = 1; }
 
-message GetProductImagesRequest {
-  int32 product_id = 1;
-}
+message GetProductImagesRequest { int32 product_id = 1; }
 
-message GetProductImagesResponse {
-  repeated ProductImage images = 1;
-}
+message GetProductImagesResponse { repeated ProductImage images = 1; }
 
 message UploadProductImageRequest {
   int32 product_id = 1;
@@ -283,68 +274,48 @@ message UploadProductImageRequest {
   bool is_primary = 5;
 }
 
-message UploadProductImageResponse {
-  string url = 1;
-}
+message UploadProductImageResponse { string url = 1; }
 
-message DeleteProductImageRequest {
-  int32 image_id = 1;
-}
+message DeleteProductImageRequest { int32 image_id = 1; }
 
 message SetPrimaryProductImageRequest {
   int32 product_id = 1;
   int32 image_id = 2;
 }
 
-message GetTopRatedTestimonialsRequest {
-  int32 limit = 1;
-}
+message GetTopRatedTestimonialsRequest { int32 limit = 1; }
 
 message GetTopRatedTestimonialsResponse {
   repeated Testimonial testimonials = 1;
 }
 
 // Request and Response messages - Category Service
-message GetCategoryByIDRequest {
-  int32 id = 1;
-}
+message GetCategoryByIDRequest { int32 id = 1; }
 
-message GetCategoryBySlugRequest {
-  string slug = 1;
-}
+message GetCategoryBySlugRequest { string slug = 1; }
 
-message ListCategoriesRequest {
-  map<string, string> filters = 1;
-}
+message ListCategoriesRequest { map<string, string> filters = 1; }
 
-message ListCategoriesResponse {
-  repeated Category categories = 1;
-}
+message ListCategoriesResponse { repeated Category categories = 1; }
 
 message CreateCategoryResponse {
   int32 id = 1;
   Category category = 2;
 }
 
-message DeleteCategoryRequest {
-  int32 id = 1;
-}
+message DeleteCategoryRequest { int32 id = 1; }
 
 message SyncProductCountsRequest {}
 
 // Request and Response messages - Banner Service
-message GetBannerByIDRequest {
-  int32 id = 1;
-}
+message GetBannerByIDRequest { int32 id = 1; }
 
 message GetBannersByTypeRequest {
   string type = 1;
   int32 limit = 2;
 }
 
-message GetBannersByTypeResponse {
-  repeated Banner banners = 1;
-}
+message GetBannersByTypeResponse { repeated Banner banners = 1; }
 
 message ListBannersRequest {
   int32 page = 1;
@@ -362,22 +333,14 @@ message CreateBannerResponse {
   Banner banner = 2;
 }
 
-message DeleteBannerRequest {
-  int32 id = 1;
-}
+message DeleteBannerRequest { int32 id = 1; }
 
 // Request and Response messages - Ads Service
-message GetAdsByLocationRequest {
-  string location = 1;
-}
+message GetAdsByLocationRequest { string location = 1; }
 
-message GetAdsByLocationResponse {
-  repeated AdsData ads = 1;
-}
+message GetAdsByLocationResponse { repeated AdsData ads = 1; }
 
-message GetAdsPlacementByIDRequest {
-  int32 id = 1;
-}
+message GetAdsPlacementByIDRequest { int32 id = 1; }
 
 message ListAdsPlacementsRequest {
   int32 page = 1;
@@ -394,9 +357,7 @@ message CreateAdsPlacementResponse {
   AdsPlacement placement = 2;
 }
 
-message DeleteAdsPlacementRequest {
-  int32 id = 1;
-}
+message DeleteAdsPlacementRequest { int32 id = 1; }
 
 // Common messages
 message StatusResponse {
@@ -412,17 +373,30 @@ message HealthResponse {
 }
 
 // New messages for getting product image files
-message GetProductImageFileRequest {
-  string filename = 1;
-}
+message GetProductImageFileRequest { string filename = 1; }
 
 message GetProductImageFileResponse {
   bytes image_data = 1;
   string content_type = 2;
+  string presigned_url = 3; // URL presigned do MinIO
+  bool redirect_to_url = 4; // Indica se o cliente deve redirecionar para a URL
 }
 
 // New message for partial updates
 message PatchProductRequest {
   int32 id = 1;
-  string updates_json = 2;  // JSON representation of updates
+  string updates_json = 2; // JSON representation of updates
+}
+
+// New messages for generating presigned URLs
+message PresignedURLRequest {
+  string filename = 1;
+  string object_path = 2;
+  int32 expiry = 3; // Expiration time in seconds
+}
+
+message PresignedURLResponse {
+  string presigned_url = 1;
+  bool success = 2;
+  string error = 3;
 }

@@ -136,6 +136,9 @@ type ProductService interface {
 
 	// Get random 5-star testimonials for HappyCustomers
 	GetRandomTopRatedReviews(limit int) ([]*Testimonial, error)
+
+	// Get presigned URL for accessing images from storage
+	GetPresignedURL(objectPath string) (string, error)
 }
 
 // FileUpload defines an interface for file uploads to allow custom implementations

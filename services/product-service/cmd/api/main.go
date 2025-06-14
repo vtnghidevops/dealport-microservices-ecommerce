@@ -2,20 +2,20 @@
 package main
 
 import (
+	"context"
 	"database/sql"
 	"fmt"
 	"log"
 	"net"
-	"net/http"
 	"os"
+	"product-service/internal/cache"
 	"product-service/internal/config"
 	"product-service/internal/domain"
-	"product-service/internal/handler"
 	"product-service/internal/migrations"
 	"product-service/internal/repository/postgres"
 	"product-service/internal/service"
+	"product-service/internal/storage"
 	transportGrpc "product-service/internal/transport/grpc"
-	transportHttp "product-service/internal/transport/http"
 	pb "product-service/proto/product"
 	"strconv"
 	"time"
@@ -34,10 +34,21 @@ func main() {
 		return
 	}
 
-	// Load config (Tải cấu hình)
+	// Load config (Load configuration)
 	cfg, err := config.LoadConfig("")
 	if err != nil {
 		log.Fatalf("Failed to load config: %v", err)
+	}
+
+	// Debug log about storage configuration
+	log.Printf("DEBUG: Storage configuration - Provider: '%s'", cfg.Storage.Provider)
+	if cfg.Storage.Provider == "minio" {
+		log.Printf("DEBUG: MinIO config - Endpoint: %s, AccessKey: %s, BucketName: %s",
+			cfg.Storage.MinIO.Endpoint,
+			cfg.Storage.MinIO.AccessKeyID,
+			cfg.Storage.MinIO.BucketName)
+	} else {
+		log.Printf("DEBUG: Using local file storage because Storage.Provider is not 'minio'")
 	}
 
 	log.Printf("Starting product service - gRPC port: %s, HTTP port: %s", cfg.Server.GRPCPort, cfg.Server.HTTPPort)
@@ -66,8 +77,99 @@ func main() {
 	bannerRepo := postgres.NewBannerRepository(conn)
 	adsRepo := postgres.NewAdsRepository(conn)
 
-	// Create services
-	productService := service.NewProductService(productRepo)
+	// Initialize storage service based on configuration
+	var storageService storage.StorageService
+	var urlCache *cache.ImageURLCache
+
+	if cfg.Storage.Provider == "minio" {
+		log.Printf("Using MinIO storage with endpoint: %s", cfg.Storage.MinIO.Endpoint)
+
+		// Initialize MinIO storage
+		minioConfig := storage.MinioConfig{
+			Endpoint:        cfg.Storage.MinIO.Endpoint,
+			AccessKeyID:     cfg.Storage.MinIO.AccessKeyID,
+			SecretAccessKey: cfg.Storage.MinIO.SecretAccessKey,
+			UseSSL:          cfg.Storage.MinIO.UseSSL,
+			BucketName:      cfg.Storage.MinIO.BucketName,
+			Location:        cfg.Storage.MinIO.Location,
+			BaseURL:         cfg.Storage.MinIO.BaseURL,
+			PresignedTTL:    cfg.Storage.MinIO.PresignedTTL,
+		}
+
+		log.Printf("Attempting to connect to MinIO at %s", cfg.Storage.MinIO.Endpoint)
+		log.Printf("Bucket: %s, UseSSL: %v", cfg.Storage.MinIO.BucketName, cfg.Storage.MinIO.UseSSL)
+		log.Printf("BaseURL (for presigned URLs): %s", cfg.Storage.MinIO.BaseURL)
+
+		// Create MinIO storage service
+		minioStorage, err := storage.NewMinioStorage(minioConfig)
+		if err != nil {
+			log.Printf("ERROR: Failed to initialize MinIO client: %v", err)
+			log.Printf("DEBUG: MinIO connection details - Endpoint: %s, AccessKey: %s, BucketName: %s",
+				cfg.Storage.MinIO.Endpoint,
+				cfg.Storage.MinIO.AccessKeyID,
+				cfg.Storage.MinIO.BucketName)
+			log.Printf("DEBUG: Check that MinIO service is running and accessible from this container/machine")
+			log.Printf("DEBUG: Also verify network connectivity and firewall settings")
+			log.Printf("Falling back to local file storage")
+		} else {
+			// Test connection to MinIO
+			ctx := context.Background()
+			err = minioStorage.TestConnection(ctx)
+			if err != nil {
+				log.Printf("ERROR: Failed to connect to MinIO: %v", err)
+				log.Printf("DEBUG: MinIO connection test failed - details:")
+				log.Printf("DEBUG: Endpoint: %s, UseSSL: %v", cfg.Storage.MinIO.Endpoint, cfg.Storage.MinIO.UseSSL)
+				log.Printf("DEBUG: AccessKey: %s, BucketName: %s", cfg.Storage.MinIO.AccessKeyID, cfg.Storage.MinIO.BucketName)
+				log.Printf("DEBUG: Network connectivity checks to try:")
+				log.Printf("DEBUG: 1. Can you ping %s?", cfg.Storage.MinIO.Endpoint)
+				log.Printf("DEBUG: 2. Can you access MinIO directly in browser: %s?", cfg.Storage.MinIO.BaseURL)
+				log.Printf("DEBUG: 3. Check DNS resolution for %s", cfg.Storage.MinIO.Endpoint)
+				log.Printf("DEBUG: 4. Check if your MinIO server is correctly configured and running")
+				log.Printf("DEBUG: 5. Verify MinIO credentials are correct")
+
+				// Check if bucket exists
+				exists, bucketErr := minioStorage.BucketExists(ctx)
+				if bucketErr != nil {
+					log.Printf("ERROR: Failed to check if bucket exists: %v", bucketErr)
+					log.Printf("DEBUG: This usually means connectivity issues to MinIO server")
+				} else if !exists {
+					log.Printf("DEBUG: MinIO server is accessible but bucket '%s' does not exist", cfg.Storage.MinIO.BucketName)
+					log.Printf("Bucket '%s' does not exist, attempting to create it...", cfg.Storage.MinIO.BucketName)
+
+					// Try to create the bucket
+					createErr := minioStorage.CreateBucket(ctx, cfg.Storage.MinIO.BucketName, cfg.Storage.MinIO.Location)
+					if createErr != nil {
+						log.Printf("ERROR: Failed to create bucket: %v", createErr)
+						log.Printf("DEBUG: Check MinIO user permissions - user needs CreateBucket rights")
+					} else {
+						log.Printf("Successfully created bucket '%s'", cfg.Storage.MinIO.BucketName)
+					}
+				}
+
+				log.Printf("WARNING: Using MinIO storage but connection test failed. Service may fall back to local storage for uploads.")
+			} else {
+				log.Printf("Successfully connected to MinIO and verified bucket '%s' exists", cfg.Storage.MinIO.BucketName)
+				log.Printf("MinIO storage is ready for use")
+			}
+
+			// Create URL cache for presigned URLs
+			urlCache = cache.NewImageURLCache(30 * time.Minute)
+			storageService = minioStorage
+		}
+	} else {
+		log.Printf("Using local file storage because Storage.Provider is not 'minio'")
+	}
+
+	// Create services with storage
+	var productService domain.ProductService
+	if storageService != nil {
+		productService = service.NewProductServiceWithStorage(productRepo, storageService, urlCache)
+		log.Printf("Product service initialized with MinIO storage")
+	} else {
+		productService = service.NewProductService(productRepo)
+		log.Printf("Product service initialized with local storage")
+	}
+
 	categoryService := service.NewCategoryService(categoryRepo)
 	bannerService := service.NewBannerService(bannerRepo)
 	adsService := service.NewAdsService(adsRepo)
@@ -79,25 +181,6 @@ func main() {
 	go func() {
 		log.Printf("Starting gRPC server on port %s...", cfg.Server.GRPCPort)
 		errCh <- startGRPCServer(productService, categoryService, bannerService, adsService, cfg.Server.GRPCPort)
-	}()
-
-	// Start HTTP server in a goroutine
-	go func() {
-		log.Printf("Starting HTTP server on port %s...", cfg.Server.HTTPPort)
-
-		// Create handler config
-		handlerConfig := &handler.Config{
-			ProductService:  productService,
-			CategoryService: categoryService,
-			BannerService:   bannerService,
-			AdsService:      adsService,
-		}
-
-		// Create HTTP server
-		httpServer := transportHttp.NewServer(handlerConfig)
-
-		// Start HTTP server
-		errCh <- http.ListenAndServe(fmt.Sprintf(":%s", cfg.Server.HTTPPort), httpServer.Routes())
 	}()
 
 	// Block until we get an error from one of the servers

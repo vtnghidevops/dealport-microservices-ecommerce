@@ -10,7 +10,9 @@ import (
 	"os"
 	"path/filepath"
 	"product-service/internal/domain"
+	"product-service/internal/service"
 	pb "product-service/proto/product"
+	"regexp"
 	"strconv"
 	"strings"
 	"time"
@@ -127,6 +129,8 @@ func (s *GrpcServer) PatchProduct(ctx context.Context, req *pb.PatchProductReque
 		return nil, fmt.Errorf("invalid patch data: %w", err)
 	}
 
+	// We'll use regex patterns directly where needed
+
 	// Apply updates to the existing product
 	for field, value := range updates {
 		switch field {
@@ -170,7 +174,28 @@ func (s *GrpcServer) PatchProduct(ctx context.Context, req *pb.PatchProductReque
 				// Convert array elements to strings
 				for _, imgVal := range imgArray {
 					if imgURL, ok := imgVal.(string); ok && imgURL != "" {
-						imgSlider = append(imgSlider, imgURL)
+						// Normalize URL:
+						normalizedURL := imgURL
+
+						// Case 1: MinIO presigned URL - extract /images/products-api/
+						if (strings.HasPrefix(imgURL, "http://") || strings.HasPrefix(imgURL, "https://")) && strings.Contains(imgURL, "/images/products-api/") {
+							pattern := regexp.MustCompile(`(/images/products-api/[^?]+)`)
+							matches := pattern.FindStringSubmatch(imgURL)
+							if len(matches) > 0 {
+								normalizedURL = matches[1]
+								log.Printf("Normalized MinIO URL from %s to %s", imgURL, normalizedURL)
+							}
+							// Case 2: Local storage URL - extract /images/products/
+						} else if (strings.HasPrefix(imgURL, "http://") || strings.HasPrefix(imgURL, "https://")) && strings.Contains(imgURL, "/images/products/") {
+							pattern := regexp.MustCompile(`(/images/products/[^?]+)`)
+							matches := pattern.FindStringSubmatch(imgURL)
+							if len(matches) > 0 {
+								normalizedURL = matches[1]
+								log.Printf("Normalized local storage URL from %s to %s", imgURL, normalizedURL)
+							}
+						}
+
+						imgSlider = append(imgSlider, normalizedURL)
 					}
 				}
 
@@ -543,22 +568,11 @@ func (s *GrpcServer) SetPrimaryProductImage(ctx context.Context, req *pb.SetPrim
 
 // GetProductImageFile implements the GetProductImageFile RPC method
 func (s *GrpcServer) GetProductImageFile(ctx context.Context, req *pb.GetProductImageFileRequest) (*pb.GetProductImageFileResponse, error) {
-	// Path to the product images directory
-	uploadsDir := "./uploads/products"
+	// This method now redirects to MinIO storage instead of using local files
+	log.Printf("GetProductImageFile requested for: %s, redirecting to MinIO", req.Filename)
 
-	// Get full file path
-	filePath := filepath.Join(uploadsDir, req.Filename)
-
-	// Check if the file exists
-	if _, err := os.Stat(filePath); os.IsNotExist(err) {
-		return nil, fmt.Errorf("image file not found: %s", req.Filename)
-	}
-
-	// Read the file data
-	imageData, err := os.ReadFile(filePath)
-	if err != nil {
-		return nil, fmt.Errorf("failed to read image file: %w", err)
-	}
+	// Extract the object name (only the filename portion)
+	objectName := fmt.Sprintf("products/%s", req.Filename)
 
 	// Determine content type based on file extension
 	var contentType string
@@ -575,9 +589,24 @@ func (s *GrpcServer) GetProductImageFile(ctx context.Context, req *pb.GetProduct
 		contentType = "application/octet-stream"
 	}
 
+	// Get the product service with storage capabilities from product_service.go
+	storageService, ok := s.productService.(*service.ProductService)
+	if !ok {
+		return nil, fmt.Errorf("storage service not available")
+	}
+
+	// Try to get a presigned URL for the file
+	presignedURL, err := storageService.GetPresignedURL(objectName)
+	if err != nil {
+		return nil, fmt.Errorf("failed to generate presigned URL: %w", err)
+	}
+
+	// Return a response that tells the client to redirect to the presigned URL
 	return &pb.GetProductImageFileResponse{
-		ImageData:   imageData,
-		ContentType: contentType,
+		ImageData:     []byte{}, // Empty image data
+		ContentType:   contentType,
+		PresignedUrl:  presignedURL, // New field added to proto
+		RedirectToUrl: true,         // Tell client to redirect
 	}, nil
 }
 
@@ -589,53 +618,68 @@ func (s *GrpcServer) GetHealth(ctx context.Context, req *pb.HealthRequest) (*pb.
 	}, nil
 }
 
+// GetPresignedURL generates a presigned URL for accessing object from storage
+func (s *GrpcServer) GetPresignedURL(ctx context.Context, req *pb.PresignedURLRequest) (*pb.PresignedURLResponse, error) {
+	log.Printf("GetPresignedURL request for path: %s", req.ObjectPath)
+
+	// Use object_path if provided, otherwise construct from filename
+	objectPath := req.ObjectPath
+	if objectPath == "" && req.Filename != "" {
+		// Assume it's a product image if only filename is provided
+		objectPath = "/images/products/" + req.Filename
+		log.Printf("Using constructed object path: %s", objectPath)
+	}
+
+	if objectPath == "" {
+		log.Printf("ERROR: Missing object path or filename")
+		return &pb.PresignedURLResponse{
+			Success: false,
+			Error:   "missing object path or filename",
+		}, nil
+	}
+
+	// Call service method to get presigned URL
+	presignedURL, err := s.productService.GetPresignedURL(objectPath)
+	if err != nil {
+		log.Printf("ERROR: Failed to generate presigned URL: %v", err)
+		return &pb.PresignedURLResponse{
+			Success: false,
+			Error:   err.Error(),
+		}, nil
+	}
+
+	// Log success (truncated URL for logs)
+	maxLogLength := 50
+	if len(presignedURL) > maxLogLength {
+		log.Printf("Generated presigned URL (truncated): %s...", presignedURL[:maxLogLength])
+	} else {
+		log.Printf("Generated presigned URL: %s", presignedURL)
+	}
+
+	return &pb.PresignedURLResponse{
+		PresignedUrl: presignedURL,
+		Success:      true,
+	}, nil
+}
+
 // Helper function to convert domain Product to proto Product
 func convertDomainProductToProto(product *domain.Product) *pb.Product {
 	if product == nil {
 		return nil
 	}
 
-	// Lấy domain cho URL ảnh từ biến môi trường
-	imgBaseURL := os.Getenv("ECOMMERCE_IMG_URL")
-	if imgBaseURL == "" {
-		// Kiểm tra môi trường để quyết định URL mặc định
-		_, isLocalDev := os.LookupEnv("LOCAL_DEV")
-		if isLocalDev {
-			// Đang ở môi trường phát triển cục bộ
-			imgBaseURL = "http://localhost:58082" // Sử dụng cổng local của product-service
-		} else {
-			// Môi trường sản xuất hoặc staging
-			imgBaseURL = "https://api.deploy.io.vn" // Fallback nếu không có biến môi trường
-		}
-	}
-
-	// Hàm để thêm domain vào URL ảnh nếu nó là đường dẫn tương đối
+	// Function to process image URLs
 	addDomainToURL := func(url string) string {
 		if url == "" {
 			return ""
 		}
-		// Nếu URL đã có http:// hoặc https://, giữ nguyên
+		// If URL already has http:// or https://, keep as is (presigned URLs)
 		if strings.HasPrefix(url, "http://") || strings.HasPrefix(url, "https://") {
 			return url
 		}
 
-		// Nếu URL bắt đầu bằng /images, không cần thêm domain (giữ nguyên URL)
-		// if strings.HasPrefix(url, "/images") {
-		// 	return url
-		// }
-
-		// Nếu URL bắt đầu bằng /, thêm domain vào
-		if strings.HasPrefix(url, "/") {
-			return imgBaseURL + url
-		}
-
-		// Nếu URL không bắt đầu bằng giao thức (có thể là hostname), thêm http:// vào đầu
-		if strings.Contains(url, ".") || strings.Contains(url, "localhost") || strings.Contains(url, ":") {
-			return "http://" + url
-		}
-
-		// Trường hợp còn lại, thêm domain và / vào
-		return imgBaseURL + "/" + url
+		// For relative URLs, keep as is for frontend processing
+		return url
 	}
 
 	protoProduct := &pb.Product{
@@ -663,7 +707,7 @@ func convertDomainProductToProto(product *domain.Product) *pb.Product {
 	// Convert features
 	protoProduct.Features = append([]string{}, product.Features...)
 
-	// Convert img_slider - thêm domain vào mỗi URL
+	// Convert img_slider - add domain to each URL
 	for _, url := range product.ImgSlider {
 		protoProduct.ImgSlider = append(protoProduct.ImgSlider, addDomainToURL(url))
 	}
@@ -685,7 +729,7 @@ func convertDomainProductToProto(product *domain.Product) *pb.Product {
 		Count:         int32(product.ReviewsAvg.Count),
 	}
 
-	// Convert images - thêm domain vào URL của từng hình ảnh
+	// Convert images - add domain to URL of each image
 	protoImages := make([]*pb.ProductImage, 0, len(product.Images))
 	for _, image := range product.Images {
 		protoImages = append(protoImages, &pb.ProductImage{

@@ -41,6 +41,8 @@ type ProductServiceClient interface {
 	SetPrimaryProductImage(ctx context.Context, in *SetPrimaryProductImageRequest, opts ...grpc.CallOption) (*StatusResponse, error)
 	// New method for retrieving image file data
 	GetProductImageFile(ctx context.Context, in *GetProductImageFileRequest, opts ...grpc.CallOption) (*GetProductImageFileResponse, error)
+	// New method for generating presigned URLs
+	GetPresignedURL(ctx context.Context, in *PresignedURLRequest, opts ...grpc.CallOption) (*PresignedURLResponse, error)
 	// Testimonials
 	GetTopRatedTestimonials(ctx context.Context, in *GetTopRatedTestimonialsRequest, opts ...grpc.CallOption) (*GetTopRatedTestimonialsResponse, error)
 	// Health check
@@ -190,6 +192,15 @@ func (c *productServiceClient) GetProductImageFile(ctx context.Context, in *GetP
 	return out, nil
 }
 
+func (c *productServiceClient) GetPresignedURL(ctx context.Context, in *PresignedURLRequest, opts ...grpc.CallOption) (*PresignedURLResponse, error) {
+	out := new(PresignedURLResponse)
+	err := c.cc.Invoke(ctx, "/product.ProductService/GetPresignedURL", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *productServiceClient) GetTopRatedTestimonials(ctx context.Context, in *GetTopRatedTestimonialsRequest, opts ...grpc.CallOption) (*GetTopRatedTestimonialsResponse, error) {
 	out := new(GetTopRatedTestimonialsResponse)
 	err := c.cc.Invoke(ctx, "/product.ProductService/GetTopRatedTestimonials", in, out, opts...)
@@ -231,6 +242,8 @@ type ProductServiceServer interface {
 	SetPrimaryProductImage(context.Context, *SetPrimaryProductImageRequest) (*StatusResponse, error)
 	// New method for retrieving image file data
 	GetProductImageFile(context.Context, *GetProductImageFileRequest) (*GetProductImageFileResponse, error)
+	// New method for generating presigned URLs
+	GetPresignedURL(context.Context, *PresignedURLRequest) (*PresignedURLResponse, error)
 	// Testimonials
 	GetTopRatedTestimonials(context.Context, *GetTopRatedTestimonialsRequest) (*GetTopRatedTestimonialsResponse, error)
 	// Health check
@@ -286,6 +299,9 @@ func (UnimplementedProductServiceServer) SetPrimaryProductImage(context.Context,
 }
 func (UnimplementedProductServiceServer) GetProductImageFile(context.Context, *GetProductImageFileRequest) (*GetProductImageFileResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetProductImageFile not implemented")
+}
+func (UnimplementedProductServiceServer) GetPresignedURL(context.Context, *PresignedURLRequest) (*PresignedURLResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetPresignedURL not implemented")
 }
 func (UnimplementedProductServiceServer) GetTopRatedTestimonials(context.Context, *GetTopRatedTestimonialsRequest) (*GetTopRatedTestimonialsResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetTopRatedTestimonials not implemented")
@@ -576,6 +592,24 @@ func _ProductService_GetProductImageFile_Handler(srv interface{}, ctx context.Co
 	return interceptor(ctx, in, info, handler)
 }
 
+func _ProductService_GetPresignedURL_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(PresignedURLRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ProductServiceServer).GetPresignedURL(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/product.ProductService/GetPresignedURL",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ProductServiceServer).GetPresignedURL(ctx, req.(*PresignedURLRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _ProductService_GetTopRatedTestimonials_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(GetTopRatedTestimonialsRequest)
 	if err := dec(in); err != nil {
@@ -678,6 +712,10 @@ var ProductService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetProductImageFile",
 			Handler:    _ProductService_GetProductImageFile_Handler,
+		},
+		{
+			MethodName: "GetPresignedURL",
+			Handler:    _ProductService_GetPresignedURL_Handler,
 		},
 		{
 			MethodName: "GetTopRatedTestimonials",
