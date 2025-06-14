@@ -79,7 +79,7 @@ func main() {
 
 	// Initialize storage service based on configuration
 	var storageService storage.StorageService
-	var urlCache *cache.ImageURLCache
+	var urlCache cache.ImageURLCache
 
 	if cfg.Storage.Provider == "minio" {
 		log.Printf("Using MinIO storage with endpoint: %s", cfg.Storage.MinIO.Endpoint)

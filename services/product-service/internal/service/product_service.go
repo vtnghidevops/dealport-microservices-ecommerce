@@ -20,7 +20,7 @@ import (
 type ProductService struct {
 	productRepo    domain.ProductRepository
 	storageService storage.StorageService
-	urlCache       *cache.ImageURLCache
+	urlCache       cache.ImageURLCache
 }
 
 // NewProductService creates a new ProductService with local file storage
@@ -31,7 +31,7 @@ func NewProductService(repo domain.ProductRepository) *ProductService {
 }
 
 // NewProductServiceWithStorage creates a new ProductService with the specified storage service
-func NewProductServiceWithStorage(repo domain.ProductRepository, storageService storage.StorageService, urlCache *cache.ImageURLCache) *ProductService {
+func NewProductServiceWithStorage(repo domain.ProductRepository, storageService storage.StorageService, urlCache cache.ImageURLCache) *ProductService {
 	return &ProductService{
 		productRepo:    repo,
 		storageService: storageService,

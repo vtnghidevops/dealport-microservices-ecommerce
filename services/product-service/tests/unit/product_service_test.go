@@ -698,14 +698,31 @@ func TestUploadProductImage(t *testing.T) {
 func TestDeleteProductImage(t *testing.T) {
 	// Setup
 	mockRepo := new(mocks.MockProductRepository)
+	mockStorage := new(mocks.MockStorageService)
 
-	// Initialize the service
-	productService := service.NewProductService(mockRepo)
+	// Create sample images for mock
+	mockImages := []domain.ProductImage{
+		{
+			ID:        1,
+			ProductID: 101,
+			URL:       "/images/products/test1.jpg",
+		},
+		{
+			ID:        2,
+			ProductID: 102,
+			URL:       "/images/products/test2.jpg",
+		},
+	}
+
+	// Initialize the service with storage
+	productService := service.NewProductServiceWithStorage(mockRepo, mockStorage, nil)
 
 	// Test case 1: Successfully delete product image
 	t.Run("Successfully delete product image", func(t *testing.T) {
-		// Set expectation
+		// Set expectations
+		mockRepo.On("GetProductImages", 0).Return(mockImages, nil).Once()
 		mockRepo.On("DeleteProductImage", 1).Return(nil).Once()
+		mockStorage.On("DeleteFile", mock.Anything, "products/test1.jpg").Return(nil).Maybe()
 
 		// Execute
 		err := productService.DeleteProductImage(1)
@@ -715,11 +732,13 @@ func TestDeleteProductImage(t *testing.T) {
 
 		// Verify expectations
 		mockRepo.AssertExpectations(t)
+		mockStorage.AssertExpectations(t)
 	})
 
 	// Test case 2: Repository error
 	t.Run("Repository error", func(t *testing.T) {
-		// Set expectation
+		// Set expectations
+		mockRepo.On("GetProductImages", 0).Return(mockImages, nil).Once()
 		mockRepo.On("DeleteProductImage", 2).Return(errors.New("database error")).Once()
 
 		// Execute
@@ -731,6 +750,7 @@ func TestDeleteProductImage(t *testing.T) {
 
 		// Verify expectations
 		mockRepo.AssertExpectations(t)
+		mockStorage.AssertExpectations(t)
 	})
 }
 
@@ -811,5 +831,62 @@ func TestSetPrimaryProductImage(t *testing.T) {
 
 		// Verify expectations
 		mockRepo.AssertExpectations(t)
+	})
+}
+
+// TestGetPresignedURL tests the GetPresignedURL function
+func TestGetPresignedURL(t *testing.T) {
+	// Setup
+	mockRepo := new(mocks.MockProductRepository)
+	mockStorage := new(mocks.MockStorageService)
+
+	// Create service with storage
+	productService := service.NewProductServiceWithStorage(mockRepo, mockStorage, nil)
+
+	// Test case 1: Successfully generate presigned URL
+	t.Run("Successfully generate presigned URL", func(t *testing.T) {
+		// Set expectations
+		mockStorage.On("GetPresignedURL", mock.Anything, "products/test.jpg", 3600).Return("https://minio-server/bucket/products/test.jpg?signature=xyz", nil).Once()
+
+		// Execute - try with a path that needs conversion
+		url, err := productService.GetPresignedURL("/images/products/test.jpg")
+
+		// Assert
+		assert.NoError(t, err)
+		assert.Equal(t, "https://minio-server/bucket/products/test.jpg?signature=xyz", url)
+
+		// Verify expectations
+		mockStorage.AssertExpectations(t)
+	})
+
+	// Test case 2: Storage service error
+	t.Run("Storage service error", func(t *testing.T) {
+		// Set expectations
+		mockStorage.On("GetPresignedURL", mock.Anything, "products/image.png", 3600).Return("", errors.New("storage error")).Once()
+
+		// Execute
+		url, err := productService.GetPresignedURL("/images/products/image.png")
+
+		// Assert
+		assert.Error(t, err)
+		assert.Empty(t, url)
+		assert.Contains(t, err.Error(), "storage error")
+
+		// Verify expectations
+		mockStorage.AssertExpectations(t)
+	})
+
+	// Test case 3: Nil storage service
+	t.Run("Nil storage service", func(t *testing.T) {
+		// Create service without storage
+		serviceWithoutStorage := service.NewProductService(mockRepo)
+
+		// Execute
+		url, err := serviceWithoutStorage.GetPresignedURL("/images/products/test.jpg")
+
+		// Assert
+		assert.Error(t, err)
+		assert.Empty(t, url)
+		assert.Contains(t, err.Error(), "not initialized")
 	})
 }
