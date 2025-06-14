@@ -3,35 +3,56 @@ package config
 import (
 	"fmt"
 	"os"
+	"strconv"
+
 	"github.com/joho/godotenv"
 )
 
-// Config (Cấu hình) holds all configuration for the product service (dịch vụ sản phẩm)
+// Config  holds all configuration for the product service
 type Config struct {
-	Server   ServerConfig   // Server (máy chủ)
-	Database DatabaseConfig // Database (cơ sở dữ liệu)
+	Server   ServerConfig   // Server
+	Database DatabaseConfig // Database
+	Storage  StorageConfig  `mapstructure:"storage"`
 }
 
-// ServerConfig (Cấu hình máy chủ)
+// ServerConfig
 type ServerConfig struct {
-	HTTPPort string // HTTP port (cổng HTTP)
-	GRPCPort string // gRPC port (cổng gRPC)
+	HTTPPort string // HTTP port
+	GRPCPort string // gRPC port
 }
 
-// DatabaseConfig (Cấu hình cơ sở dữ liệu)
+// DatabaseConfig
 type DatabaseConfig struct {
-	Host     string // Host (máy chủ)
-	Port     string // Port (cổng)
-	User     string // User (người dùng)
-	Password string // Password (mật khẩu)
-	DBName   string // Database name (tên cơ sở dữ liệu)
-	SSLMode  string // SSL mode (chế độ SSL)
+	Host     string // Host
+	Port     string // Port
+	User     string // User
+	Password string // Password
+	DBName   string // Database name
+	SSLMode  string // SSL mode
 }
 
-// LoadConfig (Tải cấu hình) loads configuration from environment variables (biến môi trường)
+// StorageConfig contains storage configuration
+type StorageConfig struct {
+	Provider string      `mapstructure:"provider"` // "local" or "minio"
+	MinIO    MinIOConfig `mapstructure:"minio"`
+}
+
+// MinIOConfig contains MinIO configuration
+type MinIOConfig struct {
+	Endpoint        string `mapstructure:"endpoint"`
+	AccessKeyID     string `mapstructure:"access_key_id"`
+	SecretAccessKey string `mapstructure:"secret_access_key"`
+	UseSSL          bool   `mapstructure:"use_ssl"`
+	BucketName      string `mapstructure:"bucket_name"`
+	Location        string `mapstructure:"location"`
+	BaseURL         string `mapstructure:"base_url"`
+	PresignedTTL    int    `mapstructure:"presigned_ttl"` // In seconds
+}
+
+// LoadConfig loads configuration from environment variables
 func LoadConfig(path string) (*Config, error) {
 	if path != "" {
-		_ = godotenv.Load(path) // Load .env file if provided (nếu có)
+		_ = godotenv.Load(path) // Load .env file if provided
 	}
 
 	cfg := &Config{
@@ -48,11 +69,24 @@ func LoadConfig(path string) (*Config, error) {
 			DBName:   getEnv("DB_NAME", "products"),
 			SSLMode:  getEnv("DB_SSLMODE", "disable"),
 		},
+		Storage: StorageConfig{
+			Provider: getEnv("STORAGE_PROVIDER", "local"),
+			MinIO: MinIOConfig{
+				Endpoint:        getEnv("MINIO_ENDPOINT", ""),
+				AccessKeyID:     getEnv("MINIO_ACCESS_KEY_ID", ""),
+				SecretAccessKey: getEnv("MINIO_SECRET_ACCESS_KEY", ""),
+				UseSSL:          getEnv("MINIO_USE_SSL", "false") == "true",
+				BucketName:      getEnv("MINIO_BUCKET_NAME", "images"),
+				Location:        getEnv("MINIO_LOCATION", "us-east-1"),
+				BaseURL:         getEnv("MINIO_BASE_URL", ""),
+				PresignedTTL:    getEnvAsInt("MINIO_PRESIGNED_TTL", 3600),
+			},
+		},
 	}
 	return cfg, nil
 }
 
-// PostgresConnectionString (Chuỗi kết nối Postgres)
+// PostgresConnectionString
 func (c *Config) PostgresConnectionString() string {
 	return fmt.Sprintf(
 		"host=%s port=%s user=%s password=%s dbname=%s sslmode=%s",
@@ -65,10 +99,20 @@ func (c *Config) PostgresConnectionString() string {
 	)
 }
 
-// getEnv (lấy biến môi trường)
+// getEnv
 func getEnv(key, defaultValue string) string {
 	if value, exists := os.LookupEnv(key); exists {
 		return value
 	}
 	return defaultValue
+}
+
+// getEnvAsInt gets an environment variable as integer with a default value
+func getEnvAsInt(key string, defaultValue int) int {
+	valueStr := getEnv(key, fmt.Sprintf("%d", defaultValue))
+	value, err := strconv.Atoi(valueStr)
+	if err != nil {
+		return defaultValue
+	}
+	return value
 }

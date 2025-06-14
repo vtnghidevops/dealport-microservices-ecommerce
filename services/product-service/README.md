@@ -1,6 +1,44 @@
 # Product Service
 
-This service manages products, categories, and reviews for the e-commerce platform.
+This service manages products, categories, and related operations for the e-commerce platform.
+
+## Features
+
+- Product CRUD operations
+- Category management
+- Product reviews
+- Product images
+- Banners and Ads management
+
+## Storage Options
+
+The product service supports two storage options for product images:
+
+1. **Local Storage** (default): Images are stored in the local filesystem under `./uploads/products/`
+2. **MinIO Storage**: Images are stored in a MinIO object storage bucket
+
+### MinIO Storage Configuration
+
+To use MinIO for image storage, set the following environment variables:
+
+```
+STORAGE_PROVIDER=minio
+MINIO_ENDPOINT=minio.deploy.io.vn
+MINIO_ACCESS_KEY_ID=be-images
+MINIO_SECRET_ACCESS_KEY=your_secret_key
+MINIO_USE_SSL=true
+MINIO_BUCKET_NAME=images
+MINIO_LOCATION=us-east-1
+MINIO_BASE_URL=https://minio.deploy.io.vn
+MINIO_PRESIGNED_TTL=3600
+```
+
+When MinIO storage is enabled:
+
+1. Images are uploaded to the specified MinIO bucket
+2. The database stores relative URLs to the images
+3. When retrieving images, the service generates presigned URLs with a configurable expiry time
+4. URLs are cached to improve performance and reduce load on the MinIO server
 
 ## Structure
 
@@ -34,9 +72,11 @@ The service will start on port 8082 by default.
 ## API Endpoints
 
 ### Health Check
+
 - `GET /health`: Basic health check endpoint
 
 ### Products
+
 - `GET /api/v1/products`: Get all products with filtering and pagination
 - `GET /api/v1/products/{id}`: Get product by ID
 - `GET /api/v1/products/slug/{slug}`: Get product by slug
@@ -46,10 +86,12 @@ The service will start on port 8082 by default.
 - `DELETE /api/v1/products/{id}`: Delete a product
 
 ### Product Reviews
+
 - `GET /api/v1/products/{id}/reviews`: Get reviews for a product
 - `POST /api/v1/products/{id}/reviews`: Add a review to a product
 
 ### Categories
+
 - `GET /api/v1/categories`: Get all categories
 - `GET /api/v1/categories/{id}`: Get category by ID
 - `GET /api/v1/categories/slug/{slug}`: Get category by slug
@@ -58,18 +100,22 @@ The service will start on port 8082 by default.
 ### Product Images API
 
 #### Upload a Product Image
+
 ```
 POST /api/v1/products/{id}/images
 ```
 
 **Parameters:**
+
 - `id` (path parameter): The ID of the product to upload the image for
 
 **Form Data:**
+
 - `image`: The image file (multipart/form-data)
 - `isPrimary`: Whether this should be the primary product image (true/false)
 
 **Response:**
+
 ```json
 {
   "status": 201,
@@ -80,15 +126,18 @@ POST /api/v1/products/{id}/images
 ```
 
 #### Delete a Product Image
+
 ```
 DELETE /api/v1/products/{id}/images/{imageId}
 ```
 
 **Parameters:**
+
 - `id` (path parameter): The ID of the product
 - `imageId` (path parameter): The ID of the image to delete
 
 **Response:**
+
 ```json
 {
   "status": 200,
@@ -97,15 +146,18 @@ DELETE /api/v1/products/{id}/images/{imageId}
 ```
 
 #### Set Primary Product Image
+
 ```
 PUT /api/v1/products/{id}/images/{imageId}/primary
 ```
 
 **Parameters:**
+
 - `id` (path parameter): The ID of the product
 - `imageId` (path parameter): The ID of the image to set as primary
 
 **Response:**
+
 ```json
 {
   "status": 200,
@@ -113,7 +165,7 @@ PUT /api/v1/products/{id}/images/{imageId}/primary
 }
 ```
 
-The image URLs in the API responses can be used directly in your frontend application. 
+The image URLs in the API responses can be used directly in your frontend application.
 Images are stored in the backend filesystem and served through the `/api/products/images/` endpoint.
 
 ## Testing
@@ -222,6 +274,7 @@ PATCH /api/v1/products/{id}
 ```
 
 **Parameters:**
+
 - `id` (path parameter): The ID of the product to update
 
 **Request Body:**
@@ -234,7 +287,7 @@ A JSON object containing only the fields you want to update. The endpoint suppor
   "slug": "updated-product-slug",
   "price": 99.99,
   "original_price": 129.99,
-  "discount": 30.00,
+  "discount": 30.0,
   "category_id": 5,
   "category_slug": "electronics",
   "stock_quantity": 150,
@@ -263,6 +316,7 @@ A JSON object containing only the fields you want to update. The endpoint suppor
 You can include any combination of these fields in your request, and only the included fields will be updated.
 
 **Response:**
+
 ```json
 {
   "status": 200,
@@ -274,6 +328,7 @@ You can include any combination of these fields in your request, and only the in
 ```
 
 **Example: Update only the price and stock quantity**
+
 ```bash
 curl -X PATCH http://localhost:8082/api/v1/products/123 \
   -H "Content-Type: application/json" \
@@ -284,6 +339,7 @@ curl -X PATCH http://localhost:8082/api/v1/products/123 \
 ```
 
 **Example: Update product images**
+
 ```bash
 curl -X PATCH http://localhost:8082/api/v1/products/123 \
   -H "Content-Type: application/json" \
@@ -297,6 +353,7 @@ curl -X PATCH http://localhost:8082/api/v1/products/123 \
 ```
 
 **Example: Update product type and add tags**
+
 ```bash
 curl -X PATCH http://localhost:8082/api/v1/products/123 \
   -H "Content-Type: application/json" \
@@ -307,6 +364,7 @@ curl -X PATCH http://localhost:8082/api/v1/products/123 \
 ```
 
 The PATCH endpoint is particularly useful for operations like:
+
 - Updating price or stock quantity without changing other fields
 - Adding or removing product images
 - Changing the product type or category
@@ -342,5 +400,7 @@ go run ./cmd/api
 ## Example API Usage
 
 ### Creating a Product
+
+```
 
 ```
