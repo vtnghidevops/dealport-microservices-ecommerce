@@ -101,3 +101,14 @@ func (m *MockCartServiceClient) GetHealth(ctx context.Context, req *cartpb.Healt
 	}
 	return responseValue, args.Error(1)
 }
+
+// RefreshCartTTL mocks the RefreshCartTTL method
+func (m *MockCartServiceClient) RefreshCartTTL(ctx context.Context, req *cartpb.RefreshCartTTLRequest, opts ...grpc.CallOption) (*cartpb.StatusResponse, error) {
+	args := m.Called(ctx, req, mock.Anything)
+	response := args.Get(0)
+	var responseValue *cartpb.StatusResponse
+	if response != nil {
+		responseValue = response.(*cartpb.StatusResponse)
+	}
+	return responseValue, args.Error(1)
+}

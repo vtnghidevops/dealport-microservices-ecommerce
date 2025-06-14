@@ -1118,3 +1118,111 @@ func TestRemoveCoupon(t *testing.T) {
 		mockCartClient.AssertExpectations(t)
 	})
 }
+
+// TestRefreshCartTTL tests the RefreshCartTTL handler
+func TestRefreshCartTTL(t *testing.T) {
+	// Setup
+	handler, mockCartClient, _ := setupCartHandlerTest()
+
+	// Test case 1: Successfully refresh cart TTL
+	t.Run("Successfully refresh cart TTL", func(t *testing.T) {
+		// Setup mock response
+		mockResponse := &cartpb.StatusResponse{
+			Success: true,
+			Message: "Cart TTL refreshed successfully",
+		}
+
+		// Setup expectations
+		mockCartClient.On("RefreshCartTTL", mock.Anything, &cartpb.RefreshCartTTLRequest{
+			UserId: "user123",
+		}).Return(mockResponse, nil).Once()
+
+		// Create test request
+		req, err := http.NewRequest("POST", "/cart/refresh-ttl", nil)
+		assert.NoError(t, err)
+
+		// Add user_id to context (simulating auth middleware)
+		ctx := context.WithValue(req.Context(), "user_id", "user123")
+		req = req.WithContext(ctx)
+
+		// Create response recorder
+		rec := httptest.NewRecorder()
+
+		// Call the handler
+		handler.RefreshCartTTL(rec, req)
+
+		// Assertions
+		assert.Equal(t, http.StatusOK, rec.Code)
+
+		// Parse the response
+		var response map[string]interface{}
+		err = helpers.ParseTestResponse(rec, &response)
+		assert.NoError(t, err)
+
+		assert.False(t, response["error"].(bool))
+		assert.Equal(t, "Cart TTL refreshed successfully", response["message"])
+
+		// Verify mock expectations
+		mockCartClient.AssertExpectations(t)
+	})
+
+	// Test case 2: Missing user ID in context
+	t.Run("Missing user ID in context", func(t *testing.T) {
+		// Create test request without user ID in context
+		req, err := http.NewRequest("POST", "/cart/refresh-ttl", nil)
+		assert.NoError(t, err)
+
+		// Create response recorder
+		rec := httptest.NewRecorder()
+
+		// Call the handler
+		handler.RefreshCartTTL(rec, req)
+
+		// Assertions
+		assert.Equal(t, http.StatusUnauthorized, rec.Code)
+
+		// Parse the response
+		var response map[string]interface{}
+		err = helpers.ParseTestResponse(rec, &response)
+		assert.NoError(t, err)
+
+		assert.True(t, response["error"].(bool))
+		assert.Contains(t, response["message"], "unauthorized")
+	})
+
+	// Test case 3: Service error
+	t.Run("Service error", func(t *testing.T) {
+		// Setup expectations
+		mockCartClient.On("RefreshCartTTL", mock.Anything, &cartpb.RefreshCartTTLRequest{
+			UserId: "user123",
+		}).Return(nil, errors.New("service error")).Once()
+
+		// Create test request
+		req, err := http.NewRequest("POST", "/cart/refresh-ttl", nil)
+		assert.NoError(t, err)
+
+		// Add user_id to context (simulating auth middleware)
+		ctx := context.WithValue(req.Context(), "user_id", "user123")
+		req = req.WithContext(ctx)
+
+		// Create response recorder
+		rec := httptest.NewRecorder()
+
+		// Call the handler
+		handler.RefreshCartTTL(rec, req)
+
+		// Assertions
+		assert.Equal(t, http.StatusInternalServerError, rec.Code)
+
+		// Parse the response
+		var response map[string]interface{}
+		err = helpers.ParseTestResponse(rec, &response)
+		assert.NoError(t, err)
+
+		assert.True(t, response["error"].(bool))
+		assert.Contains(t, response["message"], "service error")
+
+		// Verify mock expectations
+		mockCartClient.AssertExpectations(t)
+	})
+}
