@@ -1,8 +1,7 @@
 #!/bin/bash
 
-# Performance Test Runner Script for E-commerce Microservices
-# This script runs k6 performance tests with proper setup and result handling
-# Updated for K8s deployment with enhanced staging validation
+# Simple Performance Test Runner for E-commerce Microservices
+# Only requires k6 and target URL - no kubernetes dependencies
 
 set -e  # Exit on any error
 
@@ -19,47 +18,39 @@ RESULTS_DIR="$SCRIPT_DIR/results"
 TIMESTAMP=$(date +"%Y%m%d_%H%M%S")
 
 # Default values
-ENVIRONMENT="local"
-TEST_TYPE="all"
-SKIP_SETUP=false
-K8S_MODE=false
+ENVIRONMENT="staging"
+TEST_TYPE="load"
+TARGET_URL=""
+GENERATE_REPORT=true
 
 # Function to print colored output
-print_status() {
-    echo -e "${BLUE}[INFO]${NC} $1"
-}
-
-print_success() {
-    echo -e "${GREEN}[SUCCESS]${NC} $1"
-}
-
-print_warning() {
-    echo -e "${YELLOW}[WARNING]${NC} $1"
-}
-
-print_error() {
-    echo -e "${RED}[ERROR]${NC} $1"
-}
-
-print_k8s() {
-    echo -e "${PURPLE}[K8S]${NC} $1"
-}
+print_status() { echo -e "${BLUE}[INFO]${NC} $1"; }
+print_success() { echo -e "${GREEN}[SUCCESS]${NC} $1"; }
+print_warning() { echo -e "${YELLOW}[WARNING]${NC} $1"; }
+print_error() { echo -e "${RED}[ERROR]${NC} $1"; }
 
 # Function to show usage
 show_usage() {
+    echo "Performance Test Runner for E-commerce Microservices"
+    echo ""
     echo "Usage: $0 [OPTIONS]"
     echo ""
     echo "Options:"
-    echo "  -e, --environment ENV    Set environment (local|staging|production) [default: local]"
-    echo "  -t, --test-type TYPE     Test type (smoke|load|stress|pipeline|all) [default: all]"
-    echo "  -s, --skip-setup         Skip environment setup checks"
-    echo "  -h, --help               Show this help message"
+    echo "  -e, --environment ENV    Set environment (local|staging|production) [default: staging]"
+    echo "  -t, --test-type TYPE     Test type (smoke|load|stress) [default: load]"
+    echo "  -u, --url URL           Target URL [required]"
+    echo "  -r, --report            Generate detailed report [default: true]"
+    echo "  -h, --help              Show this help message"
+    echo ""
+    echo "Available Test Types:"
+    echo "  smoke                   Quick validation (5 users, 2min)"
+    echo "  load                    Load testing (up to 200 users, 10min)"
+    echo "  stress                  Stress testing (300+ users, 15min)"
     echo ""
     echo "Examples:"
-    echo "  $0                       # Run all tests on local environment"
-    echo "  $0 -t smoke              # Run only smoke test"
-    echo "  $0 -e staging -t load    # Run load test on staging"
-    echo "  $0 -t pipeline           # Run pipeline test for CI/CD"
+    echo "  $0 -u https://api.example.com                    # Default load test"
+    echo "  $0 -t smoke -u https://staging.example.com      # Quick smoke test"
+    echo "  $0 -t stress -e production -u https://prod.com  # Production stress test"
 }
 
 # Parse command line arguments
@@ -73,8 +64,12 @@ while [[ $# -gt 0 ]]; do
             TEST_TYPE="$2"
             shift 2
             ;;
-        -s|--skip-setup)
-            SKIP_SETUP=true
+        -u|--url)
+            TARGET_URL="$2"
+            shift 2
+            ;;
+        -r|--report)
+            GENERATE_REPORT=true
             shift
             ;;
         -h|--help)
@@ -97,9 +92,16 @@ if [[ ! "$ENVIRONMENT" =~ ^(local|staging|production)$ ]]; then
 fi
 
 # Validate test type
-if [[ ! "$TEST_TYPE" =~ ^(smoke|load|stress|pipeline|all)$ ]]; then
+if [[ ! "$TEST_TYPE" =~ ^(smoke|load|stress)$ ]]; then
     print_error "Invalid test type: $TEST_TYPE"
-    print_error "Valid test types: smoke, load, stress, pipeline, all"
+    print_error "Valid test types: smoke, load, stress"
+    exit 1
+fi
+
+# Validate target URL
+if [[ -z "$TARGET_URL" ]]; then
+    print_error "Target URL is required. Use -u or --url option."
+    show_usage
     exit 1
 fi
 
@@ -107,191 +109,141 @@ fi
 check_prerequisites() {
     print_status "Checking prerequisites..."
     
-    # Check if k6 is installed
+    # Check k6
     if ! command -v k6 &> /dev/null; then
-        print_error "k6 is not installed. Please install k6 first."
-        print_status "Installation instructions: https://k6.io/docs/getting-started/installation/"
+        print_error "k6 is required for performance testing"
+        print_error "Install k6: https://k6.io/docs/getting-started/installation/"
         exit 1
     fi
     
-    # Check k6 version
+    # Get k6 version
     K6_VERSION=$(k6 version | head -n1 | cut -d' ' -f2)
     print_status "k6 version: $K6_VERSION"
     
-    # Create results directory
-    mkdir -p "$RESULTS_DIR"
+    # Test target URL connectivity
+    print_status "Testing connectivity to $TARGET_URL..."
+    if curl -f -s --max-time 10 "$TARGET_URL/health" > /dev/null 2>&1; then
+        print_success "Target URL is reachable"
+    else
+        print_warning "Health endpoint not reachable, continuing anyway..."
+    fi
     
     print_success "Prerequisites check completed"
 }
 
-# Function to check environment connectivity
-check_environment() {
-    if [[ "$SKIP_SETUP" == true ]]; then
-        print_warning "Skipping environment setup checks"
-        return
+# Function to prepare results directory
+prepare_results() {
+    print_status "Preparing results directory..."
+    
+    mkdir -p "$RESULTS_DIR"
+    
+    # Clean old results (keep last 10)
+    if ls "$RESULTS_DIR"/*.json 1> /dev/null 2>&1; then
+        ls -t "$RESULTS_DIR"/*.json | tail -n +11 | xargs -r rm --
     fi
     
-    print_status "Checking environment connectivity..."
-    
-    case $ENVIRONMENT in
-        "local")
-            BASE_URL="http://localhost:58080"
-            ;;
-        "staging")
-            BASE_URL="https://staging-api.ecommerce.com"
-            ;;
-        "production")
-            BASE_URL="https://api.ecommerce.com"
-            ;;
-    esac
-    
-    # Check if the API is accessible
-    if curl -s --max-time 10 "$BASE_URL/api/v1/health" > /dev/null 2>&1; then
-        print_success "Environment $ENVIRONMENT is accessible at $BASE_URL"
-    else
-        print_warning "Cannot reach $BASE_URL - tests may fail"
-        print_warning "Make sure the services are running for $ENVIRONMENT environment"
-        
-        if [[ "$ENVIRONMENT" == "local" ]]; then
-            print_status "For local environment, run: docker-compose up -d"
-        fi
-        
-        read -p "Continue anyway? (y/N): " -n 1 -r
-        echo
-        if [[ ! $REPLY =~ ^[Yy]$ ]]; then
-            exit 1
-        fi
-    fi
+    print_success "Results directory ready: $RESULTS_DIR"
 }
 
-# Function to run a specific test
+# Function to run performance test
 run_test() {
-    local test_name=$1
-    local test_file="$SCRIPT_DIR/tests/${test_name}-test.js"
-    local result_file="$RESULTS_DIR/${test_name}_${ENVIRONMENT}_${TIMESTAMP}.json"
+    local test_file="tests/${TEST_TYPE}-test.js"
+    local output_file="$RESULTS_DIR/${TEST_TYPE}_${ENVIRONMENT}_${TIMESTAMP}.json"
     
+    print_status "Running $TEST_TYPE test..."
+    print_status "Test file: $test_file"
+    print_status "Target: $TARGET_URL"
+    print_status "Output: $output_file"
+    
+    # Check if test file exists
     if [[ ! -f "$test_file" ]]; then
         print_error "Test file not found: $test_file"
-        return 1
+        exit 1
     fi
     
-    print_status "Running $test_name test..."
-    print_status "Environment: $ENVIRONMENT"
-    print_status "Results will be saved to: $result_file"
+    # Set environment variables for k6
+    export ENVIRONMENT="$ENVIRONMENT"
+    export TARGET_URL="$TARGET_URL"
     
-    # Run k6 test with environment variable and JSON output
-    if ENVIRONMENT="$ENVIRONMENT" k6 run \
-        --out json="$result_file" \
+    # Run k6 test
+    print_status "Starting k6 test execution..."
+    
+    if k6 run \
+        --out json="$output_file" \
         --summary-trend-stats="avg,min,med,max,p(90),p(95),p(99)" \
         "$test_file"; then
         
-        print_success "$test_name test completed successfully"
+        print_success "$TEST_TYPE test completed successfully"
+        print_status "Results saved to: $output_file"
         
-        # Generate summary report
-        generate_summary_report "$test_name" "$result_file"
+        # Show quick summary
+        if [[ -f "$output_file" ]]; then
+            print_status "Quick Summary:"
+            echo "  - Total requests: $(grep '"type":"Point"' "$output_file" | grep '"metric":"http_reqs"' | wc -l)"
+            echo "  - Test duration: $(grep '"type":"Point"' "$output_file" | grep '"metric":"iteration_duration"' | tail -1 | jq -r '.data.value' 2>/dev/null || echo "N/A") ms"
+        fi
         
         return 0
     else
-        print_error "$test_name test failed"
+        print_error "$TEST_TYPE test failed"
         return 1
     fi
 }
 
-# Function to generate summary report
-generate_summary_report() {
-    local test_name=$1
-    local result_file=$2
-    local summary_file="$RESULTS_DIR/${test_name}_${ENVIRONMENT}_${TIMESTAMP}_summary.txt"
+# Function to generate report
+generate_report() {
+    if [[ "$GENERATE_REPORT" != true ]]; then
+        return
+    fi
     
-    print_status "Generating summary report..."
+    print_status "Generating test report..."
     
+    local output_file="$RESULTS_DIR/${TEST_TYPE}_${ENVIRONMENT}_${TIMESTAMP}.json"
+    local report_file="$RESULTS_DIR/${TEST_TYPE}_${ENVIRONMENT}_${TIMESTAMP}_report.txt"
+    
+    if [[ ! -f "$output_file" ]]; then
+        print_warning "No results file found for report generation"
+        return
+    fi
+    
+    # Generate simple text report
     {
-        echo "=========================================="
-        echo "Performance Test Summary Report"
-        echo "=========================================="
-        echo "Test Type: $test_name"
+        echo "=========================="
+        echo "Performance Test Report"
+        echo "=========================="
+        echo "Test Type: $TEST_TYPE"
         echo "Environment: $ENVIRONMENT"
+        echo "Target URL: $TARGET_URL"
         echo "Timestamp: $(date)"
-        echo "=========================================="
+        echo "=========================="
         echo ""
-        
-        # Extract key metrics from JSON (basic parsing)
-        if [[ -f "$result_file" ]]; then
-            echo "Key Metrics:"
-            echo "- Check the detailed JSON results in: $result_file"
-            echo "- Use k6 dashboard or analysis tools for detailed insights"
-        fi
-        
+        echo "Results file: $output_file"
         echo ""
-        echo "Next Steps:"
-        echo "1. Review the detailed results in the JSON file"
-        echo "2. Compare with previous test runs"
-        echo "3. Investigate any performance regressions"
-        echo "4. Update performance baselines if needed"
-        
-    } > "$summary_file"
+        echo "To analyze detailed results, use k6 analysis tools or"
+        echo "import the JSON file into your preferred analysis tool."
+    } > "$report_file"
     
-    print_success "Summary report saved to: $summary_file"
-}
-
-# Function to run all tests
-run_all_tests() {
-    local failed_tests=()
-    
-    print_status "Running all performance tests..."
-    
-    # Run tests in order of increasing load
-    for test in smoke load stress; do
-        if run_test "$test"; then
-            print_success "$test test passed"
-        else
-            print_error "$test test failed"
-            failed_tests+=("$test")
-        fi
-        
-        # Wait between tests to allow system recovery
-        if [[ "$test" != "stress" ]]; then
-            print_status "Waiting 30 seconds for system recovery..."
-            sleep 30
-        fi
-    done
-    
-    # Report results
-    if [[ ${#failed_tests[@]} -eq 0 ]]; then
-        print_success "All performance tests completed successfully!"
-    else
-        print_error "The following tests failed: ${failed_tests[*]}"
-        return 1
-    fi
+    print_success "Report generated: $report_file"
 }
 
 # Main execution
 main() {
-    echo "=========================================="
-    echo "E-commerce Microservices Performance Tests"
-    echo "=========================================="
-    echo ""
+    print_status "Starting E-commerce Performance Test"
+    print_status "Environment: $ENVIRONMENT"
+    print_status "Test Type: $TEST_TYPE"
+    print_status "Target URL: $TARGET_URL"
     
     check_prerequisites
-    check_environment
+    prepare_results
     
-    case $TEST_TYPE in
-        "smoke"|"load"|"stress"|"pipeline")
-            run_test "$TEST_TYPE"
-            ;;
-        "all")
-            run_all_tests
-            ;;
-    esac
-    
-    echo ""
-    print_success "Performance testing completed!"
-    print_status "Results are available in: $RESULTS_DIR"
-    
-    # Show recent results
-    echo ""
-    print_status "Recent test results:"
-    ls -la "$RESULTS_DIR" | tail -5
+    if run_test; then
+        generate_report
+        print_success "Performance test completed successfully!"
+        exit 0
+    else
+        print_error "Performance test failed!"
+        exit 1
+    fi
 }
 
 # Run main function

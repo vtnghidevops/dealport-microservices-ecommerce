@@ -21,7 +21,6 @@ The performance testing suite validates the e-commerce microservices architectur
 - **Smoke Tests**: Basic functionality validation with minimal load
 - **Load Tests**: Normal expected load simulation
 - **Stress Tests**: Beyond-capacity testing to find breaking points
-- **Pipeline Tests**: Quick validation for CI/CD pipelines
 
 ### Architecture Coverage
 
@@ -61,15 +60,6 @@ The tests cover all major services and endpoints:
   - 95% of requests under 5 seconds
   - Error rate under 10%
   - 90% of checks pass
-
-### 4. Pipeline Test (`pipeline-test.js`)
-
-- **Purpose**: Quick performance validation for CI/CD
-- **Load**: Up to 10 users for 4 minutes
-- **Thresholds**:
-  - 95% of requests under 2.5 seconds
-  - Error rate under 2%
-  - 98% of checks pass
 
 ## 🔧 Prerequisites
 
@@ -144,20 +134,16 @@ Update the base URLs in `config/test-config.js` for your staging/production envi
 # Make script executable
 chmod +x run-tests.sh
 
-# Run all tests on local environment
-./run-tests.sh
+# Run load test (default)
+./run-tests.sh -u https://staging-api.example.com
 
-# Run specific test type
-./run-tests.sh -t smoke
-./run-tests.sh -t load
-./run-tests.sh -t stress
-./run-tests.sh -t pipeline
+# Run specific test types
+./run-tests.sh -t smoke -u https://staging-api.example.com
+./run-tests.sh -t load -u https://staging-api.example.com
+./run-tests.sh -t stress -u https://staging-api.example.com
 
-# Run on different environment
-./run-tests.sh -e staging -t load
-
-# Skip environment checks
-./run-tests.sh -s -t smoke
+# Run on different environments
+./run-tests.sh -e production -t load -u https://api.example.com
 ```
 
 #### Windows (PowerShell)
@@ -170,7 +156,6 @@ chmod +x run-tests.sh
 .\run-tests.ps1 -TestType smoke
 .\run-tests.ps1 -TestType load
 .\run-tests.ps1 -TestType stress
-.\run-tests.ps1 -TestType pipeline
 
 # Run on different environment
 .\run-tests.ps1 -Environment staging -TestType load
@@ -182,14 +167,14 @@ chmod +x run-tests.sh
 ### Direct k6 Execution
 
 ```bash
-# Set environment and run test directly
-ENVIRONMENT=local k6 run tests/smoke-test.js
+# Set environment variables and run test directly
+ENVIRONMENT=staging TARGET_URL=https://staging-api.example.com k6 run tests/smoke-test.js
 
 # With JSON output for analysis
-ENVIRONMENT=local k6 run --out json=results/smoke-results.json tests/smoke-test.js
+ENVIRONMENT=staging TARGET_URL=https://staging-api.example.com k6 run --out json=results/smoke-results.json tests/smoke-test.js
 
 # With custom thresholds
-ENVIRONMENT=local k6 run --summary-trend-stats="avg,min,med,max,p(90),p(95),p(99)" tests/load-test.js
+ENVIRONMENT=staging TARGET_URL=https://staging-api.example.com k6 run --summary-trend-stats="avg,min,med,max,p(90),p(95),p(99)" tests/load-test.js
 ```
 
 ### NPM Scripts (if using package.json)
