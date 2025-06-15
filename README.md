@@ -1,483 +1,272 @@
-# E-commerce Microservices Architecture
+# E-commerce Microservices DevSecOps Pipeline
 
-This project implements a modern e-commerce platform using a microservices architecture built with Golang.
+## 🏗️ **Architecture Overview**
 
-## System Architecture
+This is a **mono-repository** containing 9 microservices for an e-commerce platform with a comprehensive DevSecOps pipeline.
+
+### **Microservices Architecture**
 
 ```
-┌─────────────────┐     ┌─────────────────┐
-│                 │     │                 │
-│  Frontend App   │────▶│  Broker Service │
-│                 │     │                 │
-└─────────────────┘     └────────┬────────┘
-                                 │
-                                 │
-         ┌─────────────┬─────────┼─────────┬─────────────┐
-         │             │         │         │             │
-         ▼             ▼         ▼         ▼             ▼
-┌─────────────────┐ ┌───────┐ ┌───────┐ ┌───────┐ ┌─────────────────┐
-│ Authentication  │ │ User  │ │Product│ │ Cart  │ │    Checkout     │
-│    Service      │ │Service│ │Service│ │Service│ │     Service     │
-└─────────────────┘ └───────┘ └───────┘ └───────┘ └─────────────────┘
-         │             │         │         │             │
-         │             │         │         │             │
-         ▼             ▼         ▼         ▼             ▼
-┌─────────────────┐ ┌───────┐ ┌───────┐ ┌───────┐ ┌─────────────────┐
-│  Postgres DB    │ │Postgres│ │Postgres│ │Redis │ │    MongoDB     │
-│  (Auth Data)    │ │  DB   │ │  DB   │ │  DB  │ │  (Order Data)   │
-└─────────────────┘ └───────┘ └───────┘ └───────┘ └─────────────────┘
-                                                          │
-                                                          │
-                                                          ▼
-┌─────────────────┐     ┌─────────────────┐     ┌─────────────────┐
-│                 │     │                 │     │                 │
-│ Logger Service  │◀───▶│ Listener Service│◀───▶│  Mail Service   │
-│                 │     │                 │     │                 │
-└─────────────────┘     └─────────────────┘     └─────────────────┘
-        │                       │                       │
-        ▼                       ▼                       ▼
-┌─────────────────┐     ┌─────────────────┐     ┌─────────────────┐
-│    MongoDB      │     │    RabbitMQ     │     │   SMTP Server   │
-│  (Log Data)     │     │  (Message Bus)  │     │                 │
-└─────────────────┘     └─────────────────┘     └─────────────────┘
+┌─────────────────┐    ┌──────────────────────────────────────┐
+│   HTTP Client   │───▶│           Broker Service             │
+└─────────────────┘    │        (HTTP Gateway)               │
+                       └──────────────────┬───────────────────┘
+                                          │ gRPC
+                       ┌──────────────────▼───────────────────┐
+                       │          gRPC Services               │
+                       │  ┌─────────────────────────────────┐ │
+                       │  │ • Authentication Service        │ │
+                       │  │ • User Service                  │ │
+                       │  │ • Product Service               │ │
+                       │  │ • Cart Service                  │ │
+                       │  │ • Checkout Service              │ │
+                       │  │ • Mail Service                  │ │
+                       │  │ • Logger Service                │ │
+                       │  │ • Listener Service              │ │
+                       │  └─────────────────────────────────┘ │
+                       └──────────────────────────────────────┘
 ```
 
-## Core Services
+## 🚀 **DevSecOps Pipeline Stages**
 
-### 1. Broker Service (API Gateway)
+### **10-Stage CI/CD Pipeline**
 
-- Serves as the entry point for all client requests
-- Routes requests to appropriate microservices
-- Handles service discovery and load balancing
+```yaml
+stages:
+  - unit-test # Go unit testing
+  - build # Docker image building
+  - scan-code # SAST security scanning
+  - push-image # Harbor registry push
+  - scan-image # Container image scanning
+  - deploy-dev # Development deployment
+  - deploy-staging # Staging deployment
+  - dast-scan # Dynamic security testing
+  - performance-test # Load/stress testing
+  - deploy-prod # Production deployment
+  - push-artifacts # MinIO artifact storage
+```
 
-### 2. Authentication Service
+## 🔒 **Security Testing Coverage**
 
-- Manages user authentication and authorization
-- Handles login, logout, and token validation
-- Stores credentials in PostgreSQL database
-- Supports JWT token-based authentication
+### **SAST (Static Application Security Testing)**
 
-### 3. User Service
+- **GitLeaks**: Secret detection in source code
+- **Trivy FS**: Filesystem vulnerability scanning
+- **Snyk**: Dependency & code vulnerability scanning
+- **SonarQube**: Code quality & security analysis
 
-- Manages user profiles and account information
-- Handles user registration and profile updates
-- Stores user data in PostgreSQL database
-- Features:
-  - User profile management
-  - Address management
-  - Payment method management
-  - Wishlist functionality
+### **DAST (Dynamic Application Security Testing)**
 
-### 4. Product Service
+- **OWASP ZAP Baseline**: Passive security scanning
+- **OWASP ZAP Full Scan**: Comprehensive active testing
+- **Security Tests**: SQL injection, XSS, CSRF, authentication issues
 
-- Manages product catalog and inventory
-- Supports product categories, search, and filtering
-- Stores product data in PostgreSQL database
-- Features:
-  - Product CRUD operations
-  - Category management
-  - Product reviews and ratings
-  - Image management
+### **Container Security**
 
-### 5. Cart Service
+- **Trivy Image**: Container image vulnerability scanning
+- **SBOM Generation**: Software Bill of Materials
 
-- Manages shopping cart functionality
-- Handles add, update, remove operations
-- Stores cart data in Redis for fast access
-- Features:
-  - Cart management
-  - Coupon application
-  - Price calculation
+## 📊 **Performance Testing**
 
-### 6. Checkout Service
+### **K6 Performance Tests**
 
-- Handles order processing and payment
-- Manages order lifecycle and status updates
-- Stores order data in MongoDB
-- Features:
-  - Order creation and management
-  - Payment processing
-  - Order validation
+- **Smoke Test**: Basic functionality validation
+- **Load Test**: Normal traffic simulation
+- **Stress Test**: High traffic & breaking point testing
 
-### 7. Logger Service
+## 🗄️ **Artifact Management**
 
-- Centralized logging system
-- Collects logs from all services
-- Stores logs in MongoDB database
+### **MinIO Storage Structure**
 
-### 8. Listener Service
+```
+minio/bucket/project-name/YYYYMMDD_branch_commit/
+├── sbom/                    # Software Bill of Materials
+├── security-scans/          # SAST scan results
+│   ├── secrets/            # GitLeaks reports
+│   ├── trivy-image/        # Container scan reports
+│   ├── trivy-fs/           # Filesystem scan reports
+│   └── snyk/               # Dependency scan reports
+├── dast-reports/           # DAST scan results
+│   ├── zap-baseline-report.html
+│   ├── zap-full-scan-report.html
+│   └── dast-summary.txt
+├── performance-tests/       # K6 test results
+├── test-reports/           # Unit test reports
+├── code-quality/           # SonarQube reports
+└── manifest.json           # Artifact inventory
+```
 
-- Event-driven communication between services
-- Listens for events on RabbitMQ
-- Triggers appropriate actions based on events
+## 🏷️ **Deployment Strategy**
 
-### 9. Mail Service
+### **Git Tag-Based Deployment**
 
-- Handles email notifications
-- Sends order confirmations, password resets, etc.
-- Connects to SMTP server for email delivery
+- `v1.0.0-dev`: Deploy to **Development**
+- `v1.0.0-staging`: Deploy to **Staging**
+- `v1.0.0-prod`: Deploy to **Production**
 
-## Implementation Details
+### **Environment Progression**
 
-### Service Communication
+```
+Development → Staging → Production
+     ↓           ↓          ↓
+  Auto Deploy  Manual    Manual
+```
 
-- **gRPC Implementation**: All services communicate using gRPC with Protocol Buffers for efficient serialization
-- **Event-Driven Architecture**: Asynchronous communication via RabbitMQ
-- **API Gateway Pattern**: Broker service handles all client requests and routes them to appropriate services
+## 🛠️ **Technology Stack**
 
-### Security Features
+### **Backend**
 
-- JWT-based authentication with refresh token mechanism
-- Password hashing using bcrypt
-- Role-based access control (RBAC)
-- HTTPS for API endpoints
+- **Language**: Go (Golang)
+- **Architecture**: gRPC microservices
+- **Gateway**: HTTP-to-gRPC broker service
+- **Database**: PostgreSQL/MongoDB
+- **Message Queue**: RabbitMQ/Kafka
 
-### Database Schema
+### **DevOps Tools**
 
-Each service has its own dedicated database following the database-per-service pattern:
+- **CI/CD**: GitLab CI/CD
+- **Container Registry**: Harbor
+- **Orchestration**: Kubernetes
+- **Monitoring**: Prometheus + Grafana
+- **Artifact Storage**: MinIO
+- **Security Scanning**: OWASP ZAP, Trivy, Snyk, GitLeaks
 
-- PostgreSQL for structured data (users, products, authentication)
-- MongoDB for unstructured data (logs, orders)
-- Redis for high-performance caching (cart data)
+## 🚦 **Pipeline Exit Codes**
 
-### Performance Optimizations
+### **Security Scan Results**
 
-- Connection pooling for database connections
-- Redis caching for frequently accessed data
-- Efficient data serialization with Protocol Buffers
-- Load balancing at the API gateway level
+- **0**: ✅ No issues - Safe to deploy
+- **1**: ⚠️ Medium risk - Review recommended
+- **2**: 🚫 Critical issues - **DEPLOYMENT BLOCKED**
 
-## Installation Guide
+## 📋 **Getting Started**
 
-### Prerequisites
-
-- Go 1.19+
-- Docker and Docker Compose
-- Git
-
-### Step 1: Clone the Repository
+### **Prerequisites**
 
 ```bash
-git clone https://github.com/yourusername/ecommerce-microservices.git
-cd ecommerce-microservices
+# Required tools
+- Docker & Docker Compose
+- Kubernetes cluster
+- GitLab Runner
+- Harbor registry access
+- MinIO storage access
 ```
 
-### Step 2: Environment Setup
+### **Environment Variables**
 
-Create environment files for each service:
+```yaml
+# Container Registry
+HARBOR_URL: "harbor.example.com"
+HARBOR_USERNAME: "robot$username"
+HARBOR_PASSWD: "password"
+
+# Deployment
+GITHUB_TOKEN: "github_token"
+GITHUB_EMAIL: "user@example.com"
+DEV_URL: "https://dev.example.com"
+STAGING_URL: "https://staging.example.com"
+PROD_URL: "https://prod.example.com"
+
+# Security
+SNYK_TOKEN: "snyk_token"
+SONAR_HOST_URL: "https://sonar.example.com"
+
+# Artifact Storage
+MINIO_URL: "https://minio.example.com"
+MINIO_ACCESS_KEY: "access_key"
+MINIO_SECRET_KEY: "secret_key"
+MINIO_BUCKET: "artifacts"
+```
+
+### **Running the Pipeline**
 
 ```bash
-# Copy example environment files
-cp auth-service/.env.example auth-service/.env
-cp broker-service/.env.example broker-service/.env
-cp user-service/.env.example user-service/.env
-cp product-service/.env.example product-service/.env
-cp cart-service/.env.example cart-service/.env
-cp checkout-service/.env.example checkout-service/.env
-cp logger-service/.env.example logger-service/.env
-cp mail-service/.env.example mail-service/.env
+# 1. Create and push a tag
+git tag v1.0.0-dev
+git push origin v1.0.0-dev
+
+# 2. Pipeline will automatically:
+#    - Run unit tests
+#    - Build Docker images
+#    - Perform security scans
+#    - Deploy to development
+#    - Generate artifacts
+
+# 3. For staging deployment
+git tag v1.0.0-staging
+git push origin v1.0.0-staging
+# Manual approval required for staging
+
+# 4. For production deployment
+git tag v1.0.0-prod
+git push origin v1.0.0-prod
+# Manual approval required for production
 ```
 
-Edit each .env file to set appropriate values for your environment.
+## 📈 **Monitoring & Reporting**
 
-### Step 3: Build and Run with Docker Compose
+### **Security Reports**
 
-```bash
-# Build all services
-docker-compose build
+- **Real-time**: GitLab Security Dashboard
+- **Historical**: MinIO artifact storage
+- **Alerts**: Critical vulnerabilities block deployment
 
-# Start all services
-docker-compose up -d
-```
+### **Performance Metrics**
 
-### Step 4: Initialize Databases
+- **Response Time**: P95, P99 percentiles
+- **Throughput**: Requests per second
+- **Error Rate**: 4xx/5xx responses
+- **Resource Usage**: CPU, Memory, Network
 
-```bash
-# Run database migrations
-docker-compose exec auth-service go run ./cmd/migrations
-docker-compose exec user-service go run ./cmd/migrations
-docker-compose exec product-service go run ./cmd/migrations
+### **Quality Gates**
 
-# Seed initial data (optional)
-docker-compose exec product-service go run ./cmd/seed
-```
+- **Unit Test Coverage**: >80%
+- **Security Scan**: No critical vulnerabilities
+- **Performance**: Response time <500ms
+- **Code Quality**: SonarQube quality gate passed
 
-## Usage Guide
+## 🔧 **Maintenance**
 
-### API Endpoints
+### **Regular Tasks**
 
-#### Authentication Service (port 50051)
+- Update security scanning tools monthly
+- Review and update dependency versions
+- Monitor artifact storage usage
+- Performance baseline updates
 
-- `RegisterUser`: Register a new user
-- `Login`: Authenticate user and generate JWT tokens
-- `ValidateToken`: Validate JWT token
-- `RefreshToken`: Get a new access token using refresh token
+### **Troubleshooting**
 
-#### User Service (port 50052)
+- Check GitLab CI/CD logs for pipeline failures
+- Review security scan reports for vulnerability details
+- Monitor Kubernetes cluster health
+- Verify MinIO artifact uploads
 
-- `GetUser`: Get user profile by ID
-- `UpdateUser`: Update user profile
-- `AddAddress`: Add a new address for user
-- `UpdateAddress`: Update existing address
-- `DeleteAddress`: Delete user address
-- `AddPaymentMethod`: Add payment method to user account
-- `GetPaymentMethods`: List user payment methods
+## 📞 **Support**
 
-#### Product Service (port 50053/8082)
+### **Team Contacts**
 
-- gRPC endpoints (port 50053):
+- **DevOps Team**: devops@company.com
+- **Security Team**: security@company.com
+- **Development Team**: dev@company.com
 
-  - `GetProduct`: Get product by ID
-  - `ListProducts`: List products with pagination
-  - `CreateProduct`: Add new product
-  - `UpdateProduct`: Update product details
-  - `DeleteProduct`: Remove product
+### **Documentation**
 
-- REST endpoints (port 8082):
-  - `GET /api/products`: List products with filtering options
-  - `GET /api/products/:id`: Get product details
-  - `GET /api/categories`: List product categories
-  - `POST /api/products/:id/reviews`: Add product review
+- **Pipeline Configuration**: `ci/templates/.gitlab-ci.yml`
+- **Security Policies**: `docs/security/`
+- **Deployment Guides**: `docs/deployment/`
+- **Performance Baselines**: `docs/performance/`
 
-#### Cart Service (port 50054)
+---
 
-- `GetCart`: Get user cart contents
-- `AddItem`: Add item to cart
-- `UpdateItem`: Update cart item quantity
-- `RemoveItem`: Remove item from cart
-- `ApplyCoupon`: Apply discount coupon to cart
-- `ClearCart`: Empty user cart
+## 🏆 **Key Features**
 
-#### Checkout Service (port 50055)
+✅ **Comprehensive Security**: SAST + DAST + Container scanning  
+✅ **Performance Testing**: Load, stress, and smoke tests  
+✅ **Artifact Management**: Long-term storage and traceability  
+✅ **Multi-Environment**: Dev → Staging → Production  
+✅ **Quality Gates**: Automated blocking of vulnerable deployments  
+✅ **Microservices Ready**: gRPC + HTTP gateway architecture  
+✅ **Cloud Native**: Kubernetes + Harbor + MinIO  
+✅ **Monitoring**: Full observability stack
 
-- `CreateOrder`: Create new order from cart
-- `GetOrder`: Get order details
-- `UpdateOrderStatus`: Update order status
-- `ProcessPayment`: Process order payment
-
-### Example: Using the API with gRPC
-
-#### Go Client Example
-
-```go
-package main
-
-import (
-    "context"
-    "log"
-    "time"
-
-    "google.golang.org/grpc"
-    pb "github.com/yourusername/ecommerce-microservices/product-service/proto"
-)
-
-func main() {
-    conn, err := grpc.Dial("localhost:50053", grpc.WithInsecure(), grpc.WithBlock())
-    if err != nil {
-        log.Fatalf("did not connect: %v", err)
-    }
-    defer conn.Close()
-
-    client := pb.NewProductServiceClient(conn)
-    ctx, cancel := context.WithTimeout(context.Background(), time.Second)
-    defer cancel()
-
-    response, err := client.GetProduct(ctx, &pb.GetProductRequest{Id: 1})
-    if err != nil {
-        log.Fatalf("could not get product: %v", err)
-    }
-    log.Printf("Product: %s", response.Product.Name)
-}
-```
-
-### Example: Using the REST API
-
-```bash
-# Get product list
-curl -X GET http://localhost:8080/api/products
-
-# Create a user account
-curl -X POST http://localhost:8080/api/auth/register \
-  -H "Content-Type: application/json" \
-  -d '{"email":"user@example.com","password":"securepassword","firstName":"John","lastName":"Doe"}'
-
-# Login and get tokens
-curl -X POST http://localhost:8080/api/auth/login \
-  -H "Content-Type: application/json" \
-  -d '{"email":"user@example.com","password":"securepassword"}'
-```
-
-## Monitoring and Management
-
-### Service Health Checks
-
-- Each service exposes a health check endpoint at `/health`
-- The broker service periodically checks the health of all services
-
-### Logging
-
-- Centralized logging through the logger service
-- Log levels: DEBUG, INFO, WARNING, ERROR
-- All logs can be queried through the logger service API
-
-### Metrics
-
-- Prometheus metrics available at `/metrics` endpoint on each service
-- Grafana dashboards for visualizing service performance
-
-## Data Models
-
-### User Model
-
-```go
-type User struct {
-    ID           string
-    Email        string
-    FirstName    string
-    LastName     string
-    DisplayName  string
-    Phone        *string
-    ProfileImage *string
-    Addresses    []Address
-    Role         string
-    Status       string
-    Active       bool
-    PaymentMethods []PaymentMethod
-    // Additional fields...
-}
-```
-
-### Product Model
-
-```go
-type Product struct {
-    ID            int
-    Type          string
-    Name          string
-    Description   string
-    Slug          string
-    Price         float64
-    ImageURL      string
-    CategoryID    int
-    CategorySlug  string
-    StockQuantity int
-    Images        []ProductImage
-    Brand         string
-    Tags          []string
-    ReviewsAvg    ProductRating
-    // Additional fields...
-}
-```
-
-### Cart Model
-
-```go
-type Cart struct {
-    ID             string
-    UserID         string
-    Items          []CartItem
-    Totals         CartTotals
-    CouponCode     string
-    DiscountAmount float64
-    CreatedAt      time.Time
-    UpdatedAt      time.Time
-}
-```
-
-### Order Model
-
-```go
-type Order struct {
-    ID           string
-    UserID       string
-    OrderNumber  string
-    Status       string
-    Items        []OrderItem
-    BillingInfo  BillingInfo
-    ShippingInfo ShippingInfo
-    PaymentInfo  PaymentInfo
-    Totals       OrderTotals
-    CouponCode   string
-    Notes        string
-    CreatedAt    time.Time
-    UpdatedAt    time.Time
-}
-```
-
-## Communication Patterns
-
-1. **Synchronous Communication (gRPC)**
-
-   - Used for direct service-to-service communication
-   - Implemented with Protocol Buffers for efficient serialization
-   - Used by Authentication, User, Product, Cart, and Checkout services
-
-2. **Asynchronous Communication (RabbitMQ)**
-   - Used for event-driven communication
-   - Implemented with RabbitMQ as message broker
-   - Handled by Listener service for processing events
-
-## Technologies Used
-
-- **Backend**: Go (Golang)
-- **API Communication**: gRPC, REST
-- **Databases**:
-  - PostgreSQL (Auth, User, Product services)
-  - MongoDB (Checkout, Logger services)
-  - Redis (Cart service)
-- **Message Queue**: RabbitMQ
-- **Containerization**: Docker
-- **Orchestration**: Docker Compose
-- **API Documentation**: Swagger/OpenAPI
-- **Testing**: Go testing package, integration tests
-
-## Development Workflow
-
-### Local Development
-
-1. Start only the required services:
-   ```bash
-   docker-compose up -d postgres redis mongodb rabbitmq
-   ```
-2. Run the service you're working on locally:
-   ```bash
-   cd product-service
-   go run ./cmd/main.go
-   ```
-
-### Adding New Features
-
-1. Implement the feature in the appropriate service
-2. Add unit tests and integration tests
-3. Update the proto file if needed
-4. Regenerate gRPC code if proto files changed
-5. Submit a pull request
-
-### Generating gRPC Code
-
-If you modify any Proto file, regenerate the Go code:
-
-```bash
-cd proto
-protoc --go_out=. --go-grpc_out=. *.proto
-```
-
-## Contributing
-
-1. Fork the repository
-2. Create your feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add some amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
-
-## Service Ports
-
-- Frontend: 3001
-- Broker Service: 8080
-- Authentication Service: 50051
-- User Service: 50052
-- Product Service: 50053/8082
-- Cart Service: 50054
-- Checkout Service: 50055
-- Logger Service: 50056
-- Mail Service: 50057
+**Built with ❤️ for secure, scalable e-commerce microservices**
