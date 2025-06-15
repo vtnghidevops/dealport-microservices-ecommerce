@@ -9,4 +9,4 @@ data:
   PRODUCT_SERVICE_HOST: "ecommerce-product-service:50053"
   CART_SERVICE_HOST: "ecommerce-cart-service:50054"
   CHECKOUT_SERVICE_HOST: "ecommerce-checkout-service:50055"
-  
+  ALLOWED_ORIGINS: "https://sapogo.deploy.io.vn,http://sapogo.deploy.io.vn,https://test-payment.momo.vn"

@@ -2,18 +2,36 @@ package main
 
 import (
 	"net/http"
+	"os"
+	"strings"
 
 	"github.com/go-chi/chi/v5"
 	chimiddleware "github.com/go-chi/chi/v5/middleware"
 	"github.com/go-chi/cors"
 )
 
+func getAllowedOrigins() []string {
+	envOrigins := os.Getenv("ALLOWED_ORIGINS")
+	if envOrigins == "" {
+		// Default origins if environment variable is not set
+		return []string{"https://*", "http://*", "https://test-payment.momo.vn", "*"}
+	}
+
+	allowedOrigins := []string{}
+	origins := strings.Split(envOrigins, ",")
+	for _, origin := range origins {
+		allowedOrigins = append(allowedOrigins, strings.TrimSpace(origin))
+	}
+	return allowedOrigins
+}
+
 func (app *Config) routers() http.Handler {
 	mux := chi.NewRouter()
 
 	// config cors for router
+	allowedOrigins := getAllowedOrigins()
 	mux.Use(cors.Handler(cors.Options{
-		AllowedOrigins:   []string{"https://*", "http://*", "https://test-payment.momo.vn", "*"},
+		AllowedOrigins:   allowedOrigins,
 		AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"},
 		AllowedHeaders:   []string{"Accept", "Authorization", "Content-Type", "X-CSRF-Token", "*"},
 		ExposedHeaders:   []string{"Link", "Content-Disposition"},

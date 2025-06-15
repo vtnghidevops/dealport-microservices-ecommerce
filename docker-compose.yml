@@ -26,6 +26,7 @@ services:
       PRODUCT_SERVICE_HOST: ${PRODUCT_SERVICE_HOST}
       CART_SERVICE_HOST: ${CART_SERVICE_HOST}
       CHECKOUT_SERVICE_HOST: ${CHECKOUT_SERVICE_HOST}
+      ALLOWED_ORIGINS: ${ALLOWED_ORIGINS:-"https://*,http://*,https://test-payment.momo.vn,*"}
     networks:
       - net
 
@@ -82,7 +83,7 @@ services:
       mongo-checkout:
         condition: service_healthy
     # Run directly with automatic migration
-    command: [ "./checkout-service" ]
+    command: ["./checkout-service"]
     networks:
       - net
 
@@ -97,14 +98,29 @@ services:
       MONGO_INITDB_ROOT_USERNAME: ${MONGO_USERNAME_CHECKOUT}
       MONGO_INITDB_ROOT_PASSWORD: ${MONGO_PASSWORD_CHECKOUT}
     healthcheck:
-      test: [ "CMD", "mongo", "--quiet", "--eval", "db.runCommand('ping').ok", "--host", "localhost", "--authenticationDatabase", "admin", "-u", "${MONGO_USERNAME_CHECKOUT}", "-p", "${MONGO_PASSWORD_CHECKOUT}" ]
+      test:
+        [
+          "CMD",
+          "mongo",
+          "--quiet",
+          "--eval",
+          "db.runCommand('ping').ok",
+          "--host",
+          "localhost",
+          "--authenticationDatabase",
+          "admin",
+          "-u",
+          "${MONGO_USERNAME_CHECKOUT}",
+          "-p",
+          "${MONGO_PASSWORD_CHECKOUT}",
+        ]
       interval: 10s
       timeout: 10s
       retries: 5
       start_period: 40s
     volumes:
       - ./db-data/mongo-checkout:/data/db
-    command: [ "--logpath", "/var/log/mongodb/mongod.log", "--logappend" ]
+    command: ["--logpath", "/var/log/mongodb/mongod.log", "--logappend"]
     networks:
       - net
 
@@ -141,7 +157,7 @@ services:
       - "56435:5432"
     restart: on-failure
     healthcheck:
-      test: [ "CMD-SHELL", "pg_isready -U ${AUTH_DB_USER} -d ${AUTH_DB_NAME}" ]
+      test: ["CMD-SHELL", "pg_isready -U ${AUTH_DB_USER} -d ${AUTH_DB_NAME}"]
       interval: 5s
       timeout: 5s
       retries: 10
@@ -188,7 +204,7 @@ services:
       - "55434:5432"
     restart: on-failure
     healthcheck:
-      test: [ "CMD-SHELL", "pg_isready -U ${USER_DB_USER} -d ${USER_DB_NAME}" ]
+      test: ["CMD-SHELL", "pg_isready -U ${USER_DB_USER} -d ${USER_DB_NAME}"]
       interval: 5s
       timeout: 5s
       retries: 10
@@ -247,7 +263,8 @@ services:
       - "55433:5432"
     restart: on-failure
     healthcheck:
-      test: [ "CMD-SHELL", "pg_isready -U ${PRODUCT_DB_USER} -d ${PRODUCT_DB_NAME}" ]
+      test:
+        ["CMD-SHELL", "pg_isready -U ${PRODUCT_DB_USER} -d ${PRODUCT_DB_NAME}"]
       interval: 5s
       timeout: 5s
       retries: 10
@@ -280,8 +297,8 @@ services:
     depends_on:
       mongo-logger:
         condition: service_healthy
-    # Run directly with automatic migration  
-    command: [ "./logger-service" ]
+    # Run directly with automatic migration
+    command: ["./logger-service"]
     networks:
       - net
 
@@ -296,14 +313,29 @@ services:
       MONGO_INITDB_ROOT_USERNAME: ${MONGO_USERNAME_LOGGER}
       MONGO_INITDB_ROOT_PASSWORD: ${MONGO_PASSWORD_LOGGER}
     healthcheck:
-      test: [ "CMD", "mongo", "--quiet", "--eval", "db.runCommand('ping').ok", "--host", "localhost", "--authenticationDatabase", "admin", "-u", "${MONGO_USERNAME_LOGGER}", "-p", "${MONGO_PASSWORD_LOGGER}" ]
+      test:
+        [
+          "CMD",
+          "mongo",
+          "--quiet",
+          "--eval",
+          "db.runCommand('ping').ok",
+          "--host",
+          "localhost",
+          "--authenticationDatabase",
+          "admin",
+          "-u",
+          "${MONGO_USERNAME_LOGGER}",
+          "-p",
+          "${MONGO_PASSWORD_LOGGER}",
+        ]
       interval: 10s
       timeout: 10s
       retries: 5
       start_period: 40s
     volumes:
       - ./db-data/mongo-logger:/data/db
-    command: [ "--logpath", "/var/log/mongodb/mongod.log", "--logappend" ]
+    command: ["--logpath", "/var/log/mongodb/mongod.log", "--logappend"]
     networks:
       - net
 

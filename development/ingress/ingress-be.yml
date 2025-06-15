@@ -6,7 +6,7 @@ metadata:
 spec:
   ingressClassName: nginx
   rules:
-    - host: lnshop.api.vntech.id.vn
+    - host: api-sapogo.deploy.io.vn
       http:
         paths:
           - path: /
