@@ -74,18 +74,18 @@ variables:
 
 .env-dev: 
   environment:
-  name: dev
-  url: ${DEV_URL}
+    name: dev
+    url: ${DEV_URL}
 
 .env-staging: 
   environment:
-  name: staging
-  url: ${STAGING_URL}
+    name: staging
+    url: ${STAGING_URL}
 
 .env-prod: 
   environment:
-  name: prod
-  url: ${PROD_URL}
+    name: prod
+    url: ${PROD_URL}
 
 .performance-test-base:
   image: ${K6_IMAGE}
