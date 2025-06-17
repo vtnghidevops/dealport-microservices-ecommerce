@@ -163,6 +163,7 @@ build-image:
     VITE_PUBLIC_BROKER_API_URL: ${API_URL} # Frontend build environment variables
   script:
     - |
+      ls -ltra
       echo "BRANCH_NAME: ${BRANCH_NAME}"
       echo "IMAGE_TAG: ${IMAGE_TAG}"
       if [ "$BRANCH_NAME" == "frontend" ]; then
