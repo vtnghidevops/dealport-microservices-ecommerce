@@ -351,9 +351,13 @@ sonarqube-code-quality-scan:
     key: "sonar-cache-${CI_PROJECT_NAME}"
     paths:
       - "${SONAR_USER_HOME}/cache"
-      - sonar-scanner/
+      - ".sonar/"
+  before_script:
+    - mkdir -p "${SONAR_USER_HOME}/cache"
+    - ls -la "${SONAR_USER_HOME}/" || echo "SONAR_USER_HOME directory not found"
   script:
-    - sonar-scanner -Dsonar.host.url="${SONAR_HOST_URL}"
+    - echo "Running SonarQube analysis..."
+    - sonar-scanner -Dsonar.host.url="${SONAR_HOST_URL}" -X
   allow_failure: true
   tags:
   - k8s-shell-runner
