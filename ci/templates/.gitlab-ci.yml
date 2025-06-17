@@ -121,6 +121,7 @@ unit-test:
       echo "Running Go unit tests..."
       mkdir -p test-reports
       TEST_OUTPUT=$(go test ./tests/unit/... -v 2>&1)
+      echo "$TEST_OUTPUT"
       
       # Save test output to file
       echo "$TEST_OUTPUT" > test-reports/unit-test-output.txt
