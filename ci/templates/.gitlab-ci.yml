@@ -69,6 +69,7 @@ variables:
   services:
   - ${DOCKER_IMAGE}
   before_script:
+  - echo "I'm here"
   - echo "$HARBOR_PASSWD" | docker login $HARBOR_URL -u 'robot$'"$HARBOR_USERNAME" --password-stdin
 
 .before-setup-vars-image-tag:
