@@ -333,6 +333,7 @@ trivy-image-security-scan:
     GIT_STRATEGY: none
   script:
   - |
+    apk add --no-cache curl
     echo "Scanning image: $IMAGE_TAG"
     mkdir -p ${TRIVY_IMG_FOLDER}
     curl -s -o html.tpl https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/html.tpl
