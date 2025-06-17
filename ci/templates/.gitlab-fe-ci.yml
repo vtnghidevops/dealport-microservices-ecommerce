@@ -606,8 +606,6 @@ upload_to_minio:
   needs:
   - job: generate-sbom-files
     artifacts: true
-  - job: unit-test
-    artifacts: true
   - job: gitleaks-secret-scan
     artifacts: true
   - job: trivyfs-code-security-scan
