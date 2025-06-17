@@ -14,7 +14,7 @@ stages:
 variables:
   # Docker & Container Registry
   DOCKER_IMAGE: "docker:28-dind"
-  
+  GO_IMAGE: "golang:1.23.4-alpine"
 
   # MinIO Configuration
   MINIO_IMAGE: "minio/mc:latest"
@@ -113,6 +113,7 @@ variables:
 unit-test:
   stage: unit-test
   extends: .env-dev
+  image: ${GO_IMAGE}
   variables:
     GIT_STRATEGY: clone
   script:
