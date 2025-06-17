@@ -1,8 +1,7 @@
 stages:
 - unit-test
-- build
 - scan-code
-- push-image
+- build-and-push-image
 - scan-image
 - deploy-dev
 - deploy-staging
@@ -150,39 +149,7 @@ unit-test:
       when: on_success
 
 ########################################################
-#### Stage 2: build images
-########################################################
-build-image:
-  stage: build
-  extends: 
-  - .docker-job-template
-  - .env-dev
-  - .before-setup-vars-image-tag
-  variables:
-    GIT_STRATEGY: clone
-    VITE_PUBLIC_BROKER_API_URL: ${API_URL} # Frontend build environment variables
-  script:
-    - |
-      ls -ltra
-      echo "BRANCH_NAME: ${BRANCH_NAME}"
-      echo "IMAGE_TAG: ${IMAGE_TAG}"
-      if [ "$BRANCH_NAME" == "frontend" ]; then
-        echo "Building frontend Docker images with environment variables..."
-        docker build \
-          --build-arg VITE_PUBLIC_BROKER_API_URL="${VITE_PUBLIC_BROKER_API_URL}" \
-          -t $IMAGE_TAG . 
-      else
-        echo "Building ${BRANCH_NAME} Docker images..."
-        docker build -t $IMAGE_TAG .
-      fi
-  tags:
-    - k8s-image-runner
-  rules:
-    - if: $CI_COMMIT_TAG
-      when: on_success
-
-########################################################
-#### Stage 3: Scan Code
+#### Stage 2: Scan Code
 ########################################################
 gitleaks-secret-scan:
   stage: scan-code
@@ -336,7 +303,6 @@ snyk-scan:
     - if: $CI_COMMIT_TAG
       when: on_success
 
-
 sonarqube-code-quality-scan:
   stage: scan-code
   extends: .env-dev
@@ -365,29 +331,46 @@ sonarqube-code-quality-scan:
     - if: $CI_COMMIT_TAG
       when: on_success
 
+
 ########################################################
-#### Stage 4: Push image to Harbor
+#### Stage 3: build and push images
 ########################################################
-push-image:
-  stage: push-image
-  extends:
+build-and-push-image:
+  stage: build
+  extends: 
   - .docker-job-template
   - .env-dev
   - .before-setup-vars-image-tag
   variables:
-    GIT_STRATEGY: none
+    GIT_STRATEGY: clone
+    VITE_PUBLIC_BROKER_API_URL: ${API_URL} # Frontend build environment variables
   script:
-  - |
-    echo "Pushing image to ${IMAGE_TAG}"
-    docker push ${IMAGE_TAG}
+    - |
+
+      # Build image
+      if [ "$BRANCH_NAME" == "frontend" ]; then
+        echo "Building frontend Docker images with environment variables..."
+        docker build \
+          --build-arg VITE_PUBLIC_BROKER_API_URL="${VITE_PUBLIC_BROKER_API_URL}" \
+          -t $IMAGE_TAG . 
+      else
+        echo "Building ${BRANCH_NAME} Docker images..."
+        docker build -t $IMAGE_TAG .
+      fi
+      
+      # Push image immediately after build
+      echo "Pushing image to ${IMAGE_TAG}"
+      docker push ${IMAGE_TAG}
+      
+      echo "Build and push completed successfully!"
   tags:
-  - k8s-image-runner
+    - k8s-image-runner
   rules:
     - if: $CI_COMMIT_TAG
       when: on_success
 
 ########################################################
-#### Stage 5: Scan image with trivy image
+#### Stage 4: Scan image with trivy image
 ########################################################
 trivy-image-security-scan:
   stage: scan-image
@@ -418,7 +401,7 @@ trivy-image-security-scan:
       when: on_success
 
 # ########################################################
-# #### Stage 6: Deploy to dev environment
+# #### Stage 5: Deploy to dev environment
 # ########################################################
 # deploy-dev:
 #   stage: deploy-dev
@@ -452,7 +435,7 @@ trivy-image-security-scan:
 #       when: on_success
 
 # ########################################################
-# #### Stage 7: Deploy to staging environment
+# #### Stage 6: Deploy to staging environment
 # ########################################################
 # deploy-staging:
 #   stage: deploy-staging
@@ -483,56 +466,8 @@ trivy-image-security-scan:
 #     - if: $CI_COMMIT_TAG =~ /-prod$/
 #       when: manual
 
-# # Smoke test
-# smoke-test:
-#   extends: .performance-test-base
-#   script:
-#   - |
-#     echo "Running smoke tests for staging environment..."
-#     k6 run --out json=../${TEST_RESULTS_DIR}/smoke-results.json tests/smoke-test.js
-#   rules:
-#     - if: $CI_COMMIT_TAG =~ /-staging$/
-#       when: on_success
-#     - if: $CI_COMMIT_TAG =~ /-prod$/
-#       when: on_success
-
-# # Load test
-# load-test:
-#   extends: .performance-test-base
-#   script:
-#   - |
-#     echo "Running load tests for staging environment..."
-#     k6 run --out json=../${TEST_RESULTS_DIR}/load-results.json tests/load-test.js
-#   timeout: 30m
-#   rules:
-#     - if: $CI_COMMIT_TAG =~ /-staging$/
-#       when: manual
-#     - if: $CI_COMMIT_TAG =~ /-prod$/
-#       when: manual
-
-# # Stress test
-# stress-test:
-#   extends: .performance-test-base
-#   script:
-#   - |
-#     echo "Running stress tests for staging environment..."
-#     k6 run --out json=../${TEST_RESULTS_DIR}/stress-results.json tests/stress-test.js || STRESS_EXIT_CODE=$?
-
-#     # Check if stress test failed critically
-#     if [ "${STRESS_EXIT_CODE:-0}" -ne 0 ]; then
-#       echo "Critical performance issues detected!"
-#       exit 1
-#     fi
-#   timeout: 45m
-#   allow_failure: true
-#   rules:
-#     - if: $CI_COMMIT_TAG =~ /-staging$/
-#       when: manual
-#     - if: $CI_COMMIT_TAG =~ /-prod$/
-#       when: manual
-
 # ########################################################
-# #### Stage 7.5: DAST Security Testing
+# #### Stage 7: DAST Security Testing
 # ########################################################
 # owasp-zap-scan:
 #   stage: dast-scan
@@ -600,10 +535,61 @@ trivy-image-security-scan:
 #     - if: $CI_COMMIT_TAG =~ /-prod$/
 #       when: on_success
 
+# ########################################################
+# #### Stage 8: Performance Testing
+# ########################################################
+# # Smoke test
+# smoke-test:
+#   extends: .performance-test-base
+#   script:
+#   - |
+#     echo "Running smoke tests for staging environment..."
+#     k6 run --out json=../${TEST_RESULTS_DIR}/smoke-results.json tests/smoke-test.js
+#   rules:
+#     - if: $CI_COMMIT_TAG =~ /-staging$/
+#       when: on_success
+#     - if: $CI_COMMIT_TAG =~ /-prod$/
+#       when: on_success
+
+# # Load test
+# load-test:
+#   extends: .performance-test-base
+#   script:
+#   - |
+#     echo "Running load tests for staging environment..."
+#     k6 run --out json=../${TEST_RESULTS_DIR}/load-results.json tests/load-test.js
+#   timeout: 30m
+#   rules:
+#     - if: $CI_COMMIT_TAG =~ /-staging$/
+#       when: manual
+#     - if: $CI_COMMIT_TAG =~ /-prod$/
+#       when: manual
+
+# # Stress test
+# stress-test:
+#   extends: .performance-test-base
+#   script:
+#   - |
+#     echo "Running stress tests for staging environment..."
+#     k6 run --out json=../${TEST_RESULTS_DIR}/stress-results.json tests/stress-test.js || STRESS_EXIT_CODE=$?
+
+#     # Check if stress test failed critically
+#     if [ "${STRESS_EXIT_CODE:-0}" -ne 0 ]; then
+#       echo "Critical performance issues detected!"
+#       exit 1
+#     fi
+#   timeout: 45m
+#   allow_failure: true
+#   rules:
+#     - if: $CI_COMMIT_TAG =~ /-staging$/
+#       when: manual
+#     - if: $CI_COMMIT_TAG =~ /-prod$/
+#       when: manual
+
 
 
 # ########################################################
-# #### Stage 8: Deploy to prod environment
+# #### Stage 9: Deploy to prod environment
 # ########################################################
 # deploy-prod:
 #   stage: deploy-prod
@@ -633,7 +619,7 @@ trivy-image-security-scan:
 #       when: manual
 
 ########################################################
-#### Stage 9: Push artifacts to MinIO
+#### Stage 10: Push artifacts to MinIO
 ########################################################
 generate-sbom-files:
   stage: push-artifacts
