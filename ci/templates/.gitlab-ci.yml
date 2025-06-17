@@ -336,7 +336,7 @@ sonarqube-code-quality-scan:
 #### Stage 3: build and push images
 ########################################################
 build-and-push-image:
-  stage: build
+  stage: build-and-push-image
   extends: 
   - .docker-job-template
   - .env-dev
