@@ -375,7 +375,16 @@ trivy-image-security-scan:
   - |
     echo "Scanning image: $IMAGE_TAG"
     mkdir -p ${TRIVY_IMG_FOLDER}
-    trivy image --username 'robot$'${HARBOR_USERNAME} --password ${HARBOR_PASSWD} --skip-version-check --format template --template "@html.tpl" --output ${TRIVY_IMG_REPORT_FILENAME} $IMAGE_TAG || echo "Scan completed with findings"
+    
+    trivy image \
+      --username 'robot$'${HARBOR_USERNAME} \
+      --password ${HARBOR_PASSWD} \
+      --skip-version-check \
+      --format template \
+      --template "@html.tpl" \
+      --output "${TRIVY_IMG_REPORT_FILENAME}" \
+      ${IMAGE_TAG} || echo "Scan completed with findings"
+    
     echo "Scan completed with findings"
   artifacts:
     paths:
