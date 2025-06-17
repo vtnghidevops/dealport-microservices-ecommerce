@@ -380,6 +380,7 @@ trivy-image-security-scan:
   - curl -s -o html.tpl https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/html.tpl
   script:
   - |
+    echo "Scanning image: $IMAGE_TAG"
     mkdir -p ${TRIVY_IMG_FOLDER}
     trivy image --skip-version-check --format template --template "@html.tpl" --output "${TRIVY_IMG_REPORT_FILENAME}" $IMAGE_TAG || echo "Scan completed with findings"
   artifacts:
