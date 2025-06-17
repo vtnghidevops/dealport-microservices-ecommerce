@@ -378,6 +378,7 @@ trivy-image-security-scan:
   image: ${TRIVY_IMAGE}
   variables:
     GIT_STRATEGY: none
+    DOCKER_TLS_CERTDIR: ""
   script:
   - |
     echo "Scanning image: $IMAGE_TAG"
