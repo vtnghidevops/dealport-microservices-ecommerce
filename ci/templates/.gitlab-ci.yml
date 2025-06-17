@@ -116,19 +116,16 @@ unit-test:
   image: ${GO_IMAGE}
   variables:
     GIT_STRATEGY: clone
+  before_script:
+    - go mod download
   script:
     - |
       echo "Running Go unit tests..."
       mkdir -p test-reports
-      TEST_OUTPUT=$(go test ./tests/unit/... -v 2>&1)
-      echo "$TEST_OUTPUT"
-      
-      # Save test output to file
-      echo "$TEST_OUTPUT" > test-reports/unit-test-output.txt
-      
+     
       # Check if test output contains FAIL
-      if echo "$TEST_OUTPUT" | grep -q "FAIL"; then
-        echo "Unit tests failed! Found FAIL in test output."
+      if ! go test ./tests/unit/... -v | tee test-reports/unit-test-output.txt; then
+        echo "Unit tests failed!"
         exit 1
       else
         echo "All unit tests passed successfully."
