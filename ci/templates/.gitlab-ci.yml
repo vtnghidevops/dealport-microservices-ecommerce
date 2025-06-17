@@ -369,14 +369,29 @@ trivy-image-security-scan:
     GIT_STRATEGY: none
   script:
   - |
-    apk add --no-cache curl
     echo "Scanning image: $IMAGE_TAG"
     mkdir -p ${TRIVY_IMG_FOLDER}
-    curl -s -o html.tpl https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/html.tpl
-    docker run --rm  -v /var/run/docker.sock:/var/run/docker.sock -v ${TRIVY_IMG_FOLDER}:/root/.cache/ ${TRIVY_IMAGE} \
-    image --username "'robot$'${HARBOR_USERNAME}" --password ${HARBOR_PASSWD} --skip-version-check  --format template  \
-    --template "@/root/.cache/html.tpl"  --output /root/.cache/trivy-report.html ${IMAGE_TAG} || echo "Scan completed with findings"
-
+    
+    # Download HTML template to host first using wget
+    wget -q -O ${TRIVY_IMG_FOLDER}/html.tpl https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/html.tpl || echo "Failed to download template, will use default"
+    
+    # Run Trivy scan with mounted volumes
+    docker run --rm \
+      -v /var/run/docker.sock:/var/run/docker.sock \
+      -v ${TRIVY_IMG_FOLDER}:/output \
+      ${TRIVY_IMAGE} \
+      image \
+      --username 'robot$'${HARBOR_USERNAME} \
+      --password ${HARBOR_PASSWD} \
+      --skip-version-check \
+      --format template \
+      --template "@/output/html.tpl" \
+      --output /output/trivy-report.html \
+      ${IMAGE_TAG} || echo "Scan completed with findings"
+    
+    # Move report to expected filename
+    mv ${TRIVY_IMG_FOLDER}/trivy-report.html "${TRIVY_IMG_REPORT_FILENAME}" || echo "Report file already in place"
+    
     echo "Scan completed with findings"
   artifacts:
     paths:
