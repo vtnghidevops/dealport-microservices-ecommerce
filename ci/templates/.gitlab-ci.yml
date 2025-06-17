@@ -167,11 +167,10 @@ gitleaks-secret-scan:
           --report-format=template \
           --report-template=basic.tmpl \
       --report-path="${GITLEAKS_REPORT_FILENAME}" \
-          --verbose || SCAN_STATUS=$? || true
+          --verbose || SCAN_STATUS=$? 
 
     if [ "${SCAN_STATUS:-0}" -ne 0 ]; then
       echo "Secrets detected in source code! Check report: ${GITLEAKS_REPORT_FILENAME}"
-      exit 1
     else
       echo "No secrets detected in source code."
     fi
