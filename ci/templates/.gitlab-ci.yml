@@ -15,8 +15,7 @@ stages:
 variables:
   # Docker & Container Registry
   DOCKER_IMAGE: "docker:28-dind"
-  BRANCH_NAME: $(echo "$CI_COMMIT_TAG" | awk -F'-' '{print $2}') # tag format: version-branch-env
-  IMAGE_TAG: "${HARBOR_URL}/${HARBOR_REPO}/${BRANCH_NAME}:${CI_COMMIT_SHORT_SHA}"
+  
 
   # MinIO Configuration
   MINIO_IMAGE: "minio/mc:latest"
@@ -73,6 +72,11 @@ variables:
   before_script:
   - echo "$HARBOR_PASSWD" | docker login $HARBOR_URL -u 'robot$'"$HARBOR_USERNAME" --password-stdin
 
+.before-setup-vars-image-tag:
+  before_script:
+    - BRANCH_NAME=$(echo "$CI_COMMIT_TAG" | awk -F'-' '{print $2}')
+    - IMAGE_TAG="${HARBOR_URL}/${HARBOR_REPO}/${BRANCH_NAME}:${CI_COMMIT_SHORT_SHA}"
+
 .env-dev: 
   environment:
     name: dev
@@ -118,7 +122,6 @@ unit-test:
     GIT_STRATEGY: clone
   script:
     - |
-      echo "BRANCH: ${CI_COMMIT_BRANCH}"
       echo "Running Go unit tests..."
       mkdir -p test-reports
       TEST_OUTPUT=$(go test ./tests/unit/... -v 2>&1)
@@ -154,6 +157,7 @@ build-image:
   extends: 
   - .docker-job-template
   - .env-dev
+  - .before-setup-vars-image-tag
   variables:
     GIT_STRATEGY: none
     VITE_PUBLIC_BROKER_API_URL: ${API_URL} # Frontend build environment variables
@@ -334,6 +338,7 @@ push-image:
   extends:
   - .docker-job-template
   - .env-dev
+  - .before-setup-vars-image-tag
   variables:
     GIT_STRATEGY: none
   script:
@@ -351,7 +356,9 @@ push-image:
 ########################################################
 trivy-image-security-scan:
   stage: scan-image
-  extends: .env-dev
+  extends: 
+    - .env-dev
+    - .before-setup-vars-image-tag
   image: ${TRIVY_IMAGE}
   variables:
     GIT_STRATEGY: none
@@ -380,7 +387,9 @@ trivy-image-security-scan:
 # ########################################################
 # deploy-dev:
 #   stage: deploy-dev
-#   extends: .env-dev
+#   extends: 
+#     - .env-dev
+#     - .before-setup-vars-image-tag
 #   variables:
 #     GIT_STRATEGY: none
 #   before_script:
@@ -412,7 +421,9 @@ trivy-image-security-scan:
 # ########################################################
 # deploy-staging:
 #   stage: deploy-staging
-#   extends: .env-staging
+#   extends: 
+#     - .env-staging
+#     - .before-setup-vars-image-tag
 #   variables:
 #     GIT_STRATEGY: none
 #   before_script:
@@ -561,7 +572,9 @@ trivy-image-security-scan:
 # ########################################################
 # deploy-prod:
 #   stage: deploy-prod
-#   extends: .env-prod
+#   extends: 
+#     - .env-prod
+#     - .before-setup-vars-image-tag
 #   variables:
 #     GIT_STRATEGY: none
 #   before_script:
@@ -591,6 +604,7 @@ generate-sbom-files:
   stage: push-artifacts
   extends:
   - .docker-job-template
+  - .before-setup-vars-image-tag
   # needs:
   # - job: deploy-staging
   #   optional: true
