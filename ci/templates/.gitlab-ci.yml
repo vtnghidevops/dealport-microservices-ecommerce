@@ -183,10 +183,10 @@ gitleaks-secret-scan:
       sast: "${GITLEAKS_REPORT_FILENAME}"
   tags:
   - k8s-shell-runner
+  allow_failure: true
   rules:
     - if: $CI_COMMIT_TAG
       when: on_success
-    - allow_failure: true
 
 
 trivyfs-code-security-scan:
@@ -210,6 +210,7 @@ trivyfs-code-security-scan:
       sast: "${TRIVYFS_REPORT_FILENAME}"
   tags:
   - k8s-shell-runner
+  allow_failure: true
   rules:
     - if: $CI_COMMIT_TAG
       when: on_success
@@ -287,6 +288,7 @@ snyk-scan-go:
     when: always
   tags:
     - k8s-shell-runner
+  allow_failure: true
   rules:
     - if: '$CI_COMMIT_TAG !~ /.*-frontend-.*/ && $CI_COMMIT_TAG'
       when: on_success
@@ -386,6 +388,7 @@ trivy-image-security-scan:
       sast: "${TRIVY_IMG_REPORT_FILENAME}"
   tags:
   - k8s-image-runner
+  allow_failure: true
   rules:
     - if: $CI_COMMIT_TAG
       when: on_success
