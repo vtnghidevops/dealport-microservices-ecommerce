@@ -159,7 +159,7 @@ build-image:
   - .env-dev
   - .before-setup-vars-image-tag
   variables:
-    GIT_STRATEGY: none
+    GIT_STRATEGY: clone
     VITE_PUBLIC_BROKER_API_URL: ${API_URL} # Frontend build environment variables
   script:
     - |
