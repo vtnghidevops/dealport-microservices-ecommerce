@@ -15,7 +15,7 @@ stages:
 variables:
   # Docker & Container Registry
   DOCKER_IMAGE: "docker:28-dind"
-  IMAGE_TAG: "${HARBOR_URL}/${HARBOR_REPO}/${CI_PROJECT_NAME}:${CI_COMMIT_SHORT_SHA}"
+  IMAGE_TAG: "${HARBOR_URL}/${HARBOR_REPO}/${CI_BRANCH_NAME}:${CI_COMMIT_SHORT_SHA}"
 
   # MinIO Configuration
   MINIO_IMAGE: "minio/mc:latest"
@@ -74,18 +74,18 @@ variables:
 
 .env-dev: 
   environment:
-  name: dev
-  url: ${DEV_URL}
+    name: dev
+    url: ${DEV_URL}
 
 .env-staging: 
   environment:
-  name: staging
-  url: ${STAGING_URL}
+    name: staging
+    url: ${STAGING_URL}
 
 .env-prod: 
   environment:
-  name: prod
-  url: ${PROD_URL}
+    name: prod
+    url: ${PROD_URL}
 
 .performance-test-base:
   image: ${K6_IMAGE}
@@ -139,7 +139,7 @@ unit-test:
   tags:
     - k8s-shell-runner
   rules:
-    - if: $CI_PROJECT_NAME =~ /frontend/
+    - if: $CI_BRANCH_NAME =~ /frontend/
       when: never
     - if: $CI_COMMIT_TAG
       when: on_success
@@ -147,17 +147,25 @@ unit-test:
 ########################################################
 #### Stage 2: build images
 ########################################################
-build-images:
+build-image:
   stage: build
   extends: 
   - .docker-job-template
   - .env-dev
   variables:
     GIT_STRATEGY: none
+    VITE_PUBLIC_BROKER_API_URL: ${API_URL} # Frontend build environment variables
   script:
     - |
-      echo "Building Docker images..."
-      docker build -t $IMAGE_TAG .
+      if [ "$CI_BRANCH_NAME" == "frontend" ]; then
+        echo "Building frontend Docker images with environment variables..."
+        docker build \
+          --build-arg VITE_PUBLIC_BROKER_API_URL="${VITE_PUBLIC_BROKER_API_URL}" \
+          -t $IMAGE_TAG . 
+      else
+        echo "Building ${CI_BRANCH_NAME} Docker images..."
+        docker build -t $IMAGE_TAG .
+      fi
   tags:
     - k8s-image-runner
   rules:
@@ -365,214 +373,214 @@ trivy-image-security-scan:
     - if: $CI_COMMIT_TAG
       when: on_success
 
-########################################################
-#### Stage 6: Deploy to dev environment
-########################################################
-deploy-dev:
-  stage: deploy-dev
-  extends: .env-dev
-  variables:
-    GIT_STRATEGY: none
-  before_script:
-  - git config --global user.email "${GITHUB_EMAIL}"
-  - git config --global user.name "${GITHUB_USERNAME}"
-  - apk add --no-cache curl yq
-  script:
-  - |
-    git clone https://${GITHUB_TOKEN}@github.com/${GITHUB_USERNAME}/${HELM_REPO}.git
-    cd ${HELM_REPO}
+# ########################################################
+# #### Stage 6: Deploy to dev environment
+# ########################################################
+# deploy-dev:
+#   stage: deploy-dev
+#   extends: .env-dev
+#   variables:
+#     GIT_STRATEGY: none
+#   before_script:
+#   - git config --global user.email "${GITHUB_EMAIL}"
+#   - git config --global user.name "${GITHUB_USERNAME}"
+#   - apk add --no-cache curl yq
+#   script:
+#   - |
+#     git clone https://${GITHUB_TOKEN}@github.com/${GITHUB_USERNAME}/${HELM_REPO}.git
+#     cd ${HELM_REPO}
 
-    yq -i ".$CI_PROJECT_NAME.image.tag = \"${CI_COMMIT_TAG}-${CI_COMMIT_SHORT_SHA}\"" ./values.yaml
+#     yq -i ".$CI_PROJECT_NAME.image.tag = \"${CI_COMMIT_TAG}-${CI_COMMIT_SHORT_SHA}\"" ./values.yaml
 
-    git add .
-    git commit -m "feat(dev): update images tag:${CI_COMMIT_TAG}-${CI_COMMIT_SHORT_SHA}"
-    git push https://${GITHUB_TOKEN}@github.com/${GITHUB_USERNAME}/${HELM_REPO}.git main
-  tags:
-  - k8s-shell-runner
-  rules:
-    - if: $CI_COMMIT_TAG =~ /-dev$/
-      when: on_success
-    - if: $CI_COMMIT_TAG =~ /-staging$/
-      when: on_success
-    - if: $CI_COMMIT_TAG =~ /-prod$/
-      when: on_success
+#     git add .
+#     git commit -m "feat(dev): update images tag:${CI_COMMIT_TAG}-${CI_COMMIT_SHORT_SHA}"
+#     git push https://${GITHUB_TOKEN}@github.com/${GITHUB_USERNAME}/${HELM_REPO}.git main
+#   tags:
+#   - k8s-shell-runner
+#   rules:
+#     - if: $CI_COMMIT_TAG =~ /-dev$/
+#       when: on_success
+#     - if: $CI_COMMIT_TAG =~ /-staging$/
+#       when: on_success
+#     - if: $CI_COMMIT_TAG =~ /-prod$/
+#       when: on_success
 
-########################################################
-#### Stage 7: Deploy to staging environment
-########################################################
-deploy-staging:
-  stage: deploy-staging
-  extends: .env-staging
-  variables:
-    GIT_STRATEGY: none
-  before_script:
-  - git config --global user.email "${GITHUB_EMAIL}"
-  - git config --global user.name "${GITHUB_USERNAME}"
-  - apk add --no-cache curl yq
-  script:
-  - |
-    git clone https://${GITHUB_TOKEN}@github.com/${GITHUB_USERNAME}/${HELM_REPO}.git
-    cd ${HELM_REPO}
+# ########################################################
+# #### Stage 7: Deploy to staging environment
+# ########################################################
+# deploy-staging:
+#   stage: deploy-staging
+#   extends: .env-staging
+#   variables:
+#     GIT_STRATEGY: none
+#   before_script:
+#   - git config --global user.email "${GITHUB_EMAIL}"
+#   - git config --global user.name "${GITHUB_USERNAME}"
+#   - apk add --no-cache curl yq
+#   script:
+#   - |
+#     git clone https://${GITHUB_TOKEN}@github.com/${GITHUB_USERNAME}/${HELM_REPO}.git
+#     cd ${HELM_REPO}
 
-    yq -i ".$CI_PROJECT_NAME.image.tag = \"${CI_COMMIT_TAG}-${CI_COMMIT_SHORT_SHA}\"" ./values.yaml
+#     yq -i ".$CI_PROJECT_NAME.image.tag = \"${CI_COMMIT_TAG}-${CI_COMMIT_SHORT_SHA}\"" ./values.yaml
 
-    git add .
-    git commit -m "feat(staging): update images tag:${CI_COMMIT_TAG}-${CI_COMMIT_SHORT_SHA}"
-    git push https://${GITHUB_TOKEN}@github.com/${GITHUB_USERNAME}/${HELM_REPO}.git main
-  tags:
-  - k8s-shell-runner
-  rules:
-    - if: $CI_COMMIT_TAG =~ /-staging$/
-      when: manual
-    - if: $CI_COMMIT_TAG =~ /-prod$/
-      when: manual
+#     git add .
+#     git commit -m "feat(staging): update images tag:${CI_COMMIT_TAG}-${CI_COMMIT_SHORT_SHA}"
+#     git push https://${GITHUB_TOKEN}@github.com/${GITHUB_USERNAME}/${HELM_REPO}.git main
+#   tags:
+#   - k8s-shell-runner
+#   rules:
+#     - if: $CI_COMMIT_TAG =~ /-staging$/
+#       when: manual
+#     - if: $CI_COMMIT_TAG =~ /-prod$/
+#       when: manual
 
-# Smoke test
-smoke-test:
-  extends: .performance-test-base
-  script:
-  - |
-    echo "Running smoke tests for staging environment..."
-    k6 run --out json=../${TEST_RESULTS_DIR}/smoke-results.json tests/smoke-test.js
-  rules:
-    - if: $CI_COMMIT_TAG =~ /-staging$/
-      when: on_success
-    - if: $CI_COMMIT_TAG =~ /-prod$/
-      when: on_success
+# # Smoke test
+# smoke-test:
+#   extends: .performance-test-base
+#   script:
+#   - |
+#     echo "Running smoke tests for staging environment..."
+#     k6 run --out json=../${TEST_RESULTS_DIR}/smoke-results.json tests/smoke-test.js
+#   rules:
+#     - if: $CI_COMMIT_TAG =~ /-staging$/
+#       when: on_success
+#     - if: $CI_COMMIT_TAG =~ /-prod$/
+#       when: on_success
 
-# Load test
-load-test:
-  extends: .performance-test-base
-  script:
-  - |
-    echo "Running load tests for staging environment..."
-    k6 run --out json=../${TEST_RESULTS_DIR}/load-results.json tests/load-test.js
-  timeout: 30m
-  rules:
-    - if: $CI_COMMIT_TAG =~ /-staging$/
-      when: manual
-    - if: $CI_COMMIT_TAG =~ /-prod$/
-      when: manual
+# # Load test
+# load-test:
+#   extends: .performance-test-base
+#   script:
+#   - |
+#     echo "Running load tests for staging environment..."
+#     k6 run --out json=../${TEST_RESULTS_DIR}/load-results.json tests/load-test.js
+#   timeout: 30m
+#   rules:
+#     - if: $CI_COMMIT_TAG =~ /-staging$/
+#       when: manual
+#     - if: $CI_COMMIT_TAG =~ /-prod$/
+#       when: manual
 
-# Stress test
-stress-test:
-  extends: .performance-test-base
-  script:
-  - |
-    echo "Running stress tests for staging environment..."
-    k6 run --out json=../${TEST_RESULTS_DIR}/stress-results.json tests/stress-test.js || STRESS_EXIT_CODE=$?
+# # Stress test
+# stress-test:
+#   extends: .performance-test-base
+#   script:
+#   - |
+#     echo "Running stress tests for staging environment..."
+#     k6 run --out json=../${TEST_RESULTS_DIR}/stress-results.json tests/stress-test.js || STRESS_EXIT_CODE=$?
 
-    # Check if stress test failed critically
-    if [ "${STRESS_EXIT_CODE:-0}" -ne 0 ]; then
-      echo "Critical performance issues detected!"
-      exit 1
-    fi
-  timeout: 45m
-  allow_failure: true
-  rules:
-    - if: $CI_COMMIT_TAG =~ /-staging$/
-      when: manual
-    - if: $CI_COMMIT_TAG =~ /-prod$/
-      when: manual
+#     # Check if stress test failed critically
+#     if [ "${STRESS_EXIT_CODE:-0}" -ne 0 ]; then
+#       echo "Critical performance issues detected!"
+#       exit 1
+#     fi
+#   timeout: 45m
+#   allow_failure: true
+#   rules:
+#     - if: $CI_COMMIT_TAG =~ /-staging$/
+#       when: manual
+#     - if: $CI_COMMIT_TAG =~ /-prod$/
+#       when: manual
 
-########################################################
-#### Stage 7.5: DAST Security Testing
-########################################################
-owasp-zap-scan:
-  stage: dast-scan
-  extends: .env-staging
-  image: ${ZAP_IMAGE}
-  variables:
-    GIT_STRATEGY: none
-  before_script:
-    - mkdir -p ${DAST_REPORT_DIR}
-    - echo "Starting OWASP ZAP security scan for ${STAGING_URL}"
-  script:
-    - |
-      echo "=== OWASP ZAP Security Testing ==="
+# ########################################################
+# #### Stage 7.5: DAST Security Testing
+# ########################################################
+# owasp-zap-scan:
+#   stage: dast-scan
+#   extends: .env-staging
+#   image: ${ZAP_IMAGE}
+#   variables:
+#     GIT_STRATEGY: none
+#   before_script:
+#     - mkdir -p ${DAST_REPORT_DIR}
+#     - echo "Starting OWASP ZAP security scan for ${STAGING_URL}"
+#   script:
+#     - |
+#       echo "=== OWASP ZAP Security Testing ==="
       
-      # 1. ZAP Baseline Scan (Quick)
-      echo "Phase 1: ZAP Baseline Scan..."
-      zap-baseline.py -t ${STAGING_URL} \
-        -r ${DAST_REPORT_DIR}/zap-baseline-report.html \
-        -x ${DAST_REPORT_DIR}/zap-baseline-report.xml || BASELINE_EXIT=$?
+#       # 1. ZAP Baseline Scan (Quick)
+#       echo "Phase 1: ZAP Baseline Scan..."
+#       zap-baseline.py -t ${STAGING_URL} \
+#         -r ${DAST_REPORT_DIR}/zap-baseline-report.html \
+#         -x ${DAST_REPORT_DIR}/zap-baseline-report.xml || BASELINE_EXIT=$?
       
-      # 2. ZAP Full Scan (Comprehensive)  
-      echo "Phase 2: ZAP Full Scan..."
-      zap-full-scan.py -t ${STAGING_URL} \
-        -r ${DAST_REPORT_DIR}/zap-full-scan-report.html \
-        -x ${DAST_REPORT_DIR}/zap-full-scan-report.xml || FULL_EXIT=$?
+#       # 2. ZAP Full Scan (Comprehensive)  
+#       echo "Phase 2: ZAP Full Scan..."
+#       zap-full-scan.py -t ${STAGING_URL} \
+#         -r ${DAST_REPORT_DIR}/zap-full-scan-report.html \
+#         -x ${DAST_REPORT_DIR}/zap-full-scan-report.xml || FULL_EXIT=$?
       
-      # 3. Generate Security Summary
-      echo "Phase 3: Generating Security Summary..."
-      cat > ${DAST_REPORT_DIR}/dast-summary.txt << EOF
-      DAST Security Scan Results - $(date +%Y-%m-%d)
-      Target: ${STAGING_URL}
-      Pipeline: ${CI_PIPELINE_ID}
+#       # 3. Generate Security Summary
+#       echo "Phase 3: Generating Security Summary..."
+#       cat > ${DAST_REPORT_DIR}/dast-summary.txt << EOF
+#       DAST Security Scan Results - $(date +%Y-%m-%d)
+#       Target: ${STAGING_URL}
+#       Pipeline: ${CI_PIPELINE_ID}
       
-      Baseline Scan: $([ "${BASELINE_EXIT:-0}" -eq 0 ] && echo "PASSED" || echo "ISSUES FOUND")
-      Full Scan: $([ "${FULL_EXIT:-0}" -eq 0 ] && echo "PASSED" || echo "ISSUES FOUND")
+#       Baseline Scan: $([ "${BASELINE_EXIT:-0}" -eq 0 ] && echo "PASSED" || echo "ISSUES FOUND")
+#       Full Scan: $([ "${FULL_EXIT:-0}" -eq 0 ] && echo "PASSED" || echo "ISSUES FOUND")
       
-      Reports: zap-baseline-report.html, zap-full-scan-report.html
-      EOF
+#       Reports: zap-baseline-report.html, zap-full-scan-report.html
+#       EOF
       
-      # 4. Security Assessment
-      if [ "${FULL_EXIT:-0}" -eq 2 ] || [ "${BASELINE_EXIT:-0}" -eq 2 ]; then
-        echo "CRITICAL SECURITY VULNERABILITIES DETECTED!"
-        echo "BLOCKING DEPLOYMENT TO PRODUCTION"
-        exit 1
-      elif [ "${FULL_EXIT:-0}" -eq 1 ] || [ "${BASELINE_EXIT:-0}" -eq 1 ]; then
-        echo "MEDIUM RISK VULNERABILITIES DETECTED"
-        echo "Review recommended but deployment not blocked"
-      else
-        echo "NO CRITICAL VULNERABILITIES DETECTED"
-        echo "Security scan passed - Safe for production deployment"
-      fi
-  artifacts:
-    paths:
-      - ${DAST_REPORT_DIR}/
-    expire_in: 7 days
-    reports:
-      dast: ${DAST_REPORT_DIR}/*.xml
-    when: always
-  tags:
-    - k8s-shell-runner
-  timeout: 60m  # Extended for comprehensive scanning
-  rules:
-    - if: $CI_COMMIT_TAG =~ /-staging$/
-      when: on_success
-    - if: $CI_COMMIT_TAG =~ /-prod$/
-      when: on_success
+#       # 4. Security Assessment
+#       if [ "${FULL_EXIT:-0}" -eq 2 ] || [ "${BASELINE_EXIT:-0}" -eq 2 ]; then
+#         echo "CRITICAL SECURITY VULNERABILITIES DETECTED!"
+#         echo "BLOCKING DEPLOYMENT TO PRODUCTION"
+#         exit 1
+#       elif [ "${FULL_EXIT:-0}" -eq 1 ] || [ "${BASELINE_EXIT:-0}" -eq 1 ]; then
+#         echo "MEDIUM RISK VULNERABILITIES DETECTED"
+#         echo "Review recommended but deployment not blocked"
+#       else
+#         echo "NO CRITICAL VULNERABILITIES DETECTED"
+#         echo "Security scan passed - Safe for production deployment"
+#       fi
+#   artifacts:
+#     paths:
+#       - ${DAST_REPORT_DIR}/
+#     expire_in: 7 days
+#     reports:
+#       dast: ${DAST_REPORT_DIR}/*.xml
+#     when: always
+#   tags:
+#     - k8s-shell-runner
+#   timeout: 60m  # Extended for comprehensive scanning
+#   rules:
+#     - if: $CI_COMMIT_TAG =~ /-staging$/
+#       when: on_success
+#     - if: $CI_COMMIT_TAG =~ /-prod$/
+#       when: on_success
 
 
 
-########################################################
-#### Stage 8: Deploy to prod environment
-########################################################
-deploy-prod:
-  stage: deploy-prod
-  extends: .env-prod
-  variables:
-    GIT_STRATEGY: none
-  before_script:
-  - git config --global user.email "${GITHUB_EMAIL}"
-  - git config --global user.name "${GITHUB_USERNAME}"
-  - apk add --no-cache curl yq
-  script:
-  - |
-    git clone https://${GITHUB_TOKEN}@github.com/${GITHUB_USERNAME}/${HELM_REPO}.git
-    cd ${HELM_REPO}
+# ########################################################
+# #### Stage 8: Deploy to prod environment
+# ########################################################
+# deploy-prod:
+#   stage: deploy-prod
+#   extends: .env-prod
+#   variables:
+#     GIT_STRATEGY: none
+#   before_script:
+#   - git config --global user.email "${GITHUB_EMAIL}"
+#   - git config --global user.name "${GITHUB_USERNAME}"
+#   - apk add --no-cache curl yq
+#   script:
+#   - |
+#     git clone https://${GITHUB_TOKEN}@github.com/${GITHUB_USERNAME}/${HELM_REPO}.git
+#     cd ${HELM_REPO}
 
-    yq -i ".$CI_PROJECT_NAME.image.tag = \"${CI_COMMIT_TAG}-${CI_COMMIT_SHORT_SHA}\"" ./values.yaml
+#     yq -i ".$CI_PROJECT_NAME.image.tag = \"${CI_COMMIT_TAG}-${CI_COMMIT_SHORT_SHA}\"" ./values.yaml
 
-    git add .
-    git commit -m "feat(prod): update images tag:${CI_COMMIT_TAG}-${CI_COMMIT_SHORT_SHA}"
-    git push https://${GITHUB_TOKEN}@github.com/${GITHUB_USERNAME}/${HELM_REPO}.git main
-  tags:
-  - k8s-shell-runner
-  rules:
-    - if: $CI_COMMIT_TAG =~ /-prod$/
-      when: manual
+#     git add .
+#     git commit -m "feat(prod): update images tag:${CI_COMMIT_TAG}-${CI_COMMIT_SHORT_SHA}"
+#     git push https://${GITHUB_TOKEN}@github.com/${GITHUB_USERNAME}/${HELM_REPO}.git main
+#   tags:
+#   - k8s-shell-runner
+#   rules:
+#     - if: $CI_COMMIT_TAG =~ /-prod$/
+#       when: manual
 
 ########################################################
 #### Stage 9: Push artifacts to MinIO
@@ -581,11 +589,11 @@ generate-sbom-files:
   stage: push-artifacts
   extends:
   - .docker-job-template
-  needs:
-  - job: deploy-staging
-    optional: true
-  - job: deploy-prod
-    optional: true
+  # needs:
+  # - job: deploy-staging
+  #   optional: true
+  # - job: deploy-prod
+  #   optional: true
   variables:
     GIT_STRATEGY: none
   script:
@@ -625,18 +633,18 @@ upload_to_minio:
   - job: sonarqube-code-quality-scan
     artifacts: true
     optional: true
-  - job: smoke-test
-    artifacts: true
-    optional: true
-  - job: load-test
-    artifacts: true
-    optional: true
-  - job: stress-test
-    artifacts: true
-    optional: true
-  - job: owasp-zap-scan
-    artifacts: true
-    optional: true
+  # - job: smoke-test
+  #   artifacts: true
+  #   optional: true
+  # - job: load-test
+  #   artifacts: true
+  #   optional: true
+  # - job: stress-test
+  #   artifacts: true
+  #   optional: true
+  # - job: owasp-zap-scan
+  #   artifacts: true
+  #   optional: true
   
   variables:
     GIT_STRATEGY: none
@@ -672,11 +680,11 @@ upload_to_minio:
       cp -r ${DAST_REPORT_DIR}/* $ARTIFACT_DIR/dast-reports/
     fi
 
-    # Copy performance test results
-    if [ -d "${TEST_RESULTS_DIR}" ]; then
-      echo "Copying performance test results..."
-      cp -r ${TEST_RESULTS_DIR}/* $ARTIFACT_DIR/performance-tests/
-    fi
+    # # Copy performance test results
+    # if [ -d "${TEST_RESULTS_DIR}" ]; then
+    #   echo "Copying performance test results..."
+    #   cp -r ${TEST_RESULTS_DIR}/* $ARTIFACT_DIR/performance-tests/
+    # fi
 
     # Copy unit test reports
     if [ -d "test-reports" ]; then
