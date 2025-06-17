@@ -167,7 +167,7 @@ gitleaks-secret-scan:
           --report-format=template \
           --report-template=basic.tmpl \
       --report-path="${GITLEAKS_REPORT_FILENAME}" \
-          --verbose || SCAN_STATUS=$?
+          --verbose || SCAN_STATUS=$? || true
 
     if [ "${SCAN_STATUS:-0}" -ne 0 ]; then
       echo "Secrets detected in source code! Check report: ${GITLEAKS_REPORT_FILENAME}"
@@ -373,7 +373,6 @@ trivy-image-security-scan:
   image: ${TRIVY_IMAGE}
   variables:
     GIT_STRATEGY: none
-    DOCKER_TLS_CERTDIR: ""
   script:
   - |
     echo "Scanning image: $IMAGE_TAG"
