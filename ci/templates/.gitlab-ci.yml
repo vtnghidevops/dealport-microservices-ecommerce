@@ -117,6 +117,7 @@ unit-test:
     GIT_STRATEGY: clone
   script:
     - |
+      echo "BRANCH: ${CI_COMMIT_BRANCH}"
       echo "Running Go unit tests..."
       mkdir -p test-reports
       TEST_OUTPUT=$(go test ./tests/unit/... -v 2>&1)
