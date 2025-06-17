@@ -1,5 +1,4 @@
 stages:
-- unit-test
 - scan-code
 - build-and-push-image
 - scan-image
@@ -14,8 +13,6 @@ stages:
 variables:
   # Docker & Container Registry
   DOCKER_IMAGE: "docker:28-dind"
-  GO_IMAGE: "golang:1.24.3-alpine3.21"
-
   # MinIO Configuration
   MINIO_IMAGE: "minio/mc:latest"
 
@@ -42,7 +39,7 @@ variables:
   TRIVYFS_FOLDER: "${SECURITY_SCAN_BASE}/trivy-fs"
   TRIVYFS_REPORT_FILENAME: "${TRIVYFS_FOLDER}/trivyfs_scan_${REPORT_NAME}_report.html"
   SNYK_FOLDER: "${SECURITY_SCAN_BASE}/snyk"
-  SNYK_REPORT_FILENAME: "${SNYK_FOLDER}/snyk_scan_${REPORT_NAME}_report.html"
+  SNYK_REPORT_FILENAME: "${SNYK_FOLDER}/snyk_scan_fe${REPORT_NAME}_report.html"
   SONAR_FOLDER: "${SECURITY_SCAN_BASE}/sonar"
   SONAR_REPORT_FILENAME: "${SONAR_FOLDER}/sonar_scan_${REPORT_NAME}_report.html"
 
@@ -60,7 +57,6 @@ variables:
   GITHUB_USERNAME: "philogn"
   HELM_REPO: "Three-tier-app-HelmChart"
   HELM_VALUES_PATH: "./values.yaml"
-
 
 # Template
 .prepare-vars-and-docker-login:
@@ -108,43 +104,7 @@ variables:
   - k8s-shell-runner
 
 ########################################################
-#### Stage 1: Unit test
-########################################################
-unit-test:
-  stage: unit-test
-  extends: .env-dev
-  image: ${GO_IMAGE}
-  variables:
-    GIT_STRATEGY: clone
-  before_script:
-    - go mod download
-  script:
-    - |
-      echo "Running Go unit tests..."
-      mkdir -p test-reports
-     
-      # Check if test output contains FAIL
-      if ! go test ./tests/unit/... -v | tee test-reports/unit-test-output.txt; then
-        echo "Unit tests failed!"
-        exit 1
-      else
-        echo "All unit tests passed successfully."
-      fi
-  artifacts:
-    paths:
-      - test-reports/
-    expire_in: 1 day
-    when: always
-  tags:
-    - k8s-shell-runner
-  rules:
-    - if: '$CI_COMMIT_TAG =~ /.*-frontend-.*/'
-      when: never
-    - if: $CI_COMMIT_TAG
-      when: on_success
-
-########################################################
-#### Stage 2: Scan Code
+#### Stage 1: Scan Code
 ########################################################
 gitleaks-secret-scan:
   stage: scan-code
@@ -188,7 +148,6 @@ gitleaks-secret-scan:
       when: on_success
     - allow_failure: true
 
-
 trivyfs-code-security-scan:
   stage: scan-code
   extends: .env-dev
@@ -215,83 +174,86 @@ trivyfs-code-security-scan:
       when: on_success
     - allow_failure: true
 
-
-snyk-scan-go:
+snyk-scan:
   stage: scan-code
   extends: .env-dev
-  image: ${GO_IMAGE}
+  image: ${SNYK_IMAGE}
   variables:
     GIT_STRATEGY: clone
   before_script:
-    - apk add --no-cache nodejs npm curl
-    - npm install -g snyk snyk-to-html
-    - snyk auth ${SNYK_TOKEN}
-    - mkdir -p ${SNYK_FOLDER}
-    - go mod download
+  - npm install -g snyk-to-html
   script:
-    - |
-      echo "=== Snyk Go Backend Scan ==="
-      # Scan modules and code
-      snyk test --severity-threshold=high --json-file-output=deps.json || echo "Go modules scan completed"
-      snyk code test --severity-threshold=high --json-file-output=code.json || echo "Go code scan completed"
-
-      # Generate HTML report
-      echo "<html><body><h1>Snyk Security Report</h1>" > "${SNYK_REPORT_FILENAME}"
-      echo "<p>Generated: $(date)</p>" >> "${SNYK_REPORT_FILENAME}"
-      
-      if [ -f "deps.json" ]; then
-        echo "Converting deps.json to HTML..."
-        snyk-to-html -i deps.json -o deps.html || echo "Warning: Failed to convert deps.json to HTML"
-        if [ -f "deps.html" ]; then
-          echo "<h2>Dependencies Vulnerabilities</h2>" >> "${SNYK_REPORT_FILENAME}"
-          cat deps.html >> "${SNYK_REPORT_FILENAME}"
-        else
-          echo "<h2>Dependencies (Raw JSON)</h2>" >> "${SNYK_REPORT_FILENAME}"
-          echo "<pre>$(cat deps.json)</pre>" >> "${SNYK_REPORT_FILENAME}"
-        fi
+  - |
+    echo "=== Running Snyk Security Scan ==="
+    mkdir -p ${SNYK_FOLDER}
+    
+    echo "Scanning npm dependencies..."
+    npm install
+    snyk test --severity-threshold=high --json-file-output=deps.json || echo "Dependencies scan completed with vulnerabilities"
+    
+    # Code scan
+    echo "Scanning source code..."
+    snyk code test --severity-threshold=high --json-file-output=code.json || echo "Code scan completed with vulnerabilities"
+    
+    # Generate HTML report
+    echo "Generating HTML report..."
+    echo "Files in current directory:"
+    ls -la *.json 2>/dev/null || echo "No JSON files found"
+    
+    echo "<html><body><h1>Snyk Security Report</h1>" > "${SNYK_REPORT_FILENAME}"
+    echo "<p>Generated: $(date)</p>" >> "${SNYK_REPORT_FILENAME}"
+    
+    if [ -f "deps.json" ]; then
+      echo "Converting deps.json to HTML..."
+      snyk-to-html -i deps.json -o deps.html || echo "Warning: Failed to convert deps.json to HTML"
+      if [ -f "deps.html" ]; then
+        echo "<h2>Dependencies Vulnerabilities</h2>" >> "${SNYK_REPORT_FILENAME}"
+        cat deps.html >> "${SNYK_REPORT_FILENAME}"
       else
-        echo "<h2>Dependencies</h2><p>No deps.json found</p>" >> "${SNYK_REPORT_FILENAME}"
+        echo "<h2>Dependencies (Raw JSON)</h2>" >> "${SNYK_REPORT_FILENAME}"
+        echo "<pre>$(cat deps.json)</pre>" >> "${SNYK_REPORT_FILENAME}"
       fi
-      
-      if [ -f "code.json" ]; then
-        echo "Converting code.json to HTML..."
-        snyk-to-html -i code.json -o code.html || echo "Warning: Failed to convert code.json to HTML"
-        if [ -f "code.html" ]; then
-          echo "<h2>Source Code Vulnerabilities</h2>" >> "${SNYK_REPORT_FILENAME}"
-          cat code.html >> "${SNYK_REPORT_FILENAME}"
-        else
-          echo "<h2>Source Code (Raw JSON)</h2>" >> "${SNYK_REPORT_FILENAME}"
-          echo "<pre>$(cat code.json)</pre>" >> "${SNYK_REPORT_FILENAME}"
-        fi
+    else
+      echo "<h2>Dependencies</h2><p>No deps.json found</p>" >> "${SNYK_REPORT_FILENAME}"
+    fi
+    
+    if [ -f "code.json" ]; then
+      echo "Converting code.json to HTML..."
+      snyk-to-html -i code.json -o code.html || echo "Warning: Failed to convert code.json to HTML"
+      if [ -f "code.html" ]; then
+        echo "<h2>Source Code Vulnerabilities</h2>" >> "${SNYK_REPORT_FILENAME}"
+        cat code.html >> "${SNYK_REPORT_FILENAME}"
       else
-        echo "<h2>Source Code</h2><p>No code.json found</p>" >> "${SNYK_REPORT_FILENAME}"
+        echo "<h2>Source Code (Raw JSON)</h2>" >> "${SNYK_REPORT_FILENAME}"
+        echo "<pre>$(cat code.json)</pre>" >> "${SNYK_REPORT_FILENAME}"
       fi
-      
-      echo "</body></html>" >> "${SNYK_REPORT_FILENAME}"
-      echo "Report generated: ${SNYK_REPORT_FILENAME}"
-      
-      # Verify report was created
-      if [ -f "${SNYK_REPORT_FILENAME}" ]; then
-        echo "HTML report successfully created at: ${SNYK_REPORT_FILENAME}"
-        ls -la "${SNYK_REPORT_FILENAME}"
-      else
-        echo "ERROR: Failed to create HTML report!"
-      fi
-
+    else
+      echo "<h2>Source Code</h2><p>No code.json found</p>" >> "${SNYK_REPORT_FILENAME}"
+    fi
+    
+    echo "</body></html>" >> "${SNYK_REPORT_FILENAME}"
+    echo "Report generated: ${SNYK_REPORT_FILENAME}"
+    
+    # Verify report was created
+    if [ -f "${SNYK_REPORT_FILENAME}" ]; then
+      echo "HTML report successfully created at: ${SNYK_REPORT_FILENAME}"
+      ls -la "${SNYK_REPORT_FILENAME}"
+    else
+      echo "ERROR: Failed to create HTML report!"
+    fi
   artifacts:
     paths:
-      - "${SNYK_REPORT_FILENAME}"
+    - "${SNYK_REPORT_FILENAME}"
     expire_in: 1 day
     reports:
       sast: "${SNYK_REPORT_FILENAME}"
-    when: always
   tags:
-    - k8s-shell-runner
+  - k8s-shell-runner
   rules:
-    - if: '$CI_COMMIT_TAG !~ /.*-frontend-.*/ && $CI_COMMIT_TAG'
+    - if: $CI_COMMIT_TAG
       when: on_success
-    - allow_failure: true
-    
+
+
 sonarqube-code-quality-scan:
   stage: scan-code
   extends: .env-dev
