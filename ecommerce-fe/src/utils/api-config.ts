@@ -74,9 +74,9 @@ export const formatImageUrl = (url: string): string => {
     }
 
     // For regular product images (/images/products/) and other /images/ URLs
-    // Keep them as relative URLs - let the browser handle the domain resolution
-    console.log("Regular image detected, keeping relative URL:", url);
-    return url;
+    // Return full domain URL like https://sapogo.deploy.io.vn/images/...
+    console.log("Regular image detected, returning full domain URL:", url);
+    return `${baseImageUrl}${url}`;
   }
 
   // Get the base domain without /api/v1 if it exists
