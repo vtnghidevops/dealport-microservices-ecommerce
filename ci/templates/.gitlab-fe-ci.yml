@@ -297,14 +297,15 @@ sonarqube-code-quality-scan:
 build-and-push-image:
   stage: build-and-push-image
   extends: 
-  - .prepare-vars-and-docker-login
+  - .docker-login-image
   - .env-dev
   variables:
     GIT_STRATEGY: clone
-    VITE_PUBLIC_BROKER_API_URL: ${API_URL} # Frontend build environment variables
+    VITE_PUBLIC_BROKER_API_URL: ${API_URL} 
   script:
     - |
       # Build image
+      echo "VITE_PUBLIC_BROKER_API_URL: ${VITE_PUBLIC_BROKER_API_URL}"
       if [ "$BRANCH_NAME" == "frontend" ]; then
         echo "Building frontend Docker images with environment variables..."
         docker build \
@@ -332,7 +333,7 @@ build-and-push-image:
 trivy-image-security-scan:
   stage: scan-image
   extends: 
-    - .prepare-vars-and-docker-login
+    - .docker-login-image
     - .env-dev    
   variables:
     GIT_STRATEGY: none
@@ -598,7 +599,7 @@ deploy-prod:
 ########################################################
 generate-sbom-files:
   stage: push-artifacts
-  extends: .prepare-vars-and-docker-login
+  extends: .docker-login-image
   needs:
   - job: deploy-staging
     optional: true
