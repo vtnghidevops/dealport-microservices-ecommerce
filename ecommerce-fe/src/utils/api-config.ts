@@ -57,26 +57,26 @@ export const formatImageUrl = (url: string): string => {
   if (url.startsWith("/images/")) {
     console.log("Processing image URL:", url);
 
-    // Get the base domain without /api/v1 if it exists
-    let baseImageUrl = BASE_API_URL;
-    if (baseImageUrl.endsWith(`/api/${API_VERSION}`)) {
-      baseImageUrl = baseImageUrl.substring(
-        0,
-        baseImageUrl.length - `/api/${API_VERSION}`.length
-      );
-    }
-
     // Check if this is a MinIO-stored image (special products-api folder)
     if (url.startsWith("/images/products-api/")) {
-      console.log("MinIO image detected, requesting via broker");
-      // For MinIO images, we need to use the broker API to get a presigned URL
-      return `${baseImageUrl}${url}`;
+      // Get the base domain without /api/v1 if it exists
+      let baseImageUrl = BASE_API_URL;
+      if (baseImageUrl.endsWith(`/api/${API_VERSION}`)) {
+        baseImageUrl = baseImageUrl.substring(
+          0,
+          baseImageUrl.length - `/api/${API_VERSION}`.length
+        );
+      }
+
+      const fullImageUrl = `${baseImageUrl}${url}`;
+      console.log("MinIO image detected, requesting via broker:", fullImageUrl);
+      return fullImageUrl;
     }
 
     // For regular product images (/images/products/) and other /images/ URLs
-    // Return full domain URL like https://sapogo.deploy.io.vn/images/...
-    console.log("Regular image detected, returning full domain URL:", url);
-    return `${baseImageUrl}${url}`;
+    // Return relative URL without domain to avoid double domain issues
+    console.log("Regular image detected, returning relative URL:", url);
+    return url;
   }
 
   // Get the base domain without /api/v1 if it exists
