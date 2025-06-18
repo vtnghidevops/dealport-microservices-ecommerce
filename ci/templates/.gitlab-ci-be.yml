@@ -144,7 +144,6 @@ gitleaks-secret-scan:
 
 trivyfs-code-security-scan:
   stage: scan-code
-  extends: .env-dev
   image: ${TRIVY_IMAGE}
   variables:
     GIT_STRATEGY: clone
@@ -172,7 +171,6 @@ trivyfs-code-security-scan:
 
 snyk-scan-go:
   stage: scan-code
-  extends: .env-dev
   image: ${GO_IMAGE}
   variables:
     GIT_STRATEGY: clone
@@ -249,7 +247,6 @@ snyk-scan-go:
     
 sonarqube-code-quality-scan:
   stage: scan-code
-  extends: .env-dev
   image:
     name: ${SONAR_IMAGE}
     entrypoint: [ "" ]
