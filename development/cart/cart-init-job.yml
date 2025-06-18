@@ -18,7 +18,7 @@ spec:
           command: ['sh', '-c', 'until nslookup redis-cart.ecommerce.svc.cluster.local; do echo waiting for redis; sleep 2; done;']
       containers:
       - name: redis-init
-        image: tannghidevops/cart-service:v2
+        image: harbor.deploy.io.vn/sapogo-shop/cart-service:c6bb3d4a
         imagePullPolicy: IfNotPresent
         command: ["/bin/sh", "-c"]
         args:
@@ -45,3 +45,5 @@ spec:
               key: REDIS_PASSWORD
               optional: true
       restartPolicy: OnFailure 
+      imagePullSecrets:
+        - name: harbor-secret

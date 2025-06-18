@@ -20,7 +20,7 @@ spec:
       spec:
         containers:
           - name: ecommerce-frontend
-            image: tannghidevops/ecommerce-frontend:v9
+            image: harbor.deploy.io.vn/sapogo-shop/frontend:247beecf
             ports: 
               - containerPort: 80
                 name: tcp
@@ -33,6 +33,6 @@ spec:
                 cpu: "250m"
                 memory: "500Mi"
         imagePullSecrets:
-          - name: auth-registry
+          - name: harbor-secret
         
 

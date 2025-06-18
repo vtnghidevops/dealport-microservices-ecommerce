@@ -40,14 +40,7 @@ spec:
             envFrom:
               - secretRef:
                   name: ecommerce-product-secret
-            volumeMounts:
-              - name: product-images-pvc
-                mountPath: /uploads/products
-        volumes:
-          - name: product-images-pvc
-            persistentVolumeClaim:
-              claimName: product-images-pvc
-        # imagePullSecrets:
-        #   - name: auth-registry
+        imagePullSecrets:
+          - name: auth-registry
         
 

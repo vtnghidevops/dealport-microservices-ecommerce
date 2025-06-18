@@ -39,7 +39,7 @@ spec:
             envFrom:
               - secretRef:
                   name: ecommerce-auth-secret
-        # imagePullSecrets:
-        #   - name: auth-registry
+        imagePullSecrets:
+           - name: auth-registry
         
 
