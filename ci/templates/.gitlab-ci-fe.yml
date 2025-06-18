@@ -2,7 +2,7 @@ stages:
 - scan-code
 - build-and-push-image
 - scan-image
-- deploy-dev
+- deploy
 - push-artifacts
 
 # Variables
@@ -59,17 +59,11 @@ variables:
   - BRANCH_NAME=$(echo "$CI_COMMIT_TAG" | awk -F'-' '{for(i=2;i<NF;i++) printf $i (i<NF-1?"-":""); print ""}')
   - IMAGE_TAG="${HARBOR_URL}/${HARBOR_REPO}/${BRANCH_NAME}:${CI_COMMIT_SHORT_SHA}"
 
-.env-dev: 
-  environment:
-    name: dev
-    url: ${DEV_URL}
-
 ########################################################
 #### Stage 1: Scan Code
 ########################################################
 gitleaks-secret-scan:
   stage: scan-code
-  extends: .env-dev
   image: ${GITLEAKS_IMAGE}
   variables:
     GIT_STRATEGY: clone
@@ -106,13 +100,12 @@ gitleaks-secret-scan:
   - k8s-shell-runner
   allow_failure: true
   rules:
-    - if: $CI_COMMIT_TAG =~ /-dev$/
+    - if: $CI_COMMIT_TAG
       when: on_success
     - allow_failure: true
 
 trivyfs-code-security-scan:
   stage: scan-code
-  extends: .env-dev
   image: ${TRIVY_IMAGE}
   variables:
     GIT_STRATEGY: clone
@@ -133,13 +126,12 @@ trivyfs-code-security-scan:
   - k8s-shell-runner
   allow_failure: true
   rules:
-    - if: $CI_COMMIT_TAG =~ /-dev$/
+    - if: $CI_COMMIT_TAG
       when: on_success
     - allow_failure: true
 
 snyk-scan:
   stage: scan-code
-  extends: .env-dev
   image: ${SNYK_IMAGE}
   variables:
     GIT_STRATEGY: clone
@@ -214,13 +206,12 @@ snyk-scan:
   - k8s-shell-runner
   allow_failure: true
   rules:
-    - if: $CI_COMMIT_TAG =~ /-dev$/
+    - if: $CI_COMMIT_TAG
       when: on_success
 
 
 sonarqube-code-quality-scan:
   stage: scan-code
-  extends: .env-dev
   image:
     name: ${SONAR_IMAGE}
     entrypoint: [ "" ]
@@ -243,7 +234,7 @@ sonarqube-code-quality-scan:
   tags:
   - k8s-shell-runner
   rules:
-    - if: $CI_COMMIT_TAG =~ /-dev$/
+    - if: $CI_COMMIT_TAG
       when: on_success
 
 
@@ -254,7 +245,6 @@ build-and-push-image:
   stage: build-and-push-image
   extends: 
   - .docker-login-image
-  - .env-dev
   variables:
     GIT_STRATEGY: clone
     VITE_PUBLIC_BROKER_API_URL: ${API_URL} 
@@ -280,7 +270,7 @@ build-and-push-image:
   tags:
     - k8s-image-runner
   rules:
-    - if: $CI_COMMIT_TAG =~ /-dev$/
+    - if: $CI_COMMIT_TAG
       when: on_success
 
 ########################################################
@@ -290,7 +280,6 @@ trivy-image-security-scan:
   stage: scan-image
   extends: 
     - .docker-login-image
-    - .env-dev    
   variables:
     GIT_STRATEGY: none
   script:
@@ -329,16 +318,15 @@ trivy-image-security-scan:
   - k8s-image-runner
   allow_failure: true
   rules:
-    - if: $CI_COMMIT_TAG =~ /-dev$/
+    - if: $CI_COMMIT_TAG
       when: on_success
 
 # ########################################################
 # #### Stage 5: Deploy to dev environment
 # ########################################################
-deploy-dev:
-  stage: deploy-dev
+deploy:
+  stage: deploy
   extends: 
-    - .env-dev
     - .prepare-vars
   variables:
     GIT_STRATEGY: none
@@ -359,7 +347,7 @@ deploy-dev:
   tags:
   - k8s-shell-runner
   rules:
-    - if: $CI_COMMIT_TAG =~ /-dev$/
+    - if: $CI_COMMIT_TAG
       when: on_success
 
 ########################################################
@@ -369,7 +357,7 @@ generate-sbom-files:
   stage: push-artifacts
   extends: .docker-login-image
   needs:
-  - job: deploy-dev
+  - job: deploy
     optional: true
   variables:
     GIT_STRATEGY: none
@@ -385,7 +373,7 @@ generate-sbom-files:
   tags:
   - k8s-shell-runner
   rules:
-    - if: $CI_COMMIT_TAG =~ /-dev$/
+    - if: $CI_COMMIT_TAG
       when: manual
 
 upload_to_minio:
@@ -484,5 +472,5 @@ upload_to_minio:
   tags:
   - devops-k8s-runner
   rules:
-    - if: $CI_COMMIT_TAG =~ /-dev$/
+    - if: $CI_COMMIT_TAG
       when: manual
