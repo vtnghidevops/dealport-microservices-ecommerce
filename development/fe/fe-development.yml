@@ -14,25 +14,23 @@ spec:
       maxUnavailable: 2
       maxSurge: 2
   template:
-      metadata:
-        labels:
-          app: ecommerce-frontend-app
-      spec:
-        containers:
-          - name: ecommerce-frontend
-            image: harbor.deploy.io.vn/sapogo-shop/frontend:247beecf
-            ports: 
-              - containerPort: 80
-                name: tcp
-                protocol: TCP
-            resources:
-              requests:
-                cpu: "125m"
-                memory: "250Mi"
-              limits:
-                cpu: "250m"
-                memory: "500Mi"
-        imagePullSecrets:
-          - name: harbor-secret
-        
-
+    metadata:
+      labels:
+        app: ecommerce-frontend-app
+    spec:
+      containers:
+      - name: ecommerce-frontend
+        image: harbor.deploy.io.vn/sapogo-shop/frontend:247beecf
+        ports:
+        - containerPort: 80
+          name: tcp
+          protocol: TCP
+        resources:
+          requests:
+            cpu: "125m"
+            memory: "250Mi"
+          limits:
+            cpu: "250m"
+            memory: "500Mi"
+      imagePullSecrets:
+      - name: harbor-secret
