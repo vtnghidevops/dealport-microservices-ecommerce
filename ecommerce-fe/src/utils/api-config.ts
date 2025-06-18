@@ -73,17 +73,9 @@ export const formatImageUrl = (url: string): string => {
       return `${baseImageUrl}${url}`;
     }
 
-    // For regular product images (/images/products/), go through broker too
-    // These could be either:
-    // 1. Legacy images still stored in local storage
-    // 2. MinIO images that were saved with the old URL pattern
-    if (url.startsWith("/images/products/")) {
-      console.log("Product image detected, using broker URL");
-      return `${baseImageUrl}${url}`;
-    }
-
-    // For any other /images/ URLs not matching the patterns above
-    console.log("Other image detected, using direct URL");
+    // For regular product images (/images/products/) and other /images/ URLs
+    // Keep them as relative URLs - let the browser handle the domain resolution
+    console.log("Regular image detected, keeping relative URL:", url);
     return url;
   }
 
