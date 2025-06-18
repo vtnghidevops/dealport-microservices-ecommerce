@@ -20,3 +20,4 @@ COPY public/50x.html /run/50x.html
 EXPOSE 80 
 
 CMD ["nginx", "-g", "daemon off;"] 
+
