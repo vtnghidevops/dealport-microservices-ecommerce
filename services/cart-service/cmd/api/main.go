@@ -90,23 +90,45 @@ func handleCommands() {
 
 // initRedis runs the Redis initialization script
 func initRedis() error {
-	// Find the script path - should be in the migrations directory
-	scriptPath := "migrations/init_redis.sh"
+	// First try the script approach
+	if err := initRedisWithScript(); err != nil {
+		log.Printf("Script initialization failed: %v", err)
+		log.Println("Fallback to direct Redis commands...")
+		return initRedisDirectly()
+	}
+	return nil
+}
 
-	// For container environment, we may need to look elsewhere
-	containerScriptPath := "/app/migrations/init_redis.sh"
+// initRedisWithScript uses the shell script
+func initRedisWithScript() error {
+	// Debug: Print current working directory
+	wd, _ := os.Getwd()
+	log.Printf("Current working directory: %s", wd)
 
-	// Check if the script exists in the first path
+	// Use absolute path for container environment - more reliable
+	scriptPath := "/app/migrations/init_redis.sh"
+
+	// Fallback to relative path if absolute doesn't exist
 	if _, err := os.Stat(scriptPath); os.IsNotExist(err) {
-		// If not, try the container path
-		if _, err := os.Stat(containerScriptPath); os.IsNotExist(err) {
-			return fmt.Errorf("Redis initialization script not found at %s or %s",
-				scriptPath, containerScriptPath)
+		log.Printf("Script not found at absolute path: %s", scriptPath)
+		scriptPath = "migrations/init_redis.sh"
+		log.Printf("Trying relative path: %s", scriptPath)
+		if _, err := os.Stat(scriptPath); os.IsNotExist(err) {
+			log.Printf("Script not found at relative path: %s", scriptPath)
+			return fmt.Errorf("Redis initialization script not found at %s or migrations/init_redis.sh", "/app/migrations/init_redis.sh")
 		}
-		scriptPath = containerScriptPath
+		log.Printf("Found script at relative path: %s", scriptPath)
+	} else {
+		log.Printf("Found script at absolute path: %s", scriptPath)
+	}
+
+	// Debug: Check current file permissions
+	if info, err := os.Stat(scriptPath); err == nil {
+		log.Printf("Script file info: %s, size: %d, mode: %s", scriptPath, info.Size(), info.Mode())
 	}
 
 	// Make the script executable
+	log.Printf("Setting executable permissions for: %s", scriptPath)
 	if err := os.Chmod(scriptPath, 0755); err != nil {
 		return fmt.Errorf("failed to make initialization script executable: %w", err)
 	}
@@ -120,15 +142,77 @@ func initRedis() error {
 		env = append(env, "ENVIRONMENT="+os.Getenv("ENVIRONMENT"))
 	}
 
-	// Create and run the command
-	cmd := exec.Command(scriptPath)
+	// Create and run the command - use sh to ensure compatibility
+	cmd := exec.Command("sh", scriptPath)
 	cmd.Env = env
 	cmd.Dir = scriptDir
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 
-	log.Printf("Running Redis initialization script: %s", scriptPath)
-	return cmd.Run()
+	log.Printf("Running Redis initialization script: sh %s", scriptPath)
+	log.Printf("Script directory: %s", scriptDir)
+	log.Printf("Command: %s", cmd.String())
+
+	// Run and capture detailed error
+	if err := cmd.Run(); err != nil {
+		return fmt.Errorf("failed to run Redis initialization script: %w", err)
+	}
+
+	log.Println("Redis initialization script completed successfully")
+	return nil
+}
+
+// initRedisDirectly executes Redis commands directly via Go
+func initRedisDirectly() error {
+	log.Println("Initializing Redis directly from Go...")
+
+	// Load config to get Redis connection details
+	cfg, err := config.LoadConfig("")
+	if err != nil {
+		return fmt.Errorf("failed to load config for Redis init: %w", err)
+	}
+
+	// Create Redis client for initialization
+	client := redisClient.NewClient(&redisClient.Options{
+		Addr:     fmt.Sprintf("%s:%s", cfg.Redis.Host, cfg.Redis.Port),
+		Password: cfg.Redis.Password,
+		DB:       cfg.Redis.DB,
+	})
+	defer client.Close()
+
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+
+	// Wait for Redis to be ready
+	log.Println("Waiting for Redis to be ready...")
+	for i := 0; i < 30; i++ {
+		if err := client.Ping(ctx).Err(); err == nil {
+			break
+		}
+		log.Printf("Redis not ready yet, waiting... (attempt %d/30)", i+1)
+		time.Sleep(1 * time.Second)
+	}
+
+	// Test final connection
+	if err := client.Ping(ctx).Err(); err != nil {
+		return fmt.Errorf("Redis not ready after 30 seconds: %w", err)
+	}
+
+	log.Println("Redis is ready, running initialization commands...")
+
+	// Run initialization commands
+	pipe := client.Pipeline()
+	pipe.FlushAll(ctx)
+	pipe.Set(ctx, "init:status", "Initialization completed successfully", 24*time.Hour)
+	pipe.Set(ctx, "init:timestamp", time.Now().Unix(), 24*time.Hour)
+
+	_, err = pipe.Exec(ctx)
+	if err != nil {
+		return fmt.Errorf("failed to execute Redis initialization commands: %w", err)
+	}
+
+	log.Println("Redis initialization completed successfully via Go")
+	return nil
 }
 
 func startGRPCServer(cartService domain.CartService, couponService domain.CouponService, port string) {
