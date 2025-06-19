@@ -4,8 +4,7 @@
  */
 
 // Base URL without /api/v1 path
-export const BASE_API_URL =
-  import.meta.env.VITE_PUBLIC_BROKER_API_URL || "http://localhost:58080/api/v1";
+export const BASE_API_URL = import.meta.env.VITE_PUBLIC_BROKER_API_URL || "http://localhost:58080/api/v1";
 
 // Default API version path
 export const API_VERSION = "v1";
@@ -21,14 +20,10 @@ export const ADMIN_PREFIX = "admin";
 export const formatImageUrl = (url: string): string => {
   // If the URL is empty, return empty string
   if (!url) return "";
-  
+
   // If URL is a presigned URL (contains X-Amz parameters), return it as is
-  if (
-    url.includes("X-Amz-") ||
-    (url.includes("?") && url.includes("Signature=")) ||
-    url.includes("minioapi.deploy.io.vn") ||
-    url.includes("minio.deploy.io.vn")
-  ) {
+  if ( url.includes("X-Amz-") || (url.includes("?") && url.includes("Signature=")) || url.includes("minioapi.deploy.io.vn") || url.includes("minio.deploy.io.vn")) 
+  {
     console.log("Detected presigned URL:", url.split("?")[0]);
     return url;
   }
