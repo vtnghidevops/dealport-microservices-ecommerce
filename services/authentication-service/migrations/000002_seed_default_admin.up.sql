@@ -6,8 +6,8 @@
 INSERT INTO users (id, email, password_hash, first_name, last_name, username, role, status, active)
 VALUES (
     'f47ac10b-58cc-4372-a567-0e02b2c3d479',
-    'admin@gmail.com', 
-    '$2a$10$tRNEG16z9o2kVQs0Cq.dZuXlKqLjNbhGKdZ/GG6nxYSxpZyK6.sPe', 
+    'admin-sapogo@gmail.com', 
+    '$2a$10$DgTbgv8SmctaZa/QIvWrouRCUvPrvoHcJAG1tpJ2R344c/IuG0bqC', 
     'Admin', 
     'User',
     'UserAdmin', -- username = lastName + firstName
