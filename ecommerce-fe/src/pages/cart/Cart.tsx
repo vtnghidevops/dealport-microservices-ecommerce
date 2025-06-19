@@ -20,7 +20,9 @@ const Cart: React.FC = () => {
         console.error("Failed to refresh cart TTL on cart page:", err)
       );
     }
-  }, [isAuthenticated, refreshCartTTL]);
+    // Chỉ depend on isAuthenticated, không depend on refreshCartTTL để tránh loop
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isAuthenticated]);
 
   // if (isLoading) return <Loading size="large" fullscreen />;
   if (error) return <div className="text-red-500 p-8">{error}</div>;

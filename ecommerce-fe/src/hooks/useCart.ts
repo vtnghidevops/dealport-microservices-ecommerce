@@ -56,16 +56,13 @@ export const useCart = (): UseCartReturn => {
 
       // Debounce 100ms để tránh gọi API nhiều lần
       debouncedFetchRef.current = setTimeout(() => {
-        // Kiểm tra xem đã tải cart trong session này chưa
+        // Chỉ fetch cart nếu chưa được tải, không refresh TTL nữa để tránh loop
         if (!cartFetchedRef.current) {
           fetchCart();
           cartFetchedRef.current = true;
-        } else {
-          // Nếu cart đã được tải, chỉ refresh TTL
-          refreshCartTTL().catch((err) =>
-            console.error("Failed to refresh cart TTL:", err)
-          );
         }
+        // Đã xóa logic refresh TTL tự động để tránh loop
+        // refreshCartTTL sẽ chỉ được gọi thủ công khi cần thiết
       }, 100);
     } else {
       // Reset flag khi logout
