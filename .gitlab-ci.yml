@@ -1,6 +1,8 @@
+workflow:
+  rules:
+    - if: '$CI_COMMIT_TAG =~ /-performance-test$/'
+      when: always
+    - when: never
+
 include:
-- local: "ci/templates/.gitlab-ci-pre-prod.yml"
-rules: 
-  - if: $CI_COMMIT_TAG
-    when: always
-  - when: never
+  - local: "ci/templates/.gitlab-ci-pre-prod.yml"
