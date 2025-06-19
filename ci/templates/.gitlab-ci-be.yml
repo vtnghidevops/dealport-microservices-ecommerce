@@ -407,7 +407,7 @@ generate-sbom-files:
     - sbom-files
     expire_in: 1 day
   tags:
-  - k8s-shell-runner
+  - k8s-image-runner
   rules:
     - if: $CI_COMMIT_TAG
       when: manual
