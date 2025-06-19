@@ -1,5 +1,5 @@
 import http from "k6/http";
-import { check } from "k6";
+import { check, sleep } from "k6";
 import { getBaseUrl, headers, config } from "../config/test-config.js";
 
 /**
