@@ -366,7 +366,7 @@ generate-sbom-files:
   - |
     mkdir -p sbom-files
     docker pull $IMAGE_TAG
-    docker run --rm -v /var/run/docker.sock:/var/run/docker.sock -v $(pwd)/sbom-files:/sbom-files $TRIVY_IMAGE image --format cyclonedx -o /sbom-files/${BRANCH_NAME}-sbom.json $IMAGE
+    docker run --rm -v /var/run/docker.sock:/var/run/docker.sock -v $(pwd)/sbom-files:/sbom-files $TRIVY_IMAGE image --format cyclonedx -o /sbom-files/${BRANCH_NAME}-sbom.json $IMAGE_TAG
   artifacts:
     paths:
     - sbom-files
