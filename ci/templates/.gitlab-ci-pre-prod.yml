@@ -12,7 +12,9 @@ variables:
 
   # OWASP ZAP DAST Testing
   ZAP_IMAGE: "ghcr.io/zaproxy/zaproxy:stable"
+  ZAP_WORK_DIR: "/zap/wrk"
   DAST_REPORT_DIR: "./dast-reports"
+
 
   # MinIO Configuration
   MINIO_IMAGE: "minio/mc:latest"
@@ -47,26 +49,57 @@ owasp-zap-scan:
   variables:
     GIT_STRATEGY: none
   before_script:
+    # Create required directories
     - mkdir -p ${DAST_REPORT_DIR}
+    - mkdir -p ${ZAP_WORK_DIR}
+    - chmod 777 ${ZAP_WORK_DIR}
     - echo "Starting OWASP ZAP security scan for ${STAGING_URL}"
+    # Test ZAP installation
+    - which zap-baseline.py || echo "ZAP baseline script not found"
+    - which zap-full-scan.py || echo "ZAP full scan script not found"
   script:
     - |
       echo "=== OWASP ZAP Security Testing ==="
       
+      # Validate target URL
+      if [ -z "${STAGING_URL}" ]; then
+        echo "ERROR: STAGING_URL is not set!"
+        exit 1
+      fi
+    
       # 1. ZAP Baseline Scan (Quick)
       echo "Phase 1: ZAP Baseline Scan..."
-      zap-baseline.py -t ${STAGING_URL} \
-        -r ${DAST_REPORT_DIR}/zap-baseline-report.html \
-        -x ${DAST_REPORT_DIR}/zap-baseline-report.xml || BASELINE_EXIT=$?
+      zap-baseline.py \
+        -t "${STAGING_URL}" \
+        -r "/zap/wrk/zap-baseline-report.html" \
+        -x "/zap/wrk/zap-baseline-report.xml" \
+        -J "/zap/wrk/zap-baseline-report.json" \
+        -I \
+        -d || BASELINE_EXIT=$?
+      
+      # Copy reports to artifacts directory
+      cp /zap/wrk/zap-baseline-report.* ${DAST_REPORT_DIR}/ 2>/dev/null || echo "No baseline reports to copy"
       
       # 2. ZAP Full Scan (Comprehensive)  
       echo "Phase 2: ZAP Full Scan..."
-      zap-full-scan.py -t ${STAGING_URL} \
-        -r ${DAST_REPORT_DIR}/zap-full-scan-report.html \
-        -x ${DAST_REPORT_DIR}/zap-full-scan-report.xml || FULL_EXIT=$?
+      zap-full-scan.py \
+        -t "${STAGING_URL}" \
+        -r "/zap/wrk/zap-full-scan-report.html" \
+        -x "/zap/wrk/zap-full-scan-report.xml" \
+        -J "/zap/wrk/zap-full-scan-report.json" \
+        -I \
+        -d || FULL_EXIT=$?
+      
+      # Copy reports to artifacts directory  
+      cp /zap/wrk/zap-full-scan-report.* ${DAST_REPORT_DIR}/ 2>/dev/null || echo "No full scan reports to copy"
       
       # 3. Generate Security Summary
       echo "Phase 3: Generating Security Summary..."
+      
+      # Check if reports exist
+      BASELINE_REPORTS=$(ls ${DAST_REPORT_DIR}/zap-baseline-* 2>/dev/null | wc -l)
+      FULL_SCAN_REPORTS=$(ls ${DAST_REPORT_DIR}/zap-full-scan-* 2>/dev/null | wc -l)
+      
       cat > ${DAST_REPORT_DIR}/dast-summary.txt << EOF
       DAST Security Scan Results - $(date +%Y-%m-%d)
       Target: ${STAGING_URL}
