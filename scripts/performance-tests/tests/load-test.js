@@ -7,7 +7,11 @@
  */
 
 import { sleep } from "k6";
-import { config } from "../config/test-config.js";
+import {
+  config,
+  getLoadPattern,
+  getThresholds,
+} from "../config/test-config.js";
 import { setupTestUser } from "../utils/auth-utils.js";
 import {
   browseProducts,
@@ -18,20 +22,28 @@ import {
   completeUserJourney,
 } from "../utils/test-scenarios.js";
 
+// Get environment-specific configuration
+const loadPattern = getLoadPattern();
+const thresholds = getThresholds();
+
 // Test configuration for load test
 export const options = {
   stages: [
-    { duration: "2m", target: 10 }, // Ramp up to 10 users over 2 minutes
-    { duration: "3m", target: 25 }, // Ramp up to 25 users over 3 minutes
-    { duration: "2m", target: 50 }, // Ramp up to 50 users over 2 minutes
-    { duration: "5m", target: 50 }, // Stay at 50 users for 5 minutes
-    { duration: "2m", target: 25 }, // Ramp down to 25 users over 2 minutes
-    { duration: "2m", target: 0 }, // Ramp down to 0 users over 2 minutes
+    { duration: "2m", target: Math.floor(loadPattern.maxUsers * 0.2) }, // 20% ramp up
+    {
+      duration: loadPattern.rampUpTime,
+      target: Math.floor(loadPattern.maxUsers * 0.5),
+    }, // 50% ramp up
+    { duration: "2m", target: loadPattern.maxUsers }, // Full load
+    { duration: loadPattern.sustainTime, target: loadPattern.maxUsers }, // Sustain load
+    { duration: "3m", target: Math.floor(loadPattern.maxUsers * 0.5) }, // Ramp down to 50%
+    { duration: "2m", target: 0 }, // Ramp down to 0
   ],
-  thresholds: config.thresholds.load,
+  thresholds: thresholds,
   tags: {
     test_type: "load",
     environment: config.environment,
+    max_users: loadPattern.maxUsers,
   },
 };
 
@@ -40,12 +52,26 @@ export function setup() {
   console.log("📊 Starting Load Test");
   console.log(`Environment: ${config.environment}`);
   console.log(`Base URL: ${config.baseUrls[config.environment]}`);
-  console.log("Expected load: Up to 50 concurrent users for 16 minutes total");
+
+  // Calculate total duration
+  const totalDuration =
+    parseFloat(loadPattern.rampUpTime) +
+    parseFloat(loadPattern.sustainTime) +
+    9; // +9 for other stages
+  console.log(
+    `Expected load: Up to ${loadPattern.maxUsers} concurrent users for ~${totalDuration} minutes total`
+  );
+  console.log(
+    `Ramp up time: ${loadPattern.rampUpTime}, Sustain time: ${loadPattern.sustainTime}`
+  );
 
   // Setup multiple test users for different scenarios
   const users = [];
+  const userCount = Math.min(10, Math.floor(loadPattern.maxUsers / 20)); // Scale user setup with max users
 
-  for (let i = 0; i < 5; i++) {
+  console.log(`Setting up ${userCount} test users...`);
+
+  for (let i = 0; i < userCount; i++) {
     const userToken = setupTestUser({
       email: `load-customer-${i}-${Date.now()}@test.com`,
       password: "testpassword123",
@@ -56,12 +82,18 @@ export function setup() {
     if (userToken) {
       users.push(userToken);
     }
+
+    // Small delay to avoid overwhelming setup
+    sleep(0.1);
   }
 
   console.log(`Setup completed with ${users.length} test users`);
+  console.log(`Starting load test with max ${loadPattern.maxUsers} users...`);
 
   return {
     userTokens: users,
+    startTime: Date.now(),
+    maxUsers: loadPattern.maxUsers,
   };
 }
 

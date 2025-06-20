@@ -70,7 +70,8 @@ export const config = {
       sustainTime: "5m",
     },
     staging: {
-      maxUsers: 200, // Increased for K8s
+      maxUsers: 300, // Load test max
+      stressMaxUsers: 500, // Stress test max
       rampUpTime: "3m",
       sustainTime: "10m",
     },

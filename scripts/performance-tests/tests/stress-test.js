@@ -24,12 +24,13 @@ const loadPattern = getLoadPattern();
 
 // Calculate stress test limits based on environment
 const getStressLimits = () => {
-  const baseMax = loadPattern.maxUsers;
+  // Use stressMaxUsers if available, otherwise fallback to maxUsers
+  const baseMax = loadPattern.stressMaxUsers || loadPattern.maxUsers;
   return {
-    normalLoad: baseMax,
-    stressLoad: Math.floor(baseMax * 1.5), // 150% of normal
-    extremeLoad: Math.floor(baseMax * 2), // 200% of normal
-    spikeLoad: Math.floor(baseMax * 2.5), // 250% of normal
+    normalLoad: Math.floor(baseMax * 0.75), // 75% as baseline
+    stressLoad: baseMax, // 100% - main stress level
+    extremeLoad: Math.floor(baseMax * 1.25), // 125% of stress max
+    spikeLoad: Math.floor(baseMax * 1.5), // 150% of stress max
   };
 };
 
