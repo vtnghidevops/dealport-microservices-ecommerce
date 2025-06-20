@@ -146,6 +146,9 @@ export default function (data) {
     // 2. Test Authenticated Endpoints (requires token)
     if (userToken) {
       console.log(`VU${currentVUs}: Testing authenticated endpoints...`);
+      console.log(
+        `VU${currentVUs}: Using token: ${userToken.substring(0, 20)}...`
+      );
 
       const authHeaders = {
         "Content-Type": "application/json",
@@ -160,6 +163,12 @@ export default function (data) {
       check(profileResponse, {
         "user profile works": (r) => r.status === 200,
       });
+
+      if (profileResponse.status !== 200) {
+        console.log(
+          `VU${currentVUs}: Profile failed: ${profileResponse.status} - ${profileResponse.body}`
+        );
+      }
 
       // Cart operations
       const cartResponse = http.get(
@@ -188,6 +197,12 @@ export default function (data) {
       check(wishlistResponse, {
         "wishlist access works": (r) => r.status === 200,
       });
+
+      if (wishlistResponse.status !== 200) {
+        console.log(
+          `VU${currentVUs}: Wishlist failed: ${wishlistResponse.status} - ${wishlistResponse.body}`
+        );
+      }
 
       // Orders
       const ordersResponse = http.get(
