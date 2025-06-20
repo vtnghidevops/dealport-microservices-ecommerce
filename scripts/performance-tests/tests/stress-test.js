@@ -10,7 +10,9 @@
 
 import { sleep } from "k6";
 import { config, getLoadPattern } from "../config/test-config.js";
-import { setupTestUser } from "../utils/auth-utils.js";
+import { setupTestUser, getAuthHeaders } from "../utils/auth-utils.js";
+import http from "k6/http";
+import { check } from "k6";
 import {
   browseProducts,
   cartOperations,
@@ -173,12 +175,33 @@ export default function (data) {
   try {
     if (stressLevel === "spike") {
       // Spike phase: Very aggressive, rapid-fire requests
-      if (userBehavior < 0.3) {
-        console.log(`VU${currentVUs}: SPIKE - Rapid browsing burst`);
-        browseProducts(userToken);
-        browseProducts(userToken); // Double requests
+      if (userBehavior < 0.4) {
+        console.log(`VU${currentVUs}: SPIKE - Rapid authenticated operations`);
+        if (userToken) {
+          // Fast authenticated operations
+          const headers = getAuthHeaders(userToken);
+
+          // Rapid cart operations
+          const cartResponse = http.get(
+            `${config.baseUrls[config.environment]}/api/v1/cart`,
+            { headers, tags: { scenario: "spike", type: "cart" } }
+          );
+
+          const profileResponse = http.get(
+            `${config.baseUrls[config.environment]}/api/v1/users/me`,
+            { headers, tags: { scenario: "spike", type: "profile" } }
+          );
+
+          check(cartResponse, { "spike cart access": (r) => r.status === 200 });
+          check(profileResponse, {
+            "spike profile access": (r) => r.status === 200,
+          });
+        } else {
+          browseProducts();
+          browseProducts(); // Double requests
+        }
         sleep(Math.random() * 0.3 + 0.1);
-      } else if (userBehavior < 0.6) {
+      } else if (userBehavior < 0.7) {
         console.log(`VU${currentVUs}: SPIKE - Cart operation burst`);
         if (userToken) {
           cartOperations(userToken);
@@ -197,26 +220,30 @@ export default function (data) {
         sleep(Math.random() * 0.2 + 0.05);
       }
     } else if (stressLevel === "extreme") {
-      // Extreme phase: Heavy operations with some rapid requests
-      if (userBehavior < 0.25) {
-        console.log(`VU${currentVUs}: EXTREME - Heavy browsing pattern`);
+      // Extreme phase: Heavy operations with authenticated focus
+      if (userBehavior < 0.3) {
+        console.log(`VU${currentVUs}: EXTREME - Heavy browsing + auth`);
         browseProducts(userToken);
         searchAndFilter();
-        browseProducts(userToken);
+        if (userToken) {
+          userProfileOperations(userToken);
+        }
         sleep(Math.random() * 0.8 + 0.2);
-      } else if (userBehavior < 0.5) {
-        console.log(`VU${currentVUs}: EXTREME - Intensive cart operations`);
+      } else if (userBehavior < 0.6) {
+        console.log(`VU${currentVUs}: EXTREME - Intensive cart + checkout`);
         if (userToken) {
           browseProducts(userToken);
           cartOperations(userToken);
-          userProfileOperations(userToken);
+          checkoutProcess(userToken);
         } else {
           browseProducts();
-          searchAndFilter();
+          checkoutProcess();
         }
         sleep(Math.random() * 1 + 0.3);
-      } else if (userBehavior < 0.75) {
-        console.log(`VU${currentVUs}: EXTREME - Complete journey stress`);
+      } else {
+        console.log(
+          `VU${currentVUs}: EXTREME - Complete authenticated journey`
+        );
         if (userToken) {
           completeUserJourney(userToken);
         } else {
@@ -225,52 +252,43 @@ export default function (data) {
           browseProducts();
         }
         sleep(Math.random() * 1.5 + 0.5);
-      } else {
-        console.log(`VU${currentVUs}: EXTREME - Search heavy pattern`);
-        searchAndFilter();
-        searchAndFilter(); // Multiple searches
-        browseProducts(userToken);
-        sleep(Math.random() * 0.6 + 0.2);
       }
     } else if (stressLevel === "stress") {
-      // Stress phase: Sustained heavy load
-      if (userBehavior < 0.2) {
-        console.log(`VU${currentVUs}: STRESS - Sustained browsing`);
+      // Stress phase: Sustained heavy load with authentication
+      if (userBehavior < 0.25) {
+        console.log(`VU${currentVUs}: STRESS - Sustained browsing + profile`);
         browseProducts(userToken);
-        searchAndFilter();
+        if (userToken) {
+          userProfileOperations(userToken);
+        }
         sleep(Math.random() * 1.2 + 0.5);
-      } else if (userBehavior < 0.4) {
-        console.log(`VU${currentVUs}: STRESS - Cart abandonment pattern`);
+      } else if (userBehavior < 0.5) {
+        console.log(`VU${currentVUs}: STRESS - Cart heavy operations`);
         if (userToken) {
           browseProducts(userToken);
           cartOperations(userToken);
           userProfileOperations(userToken);
           cartOperations(userToken); // Multiple cart operations
+        } else {
+          browseProducts();
+          searchAndFilter();
         }
         sleep(Math.random() * 1.5 + 0.5);
-      } else if (userBehavior < 0.6) {
+      } else if (userBehavior < 0.75) {
         console.log(`VU${currentVUs}: STRESS - Complete journey under load`);
         if (userToken) {
           completeUserJourney(userToken);
         } else {
           browseProducts();
-          searchAndFilter();
+          checkoutProcess();
         }
         sleep(Math.random() * 2 + 0.8);
-      } else if (userBehavior < 0.8) {
-        console.log(`VU${currentVUs}: STRESS - Search intensive`);
-        searchAndFilter();
-        browseProducts(userToken);
-        if (userToken && Math.random() < 0.6) {
-          cartOperations(userToken);
-        }
-        sleep(Math.random() * 1 + 0.4);
       } else {
-        console.log(`VU${currentVUs}: STRESS - Mixed heavy operations`);
+        console.log(`VU${currentVUs}: STRESS - Mixed authenticated operations`);
         browseProducts(userToken);
         if (userToken) {
           userProfileOperations(userToken);
-          if (Math.random() < 0.5) {
+          if (Math.random() < 0.6) {
             cartOperations(userToken);
           }
         }
@@ -278,12 +296,15 @@ export default function (data) {
         sleep(Math.random() * 1.3 + 0.3);
       }
     } else {
-      // Normal phase: Regular stress test patterns
-      if (userBehavior < 0.2) {
-        console.log(`VU${currentVUs}: NORMAL - Browsing pattern`);
+      // Normal phase: Regular stress test patterns with auth
+      if (userBehavior < 0.3) {
+        console.log(`VU${currentVUs}: NORMAL - Browsing + profile pattern`);
         browseProducts(userToken);
+        if (userToken) {
+          userProfileOperations(userToken);
+        }
         sleep(Math.random() * 1.5 + 0.8);
-      } else if (userBehavior < 0.4) {
+      } else if (userBehavior < 0.6) {
         console.log(`VU${currentVUs}: NORMAL - Cart operations`);
         if (userToken) {
           browseProducts(userToken);
@@ -292,29 +313,25 @@ export default function (data) {
           browseProducts();
         }
         sleep(Math.random() * 2 + 1);
-      } else if (userBehavior < 0.6) {
+      } else if (userBehavior < 0.8) {
         console.log(`VU${currentVUs}: NORMAL - User journey`);
         if (userToken) {
           completeUserJourney(userToken);
         } else {
           browseProducts();
-          searchAndFilter();
+          checkoutProcess();
         }
         sleep(Math.random() * 2.5 + 1);
-      } else if (userBehavior < 0.8) {
-        console.log(`VU${currentVUs}: NORMAL - Search operations`);
-        searchAndFilter();
-        browseProducts(userToken);
-        sleep(Math.random() * 1.8 + 0.7);
       } else {
-        console.log(`VU${currentVUs}: NORMAL - Profile operations`);
+        console.log(`VU${currentVUs}: NORMAL - Search + profile operations`);
+        searchAndFilter();
         if (userToken) {
           userProfileOperations(userToken);
           browseProducts(userToken);
         } else {
           browseProducts();
         }
-        sleep(Math.random() * 1.5 + 0.8);
+        sleep(Math.random() * 1.8 + 0.7);
       }
     }
   } catch (error) {

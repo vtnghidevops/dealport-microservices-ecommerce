@@ -23,6 +23,8 @@ import {
   windowShopping,
   quickSearch,
 } from "../utils/test-scenarios.js";
+import { getAuthHeaders } from "../utils/auth-utils.js";
+import { http, check } from "k6";
 
 // Get environment-specific configuration
 const loadPattern = getLoadPattern();
@@ -105,38 +107,91 @@ export default function (data) {
   const userBehavior = Math.random();
 
   try {
-    if (userBehavior < 0.4) {
-      // 40% - Window shopping (browsing without purchase intent)
+    if (userBehavior < 0.3) {
+      // 30% - Window shopping (browsing without purchase intent)
       console.log(`VU${currentVUs}: Window shopping pattern`);
-      windowShopping(userToken);
-    } else if (userBehavior < 0.7) {
-      // 30% - Guest checkout validation (public APIs)
-      console.log(`VU${currentVUs}: Guest checkout validation`);
+
+      // Browse categories and products
       browseProducts(userToken);
-      checkoutProcess(); // Guest checkout
-    } else if (userBehavior < 0.85) {
-      // 15% - Authenticated complete journey
+      sleep(Math.random() * 1 + 0.5);
+
+      // Browse more products
+      browseProducts(userToken);
+    } else if (userBehavior < 0.6) {
+      // 30% - Search and browse behavior
+      console.log(`VU${currentVUs}: Search and browse pattern`);
+
+      // Search/browse products
+      searchAndFilter(userToken);
+      sleep(Math.random() * 1 + 0.5);
+
+      // Follow up with more browsing
+      browseProducts(userToken);
+    } else if (userBehavior < 0.8) {
+      // 20% - Authenticated cart operations
       if (userToken) {
-        console.log(`VU${currentVUs}: Complete authenticated journey`);
-        completeUserJourney(userToken);
+        console.log(`VU${currentVUs}: Authenticated cart operations`);
+
+        // Browse products first
+        browseProducts(userToken);
+        sleep(Math.random() * 1 + 0.5);
+
+        // Add items to cart
+        cartOperations(userToken);
+        sleep(Math.random() * 1 + 0.5);
+
+        // Check profile/orders
+        userProfileOperations(userToken);
       } else {
-        console.log(`VU${currentVUs}: Fallback to browsing (no auth)`);
+        console.log(`VU${currentVUs}: No auth - fallback to browsing`);
         browseProducts();
+        searchAndFilter();
       }
     } else if (userBehavior < 0.95) {
-      // 10% - Authenticated cart operations
+      // 15% - Complete purchase journey
       if (userToken) {
-        console.log(`VU${currentVUs}: Cart operations`);
-        browseProducts(userToken);
-        cartOperations(userToken);
+        console.log(`VU${currentVUs}: Complete purchase journey`);
+
+        // Full user journey
+        completeUserJourney(userToken);
       } else {
-        console.log(`VU${currentVUs}: Fallback to browsing (no auth)`);
+        console.log(`VU${currentVUs}: No auth - guest checkout attempt`);
         browseProducts();
+        checkoutProcess(); // Guest checkout validation
       }
     } else {
-      // 5% - Quick search users
-      console.log(`VU${currentVUs}: Quick search pattern`);
-      quickSearch(userToken);
+      // 5% - Profile and account management
+      if (userToken) {
+        console.log(`VU${currentVUs}: Account management pattern`);
+
+        // Focus on profile operations
+        userProfileOperations(userToken);
+        sleep(Math.random() * 1 + 0.5);
+
+        // Check orders and wishlist
+        const headers = getAuthHeaders(userToken);
+
+        // Get orders
+        const ordersResponse = http.get(
+          `${config.baseUrls[config.environment]}/api/v1/checkout/orders`,
+          { headers, tags: { scenario: "account", type: "orders" } }
+        );
+        check(ordersResponse, {
+          "orders retrieved": (r) => r.status === 200,
+        });
+
+        // Get wishlist
+        const wishlistResponse = http.get(
+          `${config.baseUrls[config.environment]}/api/v1/users/me/wishlist`,
+          { headers, tags: { scenario: "account", type: "wishlist" } }
+        );
+        check(wishlistResponse, {
+          "wishlist retrieved": (r) => r.status === 200,
+        });
+      } else {
+        console.log(`VU${currentVUs}: No auth - fallback to browsing`);
+        browseProducts();
+      }
     }
   } catch (error) {
     console.error(`VU${currentVUs}: Load test error:`, error.message);

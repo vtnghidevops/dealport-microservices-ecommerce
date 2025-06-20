@@ -86,89 +86,152 @@ export function setup() {
 
 // Main test function - runs for each virtual user
 export default function (data) {
-  const { userSessions, authenticatedCount } = data;
-
-  // Get user session for this virtual user
-  const userSession = getRandomUserSession(userSessions);
+  const { userTokens, startTime } = data;
   const currentVUs = __VU;
 
-  console.log(`VU${currentVUs}: Starting smoke test checks`);
+  // Get authenticated user token for this VU
+  const userToken =
+    userTokens && userTokens.length > 0
+      ? userTokens[currentVUs % userTokens.length]
+      : null;
 
   try {
-    // 1. Test core browsing functionality (public)
-    console.log(`VU${currentVUs}: Testing product browsing...`);
-    browseProducts(userSession);
+    console.log(`🔍 VU${currentVUs}: Starting comprehensive endpoint testing`);
 
-    sleep(1);
+    // 1. Test Public Endpoints (no auth required)
+    console.log(`VU${currentVUs}: Testing public endpoints...`);
 
-    // 2. Test search functionality (public)
-    console.log(`VU${currentVUs}: Testing search functionality...`);
-    searchAndFilter(userSession);
+    // Categories
+    const categoriesResponse = http.get(
+      `${config.baseUrls[config.environment]}/api/v1/categories`,
+      { tags: { scenario: "public", type: "categories" } }
+    );
+    check(categoriesResponse, {
+      "categories endpoint works": (r) => r.status === 200,
+    });
 
-    sleep(1);
+    // Products
+    const productsResponse = http.get(
+      `${config.baseUrls[config.environment]}/api/v1/products?limit=5`,
+      { tags: { scenario: "public", type: "products" } }
+    );
+    check(productsResponse, {
+      "products endpoint works": (r) => r.status === 200,
+    });
 
-    // 3. Test checkout validation (public)
-    console.log(`VU${currentVUs}: Testing checkout validation...`);
-    checkoutProcess(userSession);
+    // Checkout validation (public)
+    const checkoutValidateResponse = http.post(
+      `${config.baseUrls[config.environment]}/api/v1/checkout/validate`,
+      JSON.stringify({
+        items: [{ product_id: 1, quantity: 2, price: 99.99 }],
+        shipping_address: {
+          street: "123 Test St",
+          city: "Test City",
+          postal_code: "12345",
+          country: "US",
+        },
+      }),
+      {
+        headers: { "Content-Type": "application/json" },
+        tags: { scenario: "public", type: "checkout_validate" },
+      }
+    );
+    check(checkoutValidateResponse, {
+      "checkout validation works": (r) =>
+        r.status === 200 || r.status === 400 || r.status === 422,
+    });
 
-    sleep(1);
-
-    // 4. Additional auth test if available
-    if (userSession && userSession.token && !userSession.isGuest) {
+    // 2. Test Authenticated Endpoints (requires token)
+    if (userToken) {
       console.log(`VU${currentVUs}: Testing authenticated endpoints...`);
 
-      // Quick cart check
+      const authHeaders = {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${userToken}`,
+      };
+
+      // User profile
+      const profileResponse = http.get(
+        `${config.baseUrls[config.environment]}/api/v1/users/me`,
+        { headers: authHeaders, tags: { scenario: "auth", type: "profile" } }
+      );
+      check(profileResponse, {
+        "user profile works": (r) => r.status === 200,
+      });
+
+      // Cart operations
       const cartResponse = http.get(
         `${config.baseUrls[config.environment]}/api/v1/cart`,
+        { headers: authHeaders, tags: { scenario: "auth", type: "cart_get" } }
+      );
+      check(cartResponse, {
+        "cart access works": (r) => r.status === 200,
+      });
+
+      // Add item to cart
+      const addToCartResponse = http.post(
+        `${config.baseUrls[config.environment]}/api/v1/cart/items`,
+        JSON.stringify({ product_id: 1, quantity: 2 }),
+        { headers: authHeaders, tags: { scenario: "auth", type: "cart_add" } }
+      );
+      check(addToCartResponse, {
+        "add to cart works": (r) => r.status === 200 || r.status === 201,
+      });
+
+      // Wishlist
+      const wishlistResponse = http.get(
+        `${config.baseUrls[config.environment]}/api/v1/users/me/wishlist`,
+        { headers: authHeaders, tags: { scenario: "auth", type: "wishlist" } }
+      );
+      check(wishlistResponse, {
+        "wishlist access works": (r) => r.status === 200,
+      });
+
+      // Orders
+      const ordersResponse = http.get(
+        `${config.baseUrls[config.environment]}/api/v1/checkout/orders`,
+        { headers: authHeaders, tags: { scenario: "auth", type: "orders" } }
+      );
+      check(ordersResponse, {
+        "orders access works": (r) => r.status === 200,
+      });
+
+      // Create order
+      const createOrderResponse = http.post(
+        `${config.baseUrls[config.environment]}/api/v1/checkout/orders`,
+        JSON.stringify({
+          items: [{ product_id: 1, quantity: 1, price: 50.0 }],
+          shipping_address: {
+            street: "123 Test St",
+            city: "Test City",
+            postal_code: "12345",
+            country: "US",
+          },
+          payment_method: "credit_card",
+        }),
         {
-          headers: getAuthHeaders(userSession),
-          tags: { scenario: "smoke", type: "cart_check" },
+          headers: authHeaders,
+          tags: { scenario: "auth", type: "create_order" },
         }
       );
-
-      check(cartResponse, {
-        "cart endpoint accessible": (r) => r.status === 200,
+      check(createOrderResponse, {
+        "order creation works": (r) => r.status >= 200 && r.status < 500,
       });
+
+      console.log(`✅ VU${currentVUs}: All authenticated endpoints tested`);
+    } else {
+      console.log(
+        `⚠️ VU${currentVUs}: No auth token - skipping authenticated tests`
+      );
     }
 
-    // Quick API endpoint checks
-    console.log("Checking API endpoints...");
-
-    // Test categories endpoint
-    const categoriesCheck = http.get(
-      `${config.baseUrls[config.environment]}/api/v1/categories`,
-      { tags: { scenario: "api_check", type: "categories" } }
-    );
-
-    check(categoriesCheck, {
-      "categories endpoint available": (r) => r.status === 200,
-    });
-
-    // Test products endpoint
-    const productsCheck = http.get(
-      `${config.baseUrls[config.environment]}/api/v1/products?limit=5`,
-      { tags: { scenario: "api_check", type: "products" } }
-    );
-
-    check(productsCheck, {
-      "products endpoint available": (r) => r.status === 200,
-    });
-
-    // Test cart endpoint (requires auth, should return 401)
-    const cartCheck = http.get(
-      `${config.baseUrls[config.environment]}/api/v1/cart`,
-      { tags: { scenario: "api_check", type: "cart" } }
-    );
-
-    check(cartCheck, {
-      "cart endpoint responds": (r) => r.status === 401 || r.status === 200,
-    });
+    console.log(`🎯 VU${currentVUs}: Smoke test completed successfully`);
   } catch (error) {
-    console.error(`VU${currentVUs}: Smoke test error:`, error.message);
+    console.error(`❌ VU${currentVUs}: Smoke test error:`, error.message);
+    sleep(0.5);
   }
 
-  // Short pause between iterations
-  sleep(2);
+  sleep(Math.random() * 2 + 1);
 }
 
 // Teardown function - runs once after the test
