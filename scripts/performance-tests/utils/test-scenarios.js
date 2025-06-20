@@ -5,7 +5,7 @@
 
 import http from "k6/http";
 import { check, sleep } from "k6";
-import { config } from "../config/test-config.js";
+import { config, getBaseUrl } from "../config/test-config.js";
 import { getAuthHeaders } from "./auth-utils.js";
 
 /**
@@ -23,10 +23,10 @@ export function browseProducts(userSession = null) {
   const headers = getBaseHeaders(userSession);
 
   // Get product categories
-  const categoriesResponse = http.get(
-    `${config.baseUrls[config.environment]}/api/v1/categories`,
-    { headers, tags: { scenario: "browse", type: "categories" } }
-  );
+  const categoriesResponse = http.get(`${getBaseUrl()}/api/v1/categories`, {
+    headers,
+    tags: { scenario: "browse", type: "categories" },
+  });
 
   check(categoriesResponse, {
     "categories loaded": (r) => r.status === 200,
@@ -41,7 +41,7 @@ export function browseProducts(userSession = null) {
           categories.data[Math.floor(Math.random() * categories.data.length)];
 
         const categoryResponse = http.get(
-          `${config.baseUrls[config.environment]}/api/v1/products?category_id=${
+          `${getBaseUrl()}/api/v1/products?category_id=${
             randomCategory.id
           }&limit=10`,
           { headers, tags: { scenario: "browse", type: "category_products" } }
@@ -58,7 +58,7 @@ export function browseProducts(userSession = null) {
 
   // Get featured/trending products
   const productsResponse = http.get(
-    `${config.baseUrls[config.environment]}/api/v1/products?limit=20`,
+    `${getBaseUrl()}/api/v1/products?limit=20`,
     { headers, tags: { scenario: "browse", type: "products" } }
   );
 
@@ -88,9 +88,7 @@ export function searchAndFilter(userSession = null) {
 
   // Search products
   const searchResponse = http.get(
-    `${
-      config.baseUrls[config.environment]
-    }/api/v1/products?search=${randomTerm}&limit=10`,
+    `${getBaseUrl()}/api/v1/products?search=${randomTerm}&limit=10`,
     { headers, tags: { scenario: "search", type: "product_search" } }
   );
 
@@ -100,9 +98,7 @@ export function searchAndFilter(userSession = null) {
 
   // Filter products by price range
   const filterResponse = http.get(
-    `${
-      config.baseUrls[config.environment]
-    }/api/v1/products?min_price=10&max_price=1000&limit=15`,
+    `${getBaseUrl()}/api/v1/products?min_price=10&max_price=1000&limit=15`,
     { headers, tags: { scenario: "search", type: "price_filter" } }
   );
 
@@ -126,20 +122,20 @@ export function cartOperations(userSession) {
   const headers = getBaseHeaders(userSession);
 
   // Get current cart
-  const cartResponse = http.get(
-    `${config.baseUrls[config.environment]}/api/v1/cart`,
-    { headers, tags: { scenario: "cart", type: "get_cart" } }
-  );
+  const cartResponse = http.get(`${getBaseUrl()}/api/v1/cart`, {
+    headers,
+    tags: { scenario: "cart", type: "get_cart" },
+  });
 
   check(cartResponse, {
     "cart retrieved": (r) => r.status === 200,
   });
 
   // Get some products to add to cart
-  const productsResponse = http.get(
-    `${config.baseUrls[config.environment]}/api/v1/products?limit=5`,
-    { headers, tags: { scenario: "cart", type: "get_products" } }
-  );
+  const productsResponse = http.get(`${getBaseUrl()}/api/v1/products?limit=5`, {
+    headers,
+    tags: { scenario: "cart", type: "get_products" },
+  });
 
   if (productsResponse.status === 200) {
     try {
@@ -155,7 +151,7 @@ export function cartOperations(userSession) {
         };
 
         const addResponse = http.post(
-          `${config.baseUrls[config.environment]}/api/v1/cart/items`,
+          `${getBaseUrl()}/api/v1/cart/items`,
           JSON.stringify(addToCartPayload),
           { headers, tags: { scenario: "cart", type: "add_item" } }
         );
@@ -172,9 +168,7 @@ export function cartOperations(userSession) {
           };
 
           const updateResponse = http.put(
-            `${config.baseUrls[config.environment]}/api/v1/cart/items/${
-              randomProduct.id
-            }`,
+            `${getBaseUrl()}/api/v1/cart/items/${randomProduct.id}`,
             JSON.stringify(updatePayload),
             { headers, tags: { scenario: "cart", type: "update_item" } }
           );

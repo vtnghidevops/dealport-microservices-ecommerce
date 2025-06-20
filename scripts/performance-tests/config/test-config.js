@@ -222,13 +222,12 @@ export const config = {
 
 // Get base URL for current environment
 export function getBaseUrl() {
-  // Priority 1: Use TARGET_URL from environment (for CI/CD pipelines)
-  if (__ENV.TARGET_URL) {
-    return __ENV.TARGET_URL;
-  }
+  // Always use API URLs, ignore TARGET_URL from pipeline
+  const envFromK6 = __ENV.ENVIRONMENT || config.environment;
+  const baseUrl = config.baseUrls[envFromK6] || config.baseUrls.local;
 
-  // Priority 2: Use configured URL for environment
-  return config.baseUrls[config.environment] || config.baseUrls.local;
+  console.log(`Using API URL for ${envFromK6}: ${baseUrl}`);
+  return baseUrl;
 }
 
 // Get load pattern for current environment
