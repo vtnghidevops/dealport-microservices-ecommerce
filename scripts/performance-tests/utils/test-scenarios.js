@@ -160,11 +160,10 @@ export function checkoutProcess(token) {
   sleep(1);
 
   // Create order
-  const orderPayload = {
-    ...validatePayload,
+  const orderPayload = Object.assign({}, validatePayload, {
     payment_method: "credit_card",
     notes: "Performance test order",
-  };
+  });
 
   const createOrderResponse = http.post(
     `${getBaseUrl()}/api/v1/checkout/orders`,
