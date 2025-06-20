@@ -144,12 +144,21 @@ func main() {
 	}()
 
 	// Initialize OTP manager
-	otpManager := util.NewOTPManager(
+	otpManager := util.NewOTPManagerWithBypass(
 		cfg.OTP.Length,
 		cfg.OTP.Expiry,
 		cfg.OTP.MaxAttempts,
+		cfg.OTP.BypassEnabled,
+		cfg.OTP.BypassCode,
 	)
-	logger.Printf("Initialized OTP manager with expiry: %v", cfg.OTP.Expiry)
+
+	// Log OTP configuration (hide bypass code in production)
+	if cfg.OTP.BypassEnabled {
+		logger.Printf("Initialized OTP manager with bypass ENABLED for %s environment", cfg.Server.Environment)
+	} else {
+		logger.Printf("Initialized OTP manager with bypass DISABLED for %s environment", cfg.Server.Environment)
+	}
+	logger.Printf("OTP expiry: %v, max attempts: %d", cfg.OTP.Expiry, cfg.OTP.MaxAttempts)
 
 	// Initialize mail client
 	//mailClient := util.NewMailClient(cfg.MailClient.BaseURL)

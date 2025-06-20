@@ -1,163 +1,202 @@
+/**
+ * Authentication utilities for K6 performance tests
+ * With OTP bypass enabled in staging, authentication is now straightforward
+ */
+
 import http from "k6/http";
-import { check, sleep } from "k6";
-import { getBaseUrl, headers, config } from "../config/test-config.js";
+import { check } from "k6";
+import { config } from "../config/test-config.js";
+
+// Simple OTP bypass - only for staging
+const STAGING_OTP_BYPASS = "123456";
 
 /**
- * Login user and return authentication token
- * @param {Object} user - User credentials {email, password}
- * @returns {string} - JWT token
+ * Check if current environment supports OTP bypass
+ * @returns {boolean} True if bypass is available
  */
-export function loginUser(user) {
-  const loginPayload = {
-    email: user.email,
-    password: user.password,
-  };
-
-  const response = http.post(
-    `${getBaseUrl()}/api/v1/auth/login`,
-    JSON.stringify(loginPayload),
-    { headers }
-  );
-
-  // Check if this is an OTP-required response (typically 202 or specific message)
-  const isOtpRequired =
-    response.status === 202 ||
-    (response.body && response.body.includes("OTP")) ||
-    (response.body && response.body.includes("verification"));
-
-  if (isOtpRequired) {
-    console.log(
-      "Login endpoint working - OTP verification required (expected in staging)"
-    );
-    // Don't fail the test for OTP requirement - this is expected behavior
-    return null;
-  }
-
-  const loginSuccess = check(response, {
-    "login successful": (r) => r.status === 200,
-    "login response has token": (r) => {
-      try {
-        const body = JSON.parse(r.body);
-        return body.data && body.data.access_token;
-      } catch (e) {
-        return false;
-      }
-    },
-  });
-
-  if (loginSuccess && response.status === 200) {
-    try {
-      const responseBody = JSON.parse(response.body);
-      return responseBody.data.access_token;
-    } catch (e) {
-      console.error("Failed to parse login response:", e);
-      return null;
-    }
-  }
-
-  // Only log as error if it's not OTP-related
-  if (!isOtpRequired) {
-    console.error("Login failed:", response.status, response.body);
-  }
-  return null;
+function isOTPBypassAvailable() {
+  return config.environment.toLowerCase() === "staging";
 }
 
 /**
- * Register a new user for testing
- * @param {Object} userData - User registration data
- * @returns {boolean} - Registration success
+ * Get OTP code to use for verification
+ * @returns {string} OTP bypass code for staging, or null for other environments
  */
-export function registerUser(userData) {
-  const registerPayload = {
-    email: userData.email,
-    password: userData.password,
-    first_name: userData.firstName || "Test",
+function getOTPCode() {
+  return isOTPBypassAvailable() ? STAGING_OTP_BYPASS : null;
+}
+
+/**
+ * Register and verify user with OTP bypass
+ * @param {Object} userData - User registration data
+ * @returns {string|null} User token or null
+ */
+export function setupTestUser(userData = {}) {
+  const baseUrl = config.baseUrls[config.environment];
+
+  // Check if OTP bypass is available
+  if (!isOTPBypassAvailable()) {
+    console.log(
+      `⚠️ OTP bypass not available in ${config.environment} environment`
+    );
+    console.log(
+      "   Authentication will use real OTP workflow (not suitable for performance testing)"
+    );
+    return null;
+  }
+
+  // Generate unique user data
+  const timestamp = Date.now();
+  const randomId = Math.random().toString(36).substr(2, 9);
+
+  const user = {
+    email: userData.email || `perf-user-${timestamp}-${randomId}@test.com`,
+    password: userData.password || "PerfTest123!",
+    first_name: userData.firstName || "Performance",
     last_name: userData.lastName || "User",
     phone: userData.phone || "+1234567890",
   };
 
-  const response = http.post(
-    `${getBaseUrl()}/api/v1/auth/register`,
-    JSON.stringify(registerPayload),
-    { headers }
-  );
+  try {
+    console.log(`Setting up user: ${user.email} (${config.environment} env)`);
 
-  // Check if this requires email verification (expected in staging)
-  const isEmailVerificationRequired =
-    response.status === 202 ||
-    (response.body && response.body.includes("verification")) ||
-    (response.body && response.body.includes("email"));
-
-  if (isEmailVerificationRequired) {
-    console.log(
-      "Registration endpoint working - Email verification required (expected in staging)"
+    // Step 1: Register user
+    const registerResponse = http.post(
+      `${baseUrl}/api/v1/auth/register`,
+      JSON.stringify(user),
+      {
+        headers: { "Content-Type": "application/json" },
+        tags: { scenario: "auth_setup", type: "register" },
+      }
     );
-    return false; // Don't proceed with login since email verification is needed
-  }
 
-  return check(response, {
-    "registration successful": (r) => r.status === 201 || r.status === 200,
-  });
-}
+    const registerSuccess = check(registerResponse, {
+      "registration successful": (r) => r.status === 200 || r.status === 201,
+    });
 
-/**
- * Get authenticated headers with JWT token
- * @param {string} token - JWT token
- * @returns {Object} - Headers with authorization
- */
-export function getAuthHeaders(token) {
-  return Object.assign({}, headers, {
-    Authorization: `Bearer ${token}`,
-  });
-}
+    if (!registerSuccess) {
+      console.log(
+        `Registration failed for ${user.email}: ${registerResponse.status}`
+      );
+      return null;
+    }
 
-/**
- * Validate token
- * @param {string} token - JWT token to validate
- * @returns {boolean} - Token validity
- */
-export function validateToken(token) {
-  const response = http.get(`${getBaseUrl()}/api/v1/auth/validate`, {
-    headers: getAuthHeaders(token),
-  });
+    // Step 2: Verify with bypass OTP (staging only)
+    const otpCode = getOTPCode();
+    const verifyResponse = http.post(
+      `${baseUrl}/api/v1/auth/verify-registration`,
+      JSON.stringify({
+        email: user.email,
+        otp: otpCode,
+      }),
+      {
+        headers: { "Content-Type": "application/json" },
+        tags: { scenario: "auth_setup", type: "verify" },
+      }
+    );
 
-  return check(response, {
-    "token is valid": (r) => r.status === 200,
-  });
-}
+    const verifySuccess = check(verifyResponse, {
+      "verification successful": (r) => r.status === 200,
+      "verification has token": (r) => {
+        try {
+          const data = JSON.parse(r.body);
+          return data.data && data.data.access_token;
+        } catch {
+          return false;
+        }
+      },
+    });
 
-/**
- * Setup test user (register if needed, then login)
- * @param {Object} userData - User data
- * @returns {string} - JWT token
- */
-export function setupTestUser(userData) {
-  console.log("Attempting authentication setup...");
-
-  // Try to login first
-  let token = loginUser(userData);
-
-  if (!token) {
-    // If login fails, try to register then login
-    console.log("Login not available, attempting registration...");
-    const registered = registerUser(userData);
-
-    if (registered) {
-      // Wait a bit for registration to complete
-      sleep(1);
-      token = loginUser(userData);
+    if (verifySuccess && verifyResponse.status === 200) {
+      const verifyData = JSON.parse(verifyResponse.body);
+      console.log(`✅ User ${user.email} setup successful with OTP bypass`);
+      return verifyData.data.access_token;
     } else {
       console.log(
-        "ℹAuthentication requires manual verification (staging security)"
+        `Verification failed for ${user.email}: ${verifyResponse.status}`
       );
+      return null;
     }
+  } catch (error) {
+    console.error(`Setup failed for ${user.email}:`, error.message);
+    return null;
   }
+}
+
+/**
+ * Setup multiple test users efficiently
+ * @param {number} maxUsers - Maximum number of users to setup
+ * @returns {Array} Array of user tokens
+ */
+export function setupMultipleTestUsers(maxUsers = 10) {
+  console.log(`🔑 Setting up ${maxUsers} test users with OTP bypass...`);
+
+  const userTokens = [];
+
+  for (let i = 0; i < maxUsers; i++) {
+    const token = setupTestUser({
+      email: `perf-user-${i}-${Date.now()}@test.com`,
+      firstName: `Perf${i}`,
+      lastName: "User",
+    });
+
+    if (token) {
+      userTokens.push(token);
+      console.log(`   ✅ User ${i + 1}/${maxUsers} authenticated`);
+    } else {
+      console.log(`   ❌ User ${i + 1}/${maxUsers} failed`);
+    }
+
+    // Small delay between registrations
+    sleep(0.2);
+  }
+
+  console.log(
+    `🎯 Setup complete: ${userTokens.length}/${maxUsers} users ready`
+  );
+  return userTokens;
+}
+
+/**
+ * Get authentication headers
+ * @param {string} token - JWT token
+ * @returns {Object} Headers object
+ */
+export function getAuthHeaders(token) {
+  const baseHeaders = {
+    "Content-Type": "application/json",
+    Accept: "application/json",
+  };
 
   if (token) {
-    console.log("Authentication successful");
-  } else {
-    console.log("ℹContinuing with public endpoint tests only");
+    return Object.assign({}, baseHeaders, {
+      Authorization: `Bearer ${token}`,
+    });
   }
 
-  return token;
+  return baseHeaders;
+}
+
+/**
+ * Validate authentication token
+ * @param {string} token - JWT token to validate
+ * @returns {boolean} True if token is valid
+ */
+export function validateToken(token) {
+  if (!token) return false;
+
+  try {
+    const response = http.get(
+      `${config.baseUrls[config.environment]}/api/v1/user/profile`,
+      {
+        headers: getAuthHeaders(token),
+        tags: { scenario: "token_validation" },
+      }
+    );
+
+    return response.status === 200;
+  } catch (error) {
+    console.error("Token validation error:", error.message);
+    return false;
+  }
 }

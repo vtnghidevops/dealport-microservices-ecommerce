@@ -45,9 +45,11 @@ type JWTConfig struct {
 
 // OTPConfig holds all OTP related configuration
 type OTPConfig struct {
-	Length      int
-	Expiry      time.Duration
-	MaxAttempts int
+	Length        int
+	Expiry        time.Duration
+	MaxAttempts   int
+	BypassEnabled bool
+	BypassCode    string
 }
 
 // MailClientConfig holds all mail client related configuration
@@ -91,9 +93,11 @@ func LoadConfig(path string) (*Config, error) {
 			RefreshDuration: time.Duration(getEnvAsInt("JWT_REFRESH_DURATION", 24*7)) * time.Hour,
 		},
 		OTP: OTPConfig{
-			Length:      getEnvAsInt("OTP_LENGTH", 6),
-			Expiry:      time.Duration(getEnvAsInt("OTP_EXPIRY", 15)) * time.Minute,
-			MaxAttempts: getEnvAsInt("OTP_MAX_ATTEMPTS", 3),
+			Length:        getEnvAsInt("OTP_LENGTH", 6),
+			Expiry:        time.Duration(getEnvAsInt("OTP_EXPIRY", 15)) * time.Minute,
+			MaxAttempts:   getEnvAsInt("OTP_MAX_ATTEMPTS", 3),
+			BypassEnabled: getOTPBypassEnabled(getEnv("ENVIRONMENT", "development")),
+			BypassCode:    getOTPBypassCode(getEnv("ENVIRONMENT", "development")),
 		},
 		MailClient: MailClientConfig{
 			BaseURL: getEnv("MAIL_SERVICE_URL", "http://mail-service:9002"),
@@ -132,4 +136,25 @@ func getEnvAsInt(key string, defaultValue int) int {
 		return value
 	}
 	return defaultValue
+}
+
+func getEnvAsBool(key string, defaultValue bool) bool {
+	valueStr := getEnv(key, "")
+	if value, err := strconv.ParseBool(valueStr); err == nil {
+		return value
+	}
+	return defaultValue
+}
+
+func getOTPBypassEnabled(environment string) bool {
+	// Only enable OTP bypass in staging for performance testing
+	return environment == "staging"
+}
+
+func getOTPBypassCode(environment string) string {
+	// Only provide bypass code for staging
+	if environment == "staging" {
+		return "123456" // Simple bypass code for staging
+	}
+	return ""
 }

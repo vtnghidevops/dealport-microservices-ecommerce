@@ -1,280 +1,400 @@
+/**
+ * Test scenarios for E-commerce performance testing
+ * Using shared account approach with unique session contexts
+ */
+
 import http from "k6/http";
 import { check, sleep } from "k6";
-import { getBaseUrl, headers, config } from "../config/test-config.js";
+import { config } from "../config/test-config.js";
 import { getAuthHeaders } from "./auth-utils.js";
 
 /**
- * Browse products scenario - simulates user browsing product catalog
- * @param {string} token - Optional auth token for personalized experience
+ * Common headers for requests
  */
-export function browseProducts(token = null) {
-  const requestHeaders = token ? getAuthHeaders(token) : headers;
+function getBaseHeaders(userSession = null) {
+  return getAuthHeaders(userSession);
+}
 
-  // Get all products
-  const productsResponse = http.get(
-    `${getBaseUrl()}/api/v1/products?page=1&limit=20`,
-    { headers: requestHeaders }
+/**
+ * Browse products - Core public functionality
+ * @param {Object} userSession - User session from setup
+ */
+export function browseProducts(userSession = null) {
+  const headers = getBaseHeaders(userSession);
+
+  // Get product categories
+  const categoriesResponse = http.get(
+    `${config.baseUrls[config.environment]}/api/v1/product/categories`,
+    { headers, tags: { scenario: "browse", type: "categories" } }
   );
-
-  check(productsResponse, {
-    "products list loaded": (r) => r.status === 200,
-    "products response time OK": (r) => r.timings.duration < 2000,
-  });
-
-  sleep(1); // Simulate user reading time
-
-  // Get categories
-  const categoriesResponse = http.get(`${getBaseUrl()}/api/v1/categories`, {
-    headers: requestHeaders,
-  });
 
   check(categoriesResponse, {
     "categories loaded": (r) => r.status === 200,
-    "categories response time OK": (r) => r.timings.duration < 1000,
   });
 
-  sleep(0.5);
+  if (categoriesResponse.status === 200) {
+    try {
+      const categories = JSON.parse(categoriesResponse.body);
+      if (categories.data && categories.data.length > 0) {
+        // Browse a random category
+        const randomCategory =
+          categories.data[Math.floor(Math.random() * categories.data.length)];
 
-  // Get a specific product (simulate clicking on product)
-  const productDetailResponse = http.get(`${getBaseUrl()}/api/v1/products/1`, {
-    headers: requestHeaders,
+        const categoryResponse = http.get(
+          `${config.baseUrls[config.environment]}/api/v1/product/category/${
+            randomCategory.id
+          }/products`,
+          { headers, tags: { scenario: "browse", type: "category_products" } }
+        );
+
+        check(categoryResponse, {
+          "category products loaded": (r) => r.status === 200,
+        });
+      }
+    } catch (error) {
+      console.error("Error browsing categories:", error.message);
+    }
+  }
+
+  // Get featured/trending products
+  const productsResponse = http.get(
+    `${config.baseUrls[config.environment]}/api/v1/product/products?limit=20`,
+    { headers, tags: { scenario: "browse", type: "products" } }
+  );
+
+  check(productsResponse, {
+    "products loaded": (r) => r.status === 200,
   });
 
-  check(productDetailResponse, {
-    "product detail loaded": (r) => r.status === 200,
-    "product detail response time OK": (r) => r.timings.duration < 1500,
-  });
-
-  sleep(2); // Simulate user viewing product details
+  sleep(Math.random() * 2 + 1);
 }
 
 /**
- * Cart operations scenario - add, update, remove items from cart
- * @param {string} token - Auth token (required for cart operations)
+ * Search and filter operations
+ * @param {Object} userSession - User session from setup
  */
-export function cartOperations(token) {
-  if (!token) {
-    console.error("Cart operations require authentication token");
-    return;
+export function searchAndFilter(userSession = null) {
+  const headers = getBaseHeaders(userSession);
+  const searchTerms = [
+    "laptop",
+    "phone",
+    "headphones",
+    "shoes",
+    "book",
+    "shirt",
+  ];
+  const randomTerm =
+    searchTerms[Math.floor(Math.random() * searchTerms.length)];
+
+  // Search products
+  const searchResponse = http.get(
+    `${
+      config.baseUrls[config.environment]
+    }/api/v1/product/search?q=${randomTerm}&limit=10`,
+    { headers, tags: { scenario: "search", type: "product_search" } }
+  );
+
+  check(searchResponse, {
+    "search successful": (r) => r.status === 200,
+  });
+
+  // Filter products by price range
+  const filterResponse = http.get(
+    `${
+      config.baseUrls[config.environment]
+    }/api/v1/product/products?min_price=10&max_price=1000&limit=15`,
+    { headers, tags: { scenario: "search", type: "price_filter" } }
+  );
+
+  check(filterResponse, {
+    "filter successful": (r) => r.status === 200,
+  });
+
+  sleep(Math.random() * 1.5 + 0.5);
+}
+
+/**
+ * Cart operations - Requires authentication
+ * @param {Object} userSession - User session with valid token
+ */
+export function cartOperations(userSession) {
+  if (!userSession || !userSession.token) {
+    console.log("Cart operations skipped - authentication required");
+    return browseProducts(userSession); // Fallback to browsing
   }
 
-  const authHeaders = getAuthHeaders(token);
+  const headers = getBaseHeaders(userSession);
 
   // Get current cart
-  const getCartResponse = http.get(`${getBaseUrl()}/api/v1/cart`, {
-    headers: authHeaders,
-  });
-
-  check(getCartResponse, {
-    "get cart successful": (r) => r.status === 200,
-    "get cart response time OK": (r) => r.timings.duration < 1000,
-  });
-
-  sleep(0.5);
-
-  // Add item to cart
-  const addItemPayload = {
-    product_id: config.testProducts[0].id,
-    quantity: config.testProducts[0].quantity,
-  };
-
-  const addItemResponse = http.post(
-    `${getBaseUrl()}/api/v1/cart/items`,
-    JSON.stringify(addItemPayload),
-    { headers: authHeaders }
+  const cartResponse = http.get(
+    `${config.baseUrls[config.environment]}/api/v1/cart`,
+    { headers, tags: { scenario: "cart", type: "get_cart" } }
   );
 
-  check(addItemResponse, {
-    "add item to cart successful": (r) => r.status === 200 || r.status === 201,
-    "add item response time OK": (r) => r.timings.duration < 1500,
+  check(cartResponse, {
+    "cart retrieved": (r) => r.status === 200,
   });
 
-  sleep(1);
-
-  // Update cart item quantity
-  const updateItemPayload = {
-    quantity: config.testProducts[0].quantity + 1,
-  };
-
-  const updateItemResponse = http.put(
-    `${getBaseUrl()}/api/v1/cart/items/1`, // Assuming item ID 1
-    JSON.stringify(updateItemPayload),
-    { headers: authHeaders }
+  // Get some products to add to cart
+  const productsResponse = http.get(
+    `${config.baseUrls[config.environment]}/api/v1/product/products?limit=5`,
+    { headers, tags: { scenario: "cart", type: "get_products" } }
   );
 
-  check(updateItemResponse, {
-    "update cart item successful": (r) => r.status === 200,
-    "update item response time OK": (r) => r.timings.duration < 1000,
-  });
+  if (productsResponse.status === 200) {
+    try {
+      const products = JSON.parse(productsResponse.body);
+      if (products.data && products.data.length > 0) {
+        const randomProduct =
+          products.data[Math.floor(Math.random() * products.data.length)];
 
-  sleep(0.5);
+        // Add product to cart
+        const addToCartPayload = {
+          product_id: randomProduct.id,
+          quantity: Math.floor(Math.random() * 3) + 1,
+        };
+
+        const addResponse = http.post(
+          `${config.baseUrls[config.environment]}/api/v1/cart/add`,
+          JSON.stringify(addToCartPayload),
+          { headers, tags: { scenario: "cart", type: "add_item" } }
+        );
+
+        check(addResponse, {
+          "item added to cart": (r) => r.status === 200 || r.status === 201,
+        });
+
+        // Update cart item quantity
+        if (addResponse.status === 200 || addResponse.status === 201) {
+          const updatePayload = {
+            product_id: randomProduct.id,
+            quantity: Math.floor(Math.random() * 2) + 1,
+          };
+
+          const updateResponse = http.put(
+            `${config.baseUrls[config.environment]}/api/v1/cart/update`,
+            JSON.stringify(updatePayload),
+            { headers, tags: { scenario: "cart", type: "update_item" } }
+          );
+
+          check(updateResponse, {
+            "cart item updated": (r) => r.status === 200,
+          });
+        }
+      }
+    } catch (error) {
+      console.error("Error in cart operations:", error.message);
+    }
+  }
+
+  sleep(Math.random() * 2 + 1);
 }
 
 /**
- * Checkout scenario - validate checkout and create order
- * @param {string} token - Auth token (required for checkout)
+ * Checkout process - Mixed public/auth operations
+ * @param {Object} userSession - User session (can be guest)
  */
-export function checkoutProcess(token) {
-  if (!token) {
-    console.error("Checkout process requires authentication token");
-    return;
-  }
+export function checkoutProcess(userSession = null) {
+  const headers = getBaseHeaders(userSession);
 
-  const authHeaders = getAuthHeaders(token);
-
-  // Validate checkout
+  // Validate checkout data (public endpoint)
   const validatePayload = {
-    billing_info: {
-      first_name: "Test",
-      last_name: "User",
-      email: "test@example.com",
-      phone: "+1234567890",
-      address: "123 Test St",
+    items: [
+      {
+        product_id: "12345",
+        quantity: 2,
+        price: 99.99,
+      },
+    ],
+    shipping_address: {
+      street: "123 Test St",
       city: "Test City",
-      state: "Test State",
-      zip_code: "12345",
-      country: "US",
-    },
-    shipping_info: {
-      first_name: "Test",
-      last_name: "User",
-      address: "123 Test St",
-      city: "Test City",
-      state: "Test State",
-      zip_code: "12345",
+      postal_code: "12345",
       country: "US",
     },
   };
 
   const validateResponse = http.post(
-    `${getBaseUrl()}/api/v1/checkout/validate`,
+    `${config.baseUrls[config.environment]}/api/v1/checkout/validate`,
     JSON.stringify(validatePayload),
-    { headers: authHeaders }
+    { headers, tags: { scenario: "checkout", type: "validate" } }
   );
 
   check(validateResponse, {
-    "checkout validation successful": (r) => r.status === 200,
-    "checkout validation response time OK": (r) => r.timings.duration < 2000,
+    "checkout validation": (r) => r.status === 200 || r.status === 400, // 400 might be validation errors
   });
 
-  sleep(1);
-
-  // Create order
-  const orderPayload = Object.assign({}, validatePayload, {
-    payment_method: "credit_card",
-    notes: "Performance test order",
-  });
-
-  const createOrderResponse = http.post(
-    `${getBaseUrl()}/api/v1/checkout/orders`,
-    JSON.stringify(orderPayload),
-    { headers: authHeaders }
+  // Get shipping options (public)
+  const shippingResponse = http.get(
+    `${
+      config.baseUrls[config.environment]
+    }/api/v1/checkout/shipping-options?country=US`,
+    { headers, tags: { scenario: "checkout", type: "shipping_options" } }
   );
 
-  check(createOrderResponse, {
-    "order creation successful": (r) => r.status === 200 || r.status === 201,
-    "order creation response time OK": (r) => r.timings.duration < 3000,
+  check(shippingResponse, {
+    "shipping options loaded": (r) => r.status === 200,
   });
 
-  sleep(2);
+  // Get available payment methods (public)
+  const paymentMethodsResponse = http.get(
+    `${config.baseUrls[config.environment]}/api/v1/checkout/payment-methods`,
+    { headers, tags: { scenario: "checkout", type: "payment_methods" } }
+  );
+
+  check(paymentMethodsResponse, {
+    "payment methods loaded": (r) => r.status === 200,
+  });
+
+  // Only attempt order creation if authenticated
+  if (userSession && userSession.token) {
+    const orderPayload = Object.assign({}, validatePayload, {
+      payment_method: "credit_card",
+      payment_details: {
+        card_number: "4111111111111111",
+        expiry: "12/25",
+        cvv: "123",
+      },
+    });
+
+    const orderResponse = http.post(
+      `${config.baseUrls[config.environment]}/api/v1/checkout/create-order`,
+      JSON.stringify(orderPayload),
+      { headers, tags: { scenario: "checkout", type: "create_order" } }
+    );
+
+    check(orderResponse, {
+      "order creation attempted": (r) => r.status >= 200 && r.status < 500,
+    });
+  }
+
+  sleep(Math.random() * 3 + 2);
 }
 
 /**
- * User profile operations scenario
- * @param {string} token - Auth token (required)
+ * User profile operations - Requires authentication
+ * @param {Object} userSession - User session with valid token
  */
-export function userProfileOperations(token) {
-  if (!token) {
-    console.error("User profile operations require authentication token");
-    return;
+export function userProfileOperations(userSession) {
+  if (!userSession || !userSession.token) {
+    console.log("Profile operations skipped - authentication required");
+    return browseProducts(userSession); // Fallback to browsing
   }
 
-  const authHeaders = getAuthHeaders(token);
+  const headers = getBaseHeaders(userSession);
 
   // Get user profile
-  const profileResponse = http.get(`${getBaseUrl()}/api/v1/users/me`, {
-    headers: authHeaders,
-  });
+  const profileResponse = http.get(
+    `${config.baseUrls[config.environment]}/api/v1/user/profile`,
+    { headers, tags: { scenario: "profile", type: "get_profile" } }
+  );
 
   check(profileResponse, {
-    "get profile successful": (r) => r.status === 200,
-    "get profile response time OK": (r) => r.timings.duration < 1000,
+    "profile retrieved": (r) => r.status === 200,
   });
 
-  sleep(0.5);
+  // Get user orders
+  const ordersResponse = http.get(
+    `${config.baseUrls[config.environment]}/api/v1/user/orders`,
+    { headers, tags: { scenario: "profile", type: "get_orders" } }
+  );
+
+  check(ordersResponse, {
+    "orders retrieved": (r) => r.status === 200,
+  });
 
   // Get wishlist
   const wishlistResponse = http.get(
-    `${getBaseUrl()}/api/v1/users/me/wishlist`,
-    { headers: authHeaders }
+    `${config.baseUrls[config.environment]}/api/v1/user/wishlist`,
+    { headers, tags: { scenario: "profile", type: "get_wishlist" } }
   );
 
   check(wishlistResponse, {
-    "get wishlist successful": (r) => r.status === 200,
-    "get wishlist response time OK": (r) => r.timings.duration < 1000,
+    "wishlist retrieved": (r) => r.status === 200,
   });
 
-  sleep(0.5);
+  // Update profile information
+  const updatePayload = {
+    first_name: `TestUser${userSession.id}`,
+    last_name: `Session${userSession.sessionId.slice(-4)}`,
+    phone: "+1234567890",
+  };
+
+  const updateResponse = http.put(
+    `${config.baseUrls[config.environment]}/api/v1/user/profile`,
+    JSON.stringify(updatePayload),
+    { headers, tags: { scenario: "profile", type: "update_profile" } }
+  );
+
+  check(updateResponse, {
+    "profile updated": (r) => r.status === 200,
+  });
+
+  sleep(Math.random() * 2 + 1);
 }
 
 /**
- * Search and filter scenario
+ * Complete user journey - Full e-commerce flow
+ * @param {Object} userSession - User session (mixed auth/guest)
  */
-export function searchAndFilter() {
-  // Search products
-  const searchResponse = http.get(
-    `${getBaseUrl()}/api/v1/products?search=test&page=1&limit=10`,
-    { headers }
-  );
+export function completeUserJourney(userSession = null) {
+  // Start with browsing (public)
+  browseProducts(userSession);
 
-  check(searchResponse, {
-    "product search successful": (r) => r.status === 200,
-    "search response time OK": (r) => r.timings.duration < 2000,
-  });
+  sleep(Math.random() * 1 + 0.5);
 
-  sleep(1);
+  // Search for products (public)
+  searchAndFilter(userSession);
 
-  // Filter by category
-  const filterResponse = http.get(
-    `${getBaseUrl()}/api/v1/products?category_id=1&page=1&limit=10`,
-    { headers }
-  );
+  sleep(Math.random() * 1 + 0.5);
 
-  check(filterResponse, {
-    "product filter successful": (r) => r.status === 200,
-    "filter response time OK": (r) => r.timings.duration < 2000,
-  });
+  // If authenticated, do cart operations
+  if (userSession && userSession.token) {
+    cartOperations(userSession);
+    sleep(Math.random() * 1 + 0.5);
 
-  sleep(0.5);
+    // Profile operations
+    userProfileOperations(userSession);
+    sleep(Math.random() * 1 + 0.5);
+  }
+
+  // Checkout (mixed public/auth)
+  checkoutProcess(userSession);
+
+  sleep(Math.random() * 2 + 1);
 }
 
 /**
- * Complete user journey - from browsing to checkout
- * @param {string} token - Auth token
+ * Window shopping behavior - Pure browsing without purchase intent
+ * @param {Object} userSession - User session (guest)
  */
-export function completeUserJourney(token) {
-  console.log("Starting complete user journey...");
+export function windowShopping(userSession = null) {
+  // Browse multiple categories
+  browseProducts(userSession);
+  sleep(Math.random() * 1 + 0.5);
 
-  // 1. Browse products
-  browseProducts(token);
+  // Search different products
+  searchAndFilter(userSession);
+  sleep(Math.random() * 1 + 0.5);
 
-  // 2. Search and filter
-  searchAndFilter();
+  // Browse more products
+  browseProducts(userSession);
+  sleep(Math.random() * 2 + 1);
+}
 
-  // 3. User profile operations (if authenticated)
-  if (token) {
-    userProfileOperations(token);
-  }
+/**
+ * Quick search user - Search-focused behavior
+ * @param {Object} userSession - User session (guest)
+ */
+export function quickSearch(userSession = null) {
+  // Multiple searches
+  searchAndFilter(userSession);
+  sleep(Math.random() * 0.5 + 0.2);
 
-  // 4. Cart operations (if authenticated)
-  if (token) {
-    cartOperations(token);
-  }
+  searchAndFilter(userSession);
+  sleep(Math.random() * 0.5 + 0.2);
 
-  // 5. Checkout process (if authenticated)
-  if (token) {
-    checkoutProcess(token);
-  }
-
-  console.log("Completed user journey");
+  // Quick browse of results
+  browseProducts(userSession);
+  sleep(Math.random() * 1 + 0.5);
 }

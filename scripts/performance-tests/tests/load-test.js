@@ -12,7 +12,7 @@ import {
   getLoadPattern,
   getThresholds,
 } from "../config/test-config.js";
-import { setupTestUser } from "../utils/auth-utils.js";
+import { setupMultipleTestUsers } from "../utils/auth-utils.js";
 import {
   browseProducts,
   cartOperations,
@@ -20,6 +20,8 @@ import {
   userProfileOperations,
   searchAndFilter,
   completeUserJourney,
+  guestCheckoutFlow,
+  windowShoppingFlow,
 } from "../utils/test-scenarios.js";
 
 // Get environment-specific configuration
@@ -65,33 +67,22 @@ export function setup() {
     `Ramp up time: ${loadPattern.rampUpTime}, Sustain time: ${loadPattern.sustainTime}`
   );
 
-  // Setup multiple test users for different scenarios
-  const users = [];
-  const userCount = Math.min(10, Math.floor(loadPattern.maxUsers / 20)); // Scale user setup with max users
+  // Setup multiple shared test accounts for better distribution
+  const userCount = Math.min(
+    10,
+    config.testUsers.performanceTestAccounts.length
+  );
+  console.log(`Attempting to authenticate ${userCount} shared accounts...`);
 
-  console.log(`Setting up ${userCount} test users...`);
+  const userTokens = setupMultipleTestUsers(userCount);
 
-  for (let i = 0; i < userCount; i++) {
-    const userToken = setupTestUser({
-      email: `load-customer-${i}-${Date.now()}@test.com`,
-      password: "testpassword123",
-      firstName: `Load${i}`,
-      lastName: "Customer",
-    });
-
-    if (userToken) {
-      users.push(userToken);
-    }
-
-    // Small delay to avoid overwhelming setup
-    sleep(0.1);
-  }
-
-  console.log(`Setup completed with ${users.length} test users`);
+  console.log(
+    `✅ Setup completed with ${userTokens.length}/${userCount} authenticated accounts`
+  );
   console.log(`Starting load test with max ${loadPattern.maxUsers} users...`);
 
   return {
-    userTokens: users,
+    userTokens: userTokens,
     startTime: Date.now(),
     maxUsers: loadPattern.maxUsers,
   };
@@ -99,7 +90,7 @@ export function setup() {
 
 // Main test function - runs for each virtual user
 export default function (data) {
-  const { userTokens } = data;
+  const { userTokens, startTime, maxUsers } = data;
 
   // Randomly select a user token for this iteration
   const userToken =
@@ -107,51 +98,52 @@ export default function (data) {
       ? userTokens[Math.floor(Math.random() * userTokens.length)]
       : null;
 
-  // Simulate different user behavior patterns
+  // Realistic user behavior patterns based on e-commerce analytics
   const userBehavior = Math.random();
 
-  if (userBehavior < 0.3) {
-    // 30% - Browsing only users (window shoppers)
-    console.log("Simulating browsing-only user...");
-    browseProducts(userToken);
-    searchAndFilter();
+  if (userBehavior < 0.4) {
+    // 40% - Window shoppers (just browsing, no purchase intent)
+    console.log("Simulating window shopping user...");
+    windowShoppingFlow();
     sleep(Math.random() * 3 + 2); // 2-5 seconds thinking time
-  } else if (userBehavior < 0.6) {
-    // 30% - Users who browse and add to cart but don't checkout
-    console.log("Simulating browse-and-cart user...");
-    browseProducts(userToken);
-
-    if (userToken) {
-      userProfileOperations(userToken);
-      cartOperations(userToken);
-    }
-
-    searchAndFilter();
+  } else if (userBehavior < 0.7) {
+    // 30% - Guest users who validate checkout but can't complete
+    console.log("Simulating guest checkout flow...");
+    guestCheckoutFlow();
     sleep(Math.random() * 2 + 1); // 1-3 seconds thinking time
   } else if (userBehavior < 0.85) {
-    // 25% - Complete user journey (browse, cart, checkout)
-    console.log("Simulating complete user journey...");
-
+    // 15% - Authenticated users with complete journey
+    console.log("Simulating authenticated complete journey...");
     if (userToken) {
       completeUserJourney(userToken);
     } else {
-      // Fallback to browsing if no token
-      browseProducts();
-      searchAndFilter();
+      // Fallback to guest flow if no auth
+      console.log("No auth token, falling back to guest checkout...");
+      guestCheckoutFlow();
     }
-
+    sleep(Math.random() * 2 + 1); // 1-3 seconds thinking time
+  } else if (userBehavior < 0.95) {
+    // 10% - Authenticated cart users (add to cart but don't checkout)
+    console.log("Simulating authenticated cart operations...");
+    if (userToken) {
+      browseProducts(userToken);
+      userProfileOperations(userToken);
+      cartOperations(userToken);
+    } else {
+      // Fallback to window shopping if no auth
+      console.log("No auth token, falling back to browsing...");
+      windowShoppingFlow();
+    }
     sleep(Math.random() * 2 + 1); // 1-3 seconds thinking time
   } else {
-    // 15% - Quick searchers (users who know what they want)
+    // 5% - Quick searchers (users who know what they want)
     console.log("Simulating quick search user...");
     searchAndFilter();
-
-    // Quick product view
     browseProducts(userToken);
 
-    if (userToken && Math.random() < 0.7) {
-      // 70% chance to add to cart
-      cartOperations(userToken);
+    // Try guest checkout validation
+    if (Math.random() < 0.5) {
+      guestCheckoutFlow();
     }
 
     sleep(Math.random() * 1 + 0.5); // 0.5-1.5 seconds thinking time

@@ -34,6 +34,9 @@ type OTPManager struct {
 	otpLength   int                   // Length of OTP
 	otpExpiry   time.Duration         // How long OTPs are valid for
 	maxAttempts int                   // Maximum verification attempts
+	// Add bypass functionality for staging/testing
+	bypassEnabled bool   // Whether bypass is enabled
+	bypassCode    string // Universal bypass code
 }
 
 // NewOTPManager creates a new OTP manager
@@ -43,6 +46,18 @@ func NewOTPManager(otpLength int, otpExpiry time.Duration, maxAttempts int) *OTP
 		otpLength:   otpLength,
 		otpExpiry:   otpExpiry,
 		maxAttempts: maxAttempts,
+	}
+}
+
+// NewOTPManagerWithBypass creates a new OTP manager with bypass support
+func NewOTPManagerWithBypass(otpLength int, otpExpiry time.Duration, maxAttempts int, bypassEnabled bool, bypassCode string) *OTPManager {
+	return &OTPManager{
+		otps:          make(map[string]*OTPRecord),
+		otpLength:     otpLength,
+		otpExpiry:     otpExpiry,
+		maxAttempts:   maxAttempts,
+		bypassEnabled: bypassEnabled,
+		bypassCode:    bypassCode,
 	}
 }
 
@@ -72,6 +87,13 @@ func (m *OTPManager) GenerateOTP(email string, purpose OTPPurpose) (string, erro
 
 // VerifyOTP verifies the provided OTP for the email and purpose
 func (m *OTPManager) VerifyOTP(email, otp string, purpose OTPPurpose) (bool, error) {
+	// Check for bypass code first (staging/testing environments)
+	if m.bypassEnabled && m.bypassCode != "" && otp == m.bypassCode {
+		// Log bypass usage for monitoring
+		fmt.Printf("OTP bypass used for email: %s, purpose: %s\n", email, purpose)
+		return true, nil
+	}
+
 	m.mutex.Lock()
 	defer m.mutex.Unlock()
 

@@ -20,6 +20,69 @@ export const config = {
       email: "customer@test.com",
       password: "customer123456",
     },
+    // Shared test account pool for performance testing
+    performanceTestAccounts: [
+      {
+        email: "perf-user-1@sapogo.test",
+        password: "PerfTest123!",
+        firstName: "Performance",
+        lastName: "User1",
+      },
+      {
+        email: "perf-user-2@sapogo.test",
+        password: "PerfTest123!",
+        firstName: "Performance",
+        lastName: "User2",
+      },
+      {
+        email: "perf-user-3@sapogo.test",
+        password: "PerfTest123!",
+        firstName: "Performance",
+        lastName: "User3",
+      },
+      {
+        email: "perf-user-4@sapogo.test",
+        password: "PerfTest123!",
+        firstName: "Performance",
+        lastName: "User4",
+      },
+      {
+        email: "perf-user-5@sapogo.test",
+        password: "PerfTest123!",
+        firstName: "Performance",
+        lastName: "User5",
+      },
+      {
+        email: "perf-user-6@sapogo.test",
+        password: "PerfTest123!",
+        firstName: "Performance",
+        lastName: "User6",
+      },
+      {
+        email: "perf-user-7@sapogo.test",
+        password: "PerfTest123!",
+        firstName: "Performance",
+        lastName: "User7",
+      },
+      {
+        email: "perf-user-8@sapogo.test",
+        password: "PerfTest123!",
+        firstName: "Performance",
+        lastName: "User8",
+      },
+      {
+        email: "perf-user-9@sapogo.test",
+        password: "PerfTest123!",
+        firstName: "Performance",
+        lastName: "User9",
+      },
+      {
+        email: "perf-user-10@sapogo.test",
+        password: "PerfTest123!",
+        firstName: "Performance",
+        lastName: "User10",
+      },
+    ],
   },
 
   // Test products for cart operations

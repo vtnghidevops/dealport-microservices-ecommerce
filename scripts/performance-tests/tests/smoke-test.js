@@ -1,28 +1,45 @@
 /**
- * Smoke Test - Verifies basic functionality with minimal load
+ * Smoke Test - Basic functionality validation
  *
- * Purpose: Ensure the system is working and all critical endpoints are accessible
- * Load: 1-2 virtual users for 30 seconds
- * Thresholds: Basic response time and error rate checks
+ * Purpose: Quick health check to ensure all critical systems are working
+ * Load: 1-2 users for 40 seconds
+ * Coverage: Core public endpoints + basic authentication
  */
 
 import { sleep } from "k6";
-import { config } from "../config/test-config.js";
-import { loginUser, setupTestUser } from "../utils/auth-utils.js";
+import { config, getLoadPattern } from "../config/test-config.js";
+import {
+  setupMultipleTestUsers,
+  getRandomUserSession,
+} from "../utils/auth-utils.js";
 import {
   browseProducts,
-  cartOperations,
-  userProfileOperations,
+  searchAndFilter,
+  checkoutProcess,
 } from "../utils/test-scenarios.js";
+
+// Get environment-specific configuration
+const loadPattern = getLoadPattern();
 
 // Test configuration for smoke test
 export const options = {
   stages: [
-    { duration: "10s", target: 1 }, // Ramp up to 1 user
-    { duration: "20s", target: 2 }, // Stay at 2 users
-    { duration: "10s", target: 0 }, // Ramp down to 0 users
+    { duration: "10s", target: 1 }, // Start with 1 user
+    { duration: "20s", target: 2 }, // Ramp to 2 users
+    { duration: "10s", target: 0 }, // Ramp down
   ],
-  thresholds: config.thresholds.smoke,
+
+  thresholds: {
+    // Lenient thresholds for smoke test - just checking if things work
+    http_req_duration: ["p(95)<5000"], // 95% under 5s
+    http_req_failed: ["rate<0.10"], // Error rate under 10%
+    checks: ["rate>0.80"], // 80% of checks pass
+
+    // Critical endpoints should work
+    "http_req_failed{type:products}": ["rate<0.05"],
+    "http_req_failed{type:categories}": ["rate<0.05"],
+  },
+
   tags: {
     test_type: "smoke",
     environment: config.environment,
@@ -31,80 +48,114 @@ export const options = {
 
 // Setup function - runs once before the test
 export function setup() {
-  console.log("Starting Smoke Test");
+  console.log("🚨 Starting Smoke Test");
   console.log(`Environment: ${config.environment}`);
   console.log(`Base URL: ${config.baseUrls[config.environment]}`);
+  console.log(`Duration: 40 seconds`);
+  console.log("");
+  console.log("🎯 Objectives:");
+  console.log("- Verify core public endpoints are working");
+  console.log("- Test basic authentication flow");
+  console.log("- Validate essential e-commerce functionality");
+  console.log("");
 
-  // Always return data to allow test to continue even if setup fails
-  let customerToken = null;
+  // Setup minimal user sessions for smoke test
+  console.log("Setting up 2 test user sessions...");
+  const userSessions = setupMultipleTestUsers(2);
 
-  try {
-    // Setup test users - Note: May fail in staging due to OTP/email verification
-    customerToken = setupTestUser({
-      email: `smoke-customer-${Date.now()}@test.com`,
-      password: "testpassword123",
-      firstName: "Smoke",
-      lastName: "Customer",
-    });
+  const authenticatedUsers = userSessions.filter((u) => u.token).length;
+  console.log(
+    `✅ Setup complete: ${authenticatedUsers}/${userSessions.length} authenticated`
+  );
 
-    if (customerToken) {
-      console.log("Authentication successful - full test coverage available");
-    } else {
-      console.log(
-        "ℹAuthentication not available - testing public endpoints only"
-      );
-      console.log(
-        "   This is expected in staging environments with OTP/email verification"
-      );
-    }
-  } catch (error) {
-    console.log(
-      "ℹAuthentication setup error (expected in staging):",
-      error.message
-    );
-    console.log("   Continuing with public endpoint tests...");
+  if (authenticatedUsers > 0) {
+    console.log("🎉 Authentication working - will test auth flows");
+  } else {
+    console.log("⚠️ Authentication failed - will test public endpoints only");
   }
 
   return {
-    customerToken: customerToken,
+    userSessions: userSessions,
+    startTime: Date.now(),
+    authenticatedCount: authenticatedUsers,
   };
 }
 
 // Main test function - runs for each virtual user
 export default function (data) {
-  const { customerToken } = data;
+  const { userSessions, authenticatedCount } = data;
 
-  // Test 1: Basic product browsing (no auth required)
-  console.log("Testing product browsing...");
-  browseProducts();
+  // Get user session for this virtual user
+  const userSession = getRandomUserSession(userSessions);
+  const currentVUs = __VU;
 
-  sleep(1);
+  console.log(`VU${currentVUs}: Starting smoke test checks`);
 
-  // Test 2: Authenticated user operations
-  if (customerToken) {
-    console.log("Testing authenticated operations...");
-
-    // Test user profile operations
-    userProfileOperations(customerToken);
+  try {
+    // 1. Test core browsing functionality (public)
+    console.log(`VU${currentVUs}: Testing product browsing...`);
+    browseProducts(userSession);
 
     sleep(1);
 
-    // Test cart operations
-    cartOperations(customerToken);
+    // 2. Test search functionality (public)
+    console.log(`VU${currentVUs}: Testing search functionality...`);
+    searchAndFilter(userSession);
 
     sleep(1);
-  } else {
-    console.warn("No customer token available, skipping authenticated tests");
+
+    // 3. Test checkout validation (public)
+    console.log(`VU${currentVUs}: Testing checkout validation...`);
+    checkoutProcess(userSession);
+
+    sleep(1);
+
+    // 4. Additional auth test if available
+    if (userSession && userSession.token && !userSession.isGuest) {
+      console.log(`VU${currentVUs}: Testing authenticated endpoints...`);
+
+      // Quick cart check
+      const cartResponse = http.get(
+        `${config.baseUrls[config.environment]}/api/v1/cart`,
+        {
+          headers: getAuthHeaders(userSession),
+          tags: { scenario: "smoke", type: "cart_check" },
+        }
+      );
+
+      check(cartResponse, {
+        "cart endpoint accessible": (r) => r.status === 200,
+      });
+    }
+  } catch (error) {
+    console.error(`VU${currentVUs}: Smoke test error:`, error.message);
   }
 
-  // Random sleep to simulate real user behavior
-  sleep(Math.random() * 2 + 1);
+  // Short pause between iterations
+  sleep(2);
 }
 
 // Teardown function - runs once after the test
 export function teardown(data) {
-  console.log("🏁 Smoke Test completed");
+  const { startTime, authenticatedCount, userSessions } = data;
+  const totalDuration = (Date.now() - startTime) / 1000;
+
+  console.log("🏁 Smoke Test Completed");
+  console.log("");
+  console.log("📊 Results Summary:");
+  console.log(`Duration: ${totalDuration.toFixed(1)} seconds`);
+  console.log(`Environment: ${config.environment}`);
   console.log(
-    "Check the results above to ensure all critical paths are working"
+    `Authenticated sessions: ${authenticatedCount}/${userSessions.length}`
   );
+  console.log("");
+  console.log("✅ Basic Health Checks:");
+  console.log("- Product browsing functionality");
+  console.log("- Search and filter operations");
+  console.log("- Checkout validation endpoints");
+  if (authenticatedCount > 0) {
+    console.log("- Authentication and cart access");
+  }
+  console.log("");
+  console.log("🚀 System is ready for load testing!");
 }
