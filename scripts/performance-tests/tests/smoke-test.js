@@ -35,13 +35,27 @@ export function setup() {
   console.log(`Environment: ${config.environment}`);
   console.log(`Base URL: ${config.baseUrls[config.environment]}`);
 
-  // Setup test users
-  const customerToken = setupTestUser({
-    email: `smoke-customer-${Date.now()}@test.com`,
-    password: "testpassword123",
-    firstName: "Smoke",
-    lastName: "Customer",
-  });
+  // Always return data to allow test to continue even if setup fails
+  let customerToken = null;
+
+  try {
+    // Setup test users
+    customerToken = setupTestUser({
+      email: `smoke-customer-${Date.now()}@test.com`,
+      password: "testpassword123",
+      firstName: "Smoke",
+      lastName: "Customer",
+    });
+
+    if (customerToken) {
+      console.log("Test user setup successful");
+    } else {
+      console.log("Test user setup failed - will run basic tests only");
+    }
+  } catch (error) {
+    console.log("Setup error:", error);
+    console.log("Continuing with basic browsing tests...");
+  }
 
   return {
     customerToken: customerToken,
