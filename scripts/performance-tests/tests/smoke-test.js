@@ -31,7 +31,7 @@ export const options = {
 
 // Setup function - runs once before the test
 export function setup() {
-  console.log("🔥 Starting Smoke Test");
+  console.log("Starting Smoke Test");
   console.log(`Environment: ${config.environment}`);
   console.log(`Base URL: ${config.baseUrls[config.environment]}`);
 
@@ -39,7 +39,7 @@ export function setup() {
   let customerToken = null;
 
   try {
-    // Setup test users
+    // Setup test users - Note: May fail in staging due to OTP/email verification
     customerToken = setupTestUser({
       email: `smoke-customer-${Date.now()}@test.com`,
       password: "testpassword123",
@@ -48,13 +48,21 @@ export function setup() {
     });
 
     if (customerToken) {
-      console.log("Test user setup successful");
+      console.log("Authentication successful - full test coverage available");
     } else {
-      console.log("Test user setup failed - will run basic tests only");
+      console.log(
+        "ℹAuthentication not available - testing public endpoints only"
+      );
+      console.log(
+        "   This is expected in staging environments with OTP/email verification"
+      );
     }
   } catch (error) {
-    console.log("Setup error:", error);
-    console.log("Continuing with basic browsing tests...");
+    console.log(
+      "ℹAuthentication setup error (expected in staging):",
+      error.message
+    );
+    console.log("   Continuing with public endpoint tests...");
   }
 
   return {
