@@ -21,14 +21,14 @@ variables:
 
 
 .performance-test-base:
-  image: alpine:latest
+  image: ${K6_IMAGE}
+  entrypoint: [""]
   stage: performance-test
   variables:
     GIT_STRATEGY: clone
     ENVIRONMENT: "staging"
     TARGET_URL: ${STAGING_URL}
   before_script:
-  - apk add --no-cache k6
   - mkdir -p ${TEST_RESULTS_DIR}
   - cd ${PERFORMANCE_TEST_DIR}
   artifacts:
