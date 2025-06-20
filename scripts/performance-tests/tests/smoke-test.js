@@ -130,6 +130,39 @@ export default function (data) {
         "cart endpoint accessible": (r) => r.status === 200,
       });
     }
+
+    // Quick API endpoint checks
+    console.log("Checking API endpoints...");
+
+    // Test categories endpoint
+    const categoriesCheck = http.get(
+      `${config.baseUrls[config.environment]}/api/v1/categories`,
+      { tags: { scenario: "api_check", type: "categories" } }
+    );
+
+    check(categoriesCheck, {
+      "categories endpoint available": (r) => r.status === 200,
+    });
+
+    // Test products endpoint
+    const productsCheck = http.get(
+      `${config.baseUrls[config.environment]}/api/v1/products?limit=5`,
+      { tags: { scenario: "api_check", type: "products" } }
+    );
+
+    check(productsCheck, {
+      "products endpoint available": (r) => r.status === 200,
+    });
+
+    // Test cart endpoint (requires auth, should return 401)
+    const cartCheck = http.get(
+      `${config.baseUrls[config.environment]}/api/v1/cart`,
+      { tags: { scenario: "api_check", type: "cart" } }
+    );
+
+    check(cartCheck, {
+      "cart endpoint responds": (r) => r.status === 401 || r.status === 200,
+    });
   } catch (error) {
     console.error(`VU${currentVUs}: Smoke test error:`, error.message);
   }

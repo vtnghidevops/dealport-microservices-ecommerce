@@ -90,7 +90,7 @@ export function setup() {
 
 // Main test function - runs for each virtual user
 export default function (data) {
-  const { userTokens, startTime, maxUsers } = data;
+  const { userTokens, startTime } = data;
 
   // Randomly select a user token for this iteration
   const userToken =
@@ -98,58 +98,53 @@ export default function (data) {
       ? userTokens[Math.floor(Math.random() * userTokens.length)]
       : null;
 
-  // Realistic user behavior patterns based on e-commerce analytics
+  const currentVUs = __VU;
+  const elapsedMinutes = (Date.now() - startTime) / (1000 * 60);
+
+  // Distribute user behavior based on realistic e-commerce patterns
   const userBehavior = Math.random();
 
-  if (userBehavior < 0.4) {
-    // 40% - Window shoppers (just browsing, no purchase intent)
-    console.log("Simulating window shopping user...");
-    windowShopping();
-    sleep(Math.random() * 3 + 2); // 2-5 seconds thinking time
-  } else if (userBehavior < 0.7) {
-    // 30% - Guest users who validate checkout but can't complete
-    console.log("Simulating guest checkout flow...");
-    checkoutProcess();
-    sleep(Math.random() * 2 + 1); // 1-3 seconds thinking time
-  } else if (userBehavior < 0.85) {
-    // 15% - Authenticated users with complete journey
-    console.log("Simulating authenticated complete journey...");
-    if (userToken) {
-      completeUserJourney(userToken);
-    } else {
-      // Fallback to guest flow if no auth
-      console.log("No auth token, falling back to guest checkout...");
-      checkoutProcess();
-    }
-    sleep(Math.random() * 2 + 1); // 1-3 seconds thinking time
-  } else if (userBehavior < 0.95) {
-    // 10% - Authenticated cart users (add to cart but don't checkout)
-    console.log("Simulating authenticated cart operations...");
-    if (userToken) {
+  try {
+    if (userBehavior < 0.4) {
+      // 40% - Window shopping (browsing without purchase intent)
+      console.log(`VU${currentVUs}: Window shopping pattern`);
+      windowShopping(userToken);
+    } else if (userBehavior < 0.7) {
+      // 30% - Guest checkout validation (public APIs)
+      console.log(`VU${currentVUs}: Guest checkout validation`);
       browseProducts(userToken);
-      userProfileOperations(userToken);
-      cartOperations(userToken);
+      checkoutProcess(); // Guest checkout
+    } else if (userBehavior < 0.85) {
+      // 15% - Authenticated complete journey
+      if (userToken) {
+        console.log(`VU${currentVUs}: Complete authenticated journey`);
+        completeUserJourney(userToken);
+      } else {
+        console.log(`VU${currentVUs}: Fallback to browsing (no auth)`);
+        browseProducts();
+      }
+    } else if (userBehavior < 0.95) {
+      // 10% - Authenticated cart operations
+      if (userToken) {
+        console.log(`VU${currentVUs}: Cart operations`);
+        browseProducts(userToken);
+        cartOperations(userToken);
+      } else {
+        console.log(`VU${currentVUs}: Fallback to browsing (no auth)`);
+        browseProducts();
+      }
     } else {
-      // Fallback to window shopping if no auth
-      console.log("No auth token, falling back to browsing...");
-      windowShopping();
+      // 5% - Quick search users
+      console.log(`VU${currentVUs}: Quick search pattern`);
+      quickSearch(userToken);
     }
-    sleep(Math.random() * 2 + 1); // 1-3 seconds thinking time
-  } else {
-    // 5% - Quick searchers (users who know what they want)
-    console.log("Simulating quick search user...");
-    searchAndFilter();
-    browseProducts(userToken);
-
-    // Try guest checkout validation
-    if (Math.random() < 0.5) {
-      checkoutProcess();
-    }
-
-    sleep(Math.random() * 1 + 0.5); // 0.5-1.5 seconds thinking time
+  } catch (error) {
+    console.error(`VU${currentVUs}: Load test error:`, error.message);
+    // Continue execution even if there are errors
+    sleep(0.5);
   }
 
-  // Random pause to simulate real user behavior
+  // Think time between user actions
   sleep(Math.random() * 2 + 1);
 }
 

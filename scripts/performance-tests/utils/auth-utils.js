@@ -7,23 +7,25 @@ import http from "k6/http";
 import { check, sleep } from "k6";
 import { config } from "../config/test-config.js";
 
-// Simple OTP bypass - only for staging
-const STAGING_OTP_BYPASS = "123456";
-
 /**
- * Check if current environment supports OTP bypass
+ * Check if OTP bypass is available in current environment
  * @returns {boolean} True if bypass is available
  */
 function isOTPBypassAvailable() {
-  return config.environment.toLowerCase() === "staging";
+  // OTP bypass is only available in staging environment
+  return config.environment === "staging" || __ENV.ENVIRONMENT === "staging";
 }
 
 /**
- * Get OTP code to use for verification
- * @returns {string} OTP bypass code for staging, or null for other environments
+ * Get OTP code for verification
+ * @returns {string} OTP code (bypass code for staging, random for others)
  */
 function getOTPCode() {
-  return isOTPBypassAvailable() ? STAGING_OTP_BYPASS : null;
+  if (isOTPBypassAvailable()) {
+    return "123456"; // Bypass code for staging
+  }
+  // Generate random 6-digit code for other environments (will likely fail)
+  return Math.floor(100000 + Math.random() * 900000).toString();
 }
 
 /**
@@ -34,13 +36,9 @@ function getOTPCode() {
 export function setupTestUser(userData = {}) {
   const baseUrl = config.baseUrls[config.environment];
 
-  // Check if OTP bypass is available
-  if (!isOTPBypassAvailable()) {
-    console.log(
-      `⚠️ OTP bypass not available in ${config.environment} environment`
-    );
-    console.log(
-      "   Authentication will use real OTP workflow (not suitable for performance testing)"
+  if (!baseUrl) {
+    console.error(
+      `No base URL configured for environment: ${config.environment}`
     );
     return null;
   }
@@ -187,7 +185,7 @@ export function validateToken(token) {
 
   try {
     const response = http.get(
-      `${config.baseUrls[config.environment]}/api/v1/user/profile`,
+      `${config.baseUrls[config.environment]}/api/v1/users/me`,
       {
         headers: getAuthHeaders(token),
         tags: { scenario: "token_validation" },

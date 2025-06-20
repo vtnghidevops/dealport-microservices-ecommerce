@@ -2,9 +2,10 @@
  * Stress Test - Tests system beyond normal capacity for K8s
  *
  * Purpose: Find breaking points and test system resilience under extreme load
- * Load: Gradually increase to 300+ users with aggressive spike testing
+ * Load: Gradually increase to 500+ users with aggressive spike testing
  * Thresholds: More lenient to allow for system degradation under stress
  * Environment: Optimized for K8s with 5 nodes
+ * API Endpoints: Tests all main broker service routes (/api/v1/*)
  */
 
 import { sleep } from "k6";
