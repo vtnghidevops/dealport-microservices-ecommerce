@@ -3,8 +3,8 @@ export const config = {
   // Base URLs for different environments
   baseUrls: {
     local: "http://localhost:58080",
-    staging: "https://staging-api.ecommerce.com",
-    production: "https://api.ecommerce.com",
+    staging: "https://sapogo.deploy.io.vn",
+    production: "https://sapogo.deploy.io.vn",
   },
 
   // Get current environment (default to local)
@@ -97,7 +97,13 @@ export const config = {
 
 // Get base URL for current environment
 export function getBaseUrl() {
-  return config.baseUrls[config.environment];
+  // Priority 1: Use TARGET_URL from environment (for CI/CD pipelines)
+  if (__ENV.TARGET_URL) {
+    return __ENV.TARGET_URL;
+  }
+
+  // Priority 2: Use configured URL for environment
+  return config.baseUrls[config.environment] || config.baseUrls.local;
 }
 
 // Get load pattern for current environment
