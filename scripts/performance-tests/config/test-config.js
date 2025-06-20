@@ -3,8 +3,8 @@ export const config = {
   // Base URLs for different environments
   baseUrls: {
     local: "http://localhost:58080",
-    staging: "https://sapogo.deploy.io.vn",
-    production: "https://sapogo.deploy.io.vn",
+    staging: "https://api-sapogo.deploy.io.vn",
+    production: "https://api-sapogo.deploy.io.vn",
   },
 
   // Get current environment (default to local)

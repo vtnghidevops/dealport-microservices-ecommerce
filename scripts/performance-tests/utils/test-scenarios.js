@@ -24,7 +24,7 @@ export function browseProducts(userSession = null) {
 
   // Get product categories
   const categoriesResponse = http.get(
-    `${config.baseUrls[config.environment]}/api/v1/product/categories`,
+    `${config.baseUrls[config.environment]}/api/v1/categories`,
     { headers, tags: { scenario: "browse", type: "categories" } }
   );
 
@@ -41,9 +41,9 @@ export function browseProducts(userSession = null) {
           categories.data[Math.floor(Math.random() * categories.data.length)];
 
         const categoryResponse = http.get(
-          `${config.baseUrls[config.environment]}/api/v1/product/category/${
+          `${config.baseUrls[config.environment]}/api/v1/products?category_id=${
             randomCategory.id
-          }/products`,
+          }&limit=10`,
           { headers, tags: { scenario: "browse", type: "category_products" } }
         );
 
@@ -58,7 +58,7 @@ export function browseProducts(userSession = null) {
 
   // Get featured/trending products
   const productsResponse = http.get(
-    `${config.baseUrls[config.environment]}/api/v1/product/products?limit=20`,
+    `${config.baseUrls[config.environment]}/api/v1/products?limit=20`,
     { headers, tags: { scenario: "browse", type: "products" } }
   );
 
@@ -90,7 +90,7 @@ export function searchAndFilter(userSession = null) {
   const searchResponse = http.get(
     `${
       config.baseUrls[config.environment]
-    }/api/v1/product/search?q=${randomTerm}&limit=10`,
+    }/api/v1/products?search=${randomTerm}&limit=10`,
     { headers, tags: { scenario: "search", type: "product_search" } }
   );
 
@@ -102,7 +102,7 @@ export function searchAndFilter(userSession = null) {
   const filterResponse = http.get(
     `${
       config.baseUrls[config.environment]
-    }/api/v1/product/products?min_price=10&max_price=1000&limit=15`,
+    }/api/v1/products?min_price=10&max_price=1000&limit=15`,
     { headers, tags: { scenario: "search", type: "price_filter" } }
   );
 
@@ -137,7 +137,7 @@ export function cartOperations(userSession) {
 
   // Get some products to add to cart
   const productsResponse = http.get(
-    `${config.baseUrls[config.environment]}/api/v1/product/products?limit=5`,
+    `${config.baseUrls[config.environment]}/api/v1/products?limit=5`,
     { headers, tags: { scenario: "cart", type: "get_products" } }
   );
 
@@ -155,7 +155,7 @@ export function cartOperations(userSession) {
         };
 
         const addResponse = http.post(
-          `${config.baseUrls[config.environment]}/api/v1/cart/add`,
+          `${config.baseUrls[config.environment]}/api/v1/cart/items`,
           JSON.stringify(addToCartPayload),
           { headers, tags: { scenario: "cart", type: "add_item" } }
         );
@@ -172,7 +172,9 @@ export function cartOperations(userSession) {
           };
 
           const updateResponse = http.put(
-            `${config.baseUrls[config.environment]}/api/v1/cart/update`,
+            `${config.baseUrls[config.environment]}/api/v1/cart/items/${
+              randomProduct.id
+            }`,
             JSON.stringify(updatePayload),
             { headers, tags: { scenario: "cart", type: "update_item" } }
           );
@@ -258,7 +260,7 @@ export function checkoutProcess(userSession = null) {
     });
 
     const orderResponse = http.post(
-      `${config.baseUrls[config.environment]}/api/v1/checkout/create-order`,
+      `${config.baseUrls[config.environment]}/api/v1/checkout/orders`,
       JSON.stringify(orderPayload),
       { headers, tags: { scenario: "checkout", type: "create_order" } }
     );
@@ -285,7 +287,7 @@ export function userProfileOperations(userSession) {
 
   // Get user profile
   const profileResponse = http.get(
-    `${config.baseUrls[config.environment]}/api/v1/user/profile`,
+    `${config.baseUrls[config.environment]}/api/v1/users/me`,
     { headers, tags: { scenario: "profile", type: "get_profile" } }
   );
 
@@ -295,7 +297,7 @@ export function userProfileOperations(userSession) {
 
   // Get user orders
   const ordersResponse = http.get(
-    `${config.baseUrls[config.environment]}/api/v1/user/orders`,
+    `${config.baseUrls[config.environment]}/api/v1/checkout/orders`,
     { headers, tags: { scenario: "profile", type: "get_orders" } }
   );
 
@@ -305,7 +307,7 @@ export function userProfileOperations(userSession) {
 
   // Get wishlist
   const wishlistResponse = http.get(
-    `${config.baseUrls[config.environment]}/api/v1/user/wishlist`,
+    `${config.baseUrls[config.environment]}/api/v1/users/me/wishlist`,
     { headers, tags: { scenario: "profile", type: "get_wishlist" } }
   );
 
@@ -321,7 +323,7 @@ export function userProfileOperations(userSession) {
   };
 
   const updateResponse = http.put(
-    `${config.baseUrls[config.environment]}/api/v1/user/profile`,
+    `${config.baseUrls[config.environment]}/api/v1/users/me`,
     JSON.stringify(updatePayload),
     { headers, tags: { scenario: "profile", type: "update_profile" } }
   );
