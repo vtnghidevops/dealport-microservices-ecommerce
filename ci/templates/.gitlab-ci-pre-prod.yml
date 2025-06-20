@@ -33,7 +33,7 @@ variables:
   variables:
     GIT_STRATEGY: clone
     ENVIRONMENT: "staging"
-    TARGET_URL: ${API_STAGING_URL}
+    TARGET_URL: ${STAGING_API_URL}
   before_script:
     - mkdir -p ${TEST_RESULTS_DIR}
     - cd ${PERFORMANCE_TEST_DIR}
