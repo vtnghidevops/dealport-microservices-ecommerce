@@ -20,8 +20,8 @@ import {
   userProfileOperations,
   searchAndFilter,
   completeUserJourney,
-  guestCheckoutFlow,
-  windowShoppingFlow,
+  windowShopping,
+  quickSearch,
 } from "../utils/test-scenarios.js";
 
 // Get environment-specific configuration
@@ -104,12 +104,12 @@ export default function (data) {
   if (userBehavior < 0.4) {
     // 40% - Window shoppers (just browsing, no purchase intent)
     console.log("Simulating window shopping user...");
-    windowShoppingFlow();
+    windowShopping();
     sleep(Math.random() * 3 + 2); // 2-5 seconds thinking time
   } else if (userBehavior < 0.7) {
     // 30% - Guest users who validate checkout but can't complete
     console.log("Simulating guest checkout flow...");
-    guestCheckoutFlow();
+    checkoutProcess();
     sleep(Math.random() * 2 + 1); // 1-3 seconds thinking time
   } else if (userBehavior < 0.85) {
     // 15% - Authenticated users with complete journey
@@ -119,7 +119,7 @@ export default function (data) {
     } else {
       // Fallback to guest flow if no auth
       console.log("No auth token, falling back to guest checkout...");
-      guestCheckoutFlow();
+      checkoutProcess();
     }
     sleep(Math.random() * 2 + 1); // 1-3 seconds thinking time
   } else if (userBehavior < 0.95) {
@@ -132,7 +132,7 @@ export default function (data) {
     } else {
       // Fallback to window shopping if no auth
       console.log("No auth token, falling back to browsing...");
-      windowShoppingFlow();
+      windowShopping();
     }
     sleep(Math.random() * 2 + 1); // 1-3 seconds thinking time
   } else {
@@ -143,7 +143,7 @@ export default function (data) {
 
     // Try guest checkout validation
     if (Math.random() < 0.5) {
-      guestCheckoutFlow();
+      checkoutProcess();
     }
 
     sleep(Math.random() * 1 + 0.5); // 0.5-1.5 seconds thinking time

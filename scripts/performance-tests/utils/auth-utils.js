@@ -200,3 +200,43 @@ export function validateToken(token) {
     return false;
   }
 }
+
+/**
+ * Get a random user session from available sessions
+ * @param {Array} userSessions - Array of user session objects/tokens
+ * @returns {Object} User session object with token and metadata
+ */
+export function getRandomUserSession(userSessions = []) {
+  if (!userSessions || userSessions.length === 0) {
+    // Return guest session if no authenticated users available
+    return {
+      token: null,
+      isGuest: true,
+      sessionId: `guest-${Math.random().toString(36).substr(2, 9)}`,
+    };
+  }
+
+  // Get random user session from available authenticated sessions
+  const randomIndex = Math.floor(Math.random() * userSessions.length);
+  const selectedToken = userSessions[randomIndex];
+
+  // Handle both token strings and user session objects
+  if (typeof selectedToken === "string") {
+    return {
+      token: selectedToken,
+      isGuest: false,
+      sessionId: `user-${randomIndex}-${Math.random()
+        .toString(36)
+        .substr(2, 6)}`,
+    };
+  }
+
+  // If it's already a session object, return it with additional metadata
+  return {
+    ...selectedToken,
+    sessionId:
+      selectedToken.sessionId ||
+      `user-${randomIndex}-${Math.random().toString(36).substr(2, 6)}`,
+    isGuest: !selectedToken.token,
+  };
+}

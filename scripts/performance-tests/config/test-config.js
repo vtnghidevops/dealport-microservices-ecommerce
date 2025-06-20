@@ -157,6 +157,67 @@ export const config = {
       memory: "4Gi", // 4GB RAM per pod
     },
   },
+
+  // Validation and monitoring configuration
+  validation: {
+    // Minimum expected metrics for test validity
+    minimumMetrics: {
+      smoke: {
+        duration: 30, // seconds
+        totalRequests: 10,
+        virtualUsers: 1,
+      },
+      load: {
+        duration: 900, // 15 minutes
+        totalRequests: 3000,
+        virtualUsers: 200,
+      },
+      stress: {
+        duration: 1500, // 25 minutes
+        totalRequests: 8000,
+        virtualUsers: 400,
+      },
+    },
+
+    // Health check endpoints for validation
+    healthChecks: {
+      api: "/api/v1/health",
+      auth: "/api/v1/auth/health",
+      products: "/api/v1/products/health",
+      cart: "/api/v1/cart/health",
+    },
+
+    // Expected status codes for different operations
+    expectedStatusCodes: {
+      browse: [200],
+      search: [200],
+      auth: [200, 201],
+      cart: [200, 201],
+      checkout: [200, 422], // 422 for validation errors is acceptable
+    },
+
+    // Test execution monitoring
+    monitoring: {
+      logInterval: 30, // seconds
+      metricsCollection: true,
+      realTimeValidation: true,
+      failureThreshold: 0.25, // 25% failure rate stops test
+    },
+  },
+
+  // Environment-specific validation rules
+  environmentValidation: {
+    staging: {
+      requiredFeatures: ["otp_bypass", "performance_testing"],
+      maxResponseTime: 5000, // ms
+      minThroughput: 100, // req/s
+    },
+    production: {
+      requiredFeatures: ["security", "monitoring"],
+      maxResponseTime: 2000, // ms
+      minThroughput: 500, // req/s
+    },
+  },
 };
 
 // Get base URL for current environment
