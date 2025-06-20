@@ -76,10 +76,9 @@ export function registerUser(userData) {
  * @returns {Object} - Headers with authorization
  */
 export function getAuthHeaders(token) {
-  return {
-    ...headers,
+  return Object.assign({}, headers, {
     Authorization: `Bearer ${token}`,
-  };
+  });
 }
 
 /**
