@@ -62,13 +62,15 @@ export function setup() {
   console.log("- Validate essential e-commerce functionality");
   console.log("");
 
-  // Setup minimal user sessions for smoke test
+  // Setup minimal user tokens for smoke test
   console.log("Setting up 2 test user sessions...");
-  const userSessions = setupMultipleTestUsers(2);
+  const userTokens = setupMultipleTestUsers(2);
 
-  const authenticatedUsers = userSessions.filter((u) => u.token).length;
+  const authenticatedUsers = userTokens.filter(
+    (token) => token !== null
+  ).length;
   console.log(
-    `✅ Setup complete: ${authenticatedUsers}/${userSessions.length} authenticated`
+    `Setup complete: ${authenticatedUsers}/${userTokens.length} authenticated`
   );
 
   if (authenticatedUsers > 0) {
@@ -78,7 +80,7 @@ export function setup() {
   }
 
   return {
-    userSessions: userSessions,
+    userTokens: userTokens,
     startTime: Date.now(),
     authenticatedCount: authenticatedUsers,
   };
@@ -236,7 +238,7 @@ export default function (data) {
 
 // Teardown function - runs once after the test
 export function teardown(data) {
-  const { startTime, authenticatedCount, userSessions } = data;
+  const { startTime, authenticatedCount, userTokens } = data;
   const totalDuration = (Date.now() - startTime) / 1000;
 
   console.log("🏁 Smoke Test Completed");
@@ -245,7 +247,7 @@ export function teardown(data) {
   console.log(`Duration: ${totalDuration.toFixed(1)} seconds`);
   console.log(`Environment: ${config.environment}`);
   console.log(
-    `Authenticated sessions: ${authenticatedCount}/${userSessions.length}`
+    `Authenticated sessions: ${authenticatedCount}/${userTokens.length}`
   );
   console.log("");
   console.log("✅ Basic Health Checks:");
