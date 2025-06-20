@@ -21,7 +21,7 @@ variables:
 
 
 .performance-test-base:
-  image: alpine:3.19
+  image: alpine:latest
   stage: performance-test
   variables:
     GIT_STRATEGY: clone
