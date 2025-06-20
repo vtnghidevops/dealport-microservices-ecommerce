@@ -21,8 +21,9 @@ variables:
 
 
 .performance-test-base:
-  image: ${K6_IMAGE}
-  entrypoint: [""]
+  image: 
+    name: ${K6_IMAGE}
+    entrypoint: [""]
   stage: performance-test
   variables:
     GIT_STRATEGY: clone
