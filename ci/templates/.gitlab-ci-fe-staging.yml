@@ -1,0 +1,85 @@
+stages:
+  - build-and-push-image
+  - deploy-staging
+
+
+variables:
+  # Git & Deployment
+  GITHUB_USERNAME: "philogn"
+  HELM_REPO: "Three-tier-app-HelmChart"
+  HELM_VALUES_PATH: "./values.yaml"
+
+# Template
+.prepare-vars:
+  before_script:
+  - BRANCH_NAME=$(echo "$CI_COMMIT_TAG" | awk -F'-' '{for(i=2;i<NF;i++) printf $i (i<NF-1?"-":""); print ""}')
+  - IMAGE_TAG="${HARBOR_URL}/${HARBOR_REPO}/${BRANCH_NAME}:${CI_COMMIT_SHORT_SHA}"
+
+.env-staging: 
+  environment:
+    name: staging
+    url: ${STAGING_URL}
+
+
+build-and-push-image:
+  stage: build-and-push-image
+  extends: 
+  - .docker-login-image
+  - .env-staging
+  variables:
+    GIT_STRATEGY: clone
+    VITE_PUBLIC_BROKER_API_URL: ${STAGING_API_URL} 
+  script:
+    - |
+      # Build image
+      echo "VITE_PUBLIC_BROKER_API_URL: ${VITE_PUBLIC_BROKER_API_URL}"
+      if [ "$BRANCH_NAME" == "frontend" ]; then
+        echo "Building frontend Docker images with environment variables..."
+        docker build \
+          --build-arg VITE_PUBLIC_BROKER_API_URL="${VITE_PUBLIC_BROKER_API_URL}" \
+          -t $IMAGE_TAG . 
+      else
+        echo "Building ${BRANCH_NAME} Docker images..."
+        docker build -t $IMAGE_TAG .
+      fi
+      
+      # Push image immediately after build
+      echo "Pushing image to ${IMAGE_TAG}"
+      docker push ${IMAGE_TAG}
+      
+      echo "Build and push completed successfully!"
+  tags:
+    - k8s-image-runner
+  rules:
+    - if: $CI_COMMIT_TAG =~ /-staging$/
+      when: on_success
+
+# ########################################################
+# #### Stage 6: Deploy to staging environment
+# ########################################################
+deploy-staging:
+  stage: deploy-staging
+  extends: 
+    - .env-staging
+    - .prepare-vars
+  variables:
+    GIT_STRATEGY: none
+  before_script:
+  - git config --global user.email "${GITHUB_EMAIL}"
+  - git config --global user.name "${GITHUB_USERNAME}"
+  - apk add --no-cache curl yq
+  script:
+  - |
+    git clone https://${GITHUB_TOKEN}@github.com/${GITHUB_USERNAME}/${HELM_REPO}.git
+    cd ${HELM_REPO}
+
+    yq -i ".$BRANCH_NAME.image.tag = \"${CI_COMMIT_TAG}-${CI_COMMIT_SHORT_SHA}\"" ./values.yaml
+
+    git add .
+    git commit -m "feat(staging): update images tag:${CI_COMMIT_TAG}-${CI_COMMIT_SHORT_SHA}"
+    git push https://${GITHUB_TOKEN}@github.com/${GITHUB_USERNAME}/${HELM_REPO}.git main
+  tags:
+  - k8s-shell-runner
+  rules:
+    - if: $CI_COMMIT_TAG =~ /-staging$/
+      when: manual

@@ -19,16 +19,21 @@ variables:
   # MinIO Configuration
   MINIO_IMAGE: "minio/mc:latest"
 
+.env-staging: 
+  environment:
+    name: staging
+    url: ${STAGING_URL}
 
 .performance-test-base:
   image: 
     name: ${K6_IMAGE}
     entrypoint: [""]
   stage: performance-test
+  extends: .env-staging
   variables:
     GIT_STRATEGY: clone
     ENVIRONMENT: "staging"
-    TARGET_URL: ${STAGING_URL}
+    TARGET_URL: ${API_STAGING_URL}
   before_script:
     - mkdir -p ${TEST_RESULTS_DIR}
     - cd ${PERFORMANCE_TEST_DIR}
@@ -133,7 +138,7 @@ load-test:
   extends: .performance-test-base
   script:
     - |
-      
+
       echo "Running load tests for staging environment..."
       k6 run --out json=../../${TEST_RESULTS_DIR}/load-results.json tests/load-test.js -e ENVIRONMENT=${ENVIRONMENT} -e TARGET_URL=${TARGET_URL}
   timeout: 30m
