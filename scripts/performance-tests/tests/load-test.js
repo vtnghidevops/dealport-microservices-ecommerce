@@ -43,7 +43,7 @@ export const options = {
   tags: {
     test_type: "load",
     environment: config.environment,
-    max_users: loadPattern.maxUsers,
+    max_users: loadPattern.maxUsers.toString(),
   },
 };
 

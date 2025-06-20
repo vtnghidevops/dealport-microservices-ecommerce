@@ -89,8 +89,8 @@ export const options = {
   tags: {
     test_type: "stress",
     environment: config.environment,
-    k8s_nodes: config.k8s.nodeCount,
-    max_stress_users: stressLimits.spikeLoad,
+    k8s_nodes: config.k8s.nodeCount.toString(),
+    max_stress_users: stressLimits.spikeLoad.toString(),
   },
 };
 
