@@ -68,8 +68,6 @@ owasp-zap-scan:
       zap-baseline.py \
         -t "${STAGING_URL}" \
         -r "zap-baseline-report.html" \
-        -x "zap-baseline-report.xml" \
-        -J "zap-baseline-report.json" \
         -I \
         -d || BASELINE_EXIT=$?
       
@@ -81,33 +79,13 @@ owasp-zap-scan:
       zap-full-scan.py \
         -t "${STAGING_URL}" \
         -r "${ZAP_WORK_DIR}/zap-full-scan-report.html" \
-        -x "${ZAP_WORK_DIR}/zap-full-scan-report.xml" \
-        -J "${ZAP_WORK_DIR}/zap-full-scan-report.json" \
         -I \
         -d || FULL_EXIT=$?
       
       # Copy reports to artifacts directory  
       cp ${ZAP_WORK_DIR}/zap-full-scan-report.* ${DAST_REPORT_DIR}/ 2>/dev/null || echo "No full scan reports to copy"
       
-      # 3. Generate Security Summary
-      echo "Phase 3: Generating Security Summary..."
-      
-      # Check if reports exist
-      BASELINE_REPORTS=$(ls ${DAST_REPORT_DIR}/zap-baseline-* 2>/dev/null | wc -l)
-      FULL_SCAN_REPORTS=$(ls ${DAST_REPORT_DIR}/zap-full-scan-* 2>/dev/null | wc -l)
-      
-      cat > ${DAST_REPORT_DIR}/dast-summary.txt << EOF
-      DAST Security Scan Results - $(date +%Y-%m-%d)
-      Target: ${STAGING_URL}
-      Pipeline: ${CI_PIPELINE_ID}
-      
-      Baseline Scan: $([ "${BASELINE_EXIT:-0}" -eq 0 ] && echo "PASSED" || echo "ISSUES FOUND")
-      Full Scan: $([ "${FULL_EXIT:-0}" -eq 0 ] && echo "PASSED" || echo "ISSUES FOUND")
-      
-      Reports: zap-baseline-report.html, zap-full-scan-report.html
-      EOF
-      
-      # 4. Security Assessment
+      # 3. Security Assessment
       if [ "${FULL_EXIT:-0}" -eq 2 ] || [ "${BASELINE_EXIT:-0}" -eq 2 ]; then
         echo "CRITICAL SECURITY VULNERABILITIES DETECTED!"
         echo "BLOCKING DEPLOYMENT TO PRODUCTION"
@@ -123,8 +101,6 @@ owasp-zap-scan:
     paths:
       - ${DAST_REPORT_DIR}/
     expire_in: 7 days
-    reports:
-      dast: ${DAST_REPORT_DIR}/*.xml
     when: always
   tags:
     - perf-docker-runner
