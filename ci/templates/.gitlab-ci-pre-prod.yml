@@ -63,22 +63,18 @@ owasp-zap-scan:
         exit 1
       fi
     
-      # 1. ZAP Baseline Scan (Quick) - Let ZAP decide output location
+      # 1. ZAP Baseline Scan (Quick)
       echo "Phase 1: ZAP Baseline Scan..."
       zap-baseline.py \
         -t "${STAGING_URL}" \
+        -r "zap-baseline-report.html" \
+        -x "zap-baseline-report.xml" \
+        -J "zap-baseline-report.json" \
         -I \
         -d || BASELINE_EXIT=$?
       
-      # Find and copy baseline reports from wherever ZAP created them
-      echo "Searching for ZAP baseline reports..."
-      find ${ZAP_WORK_DIR} -name "*baseline*" -type f 2>/dev/null | head -10
-      
-      # Copy reports from multiple possible locations
-      cp ${ZAP_WORK_DIR}/*baseline* ${DAST_REPORT_DIR}/ 2>/dev/null || \
-      cp ${ZAP_WORK_DIR}/zap/*baseline* ${DAST_REPORT_DIR}/ 2>/dev/null || \
-      cp ${ZAP_WORK_DIR}/zap/wrk/*baseline* ${DAST_REPORT_DIR}/ 2>/dev/null || \
-      echo "No baseline reports found in expected locations"
+      # Copy reports to artifacts directory
+      cp ${ZAP_WORK_DIR}/zap-baseline-report.* ${DAST_REPORT_DIR}/ 2>/dev/null || echo "No baseline reports to copy"
       
       # 2. ZAP Full Scan (Comprehensive)  
       echo "Phase 2: ZAP Full Scan..."
