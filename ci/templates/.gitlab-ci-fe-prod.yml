@@ -9,6 +9,9 @@ variables:
   HELM_REPO: "Three-tier-app-HelmChart"
   HELM_VALUES_PATH: "./values.yaml"
 
+  # Docker & Container Registry
+  DOCKER_IMAGE: "docker:28-dind"
+
 # Template
 .prepare-vars:
   before_script:

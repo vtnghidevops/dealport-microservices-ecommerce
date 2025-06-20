@@ -9,6 +9,9 @@ variables:
   HELM_REPO: "Three-tier-app-HelmChart"
   HELM_VALUES_PATH: "./values.yaml"
 
+  # Docker & Container Registry
+  DOCKER_IMAGE: "docker:28-dind"
+
 # Template
 .prepare-vars:
   before_script:
@@ -23,7 +26,7 @@ variables:
   - echo "$HARBOR_PASSWD" | docker login $HARBOR_URL -u 'robot$'"$HARBOR_USERNAME" --password-stdin
   - BRANCH_NAME=$(echo "$CI_COMMIT_TAG" | awk -F'-' '{for(i=2;i<NF;i++) printf $i (i<NF-1?"-":""); print ""}')
   - IMAGE_TAG="${HARBOR_URL}/${HARBOR_REPO}/${BRANCH_NAME}:${CI_COMMIT_SHORT_SHA}"
-  
+
 .env-staging: 
   environment:
     name: staging
