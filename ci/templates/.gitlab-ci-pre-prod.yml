@@ -53,10 +53,6 @@ owasp-zap-scan:
     - mkdir -p ${DAST_REPORT_DIR}
     - mkdir -p ${ZAP_WORK_DIR}
     - chmod 777 ${ZAP_WORK_DIR}
-    - echo "Starting OWASP ZAP security scan for ${STAGING_URL}"
-    # Test ZAP installation
-    - which zap-baseline.py || echo "ZAP baseline script not found"
-    - which zap-full-scan.py || echo "ZAP full scan script not found"
   script:
     - |
       echo "=== OWASP ZAP Security Testing ==="
@@ -67,18 +63,22 @@ owasp-zap-scan:
         exit 1
       fi
     
-      # 1. ZAP Baseline Scan (Quick)
+      # 1. ZAP Baseline Scan (Quick) - Let ZAP decide output location
       echo "Phase 1: ZAP Baseline Scan..."
       zap-baseline.py \
         -t "${STAGING_URL}" \
-        -r "${ZAP_WORK_DIR}/zap-baseline-report.html" \
-        -x "${ZAP_WORK_DIR}/zap-baseline-report.xml" \
-        -J "${ZAP_WORK_DIR}/zap-baseline-report.json" \
         -I \
         -d || BASELINE_EXIT=$?
       
-      # Copy reports to artifacts directory
-      cp ${ZAP_WORK_DIR}/zap-baseline-report.* ${DAST_REPORT_DIR}/ 2>/dev/null || echo "No baseline reports to copy"
+      # Find and copy baseline reports from wherever ZAP created them
+      echo "Searching for ZAP baseline reports..."
+      find ${ZAP_WORK_DIR} -name "*baseline*" -type f 2>/dev/null | head -10
+      
+      # Copy reports from multiple possible locations
+      cp ${ZAP_WORK_DIR}/*baseline* ${DAST_REPORT_DIR}/ 2>/dev/null || \
+      cp ${ZAP_WORK_DIR}/zap/*baseline* ${DAST_REPORT_DIR}/ 2>/dev/null || \
+      cp ${ZAP_WORK_DIR}/zap/wrk/*baseline* ${DAST_REPORT_DIR}/ 2>/dev/null || \
+      echo "No baseline reports found in expected locations"
       
       # 2. ZAP Full Scan (Comprehensive)  
       echo "Phase 2: ZAP Full Scan..."
