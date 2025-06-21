@@ -76,13 +76,11 @@ message Address {
   string postal_code = 6;
   string country = 7;
   bool is_default = 8;
-  string address_type = 9;  // shipping, billing, etc.
+  string address_type = 9; // shipping, billing, etc.
 }
 
 // GetUserRequest is used to request a user by ID
-message GetUserRequest {
-  string id = 1;
-}
+message GetUserRequest { string id = 1; }
 
 // CreateUserRequest contains data for creating a new user
 message CreateUserRequest {
@@ -112,9 +110,7 @@ message UpdateUserRequest {
 }
 
 // DeleteUserRequest is used to request deletion of a user
-message DeleteUserRequest {
-  string id = 1;
-}
+message DeleteUserRequest { string id = 1; }
 
 // DeleteUserResponse is the response for a delete user operation
 message DeleteUserResponse {
@@ -135,7 +131,7 @@ message GetUsersRequest {
   string sort_by = 3;
   string sort_order = 4;
   string role = 5;
-  bool active = 6;  // Filter by active status
+  bool active = 6; // Filter by active status
 }
 
 // GetUsersResponse contains a list of users
@@ -175,7 +171,7 @@ message LogUserActivityRequest {
   string user_id = 1;
   string action = 2;
   string message = 3;
-  string metadata = 4;  // JSON string of additional metadata
+  string metadata = 4; // JSON string of additional metadata
 }
 
 // LogUserActivityResponse is the response for logging a user activity
@@ -187,12 +183,12 @@ message LogUserActivityResponse {
 // GetUserActivityLogsRequest is used to request user activity logs
 message GetUserActivityLogsRequest {
   string user_id = 1;
-  string action_type = 2;  // Optional filter by action type
+  string action_type = 2; // Optional filter by action type
 }
 
 // GetUserActivityLogsResponse contains user activity logs
 message GetUserActivityLogsResponse {
-  string logs = 1;  // JSON string of logs
+  string logs = 1; // JSON string of logs
   bool success = 2;
   string message = 3;
 }
@@ -219,17 +215,17 @@ message GetUserStatisticsResponse {
 
 // GetUserActivityChartRequest is used to request user activity chart data
 message GetUserActivityChartRequest {
-  int32 days = 1;         // Number of days to include in the chart
-  string chart_type = 2;  // Type of chart: "activity", "new_users", "orders",
-                          // "revenue", "conversion"
+  int32 days = 1;        // Number of days to include in the chart
+  string chart_type = 2; // Type of chart: "activity", "new_users", "orders",
+                         // "revenue", "conversion"
 }
 
 // UserActivityChartPoint represents a single data point in the activity chart
 message UserActivityChartPoint {
-  string day = 1;    // Day of week (e.g., "Mon")
-  string date = 2;   // Full date (e.g., "2023-07-10")
-  int32 count = 3;   // Primary count value (users/orders/etc)
-  double value = 4;  // Secondary value (revenue/conversion/etc)
+  string day = 1;   // Day of week (e.g., "Mon")
+  string date = 2;  // Full date (e.g., "2023-07-10")
+  int32 count = 3;  // Primary count value (users/orders/etc)
+  double value = 4; // Secondary value (revenue/conversion/etc)
 }
 
 // GetUserActivityChartResponse contains user activity chart data
