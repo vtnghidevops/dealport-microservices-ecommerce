@@ -1,34 +1,55 @@
-import React from 'react';
-import { CustomerChartData } from '../models/customer.model';
-import { CustomerOverview } from '../models/customer.model';
+import React from "react";
+import { CustomerChartData } from "../models/customer.model";
+import { CustomerOverview } from "../models/customer.model";
 
 interface CustomerActivityChartProps {
   chartData: CustomerChartData[];
   overview?: CustomerOverview;
 }
 
-const CustomerActivityChart: React.FC<CustomerActivityChartProps> = ({ 
+const CustomerActivityChart: React.FC<CustomerActivityChartProps> = ({
   chartData,
-  overview
+  overview,
 }) => {
+  // Ensure we have valid chart data
+  const validChartData =
+    chartData && chartData.length > 0
+      ? chartData
+      : [
+          { day: "Sun", count: 0 },
+          { day: "Mon", count: 0 },
+          { day: "Tue", count: 0 },
+          { day: "Wed", count: 0 },
+          { day: "Thu", count: 0 },
+          { day: "Fri", count: 0 },
+          { day: "Sat", count: 0 },
+        ];
+
   // Find the peak day (highest value)
-  const peakDay = chartData.reduce((peak, current) => 
-    current.count > peak.count ? current : peak, chartData[0]);
-  
+  const peakDay = validChartData.reduce(
+    (peak, current) => (current.count > peak.count ? current : peak),
+    validChartData[0]
+  );
+
   // Find the index of Wednesday for the vertical line
-  const wednesdayIndex = chartData.findIndex(data => data.day === 'Wed');
-  const wednesdayPosition = ((wednesdayIndex) / (chartData.length - 1)) * 100;
+  const wednesdayIndex = validChartData.findIndex((data) => data.day === "Wed");
+  const wednesdayPosition =
+    (wednesdayIndex / (validChartData.length - 1)) * 100;
 
   // Find max value for scaling (round up to nearest 10k for nice y-axis labels)
-  const maxValue = Math.ceil(Math.max(...chartData.map(item => item.count)) / 10000) * 10000;
-  
+  const maxValue = Math.max(
+    10000,
+    Math.ceil(Math.max(...validChartData.map((item) => item.count)) / 10000) *
+      10000
+  );
+
   return (
     <div className="bg-white rounded-lg shadow p-5 w-[826px] h-[445px]">
       {/* Header */}
       <div className="mb-4 flex justify-between items-center h-[38px]">
         <h3 className="text-[18px] font-bold text-cyprus">Customer Overview</h3>
         <div className="flex items-center gap-2 w-[200px] h-full">
-          <div className='rounded-lg p-4 gap-4 w-[178px] h-full bg-aqua-spring flex justify-center items-center'>
+          <div className="rounded-lg p-4 gap-4 w-[178px] h-full bg-aqua-spring flex justify-center items-center">
             <button className="h-[30px] w-[83px] text-[12px] text-ocean-green bg-white rounded-lg">
               This week
             </button>
@@ -50,8 +71,8 @@ const CustomerActivityChart: React.FC<CustomerActivityChartProps> = ({
       </div>
 
       {/* Customer Metrics */}
-      <div className="grid grid-cols-4 gap-4 mt-5 shadow-sm">
-        <div className="border-b-2 border-success pb-2 w-[182px] h-[78px]">
+      <div className="grid grid-cols-3 gap-6 mt-5 shadow-sm">
+        <div className="border-b-2 border-success pb-2 w-[240px] h-[78px]">
           <div className="text-[24px] font-bold text-cyprus">
             {overview ? formatNumber(overview.activeCustomers.count) : "25k"}
           </div>
@@ -61,7 +82,7 @@ const CustomerActivityChart: React.FC<CustomerActivityChartProps> = ({
               : "Active Customers"}
           </div>
         </div>
-        <div className="border-b-2 border-gray-200 pb-2 w-[182px] h-[78px]">
+        <div className="border-b-2 border-gray-200 pb-2 w-[240px] h-[78px]">
           <div className="text-[24px] font-bold text-cyprus">
             {overview ? formatNumber(overview.repeatCustomers.count) : "5.6k"}
           </div>
@@ -71,16 +92,8 @@ const CustomerActivityChart: React.FC<CustomerActivityChartProps> = ({
               : "Repeat Customers"}
           </div>
         </div>
-        <div className="border-b-2 border-gray-200 pb-2 w-[182px] h-[78px]">
+        <div className="border-b-2 border-gray-200 pb-2 w-[240px] h-[78px]">
           <div className="text-[24px] font-bold text-cyprus">
-            {overview ? formatNumber(overview.shopVisitor.count) : "250k"}
-          </div>
-          <div className="text-sm text-gray-500">
-            {overview ? overview.shopVisitor.chartLabel : "Shop Visitor"}
-          </div>
-        </div>
-        <div className="border-b-2 border-gray-200 pb-2 w-[182px] h-[78px]">
-          <div className="text-3xl font-medium text-gray-900">
             {overview ? `${overview.conversionRate.rate}%` : "5.5%"}
           </div>
           <div className="text-sm text-gray-500">
@@ -129,7 +142,7 @@ const CustomerActivityChart: React.FC<CustomerActivityChartProps> = ({
 
             {/* The chart line path */}
             <path
-              d={generatePathD(chartData, maxValue)}
+              d={generatePathD(validChartData, maxValue)}
               stroke="#10B981"
               strokeWidth="2"
               fill="none"
@@ -139,7 +152,7 @@ const CustomerActivityChart: React.FC<CustomerActivityChartProps> = ({
 
             {/* The area fill path */}
             <path
-              d={generateAreaD(chartData, maxValue)}
+              d={generateAreaD(validChartData, maxValue)}
               fill="url(#chartGradient)"
             />
           </svg>
@@ -149,8 +162,8 @@ const CustomerActivityChart: React.FC<CustomerActivityChartProps> = ({
             className="absolute bg-green-100 rounded-lg p-2 text-xs text-green-800 z-20"
             style={{
               left: `${
-                (chartData.findIndex((d) => d.day === peakDay.day) /
-                  (chartData.length - 1)) *
+                (validChartData.findIndex((d) => d.day === peakDay.day) /
+                  (validChartData.length - 1)) *
                 100
               }%`,
               top: "10px",
@@ -165,7 +178,7 @@ const CustomerActivityChart: React.FC<CustomerActivityChartProps> = ({
 
         {/* X-axis labels */}
         <div className="absolute left-10 right-0 bottom-0 flex justify-between text-xs text-gray-500">
-          {chartData.map((data, index) => (
+          {validChartData.map((data, index) => (
             <div
               key={index}
               className={data.day === "Wed" ? "font-medium text-green-700" : ""}
@@ -192,36 +205,46 @@ function formatNumber(value: number): string {
 function generateYAxisLabels(max: number): string[] {
   const labels: string[] = [];
   const step = max / 5;
-  
+
   for (let i = 5; i >= 0; i--) {
     const value = i * step;
     labels.push(formatNumber(value));
   }
-  
+
   return labels;
 }
 
 function generatePathD(data: CustomerChartData[], maxValue: number): string {
+  if (!data || data.length === 0) return "";
+
   const height = 220 - 30; // Chart height minus bottom padding for x-axis
-  
-  return data.map((point, i) => {
-    const x = `${(i / (data.length - 1)) * 100}%`;
-    const y = height - (point.count / maxValue) * height;
-    return `${i === 0 ? 'M' : 'L'} ${x},${y}`;
-  }).join(' ');
+  const width = 400; // Approximate chart width
+
+  return data
+    .map((point, i) => {
+      const x = (i / (data.length - 1)) * width;
+      const y = height - ((point.count || 0) / maxValue) * height;
+      return `${i === 0 ? "M" : "L"} ${x},${y}`;
+    })
+    .join(" ");
 }
 
 function generateAreaD(data: CustomerChartData[], maxValue: number): string {
+  if (!data || data.length === 0) return "";
+
   const height = 220 - 30; // Chart height minus bottom padding for x-axis
-  
-  const linePath = data.map((point, i) => {
-    const x = `${(i / (data.length - 1)) * 100}%`;
-    const y = height - (point.count / maxValue) * height;
-    return `${i === 0 ? 'M' : 'L'} ${x},${y}`;
-  }).join(' ');
-  
+  const width = 400; // Approximate chart width
+
+  const linePath = data
+    .map((point, i) => {
+      const x = (i / (data.length - 1)) * width;
+      const y = height - ((point.count || 0) / maxValue) * height;
+      return `${i === 0 ? "M" : "L"} ${x},${y}`;
+    })
+    .join(" ");
+
   // Complete the path by drawing to bottom right, bottom left, and back to start
-  return `${linePath} L 100%,${height} L 0,${height} Z`;
+  return `${linePath} L ${width},${height} L 0,${height} Z`;
 }
 
 export default CustomerActivityChart;

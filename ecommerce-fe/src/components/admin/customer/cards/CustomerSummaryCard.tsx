@@ -1,28 +1,34 @@
-import React from 'react';
-import { CustomerSummaryCardProps } from './models/card.model';
+import React from "react";
+import { CustomerSummaryCardProps } from "./models/card.model";
 import { IoIosArrowRoundDown } from "react-icons/io";
 import { IoIosArrowRoundUp } from "react-icons/io";
-export const CustomerSummaryCard: React.FC<CustomerSummaryCardProps> = ({ 
-  title, 
-  value, 
-  growthRate, 
-  period, 
+export const CustomerSummaryCard: React.FC<CustomerSummaryCardProps> = ({
+  title,
+  value,
+  growthRate,
+  period,
 }) => {
   const getGrowthRateColor = () => {
-    if (title === 'Canceled Orders') {
-      return growthRate > 0 ? 'text-error' : 'text-success';
+    if (title === "Canceled Orders") {
+      return growthRate > 0 ? "text-error" : "text-success";
     }
-    return growthRate > 0 ? 'text-success' : 'text-error';
+    return growthRate > 0 ? "text-success" : "text-error";
   };
 
   const getGrowthRateIcon = () => {
-    if (title === 'Canceled Orders') {
-      return growthRate > 0 ? <IoIosArrowRoundUp className='h-[16px] w-[16px]'/> : <IoIosArrowRoundDown className='h-[16px] w-[16px]'/>;
+    if (title === "Canceled Orders") {
+      return growthRate > 0 ? (
+        <IoIosArrowRoundUp className="h-[16px] w-[16px]" />
+      ) : (
+        <IoIosArrowRoundDown className="h-[16px] w-[16px]" />
+      );
     }
-    return growthRate > 0 ? <IoIosArrowRoundUp className='h-[16px] w-[16px]'/> : <IoIosArrowRoundDown className='h-[16px] w-[16px]'/>;
+    return growthRate > 0 ? (
+      <IoIosArrowRoundUp className="h-[16px] w-[16px]" />
+    ) : (
+      <IoIosArrowRoundDown className="h-[16px] w-[16px]" />
+    );
   };
-
-  
 
   return (
     <div className="rounded-lg p-5 w-[270px] h-[135px] bg-white filter drop-shadow-lg">
@@ -32,7 +38,7 @@ export const CustomerSummaryCard: React.FC<CustomerSummaryCardProps> = ({
           <svg
             stroke="currentColor"
             fill="none"
-            stroke-width="2"
+            strokeWidth="2"
             viewBox="0 0 24 24"
             aria-hidden="true"
             height="1em"
@@ -40,8 +46,8 @@ export const CustomerSummaryCard: React.FC<CustomerSummaryCardProps> = ({
             xmlns="http://www.w3.org/2000/svg"
           >
             <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
+              strokeLinecap="round"
+              strokeLinejoin="round"
               d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z"
             ></path>
           </svg>
@@ -53,9 +59,11 @@ export const CustomerSummaryCard: React.FC<CustomerSummaryCardProps> = ({
             <span className="header-2 font-bold text-cyprus">
               {value.toLocaleString()}
             </span>
-            <div className={`mt-[1rem] text-sm font-medium flex items-center ${getGrowthRateColor()}`}>
-              <div className='mr-1 text-[12px]'>{getGrowthRateIcon()} </div>
-              <div >{Math.abs(growthRate)}%</div>
+            <div
+              className={`mt-[1rem] text-sm font-medium flex items-center ${getGrowthRateColor()}`}
+            >
+              <div className="mr-1 text-[12px]">{getGrowthRateIcon()} </div>
+              <div>{Math.abs(growthRate)}%</div>
             </div>
           </div>
 

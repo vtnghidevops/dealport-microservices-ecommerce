@@ -31,9 +31,13 @@ import { CiCirclePlus } from "react-icons/ci";
 
 const DashboardAdmin: React.FC = () => {
   const [loading, setLoading] = useState<boolean>(true);
-  const [dashboardData, setDashboardData] = useState<DashboardSummary | null>(null);
+  const [dashboardData, setDashboardData] = useState<DashboardSummary | null>(
+    null
+  );
   const [transactions, setTransactions] = useState<Transaction[]>([]);
-  const [bestSellingProducts, setBestSellingProducts] = useState<BestSellingProductStats[]>([]);
+  const [bestSellingProducts, setBestSellingProducts] = useState<
+    BestSellingProductStats[]
+  >([]);
   const [productCategories, setProductCategories] = useState<Category[]>([]);
   const [newProducts, setNewProducts] = useState<Product[]>([]);
   const [topProducts, setTopProducts] = useState<BestSellingProductStats[]>([]);
@@ -66,11 +70,11 @@ const DashboardAdmin: React.FC = () => {
         setNewProducts(latestProducts);
 
         //  console.log('Dashboard data loaded successfully', {
-          //dashboardSummary,
-          //transactions: transactionData.transactions,
-          //bestSellingProducts: topSellingProducts,
-          //categories,
-          //latestProducts
+        //dashboardSummary,
+        //transactions: transactionData.transactions,
+        //bestSellingProducts: topSellingProducts,
+        //categories,
+        //latestProducts
         //});
       } catch (error) {
         console.error("Error fetching dashboard data:", error);
@@ -95,6 +99,7 @@ const DashboardAdmin: React.FC = () => {
       {/* <Sidebar isOpen={true} /> */}
       <div className="flex-1 overflow-auto">
         <AdminHeader title="Dashboard" />
+
         <main className="p-[1rem]">
           {/* Metric Cards */}
           <div className="flex flex-col md:flex-row gap-[18px] mb-6">
@@ -148,23 +153,39 @@ const DashboardAdmin: React.FC = () => {
 
               <div className="grid grid-cols-5 gap-2 mb-[3rem] text-center">
                 <div className="p-2">
-                  <p className="text-xl font-semibold">{(dashboardData.weeklyReport.customers / 1000).toFixed(1)}k</p>
+                  <p className="text-xl font-semibold">
+                    {(dashboardData.weeklyReport.customers / 1000).toFixed(1)}k
+                  </p>
                   <p className="text-xs text-gray-500">Customers</p>
                 </div>
                 <div className="p-2">
-                  <p className="text-xl font-semibold">{(dashboardData.weeklyReport.totalProducts / 1000).toFixed(1)}k</p>
+                  <p className="text-xl font-semibold">
+                    {(dashboardData.weeklyReport.totalProducts / 1000).toFixed(
+                      1
+                    )}
+                    k
+                  </p>
                   <p className="text-xs text-gray-500">Total Products</p>
                 </div>
                 <div className="p-2">
-                  <p className="text-xl font-semibold">{(dashboardData.weeklyReport.stockProducts / 1000).toFixed(1)}k</p>
+                  <p className="text-xl font-semibold">
+                    {(dashboardData.weeklyReport.stockProducts / 1000).toFixed(
+                      1
+                    )}
+                    k
+                  </p>
                   <p className="text-xs text-gray-500">Stock Products</p>
                 </div>
                 <div className="p-2">
-                  <p className="text-xl font-semibold">{(dashboardData.weeklyReport.outOfStock / 1000).toFixed(1)}k</p>
+                  <p className="text-xl font-semibold">
+                    {(dashboardData.weeklyReport.outOfStock / 1000).toFixed(1)}k
+                  </p>
                   <p className="text-xs text-gray-500">Out of Stock</p>
                 </div>
                 <div className="p-2">
-                  <p className="text-xl font-semibold">{(dashboardData.weeklyReport.revenue / 1000).toFixed(1)}k</p>
+                  <p className="text-xl font-semibold">
+                    {(dashboardData.weeklyReport.revenue / 1000).toFixed(1)}k
+                  </p>
                   <p className="text-xs text-gray-500">Revenue</p>
                 </div>
               </div>
@@ -182,7 +203,12 @@ const DashboardAdmin: React.FC = () => {
                     <HiOutlineDotsVertical></HiOutlineDotsVertical>
                   </button>
                 </div>
-                <p className="text-2xl font-bold mb-2">{(dashboardData.userStats.totalInLastMinutes / 1000).toFixed(1)}K</p>
+                <p className="text-2xl font-bold mb-2">
+                  {(dashboardData.userStats.totalInLastMinutes / 1000).toFixed(
+                    1
+                  )}
+                  K
+                </p>
                 <p className="text-xs text-gray-500 mb-2 mt-[1rem]">
                   Users per minute
                 </p>
@@ -227,7 +253,7 @@ const DashboardAdmin: React.FC = () => {
                 </button>
               </div>
               <BestSellingTable bestProducts={bestSellingProducts} />
-              <div className="flex justify-end mt-[1rem] items-center mr-[1rem]">
+              <div className="flex justify-end mt-[-1.2rem] items-center mr-[-1rem]">
                 <button className="text-sm bg-white text-primary border border-primary rounded-[25px] w-[96px] h-[32px]">
                   Details
                 </button>
@@ -238,7 +264,9 @@ const DashboardAdmin: React.FC = () => {
               <div className="flex justify-between mb-6">
                 <div>
                   <h3 className="text-[18px] font-bold">Add Product</h3>
-                  <p className="text-sm text-gray-500">Add your product with category</p>
+                  <p className="text-sm text-gray-500">
+                    Add your product with category
+                  </p>
                 </div>
                 <button className="rounded-full h-10 w-10 flex justify-center items-center bg-ocean-green text-white text-[24px]">
                   <CiCirclePlus />
@@ -246,7 +274,9 @@ const DashboardAdmin: React.FC = () => {
               </div>
 
               <div className="mb-4">
-                <h4 className="text-[16px] font-semibold mb-3">Product Categories</h4>
+                <h4 className="text-[16px] font-semibold mb-3">
+                  Product Categories
+                </h4>
                 <ProductCategoryList categories={productCategories} />
               </div>
 

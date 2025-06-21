@@ -3,32 +3,34 @@ import {
   CustomerOverview,
   CustomerStatus,
   CustomerChartData,
-  CustomerFilterParams
-} from '../models/customer.model';
-import axios from 'axios';
-import { getApiUrl, getAuthHeader } from '@/utils/api-config';
+  CustomerFilterParams,
+} from "../models/customer.model";
+import axios from "axios";
+import { getApiUrl, getAuthHeader } from "@/utils/api-config";
 
 // Helper function to convert API data to Customer object
 const mapApiDataToCustomer = (userData: any): Customer => {
   return {
-    id: userData.id?.toString() || '',
-    name: userData.name || 'Unknown User',
-    phone: userData.phone || 'N/A',
+    id: userData.id?.toString() || "",
+    name: userData.name || "Unknown User",
+    phone: userData.phone || "N/A",
     orderCount: userData.orderCount || 0,
     totalSpend: userData.totalSpend || 0,
-    status: userData.status || CustomerStatus.ACTIVE
+    status: userData.status || CustomerStatus.ACTIVE,
   };
 };
 
 export const CustomerService = {
-  getCustomers: async (params: CustomerFilterParams = { page: 1, limit: 10 }): Promise<{ customers: Customer[], total: number }> => {
+  getCustomers: async (
+    params: CustomerFilterParams = { page: 1, limit: 10 }
+  ): Promise<{ customers: Customer[]; total: number }> => {
     try {
       const headers = getAuthHeader();
 
       // Build filter parameters based on CustomerFilterParams
       const requestData: any = {
         page: params.page,
-        limit: params.limit
+        limit: params.limit,
       };
 
       // Add search term if provided
@@ -43,7 +45,7 @@ export const CustomerService = {
 
       // Call the customer list API (sử dụng endpoint admin mới)
       const response = await axios.post(
-        getApiUrl('users/admin/list'),
+        getApiUrl("users/admin/list"),
         requestData,
         { headers }
       );
@@ -56,13 +58,13 @@ export const CustomerService = {
 
         return {
           customers: mappedCustomers,
-          total: total || mappedCustomers.length
+          total: total || mappedCustomers.length,
         };
       } else {
-        throw new Error(response.data?.message || 'Failed to fetch customers');
+        throw new Error(response.data?.message || "Failed to fetch customers");
       }
     } catch (error) {
-      console.error('Error fetching customers:', error);
+      console.error("Error fetching customers:", error);
       // Throw the error to be handled by the component
       throw error;
     }
@@ -74,7 +76,7 @@ export const CustomerService = {
 
       // Call the customer statistics API (sử dụng endpoint admin mới)
       const response = await axios.post(
-        getApiUrl('users/admin/statistics'),
+        getApiUrl("users/admin/statistics"),
         {},
         { headers }
       );
@@ -88,40 +90,38 @@ export const CustomerService = {
           totalCustomers: {
             count: stats.total_users || 0,
             growth: stats.user_growth || 0,
-            period: 'Last 7 days'
+            period: "Last 7 days",
           },
           newCustomers: {
             count: stats.new_users || 0,
             growth: stats.new_user_growth || 0,
-            period: 'Last 7 days'
+            period: "Last 7 days",
           },
           visitors: {
             count: stats.visitors || 0,
             growth: stats.visitor_growth || 0,
-            period: 'Last 7 days'
+            period: "Last 7 days",
           },
           activeCustomers: {
             count: stats.active_users || 0,
-            chartLabel: 'Active Customers'
+            chartLabel: "Active Customers",
           },
           repeatCustomers: {
             count: stats.repeat_customers || 0,
-            chartLabel: 'Repeat Customers'
-          },
-          shopVisitor: {
-            count: stats.shop_visitors || 0,
-            chartLabel: 'Shop Visitor'
+            chartLabel: "Repeat Customers",
           },
           conversionRate: {
             rate: stats.conversion_rate || 0,
-            chartLabel: 'Conversion Rate'
-          }
+            chartLabel: "Conversion Rate",
+          },
         };
       } else {
-        throw new Error(response.data?.message || 'Failed to fetch customer overview');
+        throw new Error(
+          response.data?.message || "Failed to fetch customer overview"
+        );
       }
     } catch (error) {
-      console.error('Error fetching customer overview:', error);
+      console.error("Error fetching customer overview:", error);
       // Throw the error to be handled by the component
       throw error;
     }
@@ -133,7 +133,7 @@ export const CustomerService = {
 
       // Call the customer activity chart API (sử dụng endpoint admin mới)
       const response = await axios.post(
-        getApiUrl('users/admin/activity-chart'),
+        getApiUrl("users/admin/activity-chart"),
         {},
         { headers }
       );
@@ -143,26 +143,31 @@ export const CustomerService = {
 
         // Map API data to CustomerChartData format
         return chartData.map((item: any) => ({
-          day: item.day || 'Unknown',
-          count: item.count || 0
+          day: item.day || "Unknown",
+          count: item.count || 0,
         }));
       } else {
-        throw new Error(response.data?.message || 'Failed to fetch customer chart data');
+        throw new Error(
+          response.data?.message || "Failed to fetch customer chart data"
+        );
       }
     } catch (error) {
-      console.error('Error fetching customer chart data:', error);
+      console.error("Error fetching customer chart data:", error);
       // Throw the error to be handled by the component
       throw error;
     }
   },
 
-  updateCustomerStatus: async (customerId: string, status: CustomerStatus): Promise<boolean> => {
+  updateCustomerStatus: async (
+    customerId: string,
+    status: CustomerStatus
+  ): Promise<boolean> => {
     try {
       const headers = getAuthHeader();
 
       // Prepare update data based on status
       const updateData: any = {
-        status: status
+        status: status,
       };
 
       // Gọi API cập nhật trạng thái người dùng
@@ -174,7 +179,7 @@ export const CustomerService = {
 
       return response.data && !response.data.error;
     } catch (error) {
-      console.error('Error updating customer status:', error);
+      console.error("Error updating customer status:", error);
       return false;
     }
   },
@@ -184,15 +189,14 @@ export const CustomerService = {
       const headers = getAuthHeader();
 
       // Gọi API xóa người dùng
-      const response = await axios.delete(
-        getApiUrl(`users/${customerId}`),
-        { headers }
-      );
+      const response = await axios.delete(getApiUrl(`users/${customerId}`), {
+        headers,
+      });
 
       return response.data && !response.data.error;
     } catch (error) {
-      console.error('Error deleting customer:', error);
+      console.error("Error deleting customer:", error);
       return false;
     }
-  }
+  },
 };

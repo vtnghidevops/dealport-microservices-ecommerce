@@ -1,9 +1,14 @@
-import { Category, CategoryFilter, CategoryResponse, CategoryFilterCounts } from '../models/category.model';
-import { CategorySummaryData } from '../cards/models/card.model';
+import {
+  Category,
+  CategoryFilter,
+  CategoryResponse,
+  CategoryFilterCounts,
+} from "../models/category.model";
+import { CategorySummaryData } from "../cards/models/card.model";
 import { CategoryService as GlobalCategoryService } from "@/services/product/product.service";
-import { Category as GlobalCategory } from '@/types/category.model';
-import axios from 'axios';
-import { getApiUrl, getAuthHeader } from '@/utils/api-config';
+import { Category as GlobalCategory } from "@/types/category.model";
+import axios from "axios";
+import { getApiUrl, getAuthHeader } from "@/utils/api-config";
 
 /**
  * Helper function to convert a global category to admin category format
@@ -24,7 +29,9 @@ export class CategoryService {
   /**
    * Get all categories with optional filtering and pagination
    */
-  static getCategories = async (filter: CategoryFilter): Promise<CategoryResponse> => {
+  static getCategories = async (
+    filter: CategoryFilter
+  ): Promise<CategoryResponse> => {
     try {
       // Create API filter parameters
       const apiFilters: Record<string, string> = {};
@@ -33,40 +40,42 @@ export class CategoryService {
         apiFilters.name = filter.search;
       }
 
-      if (filter.status !== 'all') {
-        apiFilters.is_active = filter.status === 'active' ? 'true' : 'false';
+      if (filter.status !== "all") {
+        apiFilters.is_active = filter.status === "active" ? "true" : "false";
       }
 
       // Get categories from API
-      const globalCategories = await GlobalCategoryService.getAllCategories(apiFilters);
+      const globalCategories = await GlobalCategoryService.getAllCategories(
+        apiFilters
+      );
 
       // Convert global categories to admin categories
-      const categories: Category[] = globalCategories.map(convertToAdminCategory);
+      const categories: Category[] = globalCategories.map(
+        convertToAdminCategory
+      );
 
       // Apply additional product filters not handled by the API
       let filteredCategories = [...categories];
 
-      if (filter.productFilter && filter.productFilter !== 'all') {
+      if (filter.productFilter && filter.productFilter !== "all") {
         switch (filter.productFilter) {
-          case 'featured':
+          case "featured":
             // Filter for categories with more products
             filteredCategories = filteredCategories.filter(
-              category => (category.productCount || 0) > 20
+              (category) => (category.productCount || 0) > 20
             );
             break;
-          case 'onSale':
+          case "onSale":
             // Filter for categories that might have products on sale
-            filteredCategories = filteredCategories.filter(
-              category => {
-                const count = category.productCount || 0;
-                return count >= 10 && count <= 30;
-              }
-            );
+            filteredCategories = filteredCategories.filter((category) => {
+              const count = category.productCount || 0;
+              return count >= 10 && count <= 30;
+            });
             break;
-          case 'outOfStock':
+          case "outOfStock":
             // Filter for categories with few products
             filteredCategories = filteredCategories.filter(
-              category => (category.productCount || 0) < 10
+              (category) => (category.productCount || 0) < 10
             );
             break;
         }
@@ -79,17 +88,20 @@ export class CategoryService {
       const page = filter.page || 1;
       const limit = filter.limit || 10;
       const start = (page - 1) * limit;
-      const paginatedCategories = filteredCategories.slice(start, start + limit);
+      const paginatedCategories = filteredCategories.slice(
+        start,
+        start + limit
+      );
 
       return {
         categories: paginatedCategories,
-        total
+        total,
       };
     } catch (error) {
       console.error("Error fetching categories:", error);
       return {
         categories: [],
-        total: 0
+        total: 0,
       };
     }
   };
@@ -102,29 +114,33 @@ export class CategoryService {
       const globalCategories = await GlobalCategoryService.getAllCategories();
 
       // Convert global categories to admin categories
-      const categories: Category[] = globalCategories.map(convertToAdminCategory);
+      const categories: Category[] = globalCategories.map(
+        convertToAdminCategory
+      );
 
       const totalCategories = categories.length;
-      const activeCategories = categories.filter(cat => cat.isActive).length;
+      const activeCategories = categories.filter((cat) => cat.isActive).length;
       const featuredCategories = Math.floor(totalCategories * 0.4); // Estimate 40% as featured
 
       // Find most popular category based on product count
       let popularCategory: Category = {
-        id: '0',
-        name: 'Unknown',
-        slug: '',
-        description: '',
-        imageUrl: '',
+        id: "0",
+        name: "Unknown",
+        slug: "",
+        description: "",
+        imageUrl: "",
         productCount: 0,
         isActive: false,
         isVisible: false,
         createdAt: new Date(),
-        updatedAt: new Date()
+        updatedAt: new Date(),
       };
 
       if (categories.length > 0) {
         popularCategory = categories.reduce((prev, current) =>
-          (prev.productCount || 0) > (current.productCount || 0) ? prev : current
+          (prev.productCount || 0) > (current.productCount || 0)
+            ? prev
+            : current
         );
       }
 
@@ -144,7 +160,7 @@ export class CategoryService {
         activeCategories: 0,
         featuredCategories: 0,
         popularCategory: {
-          name: 'Unknown',
+          name: "Unknown",
           productCount: 0,
         },
       };
@@ -154,7 +170,9 @@ export class CategoryService {
   /**
    * Get category by ID
    */
-  static getCategoryById = async (id: string): Promise<Category | undefined> => {
+  static getCategoryById = async (
+    id: string
+  ): Promise<Category | undefined> => {
     try {
       const globalCategory = await GlobalCategoryService.getCategoryById(id);
       if (globalCategory) {
@@ -170,16 +188,16 @@ export class CategoryService {
   /**
    * Create a new category
    */
-  static createCategory = async (category: Omit<Category, "id">): Promise<Category> => {
+  static createCategory = async (
+    category: Omit<Category, "id">
+  ): Promise<Category> => {
     try {
       // Use the API to create a category
       const headers = getAuthHeader();
 
-      const response = await axios.post(
-        getApiUrl('categories', true),
-        category,
-        { headers }
-      );
+      const response = await axios.post(getApiUrl("categories"), category, {
+        headers,
+      });
 
       const newCategory = response.data.data || response.data;
       return convertToAdminCategory({
@@ -201,7 +219,7 @@ export class CategoryService {
       const headers = getAuthHeader();
 
       const response = await axios.put(
-        getApiUrl(`categories/${category.id}`, true),
+        getApiUrl(`categories/${category.id}`),
         {
           ...category,
           id: Number(category.id),
@@ -225,10 +243,7 @@ export class CategoryService {
       // Use the API to delete a category
       const headers = getAuthHeader();
 
-      await axios.delete(
-        getApiUrl(`categories/${id}`, true),
-        { headers }
-      );
+      await axios.delete(getApiUrl(`categories/${id}`), { headers });
 
       return true;
     } catch (error) {
@@ -243,19 +258,25 @@ export class CategoryService {
   static getCategoryFilterCounts = async (): Promise<CategoryFilterCounts> => {
     try {
       const globalCategories = await GlobalCategoryService.getAllCategories();
-      const categories: Category[] = globalCategories.map(convertToAdminCategory);
+      const categories: Category[] = globalCategories.map(
+        convertToAdminCategory
+      );
 
       // Count categories by status
-      const activeCount = categories.filter(cat => cat.isActive).length;
+      const activeCount = categories.filter((cat) => cat.isActive).length;
       const inactiveCount = categories.length - activeCount;
 
       // Count categories by product count
-      const featuredCount = categories.filter(cat => (cat.productCount || 0) > 20).length;
-      const onSaleCount = categories.filter(cat => {
+      const featuredCount = categories.filter(
+        (cat) => (cat.productCount || 0) > 20
+      ).length;
+      const onSaleCount = categories.filter((cat) => {
         const count = cat.productCount || 0;
         return count >= 10 && count <= 30;
       }).length;
-      const outOfStockCount = categories.filter(cat => (cat.productCount || 0) < 10).length;
+      const outOfStockCount = categories.filter(
+        (cat) => (cat.productCount || 0) < 10
+      ).length;
 
       return {
         all: categories.length,

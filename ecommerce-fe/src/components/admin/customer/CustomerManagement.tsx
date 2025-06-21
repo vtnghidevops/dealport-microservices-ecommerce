@@ -4,7 +4,7 @@ import { CustomerSummaryCard } from "./cards/CustomerSummaryCard";
 import CustomerTable from "./tables/CustomerTable";
 import CustomerActivityChart from "./charts/CustomerActivityChart";
 import CustomerSidebar from "./detail/CustomerSidebar";
-import Pagination from '../../common/Pagination';
+import Pagination from "../../common/Pagination";
 import {
   Customer,
   CustomerStatus,
@@ -26,14 +26,18 @@ const CustomerManagement: React.FC = () => {
     limit: 10,
   });
   const [totalCustomers, setTotalCustomers] = useState<number>(0);
-  const [activeStatus, setActiveStatus] = useState<CustomerStatus | "All">("All");
+  const [activeStatus, setActiveStatus] = useState<CustomerStatus | "All">(
+    "All"
+  );
   const [filterCounts, setFilterCounts] = useState({
     all: 0,
     active: 0,
     inactive: 0,
     vip: 0,
   });
-  const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
+  const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(
+    null
+  );
   const [showSidebar, setShowSidebar] = useState<boolean>(false);
   const { toast } = useToast();
 
@@ -92,14 +96,20 @@ const CustomerManagement: React.FC = () => {
     });
   };
 
-  const handleStatusChange = async (customerId: string, newStatus: CustomerStatus) => {
+  const handleStatusChange = async (
+    customerId: string,
+    newStatus: CustomerStatus
+  ) => {
     try {
-      const success = await CustomerService.updateCustomerStatus(customerId, newStatus);
+      const success = await CustomerService.updateCustomerStatus(
+        customerId,
+        newStatus
+      );
 
       if (success) {
         // Update the customer in the local state
-        setCustomers(prevCustomers =>
-          prevCustomers.map(customer =>
+        setCustomers((prevCustomers) =>
+          prevCustomers.map((customer) =>
             customer.id === customerId
               ? { ...customer, status: newStatus }
               : customer
@@ -110,14 +120,14 @@ const CustomerManagement: React.FC = () => {
         if (selectedCustomer && selectedCustomer.id === customerId) {
           setSelectedCustomer({
             ...selectedCustomer,
-            status: newStatus
+            status: newStatus,
           });
         }
 
         toast({
           variant: "success",
           title: "Status Updated",
-          description: `Customer status has been updated to ${newStatus}`
+          description: `Customer status has been updated to ${newStatus}`,
         });
 
         // Refresh the filter counts
@@ -126,7 +136,7 @@ const CustomerManagement: React.FC = () => {
         toast({
           variant: "destructive",
           title: "Update Failed",
-          description: "Could not update customer status"
+          description: "Could not update customer status",
         });
       }
     } catch (error) {
@@ -134,7 +144,7 @@ const CustomerManagement: React.FC = () => {
       toast({
         variant: "destructive",
         title: "Update Failed",
-        description: "An error occurred while updating customer status"
+        description: "An error occurred while updating customer status",
       });
     }
   };
@@ -145,7 +155,9 @@ const CustomerManagement: React.FC = () => {
 
       if (success) {
         // Remove the customer from the local state
-        setCustomers(prevCustomers => prevCustomers.filter(customer => customer.id !== customerId));
+        setCustomers((prevCustomers) =>
+          prevCustomers.filter((customer) => customer.id !== customerId)
+        );
 
         // If the deleted customer was selected, hide the sidebar
         if (selectedCustomer && selectedCustomer.id === customerId) {
@@ -154,12 +166,12 @@ const CustomerManagement: React.FC = () => {
         }
 
         // Decrease the total count
-        setTotalCustomers(prevTotal => Math.max(0, prevTotal - 1));
+        setTotalCustomers((prevTotal) => Math.max(0, prevTotal - 1));
 
         toast({
           variant: "success",
           title: "Customer Deleted",
-          description: "Customer has been successfully deleted"
+          description: "Customer has been successfully deleted",
         });
 
         // Refresh the filter counts
@@ -168,7 +180,7 @@ const CustomerManagement: React.FC = () => {
         toast({
           variant: "destructive",
           title: "Delete Failed",
-          description: "Could not delete the customer"
+          description: "Could not delete the customer",
         });
       }
     } catch (error) {
@@ -176,7 +188,7 @@ const CustomerManagement: React.FC = () => {
       toast({
         variant: "destructive",
         title: "Delete Failed",
-        description: "An error occurred while deleting the customer"
+        description: "An error occurred while deleting the customer",
       });
     }
   };
@@ -229,7 +241,9 @@ const CustomerManagement: React.FC = () => {
         setChartData(chartData);
 
         // Fetch customers with filters
-        const { customers, total } = await CustomerService.getCustomers(filterParams);
+        const { customers, total } = await CustomerService.getCustomers(
+          filterParams
+        );
 
         setCustomers(customers);
         setTotalCustomers(total);
@@ -241,7 +255,7 @@ const CustomerManagement: React.FC = () => {
         toast({
           variant: "destructive",
           title: "Data Loading Error",
-          description: "Failed to load customer data. Please try again later."
+          description: "Failed to load customer data. Please try again later.",
         });
       } finally {
         setLoading(false);
@@ -282,7 +296,7 @@ const CustomerManagement: React.FC = () => {
                   </div>
                   <div className="col-span-1 row-span-1 row-start-3">
                     <CustomerSummaryCard
-                      title="Visitor"
+                      title="Visitors"
                       value={overview.visitors.count}
                       growthRate={overview.visitors.growth}
                       period={overview.visitors.period}
@@ -315,8 +329,9 @@ const CustomerManagement: React.FC = () => {
             <div className="w-[1116px] bg-white rounded-lg shadow p-[1rem] mb-6 mt-[1rem] drop-shadow filter">
               <div className="flex ">
                 <div
-                  className={`transition-all duration-500 ease-in-out ${showSidebar ? "w-[788px] mr-5" : "w-full"
-                    }`}
+                  className={`transition-all duration-500 ease-in-out ${
+                    showSidebar ? "w-[788px] mr-5" : "w-full"
+                  }`}
                 >
                   {loading ? (
                     <div className="flex justify-center py-10">

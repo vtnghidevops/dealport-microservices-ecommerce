@@ -1,7 +1,7 @@
 export enum CustomerStatus {
-  ACTIVE = 'Active',
-  INACTIVE = 'Inactive',
-  VIP = 'VIP'
+  ACTIVE = "Active",
+  INACTIVE = "Inactive",
+  VIP = "VIP",
 }
 
 export interface Customer {
@@ -41,10 +41,6 @@ export interface CustomerOverview {
     chartLabel: string;
   };
   repeatCustomers: {
-    count: number;
-    chartLabel: string;
-  };
-  shopVisitor: {
     count: number;
     chartLabel: string;
   };

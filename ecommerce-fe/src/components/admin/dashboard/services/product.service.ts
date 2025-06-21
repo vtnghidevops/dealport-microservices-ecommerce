@@ -39,10 +39,10 @@
 //   },
 // };
 
-import axios from 'axios';
-import { Product } from '@/types/product.model';
-import { TopProductItem } from '@/components/homepage/BestSelling/models/topProducts.model';
-import { getApiUrl, getAdminHeaders } from '@/utils/api-config';
+import axios from "axios";
+import { Product } from "@/types/product.model";
+import { TopProductItem } from "@/components/homepage/BestSelling/models/topProducts.model";
+import { getApiUrl, getAdminHeaders } from "@/utils/api-config";
 
 // Types for product dashboard data
 export interface ProductStatistics {
@@ -68,10 +68,9 @@ export const ProductDashboardService = {
   getProductStatistics: async (): Promise<ProductStatistics> => {
     try {
       const headers = getAdminHeaders();
-      const response = await axios.get(
-        getApiUrl('products/statistics', true),
-        { headers }
-      );
+      const response = await axios.get(getApiUrl("products/statistics"), {
+        headers,
+      });
 
       if (response.data && response.data.data) {
         return {
@@ -79,7 +78,7 @@ export const ProductDashboardService = {
           inStockProducts: response.data.data.inStockProducts || 0,
           outOfStockProducts: response.data.data.outOfStockProducts || 0,
           lowStockProducts: response.data.data.lowStockProducts || 0,
-          productGrowth: response.data.data.productGrowth || 0
+          productGrowth: response.data.data.productGrowth || 0,
         };
       }
 
@@ -89,10 +88,10 @@ export const ProductDashboardService = {
         inStockProducts: 2500,
         outOfStockProducts: 500,
         lowStockProducts: 300,
-        productGrowth: 12.5
+        productGrowth: 12.5,
       };
     } catch (error) {
-      console.error('Error fetching product statistics:', error);
+      console.error("Error fetching product statistics:", error);
 
       // Return default data if API request fails
       return {
@@ -100,45 +99,46 @@ export const ProductDashboardService = {
         inStockProducts: 2500,
         outOfStockProducts: 500,
         lowStockProducts: 300,
-        productGrowth: 12.5
+        productGrowth: 12.5,
       };
     }
   },
 
   // Get top selling products for dashboard
-  getTopSellingProducts: async (limit: number = 5): Promise<BestSellingProductStats[]> => {
+  getTopSellingProducts: async (
+    limit: number = 5
+  ): Promise<BestSellingProductStats[]> => {
     try {
       const headers = getAdminHeaders();
       // Get products sorted by order count (sold)
-      const response = await axios.get(
-        getApiUrl('products', true),
-        {
-          headers,
-          params: {
-            page: 1,
-            limit,
-            sort_by: 'orders',
-            sort_dir: 'desc'
-          }
-        }
-      );
+      const response = await axios.get(getApiUrl("products"), {
+        headers,
+        params: {
+          page: 1,
+          page_size: limit,
+        },
+      });
 
-      if (response.data && response.data.data && Array.isArray(response.data.data)) {
+      if (
+        response.data &&
+        response.data.data &&
+        Array.isArray(response.data.data)
+      ) {
         return response.data.data.map((product: any) => ({
           id: product.id,
           name: product.name,
-          imageSrc: product.imageUrl || '/assets/images/placeholder.png',
+          imageSrc: product.imageUrl || "/assets/images/placeholder.png",
           sold: product.orders || 0,
           price: product.price || 0,
           stock: product.stockQuantity || 0,
-          growth: Math.random() * 30 // Placeholder since growth isn't in the API
+          growth: Math.random() * 30, // Placeholder since growth isn't in the API
         }));
       }
 
       // Return empty array if API response is invalid
       return [];
     } catch (error) {
-      console.error('Error fetching top selling products:', error);
+      console.error("Error fetching top selling products:", error);
       return [];
     }
   },
@@ -148,27 +148,26 @@ export const ProductDashboardService = {
     try {
       const headers = getAdminHeaders();
       // Get products sorted by creation date
-      const response = await axios.get(
-        getApiUrl('products', true),
-        {
-          headers,
-          params: {
-            page: 1,
-            limit,
-            sort_by: 'created_at',
-            sort_dir: 'desc'
-          }
-        }
-      );
+      const response = await axios.get(getApiUrl("products"), {
+        headers,
+        params: {
+          page: 1,
+          page_size: limit,
+        },
+      });
 
-      if (response.data && response.data.data && Array.isArray(response.data.data)) {
+      if (
+        response.data &&
+        response.data.data &&
+        Array.isArray(response.data.data)
+      ) {
         return response.data.data;
       }
 
       // Return empty array if API response is invalid
       return [];
     } catch (error) {
-      console.error('Error fetching new products:', error);
+      console.error("Error fetching new products:", error);
       return [];
     }
   },
@@ -178,23 +177,24 @@ export const ProductDashboardService = {
     try {
       const headers = getAdminHeaders();
       // Get top-sale products
-      const response = await axios.get(
-        getApiUrl('products', true),
-        {
-          headers,
-          params: {
-            page: 1,
-            limit,
-            type: 'top-sale'
-          }
-        }
-      );
+      const response = await axios.get(getApiUrl("products"), {
+        headers,
+        params: {
+          page: 1,
+          page_size: limit,
+          type: "top-sale",
+        },
+      });
 
-      if (response.data && response.data.data && Array.isArray(response.data.data)) {
+      if (
+        response.data &&
+        response.data.data &&
+        Array.isArray(response.data.data)
+      ) {
         return response.data.data.map((product: any) => {
           // Parse the uiMetadata if it's a string
           let metadata = product.uiMetadata || {};
-          if (typeof product.uiMetadata === 'string') {
+          if (typeof product.uiMetadata === "string") {
             try {
               metadata = JSON.parse(product.uiMetadata);
             } catch (err) {
@@ -205,9 +205,9 @@ export const ProductDashboardService = {
           return {
             ...product,
             uiMetadata: {
-              setUpDesign: metadata.setUpDesign || 'row',
-              isCommingSoon: metadata.isCommingSoon || false
-            }
+              setUpDesign: metadata.setUpDesign || "row",
+              isCommingSoon: metadata.isCommingSoon || false,
+            },
           };
         });
       }
@@ -215,8 +215,8 @@ export const ProductDashboardService = {
       // Return empty array if API response is invalid
       return [];
     } catch (error) {
-      console.error('Error fetching top sale products:', error);
+      console.error("Error fetching top sale products:", error);
       return [];
     }
-  }
+  },
 };
