@@ -169,6 +169,18 @@ func (app *Config) routers() http.Handler {
 			})
 		})
 
+		// Orders admin routes for dashboard
+		r.Route("/orders", func(r chi.Router) {
+			r.Group(func(r chi.Router) {
+				r.Use(app.AuthMiddleware.RequireAuth)
+				r.Use(app.AuthMiddleware.RequireAdmin)
+
+				// Dashboard statistics endpoints - placeholder for now
+				// r.Post("/statistics", app.CheckoutHandler.GetOrderStatistics)
+				// r.Post("/activity-chart", app.CheckoutHandler.GetOrderActivityChart)
+			})
+		})
+
 		// Payment routes
 		r.Route("/payments", func(r chi.Router) {
 			r.Post("/momo/create", app.PaymentHandler.CreateMomoPayment)
@@ -203,6 +215,15 @@ func (app *Config) routers() http.Handler {
 			r.Post("/{id}/images", app.ProductHandler.UploadProductImage)
 			r.Delete("/{id}/images/{imageId}", app.ProductHandler.DeleteProductImage)
 			r.Put("/{id}/images/{imageId}/primary", app.ProductHandler.SetPrimaryProductImage)
+
+			// Admin routes for statistics
+			r.Group(func(r chi.Router) {
+				r.Use(app.AuthMiddleware.RequireAuth)
+				r.Use(app.AuthMiddleware.RequireAdmin)
+
+				// Dashboard statistics endpoints - placeholder for now
+				// r.Post("/statistics", app.ProductHandler.GetProductStatistics)
+			})
 		})
 
 		// Testimonials endpoint for HappyCustomers section
