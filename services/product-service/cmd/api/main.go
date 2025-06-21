@@ -163,10 +163,10 @@ func main() {
 	// Create services with storage
 	var productService domain.ProductService
 	if storageService != nil {
-		productService = service.NewProductServiceWithStorage(productRepo, storageService, urlCache)
+		productService = service.NewProductServiceWithStorage(productRepo, categoryRepo, storageService, urlCache)
 		log.Printf("Product service initialized with MinIO storage")
 	} else {
-		productService = service.NewProductService(productRepo)
+		productService = service.NewProductService(productRepo, categoryRepo)
 		log.Printf("Product service initialized with local storage")
 	}
 

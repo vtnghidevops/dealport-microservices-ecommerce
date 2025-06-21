@@ -19,21 +19,24 @@ import (
 // ProductService implements the domain.ProductService interface
 type ProductService struct {
 	productRepo    domain.ProductRepository
+	categoryRepo   domain.CategoryRepository
 	storageService storage.StorageService
 	urlCache       cache.ImageURLCache
 }
 
 // NewProductService creates a new ProductService with local file storage
-func NewProductService(repo domain.ProductRepository) *ProductService {
+func NewProductService(repo domain.ProductRepository, categoryRepo domain.CategoryRepository) *ProductService {
 	return &ProductService{
-		productRepo: repo,
+		productRepo:  repo,
+		categoryRepo: categoryRepo,
 	}
 }
 
 // NewProductServiceWithStorage creates a new ProductService with the specified storage service
-func NewProductServiceWithStorage(repo domain.ProductRepository, storageService storage.StorageService, urlCache cache.ImageURLCache) *ProductService {
+func NewProductServiceWithStorage(repo domain.ProductRepository, categoryRepo domain.CategoryRepository, storageService storage.StorageService, urlCache cache.ImageURLCache) *ProductService {
 	return &ProductService{
 		productRepo:    repo,
+		categoryRepo:   categoryRepo,
 		storageService: storageService,
 		urlCache:       urlCache,
 	}
@@ -167,7 +170,21 @@ func (s *ProductService) CreateProduct(product *domain.Product) (int, error) {
 		product.Slug = util.CreateSlug(product.Name)
 	}
 
-	return s.productRepo.CreateProduct(product)
+	// Create the product
+	id, err := s.productRepo.CreateProduct(product)
+	if err != nil {
+		return 0, err
+	}
+
+	// Sync category product counts after creating product
+	if s.categoryRepo != nil {
+		if syncErr := s.categoryRepo.SyncProductCounts(); syncErr != nil {
+			log.Printf("Warning: Failed to sync category product counts after creating product %d: %v", id, syncErr)
+			// Don't return error as product creation was successful
+		}
+	}
+
+	return id, nil
 }
 
 // UpdateProduct updates an existing product
@@ -192,12 +209,33 @@ func (s *ProductService) UpdateProduct(product *domain.Product) error {
 		return err
 	}
 
+	// Sync category product counts after updating product (in case category changed)
+	if s.categoryRepo != nil {
+		if syncErr := s.categoryRepo.SyncProductCounts(); syncErr != nil {
+			log.Printf("Warning: Failed to sync category product counts after updating product %d: %v", product.ID, syncErr)
+			// Don't return error as product update was successful
+		}
+	}
+
 	return nil
 }
 
 // DeleteProduct deletes a product by ID
 func (s *ProductService) DeleteProduct(id int) error {
-	return s.productRepo.DeleteProduct(id)
+	err := s.productRepo.DeleteProduct(id)
+	if err != nil {
+		return err
+	}
+
+	// Sync category product counts after deleting product
+	if s.categoryRepo != nil {
+		if syncErr := s.categoryRepo.SyncProductCounts(); syncErr != nil {
+			log.Printf("Warning: Failed to sync category product counts after deleting product %d: %v", id, syncErr)
+			// Don't return error as product deletion was successful
+		}
+	}
+
+	return nil
 }
 
 // transformImageURL converts a MinIO URL to a presigned URL

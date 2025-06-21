@@ -364,9 +364,20 @@ func (r *CategoryRepository) DeleteCategory(id int) error {
 }
 
 // SyncProductCounts updates product counts for all categories
-// This method is now redundant since counts are calculated dynamically,
-// but kept for backward compatibility
 func (r *CategoryRepository) SyncProductCounts() error {
-	// No-op as counts are calculated dynamically in queries
-	return nil
+	ctx, cancel := context.WithTimeout(context.Background(), dbTimeout)
+	defer cancel()
+
+	// Update all category product counts
+	query := `
+		UPDATE categories 
+		SET product_count = (
+			SELECT COUNT(*) 
+			FROM products 
+			WHERE products.category_id = categories.id
+		)
+	`
+
+	_, err := r.db.ExecContext(ctx, query)
+	return err
 }
