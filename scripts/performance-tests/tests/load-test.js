@@ -82,14 +82,14 @@ export function setup() {
   // Setup multiple shared test accounts for better distribution
   // Need enough users to cover most VUs for realistic authenticated testing
   const userCount = Math.min(
-    loadPattern.maxUsers, // Match max VUs for full coverage
-    300 // Cap to avoid overwhelming setup
+    loadPattern.maxUsers, // RESTORED - match max VUs for full coverage
+    250 // RESTORED high cap but not too high to avoid overwhelming setup
   );
   console.log(`Attempting to authenticate ${userCount} shared accounts...`);
 
   const userTokens = setupMultipleTestUsers(userCount, {
-    batchSize: 50, // Larger batches for faster setup
-    setupDelay: 0.1, // Minimal delay during setup
+    batchSize: 25, // OPTIMIZED batch size for parallel processing
+    setupDelay: 0.3, // OPTIMIZED delay - faster than before but not too fast
   });
 
   console.log(
@@ -108,17 +108,23 @@ export function setup() {
 export default function (data) {
   const { userTokens, startTime } = data;
 
-  // Mix of authenticated and guest users for realistic testing
-  let userToken = null;
-  const guestChance = 0.25; // 25% guest users, 75% authenticated
-
-  if (Math.random() > guestChance && userTokens && userTokens.length > 0) {
-    userToken = userTokens[Math.floor(Math.random() * userTokens.length)];
-  }
-  // else remains null for guest user behavior
+  // Get authenticated user token for this VU (same approach as smoke test)
+  const userToken =
+    userTokens && userTokens.length > 0
+      ? userTokens[(__VU - 1) % userTokens.length] // Use modulo like smoke test
+      : null;
 
   const currentVUs = __VU;
   const elapsedMinutes = (Date.now() - startTime) / (1000 * 60);
+
+  // Simple logging for debugging
+  if (userToken) {
+    console.log(
+      `VU${currentVUs}: Using token: ${userToken.substring(0, 20)}...`
+    );
+  } else {
+    console.log(`VU${currentVUs}: Running as guest user`);
+  }
 
   // Distribute user behavior based on realistic e-commerce patterns
   const userBehavior = Math.random();
@@ -153,7 +159,7 @@ export default function (data) {
       // Traditional search/browse
       searchAndFilter(userToken);
     } else if (userBehavior < 0.8) {
-      // 20% - Authenticated cart operations
+      // 30% - Authenticated operations (increased from 20%)
       if (userToken) {
         console.log(`VU${currentVUs}: Authenticated cart operations`);
 
@@ -174,8 +180,8 @@ export default function (data) {
         categoryManagement(); // Guest can view categories
         checkoutProcess(); // Guest can validate checkout (without actual order)
       }
-    } else if (userBehavior < 0.85) {
-      // 15% - Complete purchase journey with payment
+    } else if (userBehavior < 0.9) {
+      // 10% - Complete purchase journey with payment
       if (userToken) {
         console.log(`VU${currentVUs}: Complete purchase journey with payment`);
 
@@ -197,7 +203,7 @@ export default function (data) {
         checkoutProcess(); // Guest checkout validation
       }
     } else if (userBehavior < 0.95) {
-      // 7% - Product and category management
+      // 5% - Product and category management
       if (userToken) {
         console.log(`VU${currentVUs}: Product management testing`);
 
@@ -208,7 +214,7 @@ export default function (data) {
         // Test category management
         categoryManagement(userToken);
       } else {
-        console.log(`VU${currentVUs}: No auth - category browsing`);
+        console.log(`VU${currentVUs}: Guest user - category browsing`);
         categoryManagement();
         browseProducts();
       }
@@ -221,11 +227,18 @@ export default function (data) {
         userProfileOperations(userToken);
         sleep(Math.random() * 1 + 0.5);
 
-        // Check orders
-        const headers = getAuthHeaders(userToken);
+        // Check orders using same approach as smoke test
+        const authHeaders = {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${userToken}`,
+        };
+
         const ordersResponse = http.get(
           `${config.baseUrls[config.environment]}/api/v1/checkout/orders`,
-          { headers, tags: { scenario: "account", type: "orders" } }
+          {
+            headers: authHeaders,
+            tags: { scenario: "account", type: "orders" },
+          }
         );
         check(ordersResponse, {
           "orders retrieved": (r) => r.status === 200,

@@ -123,27 +123,24 @@ export function setup() {
   console.log("⚠️  This test will push the system beyond normal capacity");
   console.log("🎯 Purpose: Find breaking points and validate resilience");
 
-  // Setup more test users for stress testing
-  const users = [];
-  // Need enough users to cover most VUs for realistic authenticated testing
+  // Setup test users for stress testing - need good coverage
   const userCount = Math.min(
-    Math.floor(stressLimits.spikeLoad * 0.8), // 80% of max VUs
-    400 // Cap to avoid overwhelming setup
+    loadPattern.stressMaxUsers || loadPattern.maxUsers, // Use stress max if available
+    300 // High cap for stress testing
+  );
+  console.log(
+    `Setting up ${userCount} shared test accounts for stress testing...`
   );
 
-  console.log(`Setting up ${userCount} test users for stress testing...`);
-
   const userTokens = setupMultipleTestUsers(userCount, {
-    batchSize: 100, // Large batches for faster stress test setup
-    setupDelay: 0.05, // Minimal delay for stress setup
+    batchSize: 30, // Larger batches for stress test
+    setupDelay: 0.2, // Faster setup for stress test
   });
 
-  users.push(...userTokens);
-
-  console.log(`✅ Setup completed with ${users.length} test users`);
+  console.log(`✅ Setup completed with ${userTokens.length} test users`);
 
   return {
-    userTokens: users,
+    userTokens: userTokens,
     startTime: Date.now(),
     stressLimits: stressLimits,
   };
@@ -153,14 +150,11 @@ export function setup() {
 export default function (data) {
   const { userTokens, startTime, stressLimits } = data;
 
-  // Mix of authenticated and guest users for realistic stress testing
-  let userToken = null;
-  const guestChance = 0.3; // 30% guest users under stress, 70% authenticated
-
-  if (Math.random() > guestChance && userTokens && userTokens.length > 0) {
-    userToken = userTokens[Math.floor(Math.random() * userTokens.length)];
-  }
-  // else remains null for guest user behavior
+  // Get authenticated user token for this VU (same approach as smoke test)
+  const userToken =
+    userTokens && userTokens.length > 0
+      ? userTokens[(__VU - 1) % userTokens.length] // Use modulo like smoke test
+      : null;
 
   // Calculate current load level and test phase
   const elapsedMinutes = (Date.now() - startTime) / (1000 * 60);

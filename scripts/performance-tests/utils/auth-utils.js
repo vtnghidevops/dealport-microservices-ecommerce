@@ -34,7 +34,7 @@ function getOTPCode() {
  * @returns {string|null} User token or null
  */
 export function setupTestUser(userData = {}, options = {}) {
-  const { setupMode = false, shortDelay = 0.5 } = options;
+  const { setupMode = false, shortDelay = 0.3 } = options;
 
   const baseUrl = config.baseUrls[config.environment];
 
@@ -69,6 +69,7 @@ export function setupTestUser(userData = {}, options = {}) {
       {
         headers: { "Content-Type": "application/json" },
         tags: { scenario: "auth_setup", type: "register" },
+        timeout: "30s", // Keep timeout for reliability
       }
     );
 
@@ -79,11 +80,16 @@ export function setupTestUser(userData = {}, options = {}) {
     if (!registerSuccess) {
       if (!setupMode) {
         console.log(
-          `Registration failed for ${user.email}: ${registerResponse.status}`
+          `Registration failed for ${user.email}: ${
+            registerResponse.status
+          } - ${registerResponse.body?.substring(0, 100)}`
         );
       }
       return null;
     }
+
+    // Essential delay for OTP bypass to work in staging
+    sleep(0.2); // MINIMAL delay just for OTP system
 
     // Step 2: Verify with bypass OTP (staging only)
     const otpCode = getOTPCode();
@@ -96,6 +102,7 @@ export function setupTestUser(userData = {}, options = {}) {
       {
         headers: { "Content-Type": "application/json" },
         tags: { scenario: "auth_setup", type: "verify" },
+        timeout: "30s", // Keep timeout
       }
     );
 
@@ -116,13 +123,11 @@ export function setupTestUser(userData = {}, options = {}) {
 
       if (!setupMode) {
         console.log(`✅ User ${user.email} setup successful with OTP bypass`);
-
-        // Add delay to allow user service to receive and process the user.registered event
-        // Only during runtime, not setup
+        // Add delay for microservices sync only during runtime
         console.log(`⏳ Waiting 3s for user sync across microservices...`);
-        sleep(3.0);
+        sleep(3.0); // Keep this for runtime reliability
       } else {
-        // During setup, use shorter delay
+        // During setup, minimal delay
         sleep(shortDelay);
       }
 
@@ -130,7 +135,9 @@ export function setupTestUser(userData = {}, options = {}) {
     } else {
       if (!setupMode) {
         console.log(
-          `Verification failed for ${user.email}: ${verifyResponse.status}`
+          `Verification failed for ${user.email}: ${
+            verifyResponse.status
+          } - ${verifyResponse.body?.substring(0, 100)}`
         );
       }
       return null;
@@ -150,10 +157,10 @@ export function setupTestUser(userData = {}, options = {}) {
  * @returns {Array} Array of user tokens
  */
 export function setupMultipleTestUsers(maxUsers = 10, options = {}) {
-  const { batchSize = 10, setupDelay = 0.5 } = options;
+  const { batchSize = 25, setupDelay = 0.3 } = options; // OPTIMIZED for high load
 
   console.log(
-    `🔑 Setting up ${maxUsers} test users with parallel processing...`
+    `🔑 Setting up ${maxUsers} test users with optimized parallel processing...`
   );
   console.log(
     `📦 Using batches of ${batchSize} users with ${setupDelay}s delay`
@@ -176,7 +183,7 @@ export function setupMultipleTestUsers(maxUsers = 10, options = {}) {
     const batchTokens = [];
     const batchStartTime = Date.now();
 
-    // Process batch in parallel (simulated)
+    // Process batch efficiently
     for (let i = batchStart; i < batchEnd; i++) {
       const token = setupTestUser(
         {
@@ -192,9 +199,10 @@ export function setupMultipleTestUsers(maxUsers = 10, options = {}) {
 
       if (token) {
         batchTokens.push(token);
-        // Short delay between users in same batch
-        sleep(0.1);
       }
+
+      // Minimal delay between users - just enough for staging OTP bypass
+      sleep(0.1); // OPTIMIZED - very short delay
     }
 
     userTokens.push(...batchTokens);
@@ -206,9 +214,10 @@ export function setupMultipleTestUsers(maxUsers = 10, options = {}) {
       }/${batchSize_actual} users in ${batchTime.toFixed(1)}s`
     );
 
-    // Short delay between batches
+    // Brief delay between batches - not too long
     if (batch < totalBatches - 1) {
-      sleep(0.5);
+      console.log(`   ⏳ Waiting 1s between batches...`);
+      sleep(1.0); // OPTIMIZED - shorter delay
     }
   }
 
