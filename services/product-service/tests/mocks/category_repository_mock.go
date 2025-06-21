@@ -6,7 +6,7 @@ import (
 	"github.com/stretchr/testify/mock"
 )
 
-// MockCategoryRepository is a mock implementation of domain.CategoryRepository
+// MockCategoryRepository is a mock implementation of CategoryRepository interface
 type MockCategoryRepository struct {
 	mock.Mock
 }
@@ -14,28 +14,31 @@ type MockCategoryRepository struct {
 // GetCategoryByID mocks the GetCategoryByID method
 func (m *MockCategoryRepository) GetCategoryByID(id int) (*domain.Category, error) {
 	args := m.Called(id)
-	if args.Get(0) == nil {
-		return nil, args.Error(1)
+
+	if category := args.Get(0); category != nil {
+		return category.(*domain.Category), args.Error(1)
 	}
-	return args.Get(0).(*domain.Category), args.Error(1)
+	return nil, args.Error(1)
 }
 
 // GetCategoryBySlug mocks the GetCategoryBySlug method
 func (m *MockCategoryRepository) GetCategoryBySlug(slug string) (*domain.Category, error) {
 	args := m.Called(slug)
-	if args.Get(0) == nil {
-		return nil, args.Error(1)
+
+	if category := args.Get(0); category != nil {
+		return category.(*domain.Category), args.Error(1)
 	}
-	return args.Get(0).(*domain.Category), args.Error(1)
+	return nil, args.Error(1)
 }
 
 // GetAllCategories mocks the GetAllCategories method
 func (m *MockCategoryRepository) GetAllCategories(filters map[string]string) ([]*domain.Category, error) {
 	args := m.Called(filters)
-	if args.Get(0) == nil {
-		return nil, args.Error(1)
+
+	if categories := args.Get(0); categories != nil {
+		return categories.([]*domain.Category), args.Error(1)
 	}
-	return args.Get(0).([]*domain.Category), args.Error(1)
+	return nil, args.Error(1)
 }
 
 // CreateCategory mocks the CreateCategory method
