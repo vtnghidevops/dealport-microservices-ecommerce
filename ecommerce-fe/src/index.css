@@ -28,6 +28,44 @@
   .transparent-autofill:-webkit-autofill:focus {
     -webkit-box-shadow: 0 0 0 30px theme('colors.surf-crest') inset !important;
   }
+
+  /* Hide browser password manager icons */
+  input[type="password"]::-ms-reveal,
+  input[type="password"]::-ms-clear {
+    display: none;
+  }
+  
+  input[type="password"]::-webkit-credentials-auto-fill-button,
+  input[type="password"]::-webkit-strong-password-auto-fill-button {
+    display: none !important;
+    position: absolute;
+    right: 0;
+    width: 0;
+    height: 0;
+    margin: 0;
+    padding: 0;
+    visibility: hidden;
+  }
+
+  /* Hide password manager extension icons */
+  div[data-lastpass-icon-root],
+  div[data-lastpass-root],
+  span[data-lastpass-root],
+  div[data-1p-container],
+  div[data-onepassword-container],
+  div[data-dashlane-container],
+  div[data-bitwarden-watching] {
+    display: none !important;
+    visibility: hidden !important;
+  }
+
+  /* Force hide any injected password icons */
+  input[type="password"] + div,
+  input[type="password"] + span,
+  input[type="password"] ~ div[style*="position: absolute"],
+  input[type="password"] ~ span[style*="position: absolute"] {
+    z-index: -1 !important;
+  }
 }
 
 @layer components {

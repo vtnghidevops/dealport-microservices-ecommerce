@@ -153,7 +153,7 @@ export const ProductPricing: React.FC<ProductPricingProps> = ({
         </div>
       </div>
 
-      <div className="mb-4">
+      {/* <div className="mb-4">
         <label className="block text-cyprus font-bold text-[15px] mb-2">
           Sale Period
         </label>
@@ -209,7 +209,7 @@ export const ProductPricing: React.FC<ProductPricingProps> = ({
             </div>
           </div>
         </div>
-      </div>
+      </div> */}
     </div>
   );
 };

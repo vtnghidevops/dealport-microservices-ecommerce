@@ -264,10 +264,13 @@ const Register: React.FC = () => {
             minLength={8}
             onFocus={handlePasswordFocus}
             onBlur={handlePasswordBlur}
+            autoComplete="new-password"
+            data-lpignore="true"
+            data-form-type="other"
           />
           <button
             type="button"
-            className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-700"
+            className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-700 z-10"
             tabIndex={-1}
             onClick={togglePasswordVisibility}
           >
@@ -285,10 +288,13 @@ const Register: React.FC = () => {
             className="h-[44px] focus:border-2 focus:border-blue-400 pr-10"
             disabled={isSubmitting}
             required
+            autoComplete="new-password"
+            data-lpignore="true"
+            data-form-type="other"
           />
           <button
             type="button"
-            className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-700"
+            className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-700 z-10"
             tabIndex={-1}
             onClick={toggleConfirmPasswordVisibility}
           >
