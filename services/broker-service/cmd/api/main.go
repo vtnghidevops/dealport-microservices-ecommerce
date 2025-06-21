@@ -32,8 +32,8 @@ import (
 
 // Config is the application configuration
 type Config struct {
-	router             *chi.Mux
-	eventEmitter       *event.Emitter
+	router       *chi.Mux
+	eventEmitter *event.Emitter
 	// Rabbit             *amqp.Connection
 	httpProductHandler *httpProductHandler.Config
 	ProductHandler     *grpcProductHandler.ProductHandler
@@ -85,6 +85,9 @@ func main() {
 	if err != nil {
 		log.Println("Error connecting to user service:", err)
 		// Continue without user service functionality
+	} else {
+		// Test the actual gRPC connection
+		grpcUserHandler.TestUserConnection(userClient)
 	}
 
 	// Connect to cart service
@@ -153,7 +156,7 @@ func main() {
 
 	// Create the application config
 	app := Config{
-		router:             chi.NewRouter(),
+		router: chi.NewRouter(),
 		// eventEmitter:       emitter,
 		// Rabbit:             rabbitConn,
 		httpProductHandler: httpProductHandler,
@@ -195,5 +198,3 @@ func main() {
 		logger.Println(err)
 	}
 }
-
-

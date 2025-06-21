@@ -67,6 +67,10 @@ func (app *Config) routers() http.Handler {
 				r.Get("/me", app.UserHandler.GetUserProfile)
 				r.Put("/me", app.UserHandler.UpdateUserProfile)
 
+				// Alternative profile endpoints for compatibility
+				r.Get("/profile", app.UserHandler.GetUserProfile)
+				r.Put("/profile", app.UserHandler.UpdateUserProfile)
+
 				// Wishlist routes
 				r.Route("/me/wishlist", func(r chi.Router) {
 					r.Get("/", app.UserHandler.GetWishlist)
@@ -157,6 +161,11 @@ func (app *Config) routers() http.Handler {
 
 				// Admin endpoints for managing orders
 				r.Patch("/orders/{id}/status", app.CheckoutHandler.UpdateOrderStatus)
+				r.Put("/orders/{id}/status", app.CheckoutHandler.UpdateOrderStatus)
+
+				// Admin endpoints with /admin prefix for easier FE routing
+				r.Patch("/admin/orders/{id}/status", app.CheckoutHandler.UpdateOrderStatus)
+				r.Put("/admin/orders/{id}/status", app.CheckoutHandler.UpdateOrderStatus)
 			})
 		})
 
