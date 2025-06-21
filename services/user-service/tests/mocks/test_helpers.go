@@ -4,7 +4,6 @@ import (
 	"time"
 
 	"user-service/internal/domain"
-	"user-service/internal/logging"
 	"user-service/internal/service"
 
 	"github.com/stretchr/testify/mock"
@@ -43,10 +42,8 @@ func CreateMockUserWithAddresses(id, email, firstName, lastName string, addresse
 // CreateTestUserService creates a mock repository and a user service for testing
 func CreateTestUserService() (*MockUserRepository, service.UserService) {
 	mockRepo := new(MockUserRepository)
-	// Use a nil logger since we're mocking and don't need actual logging
-	// This is safer than creating an empty struct which could cause nil pointer errors
-	var mockLogger *logging.LoggerClient = nil
-	userService := service.NewUserService(mockRepo, mockLogger)
+	// Use nil event emitter for testing since we're mocking and don't need actual event publishing
+	userService := service.NewUserService(mockRepo, nil)
 	return mockRepo, userService
 }
 
