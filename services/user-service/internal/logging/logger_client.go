@@ -21,11 +21,18 @@ type LoggerClient struct {
 
 // NewLoggerClient creates a new logger client
 func NewLoggerClient(loggerHost string) (*LoggerClient, error) {
+	// Create context with timeout to avoid hanging forever
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	log.Printf("Attempting to connect to logger service at %s with 10s timeout", loggerHost)
+
 	// Set up connection to the logger service
-	conn, err := grpc.Dial(
+	conn, err := grpc.DialContext(
+		ctx,
 		loggerHost,
 		grpc.WithTransportCredentials(insecure.NewCredentials()),
-		grpc.WithBlock(),
+		// Removed grpc.WithBlock() to avoid hanging forever
 	)
 	if err != nil {
 		return nil, fmt.Errorf("failed to connect to logger service: %w", err)
@@ -33,6 +40,8 @@ func NewLoggerClient(loggerHost string) (*LoggerClient, error) {
 
 	// Create client
 	client := pb.NewLogServiceClient(conn)
+
+	log.Printf("Successfully connected to logger service at %s", loggerHost)
 
 	return &LoggerClient{
 		client: client,

@@ -11,21 +11,21 @@ import (
 	"golang.org/x/crypto/bcrypt"
 
 	"user-service/internal/domain"
-	"user-service/internal/logging"
+	"user-service/internal/event"
 	"user-service/internal/repository"
 )
 
 // userService implements the UserService interface
 type userService struct {
 	userRepo     repository.UserRepository
-	loggerClient *logging.LoggerClient
+	eventEmitter *event.EventEmitter
 }
 
 // NewUserService creates a new user service
-func NewUserService(userRepo repository.UserRepository, loggerClient *logging.LoggerClient) UserService {
+func NewUserService(userRepo repository.UserRepository, eventEmitter *event.EventEmitter) UserService {
 	return &userService{
 		userRepo:     userRepo,
-		loggerClient: loggerClient,
+		eventEmitter: eventEmitter,
 	}
 }
 
@@ -121,15 +121,15 @@ func (s *userService) CreateUser(ctx context.Context, req *domain.CreateUserRequ
 		return nil, errors.New("user with this email already exists")
 	}
 
-	// Hash password if provided
-	var hashedPassword string
-	if req.Password != "" {
-		hashed, err := bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
-		if err != nil {
-			return nil, fmt.Errorf("failed to hash password: %w", err)
-		}
-		hashedPassword = string(hashed)
-	}
+	// // Hash password if provided
+	// var hashedPassword string
+	// if req.Password != "" {
+	// 	hashed, err := bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
+	// 	if err != nil {
+	// 		return nil, fmt.Errorf("failed to hash password: %w", err)
+	// 	}
+	// 	hashedPassword = string(hashed)
+	// }
 
 	// Set default values
 	id := uuid.New().String()
@@ -157,19 +157,31 @@ func (s *userService) CreateUser(ctx context.Context, req *domain.CreateUserRequ
 
 	// Create user object
 	user := &domain.User{
-		ID:           id,
-		Email:        req.Email,
-		PasswordHash: hashedPassword,
-		FirstName:    req.FirstName,
-		LastName:     req.LastName,
-		Username:     req.Username,
-		DisplayName:  req.DisplayName,
-		Addresses:    req.Addresses,
-		Role:         req.Role,
-		Status:       "active",
-		Active:       true,
-		CreatedAt:    now,
-		UpdatedAt:    now,
+		ID:          id,
+		Email:       req.Email,
+		FirstName:   req.FirstName,
+		LastName:    req.LastName,
+		Username:    req.Username,
+		DisplayName: req.DisplayName,
+		Addresses:   req.Addresses,
+		Role:        req.Role,
+		Status:      "active",
+		Active:      true,
+		CreatedAt:   now,
+		UpdatedAt:   now,
+		// ID:           id,
+		// Email:        req.Email,
+		// PasswordHash: hashedPassword,
+		// FirstName:    req.FirstName,
+		// LastName:     req.LastName,
+		// Username:     req.Username,
+		// DisplayName:  req.DisplayName,
+		// Addresses:    req.Addresses,
+		// Role:         req.Role,
+		// Status:       "active",
+		// Active:       true,
+		// CreatedAt:    now,
+		// UpdatedAt:    now,
 	}
 
 	// Set pointer fields properly
@@ -263,12 +275,17 @@ func (s *userService) UpdateUser(ctx context.Context, req *domain.UpdateUserRequ
 		return nil, fmt.Errorf("failed to update user: %w", err)
 	}
 
-	// Log profile update activity
-	if s.loggerClient != nil {
-		metadata := map[string]interface{}{
-			"updated_fields": getUpdatedFields(req),
-		}
-		go s.loggerClient.LogUserActivity(context.Background(), "profile_updated", user.ID, "User profile updated", metadata)
+	// Profile update activity will be handled by event emitter below
+
+	// Emit profile updated event
+	if s.eventEmitter != nil {
+		updatedFields := getUpdatedFields(req)
+		go func() {
+			if err := s.eventEmitter.EmitProfileUpdatedEvent(context.Background(), user.ID, updatedFields); err != nil {
+				// Note: We don't return error here to avoid breaking the update flow
+				fmt.Printf("Warning: Failed to emit profile updated event: %v\n", err)
+			}
+		}()
 	}
 
 	user.PasswordHash = ""
@@ -397,56 +414,60 @@ func (s *userService) GetWishlist(ctx context.Context, req *domain.GetWishlistRe
 	return response, nil
 }
 
-// ChangePassword changes a user's password
-func (s *userService) ChangePassword(ctx context.Context, userID, oldPassword, newPassword string) error {
-	// Get user
-	user, err := s.userRepo.GetUserByID(ctx, userID)
-	if err != nil {
-		return fmt.Errorf("failed to get user: %w", err)
-	}
+// // ChangePassword changes a user's password
+// func (s *userService) ChangePassword(ctx context.Context, userID, oldPassword, newPassword string) error {
+// 	// Get user
+// 	user, err := s.userRepo.GetUserByID(ctx, userID)
+// 	if err != nil {
+// 		return fmt.Errorf("failed to get user: %w", err)
+// 	}
 
-	// Verify old password
-	err = bcrypt.CompareHashAndPassword([]byte(user.PasswordHash), []byte(oldPassword))
-	if err != nil {
-		return errors.New("invalid current password")
-	}
+// 	// Verify old password
+// 	err = bcrypt.CompareHashAndPassword([]byte(user.PasswordHash), []byte(oldPassword))
+// 	if err != nil {
+// 		return errors.New("invalid current password")
+// 	}
 
-	// Hash new password
-	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(newPassword), bcrypt.DefaultCost)
-	if err != nil {
-		return fmt.Errorf("failed to hash password: %w", err)
-	}
+// 	// Hash new password
+// 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(newPassword), bcrypt.DefaultCost)
+// 	if err != nil {
+// 		return fmt.Errorf("failed to hash password: %w", err)
+// 	}
 
-	// Update password
-	user.PasswordHash = string(hashedPassword)
-	user.UpdatedAt = time.Now()
+// 	// Update password
+// 	user.PasswordHash = string(hashedPassword)
+// 	user.UpdatedAt = time.Now()
 
-	// Save to database
-	if err := s.userRepo.UpdateUser(ctx, user); err != nil {
-		return fmt.Errorf("failed to update user: %w", err)
-	}
+// 	// Save to database
+// 	if err := s.userRepo.UpdateUser(ctx, user); err != nil {
+// 		return fmt.Errorf("failed to update user: %w", err)
+// 	}
 
-	// Log password change activity
-	if s.loggerClient != nil {
-		go s.loggerClient.LogUserActivity(context.Background(), "password_changed", user.ID, "Password changed", nil)
-	}
+// 	// Password change activity will be handled by event emitter below
 
-	return nil
-}
+// 	// Emit password changed event
+// 	if s.eventEmitter != nil {
+// 		go func() {
+// 			if err := s.eventEmitter.EmitPasswordChangedEvent(context.Background(), user.ID); err != nil {
+// 				// Note: We don't return error here to avoid breaking the flow
+// 				fmt.Printf("Warning: Failed to emit password changed event: %v\n", err)
+// 			}
+// 		}()
+// 	}
+
+// 	return nil
+// }
 
 // RequestPasswordReset initiates a password reset request
 func (s *userService) RequestPasswordReset(ctx context.Context, email string) error {
 	// Check if user exists
-	user, err := s.userRepo.GetUserByEmail(ctx, email)
+	_, err := s.userRepo.GetUserByEmail(ctx, email)
 	if err != nil {
 		return fmt.Errorf("failed to get user: %w", err)
 	}
 
-	// Log password reset request activity
-	if s.loggerClient != nil {
-		go s.loggerClient.LogUserActivity(context.Background(), "password_reset_requested", user.ID, "Password reset requested", nil)
-	}
-
+	// Password reset request activity will be handled by event emitter if needed
+	// For now, just return nil as this is mainly for validation
 	return nil
 }
 
@@ -477,30 +498,35 @@ func (s *userService) LogoutUser(ctx context.Context, userID string) error {
 		return fmt.Errorf("failed to get user: %w", err)
 	}
 
-	// Log logout activity
-	if s.loggerClient != nil {
-		go s.loggerClient.LogUserActivity(context.Background(), "logout", user.ID, "User logged out", nil)
+	// Logout activity will be handled by event emitter below
+
+	// Emit logout event
+	if s.eventEmitter != nil {
+		go func() {
+			if err := s.eventEmitter.EmitLogoutEvent(context.Background(), user.ID, user.Email); err != nil {
+				// Note: We don't return error here to avoid breaking the flow
+				fmt.Printf("Warning: Failed to emit logout event: %v\n", err)
+			}
+		}()
 	}
 
 	return nil
 }
 
-// LogUserActivity logs a user activity
+// LogUserActivity logs a user activity using events
 func (s *userService) LogUserActivity(ctx context.Context, action, userID, message string, metadata map[string]interface{}) error {
-	if s.loggerClient == nil {
-		return errors.New("logger client not initialized")
+	// Use event emitter for logging instead of direct logger client
+	if s.eventEmitter != nil {
+		return s.eventEmitter.EmitUserActivityEvent(ctx, action, userID, message, metadata)
 	}
-
-	return s.loggerClient.LogUserActivity(ctx, action, userID, message, metadata)
+	return errors.New("event emitter not initialized")
 }
 
 // GetUserActivityLogs retrieves user activity logs
 func (s *userService) GetUserActivityLogs(ctx context.Context, userID string, actionType string) (interface{}, error) {
-	if s.loggerClient == nil {
-		return nil, errors.New("logger client not initialized")
-	}
-
-	return s.loggerClient.GetUserActivityLogs(ctx, userID, actionType)
+	// This functionality is now handled by logger-service through events
+	// For now, return empty result as this needs to be called via logger service API
+	return nil, errors.New("activity logs are now handled by logger service - use logger service API directly")
 }
 
 // Helper function to get updated fields for logging
@@ -894,7 +920,7 @@ func (s *userService) getNewUsersForTimeRange(ctx context.Context, start, end ti
 	return count, nil
 }
 
-// SyncUserOrderData updates a user's order count from checkout service
+// SyncUserOrderData synchronizes user order statistics
 func (s *userService) SyncUserOrderData(ctx context.Context, userID string, orderCount int, totalSpend float64) error {
 	// Validate userID
 	if userID == "" {
@@ -913,17 +939,8 @@ func (s *userService) SyncUserOrderData(ctx context.Context, userID string, orde
 		return fmt.Errorf("failed to update order count: %w", err)
 	}
 
-	// Lưu ý: Không cập nhật total_spend vì không có cột này trong database
-	// totalSpend được tính toán trực tiếp từ checkout-service khi cần
-
-	// Log the activity if logger client is available
-	if s.loggerClient != nil {
-		metadata := map[string]interface{}{
-			"orderCount": orderCount,
-			"totalSpend": totalSpend, // Vẫn ghi log totalSpend nhưng không lưu vào DB
-		}
-		go s.loggerClient.LogUserActivity(context.Background(), "order_sync", userID, "Order data synchronized", metadata)
-	}
-
+	// Note: totalSpend is not stored in database, only used for logging/events
+	// Order sync activity can be logged via events if needed
+	// For now, we'll skip logging this internal sync operation
 	return nil
 }

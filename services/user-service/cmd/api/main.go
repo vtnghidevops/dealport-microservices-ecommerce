@@ -14,7 +14,7 @@ import (
 	"google.golang.org/grpc/reflection"
 
 	"user-service/internal/config"
-	"user-service/internal/logging"
+	"user-service/internal/event"
 	"user-service/internal/migrations"
 	"user-service/internal/repository/postgres"
 	"user-service/internal/service"
@@ -60,29 +60,28 @@ func main() {
 		logger.Fatalf("Failed to ping database: %v", err)
 	}
 
-	// Get logger service host from environment or use default
-	loggerHost := os.Getenv("LOGGER_SERVICE_HOST")
-	if loggerHost == "" {
-		loggerHost = "logger-service:50056"
+	// Initialize event emitter for RabbitMQ
+	// Get RabbitMQ URL from environment
+	rabbitURL := os.Getenv("RABBIT_URL")
+	if rabbitURL == "" {
+		rabbitURL = "amqp://guest:guest@rabbitmq:5672/"
 	}
 
-	// Initialize the logger client
-	var loggerClient *logging.LoggerClient
-	loggerClient, err = logging.NewLoggerClient(loggerHost)
+	eventEmitter, err := event.NewEventEmitter(rabbitURL, logger)
 	if err != nil {
-		logger.Printf("Warning: Failed to initialize logger client: %v", err)
-		logger.Println("User activity logging will be disabled")
-		loggerClient = nil
+		logger.Printf("Warning: Failed to initialize event emitter: %v", err)
+		logger.Println("Event publishing will be disabled")
+		eventEmitter = nil
 	} else {
-		logger.Println("Connected to logger service")
-		defer loggerClient.Close()
+		logger.Println("Event emitter initialized successfully")
+		defer eventEmitter.Close()
 	}
 
 	// Initialize repository
 	userRepo := postgres.NewPostgresRepository(db)
 
 	// Initialize service
-	userService := service.NewUserService(userRepo, loggerClient)
+	userService := service.NewUserService(userRepo, eventEmitter)
 
 	// Initialize gRPC handler
 	userHandler := grpcHandler.NewUserHandler(userService, logger)

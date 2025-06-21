@@ -28,8 +28,7 @@ type UserService interface {
 	RemoveFromWishlist(ctx context.Context, req *domain.RemoveFromWishlistRequest) error
 	GetWishlist(ctx context.Context, req *domain.GetWishlistRequest) (*domain.GetWishlistResponse, error)
 
-	// Authentication related operations
-	ChangePassword(ctx context.Context, userID, oldPassword, newPassword string) error
+	// Authentication related operations (password management handled by auth-service)
 	RequestPasswordReset(ctx context.Context, email string) error
 	ValidateCredentials(ctx context.Context, email, password string) (*domain.User, error)
 	LogoutUser(ctx context.Context, userID string) error
