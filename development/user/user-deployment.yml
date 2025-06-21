@@ -14,32 +14,32 @@ spec:
       maxUnavailable: 2
       maxSurge: 2
   template:
-      metadata:
-        labels:
-          app: ecommerce-user-app
-      spec:
-        initContainers:
-          - name: wait-for-postgres-user-db
-            image: busybox:1.28
-            command: ['sh', '-c', 'until nslookup postgres-users.ecommerce.svc.cluster.local; do echo waiting for postgres; sleep 2; done;']
-        containers:
-          - name: ecommerce-user-app
-            image: tannghidevops/user-service:v1
-            ports: 
-              - containerPort: 50052
-                name: tcp
-                protocol: TCP
-            resources:
-              requests:
-                cpu: "125m"
-                memory: "250Mi"
-              limits:
-                cpu: "250m"
-                memory: "500Mi"
-            envFrom:
-              - secretRef:
-                  name: ecommerce-user-secret
-        # imagePullSecrets:
-        #   - name: auth-registry
-        
+    metadata:
+      labels:
+        app: ecommerce-user-app
+    spec:
+      initContainers:
+      - name: wait-for-postgres-user-db
+        image: busybox:1.28
+        command: [ 'sh', '-c', 'until nslookup postgres-users.ecommerce.svc.cluster.local; do echo waiting for postgres; sleep 2; done;' ]
+      containers:
+      - name: ecommerce-user-app
+        image: tannghidevops/user-service:v1
+        ports:
+        - containerPort: 50052
+          name: tcp
+          protocol: TCP
+        resources:
+          requests:
+            cpu: "125m"
+            memory: "250Mi"
+          limits:
+            cpu: "250m"
+            memory: "500Mi"
+        envFrom:
+        - secretRef:
+            name: ecommerce-user-secret
+      # imagePullSecrets:
+      #   - name: auth-registry
+
 

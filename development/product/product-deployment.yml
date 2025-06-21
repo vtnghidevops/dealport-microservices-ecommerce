@@ -27,7 +27,6 @@ spec:
             image: tannghidevops/product-service:v1
             ports: 
               - containerPort: 50053
-              - containerPort: 8082
                 name: tcp
                 protocol: TCP
             resources:
