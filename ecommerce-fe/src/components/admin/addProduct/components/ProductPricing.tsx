@@ -41,9 +41,9 @@ export const ProductPricing: React.FC<ProductPricingProps> = ({
   // };
 
   // Handle date changes for expiration dates
-  const handleDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    onChange(e);
-  };
+  // const handleDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  //   onChange(e);
+  // };
 
   // Update price whenever original_price or discount changes
   useEffect(() => {
