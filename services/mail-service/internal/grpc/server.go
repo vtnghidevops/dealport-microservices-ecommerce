@@ -88,7 +88,7 @@ func (s *MailServer) SendTemplateEmail(ctx context.Context, req *pb.SendTemplate
 		err = s.handleRegistrationEmail(req.To, req.Variables)
 	case emailType == "password_reset" || req.Template == "password_reset.html.gohtml" || req.Template == "reset_password.html.gohtml":
 		err = s.handlePasswordResetEmail(req.To, req.Variables)
-	case emailType == "password_change" || req.Template == "password_changed.html.gohtml" || req.Template == "password_change.html.gohtml":
+	case emailType == "password_change" || emailType == "password_changed" || req.Template == "password_changed.html.gohtml" || req.Template == "password_change.html.gohtml":
 		err = s.handlePasswordChangeEmail(req.To, req.Variables)
 	case emailType == "order_confirmation" || req.Template == "order_confirmation.html.gohtml":
 		err = s.handleOrderConfirmationEmail(req.To, req.Variables)
@@ -308,7 +308,7 @@ func (s *MailServer) handlePasswordChangeEmail(email string, data map[string]str
 		FromName: data["from_name"],
 		To:       email,
 		Subject:  data["subject"],
-		Template: "password_change.html.gohtml",
+		Template: "password_changed.html.gohtml",
 		Data:     dataInterface,
 	}
 
