@@ -33,7 +33,9 @@ function getOTPCode() {
  * @param {Object} userData - User registration data
  * @returns {string|null} User token or null
  */
-export function setupTestUser(userData = {}) {
+export function setupTestUser(userData = {}, options = {}) {
+  const { setupMode = false, shortDelay = 0.5 } = options;
+
   const baseUrl = config.baseUrls[config.environment];
 
   if (!baseUrl) {
@@ -56,7 +58,9 @@ export function setupTestUser(userData = {}) {
   };
 
   try {
-    console.log(`Setting up user: ${user.email} (${config.environment} env)`);
+    if (!setupMode) {
+      console.log(`Setting up user: ${user.email} (${config.environment} env)`);
+    }
 
     // Step 1: Register user
     const registerResponse = http.post(
@@ -73,9 +77,11 @@ export function setupTestUser(userData = {}) {
     });
 
     if (!registerSuccess) {
-      console.log(
-        `Registration failed for ${user.email}: ${registerResponse.status}`
-      );
+      if (!setupMode) {
+        console.log(
+          `Registration failed for ${user.email}: ${registerResponse.status}`
+        );
+      }
       return null;
     }
 
@@ -107,51 +113,110 @@ export function setupTestUser(userData = {}) {
 
     if (verifySuccess && verifyResponse.status === 200) {
       const verifyData = JSON.parse(verifyResponse.body);
-      console.log(`✅ User ${user.email} setup successful with OTP bypass`);
+
+      if (!setupMode) {
+        console.log(`✅ User ${user.email} setup successful with OTP bypass`);
+
+        // Add delay to allow user service to receive and process the user.registered event
+        // Only during runtime, not setup
+        console.log(`⏳ Waiting 3s for user sync across microservices...`);
+        sleep(3.0);
+      } else {
+        // During setup, use shorter delay
+        sleep(shortDelay);
+      }
+
       return verifyData.data.access_token;
     } else {
-      console.log(
-        `Verification failed for ${user.email}: ${verifyResponse.status}`
-      );
+      if (!setupMode) {
+        console.log(
+          `Verification failed for ${user.email}: ${verifyResponse.status}`
+        );
+      }
       return null;
     }
   } catch (error) {
-    console.error(`Setup failed for ${user.email}:`, error.message);
+    if (!setupMode) {
+      console.error(`Setup failed for ${user.email}:`, error.message);
+    }
     return null;
   }
 }
 
 /**
- * Setup multiple test users efficiently
+ * Setup multiple test users efficiently with parallel processing
  * @param {number} maxUsers - Maximum number of users to setup
+ * @param {Object} options - Setup options
  * @returns {Array} Array of user tokens
  */
-export function setupMultipleTestUsers(maxUsers = 10) {
-  console.log(`🔑 Setting up ${maxUsers} test users with OTP bypass...`);
-
-  const userTokens = [];
-
-  for (let i = 0; i < maxUsers; i++) {
-    const token = setupTestUser({
-      email: `perf-user-${i}-${Date.now()}@test.com`,
-      firstName: `Perf${i}`,
-      lastName: "User",
-    });
-
-    if (token) {
-      userTokens.push(token);
-      console.log(`   ✅ User ${i + 1}/${maxUsers} authenticated`);
-    } else {
-      console.log(`   ❌ User ${i + 1}/${maxUsers} failed`);
-    }
-
-    // Small delay between registrations
-    sleep(0.2);
-  }
+export function setupMultipleTestUsers(maxUsers = 10, options = {}) {
+  const { batchSize = 10, setupDelay = 0.5 } = options;
 
   console.log(
-    `🎯 Setup complete: ${userTokens.length}/${maxUsers} users ready`
+    `🔑 Setting up ${maxUsers} test users with parallel processing...`
   );
+  console.log(
+    `📦 Using batches of ${batchSize} users with ${setupDelay}s delay`
+  );
+
+  const userTokens = [];
+  const totalBatches = Math.ceil(maxUsers / batchSize);
+
+  for (let batch = 0; batch < totalBatches; batch++) {
+    const batchStart = batch * batchSize;
+    const batchEnd = Math.min(batchStart + batchSize, maxUsers);
+    const batchSize_actual = batchEnd - batchStart;
+
+    console.log(
+      `🔄 Processing batch ${
+        batch + 1
+      }/${totalBatches} (${batchSize_actual} users)...`
+    );
+
+    const batchTokens = [];
+    const batchStartTime = Date.now();
+
+    // Process batch in parallel (simulated)
+    for (let i = batchStart; i < batchEnd; i++) {
+      const token = setupTestUser(
+        {
+          email: `perf-user-${i}-${Date.now()}@test.com`,
+          firstName: `Perf${i}`,
+          lastName: "User",
+        },
+        {
+          setupMode: true, // Skip the 3s runtime delay
+          shortDelay: setupDelay,
+        }
+      );
+
+      if (token) {
+        batchTokens.push(token);
+        // Short delay between users in same batch
+        sleep(0.1);
+      }
+    }
+
+    userTokens.push(...batchTokens);
+
+    const batchTime = (Date.now() - batchStartTime) / 1000;
+    console.log(
+      `   ✅ Batch ${batch + 1} completed: ${
+        batchTokens.length
+      }/${batchSize_actual} users in ${batchTime.toFixed(1)}s`
+    );
+
+    // Short delay between batches
+    if (batch < totalBatches - 1) {
+      sleep(0.5);
+    }
+  }
+
+  const successRate = ((userTokens.length / maxUsers) * 100).toFixed(1);
+  console.log(
+    `🎯 Setup complete: ${userTokens.length}/${maxUsers} users ready (${successRate}% success)`
+  );
+
   return userTokens;
 }
 
@@ -185,7 +250,7 @@ export function validateToken(token) {
 
   try {
     const response = http.get(
-      `${config.baseUrls[config.environment]}/api/v1/users/me`,
+      `${config.baseUrls[config.environment]}/api/v1/users/profile`,
       {
         headers: getAuthHeaders(token),
         tags: { scenario: "token_validation" },

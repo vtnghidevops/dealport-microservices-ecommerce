@@ -20,6 +20,13 @@ import {
   userProfileOperations,
   searchAndFilter,
   completeUserJourney,
+  authenticationFlow,
+  productManagement,
+  categoryManagement,
+  enhancedShopping,
+  explorePromotions,
+  paymentFlow,
+  viewHomepageContent,
 } from "../utils/test-scenarios.js";
 
 // Get environment-specific configuration
@@ -41,6 +48,9 @@ const stressLimits = getStressLimits();
 
 // Test configuration for stress test
 export const options = {
+  // Increase setup timeout for large user setups
+  setupTimeout: "15m", // Allow 15 minutes for 500+ user setup
+
   stages: [
     // Gradual ramp up to normal capacity
     { duration: "2m", target: Math.floor(stressLimits.normalLoad * 0.2) }, // 20%
@@ -101,7 +111,7 @@ export const options = {
 export function setup() {
   console.log("🔥 Starting K8s Stress Test");
   console.log(`Environment: ${config.environment}`);
-  console.log(`Base URL: ${config.baseUrls[config.environment]}`);
+  // Target: ${config.baseUrls[config.environment]}
   console.log(`K8s Nodes: ${config.k8s.nodeCount}`);
   console.log("");
   console.log("📊 Stress Test Load Levels:");
@@ -115,25 +125,20 @@ export function setup() {
 
   // Setup more test users for stress testing
   const users = [];
-  const userCount = Math.min(30, Math.floor(stressLimits.normalLoad / 8)); // More users for stress testing
+  // Need enough users to cover most VUs for realistic authenticated testing
+  const userCount = Math.min(
+    Math.floor(stressLimits.spikeLoad * 0.8), // 80% of max VUs
+    400 // Cap to avoid overwhelming setup
+  );
 
   console.log(`Setting up ${userCount} test users for stress testing...`);
 
-  for (let i = 0; i < userCount; i++) {
-    const userToken = setupTestUser({
-      email: `stress-user-${i}-${Date.now()}@test.com`,
-      password: "testpassword123",
-      firstName: `Stress${i}`,
-      lastName: "User",
-    });
+  const userTokens = setupMultipleTestUsers(userCount, {
+    batchSize: 100, // Large batches for faster stress test setup
+    setupDelay: 0.05, // Minimal delay for stress setup
+  });
 
-    if (userToken) {
-      users.push(userToken);
-    }
-
-    // Minimal delay to setup users quickly
-    sleep(0.05);
-  }
+  users.push(...userTokens);
 
   console.log(`✅ Setup completed with ${users.length} test users`);
 
@@ -148,11 +153,14 @@ export function setup() {
 export default function (data) {
   const { userTokens, startTime, stressLimits } = data;
 
-  // Randomly select a user token for this iteration
-  const userToken =
-    userTokens && userTokens.length > 0
-      ? userTokens[Math.floor(Math.random() * userTokens.length)]
-      : null;
+  // Mix of authenticated and guest users for realistic stress testing
+  let userToken = null;
+  const guestChance = 0.3; // 30% guest users under stress, 70% authenticated
+
+  if (Math.random() > guestChance && userTokens && userTokens.length > 0) {
+    userToken = userTokens[Math.floor(Math.random() * userTokens.length)];
+  }
+  // else remains null for guest user behavior
 
   // Calculate current load level and test phase
   const elapsedMinutes = (Date.now() - startTime) / (1000 * 60);
@@ -188,7 +196,7 @@ export default function (data) {
           );
 
           const profileResponse = http.get(
-            `${config.baseUrls[config.environment]}/api/v1/users/me`,
+            `${config.baseUrls[config.environment]}/api/v1/users/profile`,
             { headers, tags: { scenario: "spike", type: "profile" } }
           );
 
@@ -212,31 +220,33 @@ export default function (data) {
         sleep(Math.random() * 0.5 + 0.1);
       } else {
         console.log(`VU${currentVUs}: SPIKE - Mixed aggressive operations`);
-        browseProducts(userToken);
+        viewHomepageContent(userToken); // Quick homepage load
+        enhancedShopping(userToken); // Fast enhanced browsing
         if (userToken && Math.random() < 0.7) {
           userProfileOperations(userToken);
         }
-        searchAndFilter();
+        explorePromotions(userToken); // Quick promotion check
         sleep(Math.random() * 0.2 + 0.05);
       }
     } else if (stressLevel === "extreme") {
       // Extreme phase: Heavy operations with authenticated focus
       if (userBehavior < 0.3) {
         console.log(`VU${currentVUs}: EXTREME - Heavy browsing + auth`);
-        browseProducts(userToken);
-        searchAndFilter();
+        enhancedShopping(userToken);
+        explorePromotions(userToken);
         if (userToken) {
           userProfileOperations(userToken);
+          wishlistManagement(userToken);
         }
         sleep(Math.random() * 0.8 + 0.2);
       } else if (userBehavior < 0.6) {
         console.log(`VU${currentVUs}: EXTREME - Intensive cart + checkout`);
         if (userToken) {
-          browseProducts(userToken);
+          enhancedShopping(userToken);
           cartOperations(userToken);
           checkoutProcess(userToken);
         } else {
-          browseProducts();
+          browseCategoriesAndProducts();
           checkoutProcess();
         }
         sleep(Math.random() * 1 + 0.3);
@@ -245,11 +255,11 @@ export default function (data) {
           `VU${currentVUs}: EXTREME - Complete authenticated journey`
         );
         if (userToken) {
-          completeUserJourney(userToken);
+          completeRealUserJourney(userToken);
         } else {
-          browseProducts();
-          searchAndFilter();
-          browseProducts();
+          viewHomepageContent();
+          explorePromotions();
+          browseCategoriesAndProducts();
         }
         sleep(Math.random() * 1.5 + 0.5);
       }
@@ -257,49 +267,62 @@ export default function (data) {
       // Stress phase: Sustained heavy load with authentication
       if (userBehavior < 0.25) {
         console.log(`VU${currentVUs}: STRESS - Sustained browsing + profile`);
-        browseProducts(userToken);
+        enhancedShopping(userToken);
         if (userToken) {
           userProfileOperations(userToken);
+          wishlistManagement(userToken);
         }
         sleep(Math.random() * 1.2 + 0.5);
       } else if (userBehavior < 0.5) {
         console.log(`VU${currentVUs}: STRESS - Cart heavy operations`);
         if (userToken) {
-          browseProducts(userToken);
+          enhancedShopping(userToken);
           cartOperations(userToken);
           userProfileOperations(userToken);
           cartOperations(userToken); // Multiple cart operations
         } else {
-          browseProducts();
-          searchAndFilter();
+          browseCategoriesAndProducts();
+          explorePromotions();
         }
         sleep(Math.random() * 1.5 + 0.5);
       } else if (userBehavior < 0.75) {
         console.log(`VU${currentVUs}: STRESS - Complete journey under load`);
         if (userToken) {
-          completeUserJourney(userToken);
+          completeRealUserJourney(userToken);
         } else {
-          browseProducts();
+          viewHomepageContent();
           checkoutProcess();
         }
         sleep(Math.random() * 2 + 0.8);
       } else {
         console.log(`VU${currentVUs}: STRESS - Mixed authenticated operations`);
-        browseProducts(userToken);
+        enhancedShopping(userToken);
         if (userToken) {
           userProfileOperations(userToken);
           if (Math.random() < 0.6) {
             cartOperations(userToken);
           }
+          // Add comprehensive endpoint testing under stress
+          if (Math.random() < 0.4) {
+            productManagement(userToken);
+          }
+          if (Math.random() < 0.2) {
+            authenticationFlow();
+          }
+          if (Math.random() < 0.3) {
+            wishlistManagement(userToken);
+          }
         }
-        searchAndFilter();
+        explorePromotions(userToken);
+        categoryManagement(userToken);
         sleep(Math.random() * 1.3 + 0.3);
       }
     } else {
       // Normal phase: Regular stress test patterns with auth
       if (userBehavior < 0.3) {
         console.log(`VU${currentVUs}: NORMAL - Browsing + profile pattern`);
-        browseProducts(userToken);
+        viewHomepageContent(userToken);
+        enhancedShopping(userToken);
         if (userToken) {
           userProfileOperations(userToken);
         }
@@ -307,29 +330,30 @@ export default function (data) {
       } else if (userBehavior < 0.6) {
         console.log(`VU${currentVUs}: NORMAL - Cart operations`);
         if (userToken) {
-          browseProducts(userToken);
+          browseCategoriesAndProducts(userToken);
           cartOperations(userToken);
         } else {
-          browseProducts();
+          browseCategoriesAndProducts();
         }
         sleep(Math.random() * 2 + 1);
       } else if (userBehavior < 0.8) {
         console.log(`VU${currentVUs}: NORMAL - User journey`);
         if (userToken) {
-          completeUserJourney(userToken);
+          completeRealUserJourney(userToken);
         } else {
-          browseProducts();
+          viewHomepageContent();
           checkoutProcess();
         }
         sleep(Math.random() * 2.5 + 1);
       } else {
         console.log(`VU${currentVUs}: NORMAL - Search + profile operations`);
-        searchAndFilter();
+        explorePromotions(userToken);
         if (userToken) {
           userProfileOperations(userToken);
-          browseProducts(userToken);
+          wishlistManagement(userToken);
+          enhancedShopping(userToken);
         } else {
-          browseProducts();
+          browseCategoriesAndProducts();
         }
         sleep(Math.random() * 1.8 + 0.7);
       }

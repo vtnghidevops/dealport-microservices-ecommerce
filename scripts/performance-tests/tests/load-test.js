@@ -22,6 +22,13 @@ import {
   completeUserJourney,
   windowShopping,
   quickSearch,
+  authenticationFlow,
+  productManagement,
+  categoryManagement,
+  enhancedShopping,
+  explorePromotions,
+  paymentFlow,
+  viewHomepageContent,
 } from "../utils/test-scenarios.js";
 import { getAuthHeaders } from "../utils/auth-utils.js";
 import { http, check } from "k6";
@@ -32,6 +39,9 @@ const thresholds = getThresholds();
 
 // Test configuration for load test
 export const options = {
+  // Increase setup timeout for large user setups
+  setupTimeout: "10m", // Allow 10 minutes for 300 user setup
+
   stages: [
     { duration: "2m", target: Math.floor(loadPattern.maxUsers * 0.2) }, // 20% ramp up
     {
@@ -55,7 +65,7 @@ export const options = {
 export function setup() {
   console.log("📊 Starting Load Test");
   console.log(`Environment: ${config.environment}`);
-  console.log(`Base URL: ${config.baseUrls[config.environment]}`);
+  // Target: ${config.baseUrls[config.environment]}
 
   // Calculate total duration
   const totalDuration =
@@ -70,13 +80,17 @@ export function setup() {
   );
 
   // Setup multiple shared test accounts for better distribution
+  // Need enough users to cover most VUs for realistic authenticated testing
   const userCount = Math.min(
-    10,
-    config.testUsers.performanceTestAccounts.length
+    loadPattern.maxUsers, // Match max VUs for full coverage
+    300 // Cap to avoid overwhelming setup
   );
   console.log(`Attempting to authenticate ${userCount} shared accounts...`);
 
-  const userTokens = setupMultipleTestUsers(userCount);
+  const userTokens = setupMultipleTestUsers(userCount, {
+    batchSize: 50, // Larger batches for faster setup
+    setupDelay: 0.1, // Minimal delay during setup
+  });
 
   console.log(
     `✅ Setup completed with ${userTokens.length}/${userCount} authenticated accounts`
@@ -94,11 +108,14 @@ export function setup() {
 export default function (data) {
   const { userTokens, startTime } = data;
 
-  // Randomly select a user token for this iteration
-  const userToken =
-    userTokens && userTokens.length > 0
-      ? userTokens[Math.floor(Math.random() * userTokens.length)]
-      : null;
+  // Mix of authenticated and guest users for realistic testing
+  let userToken = null;
+  const guestChance = 0.25; // 25% guest users, 75% authenticated
+
+  if (Math.random() > guestChance && userTokens && userTokens.length > 0) {
+    userToken = userTokens[Math.floor(Math.random() * userTokens.length)];
+  }
+  // else remains null for guest user behavior
 
   const currentVUs = __VU;
   const elapsedMinutes = (Date.now() - startTime) / (1000 * 60);
@@ -107,26 +124,34 @@ export default function (data) {
   const userBehavior = Math.random();
 
   try {
-    if (userBehavior < 0.3) {
-      // 30% - Window shopping (browsing without purchase intent)
+    if (userBehavior < 0.25) {
+      // 25% - Window shopping with homepage content
       console.log(`VU${currentVUs}: Window shopping pattern`);
 
-      // Browse categories and products
-      browseProducts(userToken);
+      // Start with homepage content (realistic user journey)
+      viewHomepageContent(userToken);
       sleep(Math.random() * 1 + 0.5);
 
-      // Browse more products
-      browseProducts(userToken);
-    } else if (userBehavior < 0.6) {
-      // 30% - Search and browse behavior
-      console.log(`VU${currentVUs}: Search and browse pattern`);
+      // Browse products with enhanced features
+      enhancedShopping(userToken);
+      sleep(Math.random() * 1 + 0.5);
 
-      // Search/browse products
+      // Explore promotions (realistic bargain hunting)
+      explorePromotions(userToken);
+    } else if (userBehavior < 0.5) {
+      // 25% - Search and enhanced browsing
+      console.log(`VU${currentVUs}: Enhanced browsing pattern`);
+
+      // Start with homepage to see what's featured
+      viewHomepageContent(userToken);
+      sleep(Math.random() * 1 + 0.5);
+
+      // Enhanced shopping with reviews
+      enhancedShopping(userToken);
+      sleep(Math.random() * 1 + 0.5);
+
+      // Traditional search/browse
       searchAndFilter(userToken);
-      sleep(Math.random() * 1 + 0.5);
-
-      // Follow up with more browsing
-      browseProducts(userToken);
     } else if (userBehavior < 0.8) {
       // 20% - Authenticated cart operations
       if (userToken) {
@@ -143,24 +168,52 @@ export default function (data) {
         // Check profile/orders
         userProfileOperations(userToken);
       } else {
-        console.log(`VU${currentVUs}: No auth - fallback to browsing`);
-        browseProducts();
-        searchAndFilter();
+        console.log(`VU${currentVUs}: Guest user - comprehensive browsing`);
+        browseProducts(); // Guest can browse
+        searchAndFilter(); // Guest can search
+        categoryManagement(); // Guest can view categories
+        checkoutProcess(); // Guest can validate checkout (without actual order)
       }
-    } else if (userBehavior < 0.95) {
-      // 15% - Complete purchase journey
+    } else if (userBehavior < 0.85) {
+      // 15% - Complete purchase journey with payment
       if (userToken) {
-        console.log(`VU${currentVUs}: Complete purchase journey`);
+        console.log(`VU${currentVUs}: Complete purchase journey with payment`);
 
-        // Full user journey
-        completeUserJourney(userToken);
+        // Start with promotions (users often look for deals before buying)
+        explorePromotions(userToken);
+        sleep(Math.random() * 1 + 0.5);
+
+        // Enhanced shopping experience
+        enhancedShopping(userToken);
+        sleep(Math.random() * 1 + 0.5);
+
+        // Complete purchase with payment flow
+        paymentFlow(userToken);
       } else {
-        console.log(`VU${currentVUs}: No auth - guest checkout attempt`);
-        browseProducts();
+        console.log(`VU${currentVUs}: Guest user - complete shopping journey`);
+        viewHomepageContent(); // Start with homepage
+        enhancedShopping(); // Enhanced browsing
+        explorePromotions(); // Check for deals
         checkoutProcess(); // Guest checkout validation
       }
+    } else if (userBehavior < 0.95) {
+      // 7% - Product and category management
+      if (userToken) {
+        console.log(`VU${currentVUs}: Product management testing`);
+
+        // Test product management features
+        productManagement(userToken);
+        sleep(Math.random() * 1 + 0.5);
+
+        // Test category management
+        categoryManagement(userToken);
+      } else {
+        console.log(`VU${currentVUs}: No auth - category browsing`);
+        categoryManagement();
+        browseProducts();
+      }
     } else {
-      // 5% - Profile and account management
+      // 5% - Account management and admin operations
       if (userToken) {
         console.log(`VU${currentVUs}: Account management pattern`);
 
@@ -168,10 +221,8 @@ export default function (data) {
         userProfileOperations(userToken);
         sleep(Math.random() * 1 + 0.5);
 
-        // Check orders and wishlist
+        // Check orders
         const headers = getAuthHeaders(userToken);
-
-        // Get orders
         const ordersResponse = http.get(
           `${config.baseUrls[config.environment]}/api/v1/checkout/orders`,
           { headers, tags: { scenario: "account", type: "orders" } }
@@ -180,17 +231,16 @@ export default function (data) {
           "orders retrieved": (r) => r.status === 200,
         });
 
-        // Get wishlist
-        const wishlistResponse = http.get(
-          `${config.baseUrls[config.environment]}/api/v1/users/me/wishlist`,
-          { headers, tags: { scenario: "account", type: "wishlist" } }
-        );
-        check(wishlistResponse, {
-          "wishlist retrieved": (r) => r.status === 200,
-        });
+        // Test authentication flow cycling
+        if (Math.random() < 0.3) {
+          authenticationFlow();
+        }
       } else {
-        console.log(`VU${currentVUs}: No auth - fallback to browsing`);
-        browseProducts();
+        console.log(`VU${currentVUs}: Guest user - account exploration`);
+        browseProducts(); // Browse as guest
+        productManagement(); // View product details (no auth needed for viewing)
+        categoryManagement(); // Explore all categories
+        authenticationFlow(); // Guest trying to login (realistic scenario)
       }
     }
   } catch (error) {

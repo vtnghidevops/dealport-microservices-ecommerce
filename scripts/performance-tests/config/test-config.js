@@ -226,7 +226,7 @@ export function getBaseUrl() {
   const envFromK6 = __ENV.ENVIRONMENT || config.environment;
   const baseUrl = config.baseUrls[envFromK6] || config.baseUrls.local;
 
-  console.log(`Using API URL for ${envFromK6}: ${baseUrl}`);
+  // Environment: ${envFromK6}, Base URL: ${baseUrl}
   return baseUrl;
 }
 
