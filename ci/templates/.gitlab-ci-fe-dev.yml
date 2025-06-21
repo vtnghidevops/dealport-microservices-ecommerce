@@ -352,7 +352,7 @@ deploy-dev:
     git clone https://${GITHUB_TOKEN}@github.com/${GITHUB_USERNAME}/${HELM_REPO}.git
     cd ${HELM_REPO}
 
-    yq -i ".$BRANCH_NAME.image.tag = \"${CI_COMMIT_SHORT_SHA}\"" ./values.yaml
+    yq -i ".$BRANCH_NAME.image.tag = \"${CI_COMMIT_SHORT_SHA}\"" ./dev-values.yaml
 
     git add .
     git commit -m "feat: update ${BRANCH_NAME} images tag:${CI_COMMIT_SHORT_SHA}"

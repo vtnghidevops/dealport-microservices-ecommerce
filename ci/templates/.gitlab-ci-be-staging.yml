@@ -38,7 +38,8 @@ deploy-staging:
     git clone https://${GITHUB_TOKEN}@github.com/${GITHUB_USERNAME}/${HELM_REPO}.git
     cd ${HELM_REPO}
 
-    yq -i ".$BRANCH_NAME.image.tag = \"${CI_COMMIT_TAG}-${CI_COMMIT_SHORT_SHA}\"" ./values.yaml
+    NEW_TAG=$(yq ".${BRANCH_NAME}.image.tag" ./dev-values.yaml)
+    yq -i ".${BRANCH_NAME}.image.tag = \"${NEW_TAG}\"" ./staging-values.yaml
 
     git add .
     git commit -m "feat(staging): update images tag:${CI_COMMIT_TAG}-${CI_COMMIT_SHORT_SHA}"
