@@ -177,9 +177,16 @@ func (c *MailClient) SendPasswordResetEmail(email, tokenHash, expiresAt string) 
 
 // SendPasswordChangedEmail sends a password changed notification email
 func (c *MailClient) SendPasswordChangedEmail(email, changedAt string) error {
+	// Parse ISO timestamp and format it nicely
+	formattedDate := changedAt
+	if parsedTime, err := time.Parse(time.RFC3339, changedAt); err == nil {
+		// Format to something like "June 21, 2025 at 09:13 AM"
+		formattedDate = parsedTime.Format("January 2, 2006 at 03:04 PM")
+	}
+
 	variables := map[string]string{
 		"email":      email,
-		"changed_at": changedAt,
+		"changed_at": formattedDate,
 		"year":       fmt.Sprintf("%d", time.Now().Year()),
 	}
 

@@ -573,7 +573,50 @@ func (consumer *Consumer) handleStandardEvent(event StandardEvent, routingKey st
 			return err
 		}
 
-	case "auth.password_changed":
+	case "user.profile_updated":
+		// Convert user.profile_updated to log format and log it
+		consumer.logger.Printf("Converting user.profile_updated to log format")
+		logEvent := StandardEvent{
+			ID:         fmt.Sprintf("log_%s", event.ID),
+			Name:       "log.INFO.user.profile_updated",
+			Data:       event.Data,
+			DataSchema: event.DataSchema,
+			Source:     event.Source,
+			CreatedAt:  time.Now(),
+			Version:    event.Version,
+		}
+
+		// Log the converted event
+		err := consumer.logStandardEvent(logEvent)
+		if err != nil {
+			consumer.logger.Printf("Error logging profile updated event: %v", err)
+			return err
+		}
+		consumer.logger.Printf("Profile updated event logged successfully")
+
+	case "auth.password_changed", "user.password_changed":
+		// Convert user.password_changed to log format and log it
+		if event.Name == "user.password_changed" {
+			consumer.logger.Printf("Converting user.password_changed to log format")
+			logEvent := StandardEvent{
+				ID:         fmt.Sprintf("log_%s", event.ID),
+				Name:       "log.INFO.user.password_changed",
+				Data:       event.Data,
+				DataSchema: event.DataSchema,
+				Source:     event.Source,
+				CreatedAt:  time.Now(),
+				Version:    event.Version,
+			}
+
+			// Log the converted event
+			err := consumer.logStandardEvent(logEvent)
+			if err != nil {
+				consumer.logger.Printf("Error logging password changed event: %v", err)
+				return err
+			}
+			consumer.logger.Printf("Password changed event logged successfully")
+		}
+
 		// Send password changed notification email
 		consumer.logger.Printf("Sending password changed notification email")
 		err := consumer.sendPasswordChangedEmail(event)
@@ -858,7 +901,7 @@ func (consumer *Consumer) handleLegacyEvent(payload Payload) error {
 			return err
 		}
 
-	case "user.registered", "auth.password_reset_requested", "user.password_changed", "order.created":
+	case "user.registered", "user.profile_updated", "auth.password_reset_requested", "user.password_changed", "order.created":
 		// Log sự kiện
 		err := logEvent(payload)
 		if err != nil {

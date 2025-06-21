@@ -41,8 +41,10 @@ func main() {
 	topics := []string{
 		"log.INFO.#",                             // All log events
 		"user.registered",                        // User registration
+		"user.profile_updated",                   // User profile updated (from user-service)
 		"auth.password_reset_requested",          // Password reset requested
-		"auth.password_changed",                  // Password changed
+		"user.password_changed",                  // Password changed (fixed routing key)
+		"auth.password_changed",                  // Password changed (fixed routing key)
 		"auth.otp_generated",                     // OTP generation
 		"email.send",                             // Email sending
 		"order.created",                          // Order creation
