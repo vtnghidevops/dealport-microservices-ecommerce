@@ -436,8 +436,10 @@ upload_to_minio:
     for scan_folder in ${GITLEAKS_FOLDER} ${TRIVY_IMG_FOLDER} ${TRIVYFS_FOLDER} ${SNYK_FOLDER}; do
       if [ -d "$scan_folder" ]; then
         scan_name=$(basename $scan_folder)
+        dest_dir="$ARTIFACT_DIR/security-scans/$scan_name"
         echo "Copying $scan_name reports..."
-        cp -r "$scan_folder"/* $ARTIFACT_DIR/security-scans/$scan_name/
+        mkdir -p "$dest_dir"
+        cp -r "$scan_folder"/* "$dest_dir/"
       fi
     done
 
