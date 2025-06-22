@@ -177,26 +177,32 @@ stress-test:
 #     optional: true
 #   variables:
 #     GIT_STRATEGY: none
+#   before_script:
+#     - BRANCH_NAME=$(echo "$CI_COMMIT_TAG" | awk -F'-' '{for(i=2;i<NF;i++) printf $i (i<NF-1?"-":""); print ""}')
+#     - TAG_NAME=$(echo "$CI_COMMIT_TAG" | awk -F'-' -v sha="$CI_COMMIT_SHORT_SHA" '{print sha "-" $1 "-" $NF}')
+#     - TIMESTAMP=$(date +%Y%m%d)
+#     - ARTIFACT_DIR="pre-prod-${TIMESTAMP}_${BRANCH_NAME}_${TAG_NAME}"
+#     - mkdir -p $ARTIFACT_DIR
 #   script:
 #   - |
 #     echo "Uploading pre-prod artifacts to MinIO..."
-#     TIMESTAMP=$(date +%Y%m%d)
-#     ARTIFACT_DIR="pre-prod-${TIMESTAMP}_${CI_COMMIT_REF_NAME}_${CI_COMMIT_SHORT_SHA}"
-#     mkdir -p $ARTIFACT_DIR
-
 #     # Create organized subdirectories
 #     mkdir -p $ARTIFACT_DIR/{dast-reports,performance-tests}
 
 #     # Copy DAST reports
 #     if [ -d "${DAST_REPORT_DIR}" ]; then
 #       echo "Copying DAST reports..."
-#       cp -r ${DAST_REPORT_DIR}/* $ARTIFACT_DIR/dast-reports/
+#       dest_dir="$ARTIFACT_DIR/dast-reports"
+#       mkdir -p "$dest_dir"
+#       cp -r ${DAST_REPORT_DIR}/* "$dest_dir/"
 #     fi
 
 #     # # Copy performance test results
 #     # if [ -d "${TEST_RESULTS_DIR}" ]; then
 #     #   echo "Copying performance test results..."
-#     #   cp -r ${TEST_RESULTS_DIR}/* $ARTIFACT_DIR/performance-tests/
+#     #   dest_dir="$ARTIFACT_DIR/performance-tests"
+#     #   mkdir -p "$dest_dir"
+#     #   cp -r ${TEST_RESULTS_DIR}/* "$dest_dir/"
 #     # fi
 
 #     # Create artifact manifest
