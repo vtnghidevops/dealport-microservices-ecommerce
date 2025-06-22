@@ -1,56 +1,97 @@
-import React, { useEffect, useState } from 'react';
-import { useParams, Link, } from 'react-router-dom';
-import { Product } from '@/types/product.model';
-import { Category } from '@/types/category.model';
-import ProductService from '@/services/product/product.service';
-import { CategoryService } from '@/services/product/product.service';
-import ProductFilter from '@/components/product/ProductFilter';
-import ProductGrid from '@/components/product/ProductGrid';
-import NotFound from '../system/NotFound';
+import React, { useEffect, useState } from "react";
+import { useParams, Link, useSearchParams } from "react-router-dom";
+import { Product } from "@/types/product.model";
+import { Category } from "@/types/category.model";
+import ProductService from "@/services/product/product.service";
+import { CategoryService } from "@/services/product/product.service";
+import ProductFilter from "@/components/product/ProductFilter";
+import ProductGrid from "@/components/product/ProductGrid";
+import NotFound from "../system/NotFound";
 import { CiSearch } from "react-icons/ci";
-import Pagination from '@/components/common/Pagination';
-import { normalizeText } from '@/utils/helpers';
-import { ProductListSkeleton } from '@/components/ui/skeletons';
+import Pagination from "@/components/common/Pagination";
+import { normalizeText } from "@/utils/helpers";
+import { ProductListSkeleton } from "@/components/ui/skeletons";
 
 const ProductListPage: React.FC = () => {
   const { categorySlug } = useParams<{ categorySlug: string }>();
+  const [searchParams] = useSearchParams();
   const [products, setProducts] = useState<Product[]>([]);
   const [category, setCategory] = useState<Category | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [notFound, setNotFound] = useState<boolean>(false);
-  const [sortOption, setSortOption] = useState<string>('popular');
+  const [sortOption, setSortOption] = useState<string>("popular");
   const [filterRating, setFilterRating] = useState<number | null>(null);
   const [currentPage, setCurrentPage] = useState<number>(1);
   const pageSize: number = 8; // Number of products per page
   // Calculate pagination
   const indexOfLastProduct = currentPage * pageSize;
   const indexOfFirstProduct = indexOfLastProduct - pageSize;
-  const currentProducts = products.slice(indexOfFirstProduct, indexOfLastProduct);
+  const currentProducts = products.slice(
+    indexOfFirstProduct,
+    indexOfLastProduct
+  );
 
-  const [priceFilter, setPriceFilter] = useState<{ min: number | null, max: number | null }>({
+  const [priceFilter, setPriceFilter] = useState<{
+    min: number | null;
+    max: number | null;
+  }>({
     min: null,
-    max: null
+    max: null,
   });
   const [selectedBrands, setSelectedBrands] = useState<string[]>([]);
   const [selectedTag, setSelectedTag] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState<string>("");
+
+  // Get search query from URL
+  const urlSearchQuery = searchParams.get("search") || "";
+  const [isSearchMode, setIsSearchMode] = useState<boolean>(false);
+  // Initialize search query from URL
+  useEffect(() => {
+    if (urlSearchQuery) {
+      setSearchQuery(urlSearchQuery);
+      setIsSearchMode(true);
+    } else {
+      setIsSearchMode(false);
+    }
+  }, [urlSearchQuery]);
+
   useEffect(() => {
     const fetchData = async () => {
       setLoading(true);
       try {
-        if (categorySlug) {
-          const categoryData = await CategoryService.getCategoryBySlug(categorySlug);
+        if (urlSearchQuery && !categorySlug) {
+          // Search mode - search all products
+          const { products: searchResults } =
+            await ProductService.getAllProducts(1, 100, {
+              search: urlSearchQuery,
+            });
+          setProducts(searchResults || []);
+          setIsSearchMode(true);
+        } else if (categorySlug) {
+          // Category mode
+          const categoryData = await CategoryService.getCategoryBySlug(
+            categorySlug
+          );
           if (!categoryData) {
             setNotFound(true);
             return;
           }
           setCategory(categoryData);
 
-          const productsData = await ProductService.getProductsByCategorySlug(categorySlug);
+          const productsData = await ProductService.getProductsByCategorySlug(
+            categorySlug
+          );
           setProducts(productsData.products || []);
+        } else {
+          // Default - show all products
+          const { products: allProducts } = await ProductService.getAllProducts(
+            1,
+            100
+          );
+          setProducts(allProducts || []);
         }
       } catch (error) {
-        console.error('Error fetching data:', error);
+        console.error("Error fetching data:", error);
         setNotFound(true);
       } finally {
         setLoading(false);
@@ -58,7 +99,7 @@ const ProductListPage: React.FC = () => {
     };
 
     fetchData();
-  }, [categorySlug]);
+  }, [categorySlug, urlSearchQuery]);
   //console.log("products in category list", products)
   //console.log("category in category list", category)
 
@@ -69,20 +110,18 @@ const ProductListPage: React.FC = () => {
     if (!categorySlug) return;
 
     // Get original products and filter
-    ProductService.getProductsByCategorySlug(categorySlug).then(products => {
+    ProductService.getProductsByCategorySlug(categorySlug).then((products) => {
       if (!products) return;
 
-      const filtered = products.products.filter(product => {
+      const filtered = products.products.filter((product) => {
         const searchIn = [
           product.name,
           product.description,
           product.brand,
-          ...(product.tags || [])
-        ].map(text => normalizeText(text || ""));
+          ...(product.tags || []),
+        ].map((text) => normalizeText(text || ""));
 
-        return searchIn.some(text =>
-          text.includes(normalizeText(query))
-        );
+        return searchIn.some((text) => text.includes(normalizeText(query)));
       });
 
       setProducts(filtered);
@@ -100,7 +139,7 @@ const ProductListPage: React.FC = () => {
   };
 
   const handleTagFilter = (tag: string) => {
-    setSelectedTag(currentTag => currentTag === tag ? null : tag);
+    setSelectedTag((currentTag) => (currentTag === tag ? null : tag));
   };
 
   // Combined filter function
@@ -108,7 +147,9 @@ const ProductListPage: React.FC = () => {
     if (!categorySlug) return;
 
     try {
-      const response = await ProductService.getProductsByCategorySlug(categorySlug);
+      const response = await ProductService.getProductsByCategorySlug(
+        categorySlug
+      );
 
       if (!response) return;
 
@@ -123,7 +164,7 @@ const ProductListPage: React.FC = () => {
 
       // Apply price filter
       if (priceFilter.min !== null || priceFilter.max !== null) {
-        filteredProducts = filteredProducts.filter(product => {
+        filteredProducts = filteredProducts.filter((product) => {
           const price = product.price;
           if (priceFilter.min !== null && priceFilter.max !== null) {
             return price >= priceFilter.min && price <= priceFilter.max;
@@ -141,31 +182,32 @@ const ProductListPage: React.FC = () => {
       // Apply brand filter
       if (selectedBrands.length > 0) {
         filteredProducts = filteredProducts.filter(
-          (product: Product) => product.brand && selectedBrands.includes(product.brand)
+          (product: Product) =>
+            product.brand && selectedBrands.includes(product.brand)
         );
       }
 
       // Apply tag filter
       if (selectedTag) {
         const normalizedSelectedTag = normalizeText(selectedTag);
-        filteredProducts = filteredProducts.filter(
-          (product: Product) => product.tags?.some(tag =>
-            normalizeText(tag) === normalizedSelectedTag
+        filteredProducts = filteredProducts.filter((product: Product) =>
+          product.tags?.some(
+            (tag) => normalizeText(tag) === normalizedSelectedTag
           )
         );
       }
 
       // Apply search filter
       if (searchQuery.trim()) {
-        filteredProducts = filteredProducts.filter(product => {
+        filteredProducts = filteredProducts.filter((product) => {
           const searchIn = [
             product.name,
             product.description,
             product.brand,
-            ...(product.tags || [])
-          ].map(text => normalizeText(text || ""));
+            ...(product.tags || []),
+          ].map((text) => normalizeText(text || ""));
 
-          return searchIn.some(text =>
+          return searchIn.some((text) =>
             text.includes(normalizeText(searchQuery))
           );
         });
@@ -173,14 +215,16 @@ const ProductListPage: React.FC = () => {
 
       // Apply sorting
       switch (sortOption) {
-        case 'price-low':
+        case "price-low":
           filteredProducts.sort((a, b) => a.price - b.price);
           break;
-        case 'price-high':
+        case "price-high":
           filteredProducts.sort((a, b) => b.price - a.price);
           break;
-        case 'rating':
-          filteredProducts.sort((a, b) => (b.reviewsAvg?.rating || 0) - (a.reviewsAvg?.rating || 0));
+        case "rating":
+          filteredProducts.sort(
+            (a, b) => (b.reviewsAvg?.rating || 0) - (a.reviewsAvg?.rating || 0)
+          );
           break;
         default:
           // Default sorting (popular)
@@ -188,15 +232,21 @@ const ProductListPage: React.FC = () => {
       }
 
       setProducts(filteredProducts);
-
     } catch (error) {
-      console.error('Error applying filters:', error);
+      console.error("Error applying filters:", error);
     }
   };
 
   useEffect(() => {
     applyFilters();
-  }, [categorySlug, filterRating, priceFilter, selectedBrands, selectedTag, sortOption]);
+  }, [
+    categorySlug,
+    filterRating,
+    priceFilter,
+    selectedBrands,
+    selectedTag,
+    sortOption,
+  ]);
 
   const handleSortChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     setSortOption(e.target.value);
@@ -226,8 +276,24 @@ const ProductListPage: React.FC = () => {
           Shop
         </Link>
         <span className="mx-2">/</span>
-        <span className="text-primary text-base">{category?.name}</span>
+        <span className="text-primary text-base">
+          {isSearchMode
+            ? `Search Results for "${urlSearchQuery}"`
+            : category?.name || "All Products"}
+        </span>
       </div>
+
+      {/* Page Title */}
+      {isSearchMode && (
+        <div className="mb-6">
+          <h1 className="text-2xl font-bold text-gray-900">
+            Search Results for "{urlSearchQuery}"
+          </h1>
+          <p className="text-gray-600 mt-2">
+            Found {products.length} product{products.length !== 1 ? "s" : ""}
+          </p>
+        </div>
+      )}
 
       <div className="flex flex-col md:flex-row gap-8">
         {/* Sidebar */}
@@ -290,7 +356,6 @@ const ProductListPage: React.FC = () => {
                   <span>{category.name}</span>
                 </div>
               )}
-
 
               {/* Search filter tag */}
               {searchQuery && (

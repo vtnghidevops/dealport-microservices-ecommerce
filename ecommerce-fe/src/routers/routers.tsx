@@ -31,9 +31,8 @@ import Addresses from "@/pages/user/Addresses";
 import SecuritySettings from "@/pages/user/SecuritySettings";
 import UserDashboard from "@/pages/user/Dashboard";
 import ProductPage from "@/pages/admin/product";
-import AdminLogin from '@/pages/admin/login/login' // Fix import path to correct location
+import AdminLogin from "@/pages/admin/login/login"; // Fix import path to correct location
 import ProtectedAdminRoute from "@/components/admin/auth/ProtectedAdminRoute";
-
 
 const AppRouters: React.FC = () => {
   return (
@@ -55,9 +54,13 @@ const AppRouters: React.FC = () => {
 
           {/* Product/Category routes - grouped for easier management */}
           <Route path="/products" element={<ProductList />} />
+
           <Route path="/categories" element={<ProductList />} />
           <Route path="/category/:categorySlug" element={<ProductList />} />
-          <Route path="/category/:categorySlug/:productSlug" element={<ProductDetail />} />
+          <Route
+            path="/category/:categorySlug/:productSlug"
+            element={<ProductDetail />}
+          />
 
           {/* User account routes */}
           <Route path="/user">
@@ -72,8 +75,6 @@ const AppRouters: React.FC = () => {
             <Route path="checkout/success" element={<SuccessfulPayment />} />
             <Route path="payment/result" element={<PaymentResult />} />
           </Route>
-
-          
         </Route>
 
         {/* Admin Login Route */}

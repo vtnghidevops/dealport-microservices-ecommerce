@@ -7,16 +7,20 @@ import { IoMenu, IoTicketOutline } from "react-icons/io5";
 import { TiHome } from "react-icons/ti";
 import { CiShop, CiHeart } from "react-icons/ci";
 import { LuUsersRound } from "react-icons/lu";
-import { HiOutlineStar } from "react-icons/hi";
+import { HiOutlineSparkles } from "react-icons/hi";
+import { BiSearch, BiTrendingUp } from "react-icons/bi";
+import { RiEmotionSadLine } from "react-icons/ri";
 import { FaLocationDot } from "react-icons/fa6";
 import { Link, useNavigate } from "react-router-dom";
-import { useAuth } from '@/hooks/useAuth';
+import { useAuth } from "@/hooks/useAuth";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
-import LoggedInUserMenu from './LoggedInUserMenu';
+import LoggedInUserMenu from "./LoggedInUserMenu";
 import { useCart } from "@/hooks/useCart";
-import { extractErrorMessage } from '@/utils/error-handler';
+import { extractErrorMessage } from "@/utils/error-handler";
+import ProductService from "@/services/product/product.service";
+import { Product } from "@/types/product.model";
 
 const Logo: React.FC = () => {
   return (
@@ -27,17 +31,329 @@ const Logo: React.FC = () => {
 };
 
 const SearchBar: React.FC = () => {
+  const [searchQuery, setSearchQuery] = useState("");
+  const [searchResults, setSearchResults] = useState<Product[]>([]);
+  const [trendingProducts, setTrendingProducts] = useState<Product[]>([]);
+  const [isSearching, setIsSearching] = useState(false);
+  const [showResults, setShowResults] = useState(false);
+  const [hasSearched, setHasSearched] = useState(false);
+  const navigate = useNavigate();
+  const searchRef = useRef<HTMLDivElement>(null);
+
+  // Load trending products on component mount
+  useEffect(() => {
+    const loadTrendingProducts = async () => {
+      try {
+        const { products } = await ProductService.getAllProducts(1, 6, {
+          type: "trending",
+        });
+        setTrendingProducts(products);
+      } catch (error) {
+        console.error("Error loading trending products:", error);
+        setTrendingProducts([]); // Ensure it's always an array
+      }
+    };
+    loadTrendingProducts();
+  }, []);
+
+  // Close search results when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      // Check if the clicked element is outside the search container
+      if (
+        searchRef.current &&
+        !searchRef.current.contains(event.target as Node) &&
+        showResults
+      ) {
+        setShowResults(false);
+      }
+    };
+
+    const handleEscapeKey = (event: KeyboardEvent) => {
+      if (event.key === "Escape" && showResults) {
+        setShowResults(false);
+      }
+    };
+
+    // Add both mouse and keyboard event listeners
+    if (showResults) {
+      document.addEventListener("mousedown", handleClickOutside);
+      document.addEventListener("keydown", handleEscapeKey);
+    }
+
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+      document.removeEventListener("keydown", handleEscapeKey);
+    };
+  }, [showResults]);
+
+  // Debounced search function
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      if (searchQuery.trim() && searchQuery.length >= 2) {
+        handleSearch();
+      } else {
+        setSearchResults([]);
+        setHasSearched(false);
+        // Keep dropdown open to show trending products when no search query
+        if (showResults) {
+          setShowResults(true);
+        }
+      }
+    }, 300);
+
+    return () => clearTimeout(timeoutId);
+  }, [searchQuery, showResults]);
+
+  const handleSearch = async () => {
+    if (!searchQuery.trim()) return;
+
+    setIsSearching(true);
+    setHasSearched(true);
+    try {
+      // Search products using the name filter
+      const { products } = await ProductService.getAllProducts(1, 8, {
+        name: searchQuery.trim(),
+      });
+      setSearchResults(products);
+      setShowResults(true);
+    } catch (error) {
+      console.error("Search error:", error);
+      setSearchResults([]); // Ensure it's always an array
+    } finally {
+      setIsSearching(false);
+    }
+  };
+
+  const handleSearchSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (searchQuery.trim()) {
+      // Navigate to products page with search query
+      navigate(`/products?search=${encodeURIComponent(searchQuery.trim())}`);
+      // Clear search state when navigating
+      setSearchQuery("");
+      setSearchResults([]);
+      setHasSearched(false);
+      setShowResults(false);
+    }
+  };
+
+  const handleProductClick = (product: Product) => {
+    // Navigate to product detail using category and product slug
+    navigate(`/category/${product.categorySlug}/${product.slug}`);
+    // Clear search state when navigating to product detail
+    setSearchQuery("");
+    setSearchResults([]);
+    setHasSearched(false);
+    setShowResults(false);
+  };
+
   return (
-    <div className="flex items-center justify-between bg-aqua-spring rounded-full px-4 py-2 w-[25rem]">
-      <input
-        type="text"
-        placeholder="What you're looking for"
-        className="bg-transparent focus:outline-none ml-[1rem] w-full"
-      />
-      <button className="flex items-center justify-center rounded-[20px] text-black w-[9rem] bg-white mr-1  h-[2rem] hover:shadow-md hover:scale-105 transition-transform transition-shadow duration-300">
-        <FiSearch className="mr-1 " />
-        Search
-      </button>
+    <div className="relative" ref={searchRef}>
+      <form
+        onSubmit={handleSearchSubmit}
+        className="flex items-center justify-between bg-aqua-spring rounded-full px-4 py-2 w-[25rem]"
+      >
+        <input
+          type="text"
+          placeholder="What you're looking for"
+          className="bg-transparent focus:outline-none ml-[1rem] w-full"
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          onFocus={() => setShowResults(true)}
+          onBlur={(e) => {
+            // Don't close immediately on blur, let click outside handle it
+            // This prevents flickering when clicking on dropdown items
+            const relatedTarget = e.relatedTarget as Node;
+            if (!searchRef.current?.contains(relatedTarget)) {
+              // Small delay to allow click events to register first
+              setTimeout(() => {
+                // Double check if we're still not focused on the search area
+                if (!searchRef.current?.contains(document.activeElement)) {
+                  setShowResults(false);
+                }
+              }, 150);
+            }
+          }}
+        />
+        <button
+          type="submit"
+          className="flex items-center justify-center rounded-[20px] text-black w-[9rem] bg-white mr-1 h-[2rem] hover:shadow-md hover:scale-105 transition-transform transition-shadow duration-300"
+          disabled={isSearching}
+        >
+          <FiSearch className="mr-1" />
+          {isSearching ? "Searching..." : "Search"}
+        </button>
+      </form>
+
+      {/* Search Results Dropdown */}
+      {showResults && (
+        <div className="absolute top-full left-0 right-0 mt-2 bg-white rounded-lg shadow-xl border border-gray-200 z-50 max-h-96 overflow-y-auto custom-scrollbar">
+          {(() => {
+            // If currently searching, show loading
+            if (isSearching) {
+              return (
+                <div className="p-6 text-center">
+                  <div className="inline-block animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600 mb-2"></div>
+                  <p className="text-sm text-gray-600">Searching...</p>
+                </div>
+              );
+            }
+
+            // If there's a search query and we have results
+            if (
+              searchQuery.trim() &&
+              searchResults &&
+              searchResults.length > 0
+            ) {
+              return (
+                <>
+                  <div className="p-3 border-b border-gray-100 bg-blue-50">
+                    <span className="text-sm font-medium text-blue-800 flex items-center gap-2">
+                      <BiSearch className="w-4 h-4" />
+                      Found {searchResults.length} product
+                      {searchResults.length !== 1 ? "s" : ""} for "{searchQuery}
+                      "
+                    </span>
+                  </div>
+                  {searchResults.map((product) => (
+                    <div
+                      key={product.id}
+                      className="p-3 hover:bg-blue-50 cursor-pointer border-b border-gray-50 last:border-b-0 transition-colors duration-150"
+                      onClick={() => handleProductClick(product)}
+                    >
+                      <div className="flex items-center space-x-3">
+                        <img
+                          src={
+                            product.imageUrl || "/images/common/placeholder.jpg"
+                          }
+                          alt={product.name}
+                          className="w-12 h-12 object-cover rounded-lg border border-gray-200"
+                          onError={(e) => {
+                            (e.target as HTMLImageElement).src =
+                              "/images/common/placeholder.jpg";
+                          }}
+                        />
+                        <div className="flex-1">
+                          <h4 className="text-sm font-medium text-gray-900 truncate">
+                            {product.name}
+                          </h4>
+                          <p className="text-sm text-gray-600">
+                            <span className="font-semibold text-green-600">
+                              ${product.price}
+                            </span>
+                            {product.originalPrice &&
+                              product.originalPrice > product.price && (
+                                <span className="ml-2 text-xs text-gray-400 line-through">
+                                  ${product.originalPrice}
+                                </span>
+                              )}
+                          </p>
+                        </div>
+                        <div className="text-gray-400">
+                          <FiExternalLink className="w-4 h-4" />
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                  <div className="p-3 border-t border-gray-100 bg-gray-50">
+                    <button
+                      onClick={() => {
+                        const fakeEvent = {
+                          preventDefault: () => {},
+                        } as React.FormEvent;
+                        handleSearchSubmit(fakeEvent);
+                      }}
+                      className="text-sm text-blue-600 hover:text-blue-800 font-medium w-full text-center py-2 hover:bg-blue-50 rounded transition-colors"
+                    >
+                      View all results for "{searchQuery}" →
+                    </button>
+                  </div>
+                </>
+              );
+            }
+
+            // If there's a search query but no results (and has searched)
+            if (
+              searchQuery.trim() &&
+              hasSearched &&
+              (!searchResults || searchResults.length === 0)
+            ) {
+              return (
+                <div className="p-6 text-center text-gray-500">
+                  <div className="flex justify-center mb-3">
+                    <RiEmotionSadLine className="w-8 h-8 text-gray-400" />
+                  </div>
+                  <p className="font-medium">
+                    No products found for "{searchQuery}"
+                  </p>
+                  <p className="text-xs mt-1">
+                    Try different keywords or check spelling
+                  </p>
+                </div>
+              );
+            }
+
+            // Default case: show trending products
+            return (
+              <>
+                <div className="p-3 border-b border-gray-100 bg-yellow-50">
+                  <span className="text-sm font-medium text-yellow-800 flex items-center gap-2">
+                    <BiTrendingUp className="w-4 h-4" />
+                    Trending Products
+                  </span>
+                </div>
+                {trendingProducts && trendingProducts.length > 0 ? (
+                  trendingProducts.map((product) => (
+                    <div
+                      key={product.id}
+                      className="p-3 hover:bg-yellow-50 cursor-pointer border-b border-gray-50 last:border-b-0 transition-colors duration-150"
+                      onClick={() => handleProductClick(product)}
+                    >
+                      <div className="flex items-center space-x-3">
+                        <img
+                          src={
+                            product.imageUrl || "/images/common/placeholder.jpg"
+                          }
+                          alt={product.name}
+                          className="w-12 h-12 object-cover rounded-lg border border-gray-200"
+                          onError={(e) => {
+                            (e.target as HTMLImageElement).src =
+                              "/images/common/placeholder.jpg";
+                          }}
+                        />
+                        <div className="flex-1">
+                          <h4 className="text-sm font-medium text-gray-900 truncate">
+                            {product.name}
+                          </h4>
+                          <p className="text-sm text-gray-600">
+                            <span className="font-semibold text-green-600">
+                              ${product.price}
+                            </span>
+                            {product.originalPrice &&
+                              product.originalPrice > product.price && (
+                                <span className="ml-2 text-xs text-gray-400 line-through">
+                                  ${product.originalPrice}
+                                </span>
+                              )}
+                          </p>
+                        </div>
+                        <div className="text-yellow-500">
+                          <HiOutlineSparkles className="w-4 h-4" />
+                        </div>
+                      </div>
+                    </div>
+                  ))
+                ) : (
+                  <div className="p-4 text-center text-gray-500">
+                    <p className="text-sm">No trending products available</p>
+                  </div>
+                )}
+              </>
+            );
+          })()}
+        </div>
+      )}
     </div>
   );
 };
@@ -51,7 +367,7 @@ const LoggedOutUserMenu: React.FC = () => {
   const [showLoginForm, setShowLoginForm] = useState(false);
   const [formData, setFormData] = useState({
     email: "",
-    password: ""
+    password: "",
   });
   const [isLoading, setIsLoading] = useState(false);
   const { login } = useAuth();
@@ -92,9 +408,9 @@ const LoggedOutUserMenu: React.FC = () => {
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>): void => {
     const { name, value } = e.target;
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
-      [name]: value
+      [name]: value,
     }));
   };
 
@@ -106,7 +422,7 @@ const LoggedOutUserMenu: React.FC = () => {
       toast({
         variant: "destructive",
         title: "Error",
-        description: "Please fill in all required fields"
+        description: "Please fill in all required fields",
       });
       return;
     }
@@ -118,29 +434,33 @@ const LoggedOutUserMenu: React.FC = () => {
       toast({
         variant: "success",
         title: "Success",
-        description: "Login successful!"
+        description: "Login successful!",
       });
       setShowLoginForm(false);
-      window.dispatchEvent(new Event('storage'));
+      window.dispatchEvent(new Event("storage"));
       if (headerContext) {
         headerContext.setForceRerender(headerContext.forceRerender + 1);
       }
-      if (window.location.pathname === '/login') {
-        navigate('/');
+      if (window.location.pathname === "/login") {
+        navigate("/");
       }
     } else {
       const friendlyMsg = extractErrorMessage(result.error);
       toast({
         variant: "destructive",
         title: "Login Failed",
-        description: friendlyMsg
+        description: friendlyMsg,
       });
     }
     setIsLoading(false);
   };
 
   return (
-    <div className="relative" ref={containerRef} onMouseLeave={handleMouseLeave}>
+    <div
+      className="relative"
+      ref={containerRef}
+      onMouseLeave={handleMouseLeave}
+    >
       <button
         ref={buttonRef}
         className="text-[1rem] h-full flex items-center hover:text-green-600 transition-colors"
@@ -161,8 +481,12 @@ const LoggedOutUserMenu: React.FC = () => {
           {/* Triangle pointer connecting to button */}
           <div className="absolute -top-2 right-[76px] w-4 h-4 bg-white border-t border-l border-gray-200 transform rotate-45"></div>
           <div className="px-[2rem] pt-[1.5rem] text-center">
-            <h3 className="text-lg font-medium text-gray-800">You have an account! Login Now</h3>
-            <p className="text-sm text-gray-500 mt-1">Enter your credentials to access your account</p>
+            <h3 className="text-lg font-medium text-gray-800">
+              You have an account! Login Now
+            </h3>
+            <p className="text-sm text-gray-500 mt-1">
+              Enter your credentials to access your account
+            </p>
           </div>
           <div className="p-[2rem] pt-[1rem]">
             <form onSubmit={handleSubmit} className="space-y-4">
@@ -214,7 +538,10 @@ const LoggedOutUserMenu: React.FC = () => {
 
               <div className="text-sm text-center mt-4">
                 <span className="text-gray-600">Don't have an account? </span>
-                <Link to="/register" className="text-blue-500 hover:text-blue-700">
+                <Link
+                  to="/register"
+                  className="text-blue-500 hover:text-blue-700"
+                >
                   Register here
                 </Link>
               </div>
@@ -228,18 +555,36 @@ const LoggedOutUserMenu: React.FC = () => {
 
 const NavMenu: React.FC = () => {
   const categories = [
-    { name: "Electronics", href: "/category/electronics", icon: <FiExternalLink className="mr-2" /> },
-    { name: "Clothing", href: "/category/clothing", icon: <CiShop className="mr-2" /> },
-    { name: "Home & Garden", href: "/category/home-garden", icon: <TiHome className="mr-2" /> },
-    { name: "Beauty", href: "/category/beauty", icon: <HiOutlineStar className="mr-2" /> },
-    { name: "Sports", href: "/category/sports", icon: <IoTicketOutline className="mr-2" /> }
+    {
+      name: "Electronics",
+      href: "/category/electronics",
+      icon: <FiExternalLink className="mr-2" />,
+    },
+    {
+      name: "Clothing",
+      href: "/category/clothing",
+      icon: <CiShop className="mr-2" />,
+    },
+    {
+      name: "Home & Garden",
+      href: "/category/home-garden",
+      icon: <TiHome className="mr-2" />,
+    },
+    {
+      name: "Beauty",
+      href: "/category/beauty",
+      icon: <HiOutlineSparkles className="mr-2" />,
+    },
+    {
+      name: "Sports",
+      href: "/category/sports",
+      icon: <IoTicketOutline className="mr-2" />,
+    },
   ];
 
   return (
     <div className="relative group">
-      <button
-        className="flex items-center"
-      >
+      <button className="flex items-center">
         <IoMenu className="text-xl mr-1" />
         Menu
         <span className="mx-4 text-gray-400">|</span>
@@ -302,23 +647,23 @@ const Header: React.FC = () => {
     // Listen for storage events which might indicate login state changes
     const handleStorageChange = () => {
       // console.log("Storage change detected - refreshing header");
-      setForceRerender(prev => prev + 1);
+      setForceRerender((prev) => prev + 1);
       checkLoginStatus();
     };
 
-    window.addEventListener('storage', handleStorageChange);
-    return () => window.removeEventListener('storage', handleStorageChange);
+    window.addEventListener("storage", handleStorageChange);
+    return () => window.removeEventListener("storage", handleStorageChange);
   }, [isAuthenticated]);
 
   const checkLoginStatus = () => {
-    const token = localStorage.getItem('token');
-    const userString = localStorage.getItem('user');
+    const token = localStorage.getItem("token");
+    const userString = localStorage.getItem("user");
 
     // If we have a token in localStorage but isAuthenticated is false, force a reload
     if (token && userString && !isAuthenticated) {
-     // console.log("Header detected token in localStorage but not in context - forcing context update");
+      // console.log("Header detected token in localStorage but not in context - forcing context update");
       // Instead of reload, try to update the auth state context by dispatching an event
-      window.dispatchEvent(new Event('storage'));
+      window.dispatchEvent(new Event("storage"));
     }
 
     // console.log("Header directly checking localStorage:", {
@@ -328,7 +673,7 @@ const Header: React.FC = () => {
     //   userData: userString ? JSON.parse(userString) : null
     // });
 
-    setForceRerender(prev => prev + 1);
+    setForceRerender((prev) => prev + 1);
   };
 
   // Debug code để kiểm tra trạng thái đăng nhập
@@ -341,8 +686,8 @@ const Header: React.FC = () => {
   // });
 
   // Determine if logged in by checking both context and localStorage
-  const token = localStorage.getItem('token');
-  const userString = localStorage.getItem('user');
+  const token = localStorage.getItem("token");
+  const userString = localStorage.getItem("user");
   const isLoggedIn = isAuthenticated || (!!token && !!userString);
 
   // If we have data in localStorage but auth context hasn't updated yet, parse from localStorage
@@ -364,11 +709,13 @@ const Header: React.FC = () => {
   // });
 
   return (
-    <HeaderContext.Provider value={{
-      forceRerender,
-      setForceRerender,
-      checkAuthStatus: checkLoginStatus
-    }}>
+    <HeaderContext.Provider
+      value={{
+        forceRerender,
+        setForceRerender,
+        checkAuthStatus: checkLoginStatus,
+      }}
+    >
       {/* {process.env.NODE_ENV === 'development' && showDebug && (
         <div className="bg-yellow-100 p-2 text-xs border-b border-yellow-300">
           <div className="flex justify-between items-center">
@@ -436,7 +783,11 @@ const Header: React.FC = () => {
           <SearchBar />
 
           {/* Hiển thị UserMenu tùy theo trạng thái đăng nhập - thêm debug class */}
-          <div className={`auth-state-${isLoggedIn ? 'authenticated' : 'unauthenticated'} rerender-${forceRerender}`}>
+          <div
+            className={`auth-state-${
+              isLoggedIn ? "authenticated" : "unauthenticated"
+            } rerender-${forceRerender}`}
+          >
             {isLoading ? (
               <div className="h-[40px] flex items-center">
                 <span className="text-gray-500">Loading...</span>
@@ -468,7 +819,10 @@ const Header: React.FC = () => {
         <div className="flex items-center space-x-10 ml-[5.4rem]">
           <NavMenu />
 
-          <a href="/explore" className="flex items-center ml-[1rem] relative group">
+          <a
+            href="/explore"
+            className="flex items-center ml-[1rem] relative group"
+          >
             <CiShop className="mr-1" /> Explore
             <span className="absolute h-[3px] w-0 bg-success bottom-[-5px] left-0 transition-all duration-300 group-hover:w-full"></span>
           </a>
@@ -504,5 +858,5 @@ const Header: React.FC = () => {
       </nav>
     </HeaderContext.Provider>
   );
-}
+};
 export default Header;
