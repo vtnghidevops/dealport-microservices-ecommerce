@@ -197,7 +197,7 @@ func declareExchange(ch *amqp.Channel) error {
 // ANTI-DUPLICATE: Uses fixed queue name so multiple listener instances share the same queue
 func declareRandomQueue(ch *amqp.Channel) (amqp.Queue, error) {
 	return ch.QueueDeclare(
-		"ecommerce_events_shared_queue", // Shared queue - multiple instances work together
+		"", 
 		true,                            // durable - survive broker restart
 		false,                           // delete when unused
 		false,                           // exclusive - allow multiple consumers
