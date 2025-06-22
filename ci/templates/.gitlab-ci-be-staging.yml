@@ -11,7 +11,8 @@ variables:
 .prepare-vars:
   before_script:
   - BRANCH_NAME=$(echo "$CI_COMMIT_TAG" | awk -F'-' '{for(i=2;i<NF;i++) printf $i (i<NF-1?"-":""); print ""}')
-  - IMAGE_TAG="${HARBOR_URL}/${HARBOR_REPO}/${BRANCH_NAME}:${CI_COMMIT_SHORT_SHA}"
+  - TAG_NAME=$(echo "$CI_COMMIT_TAG" | awk -F'-' '{print $1}')
+  - IMAGE_TAG="${HARBOR_URL}/${HARBOR_REPO}/${BRANCH_NAME}:${CI_COMMIT_SHORT_SHA}-${TAG_NAME}"
 
 .env-staging: 
   environment:
