@@ -361,6 +361,28 @@ func (r *ProductRepository) GetAllProducts(page, pageSize int, filters map[strin
 			argCount++
 		}
 
+		// Search by name - case insensitive
+		if name, ok := filters["name"]; ok {
+			conditions = append(conditions, fmt.Sprintf("LOWER(p.name) LIKE LOWER($%d)", argCount))
+			args = append(args, "%"+name+"%")
+			argCount++
+		}
+
+		// Search by description - case insensitive
+		if description, ok := filters["description"]; ok {
+			conditions = append(conditions, fmt.Sprintf("LOWER(p.description) LIKE LOWER($%d)", argCount))
+			args = append(args, "%"+description+"%")
+			argCount++
+		}
+
+		// General search - searches in name, description, and brand
+		if search, ok := filters["search"]; ok {
+			searchCondition := fmt.Sprintf("(LOWER(p.name) LIKE LOWER($%d) OR LOWER(p.description) LIKE LOWER($%d) OR LOWER(p.brand) LIKE LOWER($%d))", argCount, argCount, argCount)
+			conditions = append(conditions, searchCondition)
+			args = append(args, "%"+search+"%")
+			argCount++
+		}
+
 		whereClause += strings.Join(conditions, " AND ")
 	}
 
