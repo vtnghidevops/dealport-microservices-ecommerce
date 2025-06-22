@@ -34,8 +34,16 @@ variables:
     ENVIRONMENT: "staging"
     TARGET_URL: ${STAGING_API_URL}
   before_script:
+    - echo "Checking shell environment..."
+    - which sh
+    - sh --version || echo "sh version check failed"
+    - echo "Setting up directories..."
     - mkdir -p ${TEST_RESULTS_DIR}
     - cd ${PERFORMANCE_TEST_DIR}
+    - echo "Current working directory:"
+    - pwd
+    - echo "Available files:"
+    - ls -la
   artifacts:
     paths:
       - ${TEST_RESULTS_DIR}/
@@ -132,27 +140,20 @@ variables:
 smoke-test:
   extends: .performance-test-base
   script:
-    - |
-      echo "Running smoke tests for staging environment..."
-      ls -ltr
-      pwd
-      echo "Creating results directory at: ../../${TEST_RESULTS_DIR}"
-      mkdir -p ../../${TEST_RESULTS_DIR}
-      echo "Testing k6 basic functionality..."
-      k6 version || echo "k6 not available"
-      echo "Running k6 smoke test..."
-      k6 run --out json=../../${TEST_RESULTS_DIR}/smoke-results.json tests/smoke-test.js -e ENVIRONMENT=${ENVIRONMENT} -e TARGET_URL=${TARGET_URL} || K6_EXIT_CODE=$?
-      echo "K6 exit code: ${K6_EXIT_CODE:-0}"
-      echo "Checking if results file was created:"
-      ls -la ../../${TEST_RESULTS_DIR}/
-      echo "Checking file size and content sample:"
-      if [ -f "../../${TEST_RESULTS_DIR}/smoke-results.json" ]; then
-        wc -l ../../${TEST_RESULTS_DIR}/smoke-results.json
-        head -n 5 ../../${TEST_RESULTS_DIR}/smoke-results.json
-      else
-        echo "Results file was not created"
-        exit 1
-      fi
+    - echo "Running smoke tests for staging environment..."
+    - ls -ltr
+    - pwd
+    - echo "Creating results directory at ../../${TEST_RESULTS_DIR}"
+    - mkdir -p ../../${TEST_RESULTS_DIR}
+    - echo "Testing k6 basic functionality..."
+    - k6 version
+    - echo "Running k6 smoke test..."
+    - k6 run --out json=../../${TEST_RESULTS_DIR}/smoke-results.json tests/smoke-test.js -e ENVIRONMENT=${ENVIRONMENT} -e TARGET_URL=${TARGET_URL}
+    - echo "Checking if results file was created:"
+    - ls -la ../../${TEST_RESULTS_DIR}/
+    - echo "Checking file size and content sample:"
+    - if [ -f "../../${TEST_RESULTS_DIR}/smoke-results.json" ]; then wc -l ../../${TEST_RESULTS_DIR}/smoke-results.json; else echo "Results file was not created" && exit 1; fi
+    - if [ -f "../../${TEST_RESULTS_DIR}/smoke-results.json" ]; then head -n 5 ../../${TEST_RESULTS_DIR}/smoke-results.json; fi
   rules:
     - if: $CI_COMMIT_TAG =~ /-performance-test$/
       when: manual
@@ -161,12 +162,11 @@ smoke-test:
 load-test:
   extends: .performance-test-base
   script:
-    - |
-      echo "Running load tests for staging environment..."
-      mkdir -p ../../${TEST_RESULTS_DIR}
-      k6 run --out json=../../${TEST_RESULTS_DIR}/load-results.json tests/load-test.js -e ENVIRONMENT=${ENVIRONMENT} -e TARGET_URL=${TARGET_URL}
-      echo "Checking if results file was created:"
-      ls -la ../../${TEST_RESULTS_DIR}/
+    - echo "Running load tests for staging environment..."
+    - mkdir -p ../../${TEST_RESULTS_DIR}
+    - k6 run --out json=../../${TEST_RESULTS_DIR}/load-results.json tests/load-test.js -e ENVIRONMENT=${ENVIRONMENT} -e TARGET_URL=${TARGET_URL}
+    - echo "Checking if results file was created:"
+    - ls -la ../../${TEST_RESULTS_DIR}/
   timeout: 30m
   rules:
     - if: $CI_COMMIT_TAG =~ /-performance-test$/
@@ -176,12 +176,11 @@ load-test:
 stress-test:
   extends: .performance-test-base
   script:
-    - |
-      echo "Running stress tests for staging environment..."
-      mkdir -p ../../${TEST_RESULTS_DIR}
-      k6 run --out json=../../${TEST_RESULTS_DIR}/stress-results.json tests/stress-test.js -e ENVIRONMENT=${ENVIRONMENT} -e TARGET_URL=${TARGET_URL}
-      echo "Checking if results file was created:"
-      ls -la ../../${TEST_RESULTS_DIR}/
+    - echo "Running stress tests for staging environment..."
+    - mkdir -p ../../${TEST_RESULTS_DIR}
+    - k6 run --out json=../../${TEST_RESULTS_DIR}/stress-results.json tests/stress-test.js -e ENVIRONMENT=${ENVIRONMENT} -e TARGET_URL=${TARGET_URL}
+    - echo "Checking if results file was created:"
+    - ls -la ../../${TEST_RESULTS_DIR}/
   timeout: 45m
   allow_failure: true
   rules:
