@@ -3,7 +3,7 @@ export const config = {
   // Base URLs for different environments
   baseUrls: {
     local: "http://localhost:58080",
-    staging: "https://api-sapogo.deploy.io.vn",
+    staging: "https://staging-api-sapogo.deploy.io.vn",
     production: "https://api-sapogo.deploy.io.vn",
   },
 
@@ -133,10 +133,10 @@ export const config = {
       sustainTime: "5m",
     },
     staging: {
-      maxUsers: 300, 
-      stressMaxUsers: 500, 
-      rampUpTime: "3m", 
-      sustainTime: "10m", 
+      maxUsers: 300,
+      stressMaxUsers: 500,
+      rampUpTime: "3m",
+      sustainTime: "10m",
     },
     production: {
       maxUsers: 500, // Production-level load
