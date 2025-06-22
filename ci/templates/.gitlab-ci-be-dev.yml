@@ -400,7 +400,7 @@ deploy-dev:
 generate-sbom-files:
   stage: push-artifacts
   extends:
-  - .prepare-vars
+  - .docker-login-image
   - .env-dev
   needs:
   - job: deploy-dev

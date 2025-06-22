@@ -368,7 +368,9 @@ deploy-dev:
 ########################################################
 generate-sbom-files:
   stage: push-artifacts
-  extends: .docker-login-image
+  extends: 
+  - .docker-login-image
+  - .env-dev
   needs:
   - job: deploy-dev
     optional: true
