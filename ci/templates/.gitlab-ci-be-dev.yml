@@ -374,7 +374,7 @@ deploy-dev:
   - apk add --no-cache curl yq
   - BRANCH_NAME=$(echo "$CI_COMMIT_TAG" | awk -F'-' '{for(i=2;i<NF;i++) printf $i (i<NF-1?"-":""); print ""}')
   - TAG_NAME=$(echo "$CI_COMMIT_TAG" | awk -F'-' '{print $1}')
-  - IMAGE_TAG="${HARBOR_URL}/${HARBOR_REPO}/${BRANCH_NAME}:${CI_COMMIT_SHORT_SHA}-${TAG_NAME}"
+  - IMAGE_TAG="${CI_COMMIT_SHORT_SHA}-${TAG_NAME}"
   script:
   - |
     git clone https://${GITHUB_TOKEN}@github.com/${GITHUB_USERNAME}/${HELM_REPO}.git
