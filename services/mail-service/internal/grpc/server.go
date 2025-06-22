@@ -242,7 +242,7 @@ func (s *MailServer) handleRegistrationEmail(email string, data map[string]strin
 		FromName: data["from_name"],
 		To:       email,
 		Subject:  data["subject"],
-		Template: "register.html.gohtml",
+		Template: "welcome.html.gohtml",
 		Data:     dataInterface,
 	}
 
