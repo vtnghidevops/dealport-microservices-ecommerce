@@ -1,6 +1,6 @@
 stages:
   - build-and-push-image
-  - deploy-staging
+  - deploy-prod
 
 
 variables:
