@@ -86,10 +86,11 @@ deploy-prod:
     git clone https://${GITHUB_TOKEN}@github.com/${GITHUB_USERNAME}/${HELM_REPO}.git
     cd ${HELM_REPO}
 
-    yq -i ".$BRANCH_NAME.image.tag = \"${CI_COMMIT_TAG}-${CI_COMMIT_SHORT_SHA}\"" ./prod-values.yaml
+    TAG_NAME=$(echo "$CI_COMMIT_TAG" | awk -F'-' -v sha="$CI_COMMIT_SHORT_SHA" '{print sha "-" $1 "-" $NF}')
+    yq -i ".$BRANCH_NAME.image.tag = \"${TAG_NAME}\"" ./prod-values.yaml
 
     git add .
-    git commit -m "feat(staging): update images tag:${CI_COMMIT_TAG}-${CI_COMMIT_SHORT_SHA}"
+    git commit -m "feat(prod): update images tag:${TAG_NAME}"
     git push https://${GITHUB_TOKEN}@github.com/${GITHUB_USERNAME}/${HELM_REPO}.git main
   tags:
   - k8s-shell-runner
