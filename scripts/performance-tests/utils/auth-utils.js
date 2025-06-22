@@ -116,7 +116,7 @@ export function setupTestUser(userData = {}, options = {}) {
         try {
           const data = JSON.parse(r.body);
           return data.data && data.data.access_token;
-        } catch {
+        } catch (error) {
           return false;
         }
       },

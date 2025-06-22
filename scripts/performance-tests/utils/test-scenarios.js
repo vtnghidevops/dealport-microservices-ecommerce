@@ -414,7 +414,7 @@ export function authenticationFlow(
       try {
         const data = JSON.parse(r.body);
         return data.data && data.data.access_token;
-      } catch {
+      } catch (error) {
         return false;
       }
     },
