@@ -282,7 +282,7 @@ const SearchBar: React.FC = () => {
               return (
                 <div className="p-6 text-center text-gray-500">
                   <div className="flex justify-center mb-3">
-                    <RiEmotionSadLine className="w-8 h-8 text-gray-400" />
+                    <RiEmotionSadLine className="w-[2rem] h-[2rem] text-gray-400" />
                   </div>
                   <p className="font-medium">
                     No products found for "{searchQuery}"
@@ -299,7 +299,7 @@ const SearchBar: React.FC = () => {
               <>
                 <div className="p-3 border-b border-gray-100 bg-yellow-50">
                   <span className="text-sm font-medium text-yellow-800 flex items-center gap-2">
-                    <BiTrendingUp className="w-4 h-4" />
+                    <BiTrendingUp className="w-5 h-5" />
                     Trending Products
                   </span>
                 </div>
@@ -316,7 +316,7 @@ const SearchBar: React.FC = () => {
                             product.imageUrl || "/images/common/placeholder.jpg"
                           }
                           alt={product.name}
-                          className="w-12 h-12 object-cover rounded-lg border border-gray-200"
+                          className="w-[2rem] h-[2rem] object-cover rounded-lg border border-gray-200"
                           onError={(e) => {
                             (e.target as HTMLImageElement).src =
                               "/images/common/placeholder.jpg";
