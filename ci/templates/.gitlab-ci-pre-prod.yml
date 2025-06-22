@@ -229,7 +229,7 @@ stress-test:
 #     echo "Artifact location: myminio/${MINIO_BUCKET}/${BRANCH_NAME}/${ARTIFACT_DIR}"
 #   artifacts:
 #     paths:
-#     - *_pre-prod_*
+#     - "*_pre-prod_*"
 #     expire_in: 1 day
 #   tags:
 #   - k8s-shell-runner

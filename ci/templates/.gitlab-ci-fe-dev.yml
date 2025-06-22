@@ -50,7 +50,7 @@ variables:
   services:
   - ${DOCKER_IMAGE}
   before_script:
-  - echo "$HARBOR_PASSWD" | docker login $HARBOR_URL -u 'robot$'"$HARBOR_USERNAME" --password-stdin  
+  - echo "$HARBOR_PASSWD" | docker login $HARBOR_URL -u 'robot$'"$HARBOR_USERNAME" --password-stdin
   - BRANCH_NAME=$(echo "$CI_COMMIT_TAG" | awk -F'-' '{for(i=2;i<NF;i++) printf $i (i<NF-1?"-":""); print ""}')
   - TAG_NAME=$(echo "$CI_COMMIT_TAG" | awk -F'-' -v sha="$CI_COMMIT_SHORT_SHA" '{print sha "-" $1 "-" $NF}')
   - IMAGE_TAG="${HARBOR_URL}/${HARBOR_REPO}/${BRANCH_NAME}:${TAG_NAME}"
@@ -61,7 +61,7 @@ variables:
   - TAG_NAME=$(echo "$CI_COMMIT_TAG" | awk -F'-' -v sha="$CI_COMMIT_SHORT_SHA" '{print sha "-" $1 "-" $NF}')
   - IMAGE_TAG="${HARBOR_URL}/${HARBOR_REPO}/${BRANCH_NAME}:${TAG_NAME}"
 
-.env-dev: 
+.env-dev:
   environment:
     name: dev
     url: ${DEV_URL}
@@ -108,9 +108,9 @@ gitleaks-secret-scan:
   - k8s-shell-runner
   allow_failure: true
   rules:
-    - if: $CI_COMMIT_TAG =~ /-dev$/
-      when: on_success
-    - allow_failure: true
+  - if: $CI_COMMIT_TAG =~ /-dev$/
+    when: on_success
+  - allow_failure: true
 
 trivyfs-code-security-scan:
   stage: scan-code
@@ -135,9 +135,9 @@ trivyfs-code-security-scan:
   - k8s-shell-runner
   allow_failure: true
   rules:
-    - if: $CI_COMMIT_TAG =~ /-dev$/
-      when: on_success
-    - allow_failure: true
+  - if: $CI_COMMIT_TAG =~ /-dev$/
+    when: on_success
+  - allow_failure: true
 
 snyk-scan:
   stage: scan-code
@@ -151,23 +151,23 @@ snyk-scan:
   - |
     echo "=== Running Snyk Security Scan ==="
     mkdir -p ${SNYK_FOLDER}
-    
+
     echo "Scanning npm dependencies..."
     npm install
     snyk test --severity-threshold=high --json-file-output=deps.json || echo "Dependencies scan completed with vulnerabilities"
-    
+
     # Code scan
     echo "Scanning source code..."
     snyk code test --severity-threshold=high --json-file-output=code.json || echo "Code scan completed with vulnerabilities"
-    
+
     # Generate HTML report
     echo "Generating HTML report..."
     echo "Files in current directory:"
     ls -la *.json 2>/dev/null || echo "No JSON files found"
-    
+
     echo "<html><body><h1>Snyk Security Report</h1>" > "${SNYK_REPORT_FILENAME}"
     echo "<p>Generated: $(date)</p>" >> "${SNYK_REPORT_FILENAME}"
-    
+
     if [ -f "deps.json" ]; then
       echo "Converting deps.json to HTML..."
       snyk-to-html -i deps.json -o deps.html || echo "Warning: Failed to convert deps.json to HTML"
@@ -181,7 +181,7 @@ snyk-scan:
     else
       echo "<h2>Dependencies</h2><p>No deps.json found</p>" >> "${SNYK_REPORT_FILENAME}"
     fi
-    
+
     if [ -f "code.json" ]; then
       echo "Converting code.json to HTML..."
       snyk-to-html -i code.json -o code.html || echo "Warning: Failed to convert code.json to HTML"
@@ -195,10 +195,10 @@ snyk-scan:
     else
       echo "<h2>Source Code</h2><p>No code.json found</p>" >> "${SNYK_REPORT_FILENAME}"
     fi
-    
+
     echo "</body></html>" >> "${SNYK_REPORT_FILENAME}"
     echo "Report generated: ${SNYK_REPORT_FILENAME}"
-    
+
     # Verify report was created
     if [ -f "${SNYK_REPORT_FILENAME}" ]; then
       echo "HTML report successfully created at: ${SNYK_REPORT_FILENAME}"
@@ -216,9 +216,8 @@ snyk-scan:
   - k8s-shell-runner
   allow_failure: true
   rules:
-    - if: $CI_COMMIT_TAG =~ /-dev$/
-      when: on_success
-
+  - if: $CI_COMMIT_TAG =~ /-dev$/
+    when: on_success
 
 sonarqube-code-quality-scan:
   stage: scan-code
@@ -228,81 +227,80 @@ sonarqube-code-quality-scan:
     entrypoint: [ "" ]
   variables:
     SONAR_USER_HOME: ${SONAR_USER_HOME}
-    GIT_DEPTH: "0" 
+    GIT_DEPTH: "0"
   cache:
     policy: pull-push
     key: "sonar-cache-${CI_PROJECT_NAME}"
     paths:
-      - "${SONAR_USER_HOME}/cache"
-      - ".sonar/"
+    - "${SONAR_USER_HOME}/cache"
+    - ".sonar/"
   before_script:
-    - mkdir -p "${SONAR_USER_HOME}/cache"
-    - ls -la "${SONAR_USER_HOME}/" || echo "SONAR_USER_HOME directory not found"
+  - mkdir -p "${SONAR_USER_HOME}/cache"
+  - ls -la "${SONAR_USER_HOME}/" || echo "SONAR_USER_HOME directory not found"
   script:
-    - echo "Running SonarQube analysis..."
-    - sonar-scanner -Dsonar.host.url="${SONAR_HOST_URL}" -X || echo "SonarQube analysis completed with findings"
+  - echo "Running SonarQube analysis..."
+  - sonar-scanner -Dsonar.host.url="${SONAR_HOST_URL}" -X || echo "SonarQube analysis completed with findings"
   allow_failure: true
   tags:
   - k8s-shell-runner
   rules:
-    - if: $CI_COMMIT_TAG =~ /-dev$/
-      when: on_success
-
+  - if: $CI_COMMIT_TAG =~ /-dev$/
+    when: on_success
 
 ########################################################
 #### Stage 3: build and push images
 ########################################################
 build-and-push-image:
   stage: build-and-push-image
-  extends: 
+  extends:
   - .docker-login-image
   - .env-dev
   variables:
     GIT_STRATEGY: clone
-    VITE_PUBLIC_BROKER_API_URL: ${DEV_API_URL} 
+    VITE_PUBLIC_BROKER_API_URL: ${DEV_API_URL}
   script:
-    - |
-      # Build image
-      echo "VITE_PUBLIC_BROKER_API_URL: ${VITE_PUBLIC_BROKER_API_URL}"
-      if [ "$BRANCH_NAME" == "frontend" ]; then
-        echo "Building frontend Docker images with environment variables..."
-        docker build \
-          --build-arg VITE_PUBLIC_BROKER_API_URL="${VITE_PUBLIC_BROKER_API_URL}" \
-          -t $IMAGE_TAG . 
-      else
-        echo "Building ${BRANCH_NAME} Docker images..."
-        docker build -t $IMAGE_TAG .
-      fi
-      
-      # Push image immediately after build
-      echo "Pushing image to ${IMAGE_TAG}"
-      docker push ${IMAGE_TAG}
-      
-      echo "Build and push completed successfully!"
+  - |
+    # Build image
+    echo "VITE_PUBLIC_BROKER_API_URL: ${VITE_PUBLIC_BROKER_API_URL}"
+    if [ "$BRANCH_NAME" == "frontend" ]; then
+      echo "Building frontend Docker images with environment variables..."
+      docker build \
+        --build-arg VITE_PUBLIC_BROKER_API_URL="${VITE_PUBLIC_BROKER_API_URL}" \
+        -t $IMAGE_TAG . 
+    else
+      echo "Building ${BRANCH_NAME} Docker images..."
+      docker build -t $IMAGE_TAG .
+    fi
+
+    # Push image immediately after build
+    echo "Pushing image to ${IMAGE_TAG}"
+    docker push ${IMAGE_TAG}
+
+    echo "Build and push completed successfully!"
   tags:
-    - k8s-image-runner
+  - k8s-image-runner
   rules:
-    - if: $CI_COMMIT_TAG =~ /-dev$/
-      when: on_success
+  - if: $CI_COMMIT_TAG =~ /-dev$/
+    when: on_success
 
 ########################################################
 #### Stage 4: Scan image with trivy image
 ########################################################
 trivy-image-security-scan:
   stage: scan-image
-  extends: 
-    - .docker-login-image
-    - .env-dev
+  extends:
+  - .docker-login-image
+  - .env-dev
   variables:
     GIT_STRATEGY: none
   script:
   - |
     echo "Scanning image: $IMAGE_TAG"
     mkdir -p ${TRIVY_IMG_FOLDER}
-    
+
     # Download HTML template to host first using wget
     wget -q -O ${TRIVY_IMG_FOLDER}/html.tpl https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/html.tpl || echo "Failed to download template, will use default"
-    
+
     # Run Trivy scan with mounted volumes
     docker run --rm \
       -v /var/run/docker.sock:/var/run/docker.sock \
@@ -316,10 +314,10 @@ trivy-image-security-scan:
       --template "@/output/html.tpl" \
       --output /output/trivy-report.html \
       ${IMAGE_TAG} || echo "Scan completed with findings"
-    
+
     # Move report to expected filename
     mv ${TRIVY_IMG_FOLDER}/trivy-report.html "${TRIVY_IMG_REPORT_FILENAME}" || echo "Report file already in place"
-    
+
     echo "Scan completed with findings"
   artifacts:
     paths:
@@ -331,16 +329,16 @@ trivy-image-security-scan:
   - k8s-image-runner
   allow_failure: true
   rules:
-    - if: $CI_COMMIT_TAG =~ /-dev$/
-      when: on_success
+  - if: $CI_COMMIT_TAG =~ /-dev$/
+    when: on_success
 
 # ########################################################
 # #### Stage 5: Deploy to dev environment
 # ########################################################
 deploy-dev:
   stage: deploy-dev
-  extends: 
-    - .env-dev
+  extends:
+  - .env-dev
   variables:
     GIT_STRATEGY: none
   before_script:
@@ -362,8 +360,8 @@ deploy-dev:
   tags:
   - k8s-shell-runner
   rules:
-    - if: $CI_COMMIT_TAG =~ /-dev$/
-      when: on_success
+  - if: $CI_COMMIT_TAG =~ /-dev$/
+    when: on_success
 
 ########################################################
 #### Stage 10: Push artifacts to MinIO
@@ -388,8 +386,8 @@ generate-sbom-files:
   tags:
   - k8s-image-runner
   rules:
-    - if: $CI_COMMIT_TAG =~ /-dev$/
-      when: manual
+  - if: $CI_COMMIT_TAG =~ /-dev$/
+    when: manual
 
 upload_to_minio:
   image: ${MINIO_IMAGE}
@@ -460,15 +458,15 @@ upload_to_minio:
     echo "Uploading to MinIO bucket: ${MINIO_BUCKET}..."
     mc alias set myminio "${MINIO_URL}" "${MINIO_ACCESS_KEY}" "${MINIO_SECRET_KEY}"
     mc mirror "${ARTIFACT_DIR}" myminio/"${MINIO_BUCKET}"/"${BRANCH_NAME}"/"${ARTIFACT_DIR}"
-    
+
     echo "Upload completed successfully!"
     echo "Artifact location: myminio/${MINIO_BUCKET}/${BRANCH_NAME}/${ARTIFACT_DIR}"
   artifacts:
     paths:
-    - *_frontend_*
+    - "*frontend_*"
     expire_in: 1 day
   tags:
   - k8s-shell-runner
   rules:
-    - if: $CI_COMMIT_TAG =~ /-dev$/
-      when: manual
+  - if: $CI_COMMIT_TAG =~ /-dev$/
+    when: manual
