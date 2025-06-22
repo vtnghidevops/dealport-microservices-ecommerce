@@ -82,7 +82,11 @@ export function setupTestUser(userData = {}, options = {}) {
         console.log(
           `Registration failed for ${user.email}: ${
             registerResponse.status
-          } - ${registerResponse.body?.substring(0, 100)}`
+          } - ${
+            registerResponse.body
+              ? registerResponse.body.substring(0, 100)
+              : "No response body"
+          }`
         );
       }
       return null;
@@ -135,9 +139,11 @@ export function setupTestUser(userData = {}, options = {}) {
     } else {
       if (!setupMode) {
         console.log(
-          `Verification failed for ${user.email}: ${
-            verifyResponse.status
-          } - ${verifyResponse.body?.substring(0, 100)}`
+          `Verification failed for ${user.email}: ${verifyResponse.status} - ${
+            verifyResponse.body
+              ? verifyResponse.body.substring(0, 100)
+              : "No response body"
+          }`
         );
       }
       return null;
