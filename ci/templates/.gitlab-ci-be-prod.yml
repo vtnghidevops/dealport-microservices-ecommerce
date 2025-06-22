@@ -32,7 +32,8 @@ deploy-prod:
   before_script:
   - git config --global user.email "${GITHUB_EMAIL}"
   - git config --global user.name "${GITHUB_USERNAME}"
-  - apk add --no-cache curl yq
+  - wget https://github.com/mikefarah/yq/releases/download/v4.44.1/yq_linux_amd64 -O /usr/bin/yq
+  - chmod +x /usr/bin/yq
   script:
   - |
     git clone https://${GITHUB_TOKEN}@github.com/${GITHUB_USERNAME}/${HELM_REPO}.git
