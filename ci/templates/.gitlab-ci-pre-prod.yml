@@ -126,7 +126,7 @@ smoke-test:
   extends: .performance-test-base
   script:
     - echo "Running smoke tests for staging environment..."
-    - RESULTS_PATH="/builds/ecommerce-project-devops/ecommerce-microservices/${TEST_RESULTS_DIR}"
+    - RESULTS_PATH="/builds/ecommerce-project-devops/ecommerce-microservices/${TEST_RESULTS_DIR}" # Docker excutor Path
     - mkdir -p "${RESULTS_PATH}"
     - k6 run --out json=./smoke-results.json tests/smoke-test.js -e ENVIRONMENT=${ENVIRONMENT} -e TARGET_URL=${TARGET_URL}
     - cp ./smoke-results.json "${RESULTS_PATH}/"
@@ -140,10 +140,11 @@ load-test:
   extends: .performance-test-base
   script:
     - echo "Running load tests for staging environment..."
-    - mkdir -p ../../${TEST_RESULTS_DIR}
-    - k6 run --out json=../../${TEST_RESULTS_DIR}/load-results.json tests/load-test.js -e ENVIRONMENT=${ENVIRONMENT} -e TARGET_URL=${TARGET_URL}
-    - echo "Checking if results file was created:"
-    - ls -la ../../${TEST_RESULTS_DIR}/
+    - RESULTS_PATH="/builds/ecommerce-project-devops/ecommerce-microservices/${TEST_RESULTS_DIR}"
+    - mkdir -p "${RESULTS_PATH}"
+    - k6 run --out json=./load-results.json tests/load-test.js -e ENVIRONMENT=${ENVIRONMENT} -e TARGET_URL=${TARGET_URL}
+    - cp ./load-results.json "${RESULTS_PATH}/"
+    - echo "Results saved to ${RESULTS_PATH}/load-results.json"
   timeout: 30m
   rules:
     - if: $CI_COMMIT_TAG =~ /-performance-test$/
@@ -154,10 +155,11 @@ stress-test:
   extends: .performance-test-base
   script:
     - echo "Running stress tests for staging environment..."
-    - mkdir -p ../../${TEST_RESULTS_DIR}
-    - k6 run --out json=../../${TEST_RESULTS_DIR}/stress-results.json tests/stress-test.js -e ENVIRONMENT=${ENVIRONMENT} -e TARGET_URL=${TARGET_URL}
-    - echo "Checking if results file was created:"
-    - ls -la ../../${TEST_RESULTS_DIR}/
+    - RESULTS_PATH="/builds/ecommerce-project-devops/ecommerce-microservices/${TEST_RESULTS_DIR}"
+    - mkdir -p "${RESULTS_PATH}"
+    - k6 run --out json=./stress-results.json tests/stress-test.js -e ENVIRONMENT=${ENVIRONMENT} -e TARGET_URL=${TARGET_URL}
+    - cp ./stress-results.json "${RESULTS_PATH}/"
+    - echo "Results saved to ${RESULTS_PATH}/stress-results.json"
   timeout: 45m
   allow_failure: true
   rules:
