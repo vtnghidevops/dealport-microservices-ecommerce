@@ -175,7 +175,6 @@ stress-test:
 #   - job: owasp-zap-scan
 #     artifacts: true
 #     optional: true
-  
 #   variables:
 #     GIT_STRATEGY: none
 #   script:
