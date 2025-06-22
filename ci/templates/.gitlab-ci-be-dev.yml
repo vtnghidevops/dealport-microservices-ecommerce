@@ -13,7 +13,7 @@ variables:
   GO_IMAGE: "golang:1.24.3-alpine3.21"
 
   # MinIO Configuration
-  MINIO_IMAGE: "minio/mc:latest"
+  MINIO_IMAGE: "bitnami/minio-client:latest"
 
   # Security Scanning Tools
   TRIVY_IMAGE: "ghcr.io/aquasecurity/trivy:latest" # Use the official Trivy image

@@ -17,7 +17,7 @@ variables:
 
 
   # MinIO Configuration
-  MINIO_IMAGE: "minio/mc:latest"
+  MINIO_IMAGE: "bitnami/minio-client:latest"
 
 .env-staging: 
   environment:
