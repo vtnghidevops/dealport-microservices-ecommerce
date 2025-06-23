@@ -128,9 +128,9 @@ smoke-test:
     - echo "Running smoke tests for staging environment..."
     - RESULTS_PATH="/builds/ecommerce-project-devops/ecommerce-microservices/${TEST_RESULTS_DIR}" # Docker excutor Path
     - mkdir -p "${RESULTS_PATH}"
-    - k6 run --out json=./smoke-results.json tests/smoke-test.js -e ENVIRONMENT=${ENVIRONMENT} -e TARGET_URL=${TARGET_URL}
-    - cp ./smoke-results.json "${RESULTS_PATH}/"
-    - echo "Results saved to ${RESULTS_PATH}/smoke-results.json"
+    - k6 run --summary-trend-stats="avg,min,med,max,p(90),p(95)" tests/smoke-test.js -e ENVIRONMENT=${ENVIRONMENT} -e TARGET_URL=${TARGET_URL} > "./smoke-summary.txt" 2>&1
+    - cp ./smoke-summary.txt "${RESULTS_PATH}/"
+    - echo "Summary saved to ${RESULTS_PATH}/smoke-summary.txt"
   rules:
     - if: $CI_COMMIT_TAG =~ /-performance-test$/
       when: manual
@@ -142,9 +142,9 @@ load-test:
     - echo "Running load tests for staging environment..."
     - RESULTS_PATH="/builds/ecommerce-project-devops/ecommerce-microservices/${TEST_RESULTS_DIR}"
     - mkdir -p "${RESULTS_PATH}"
-    - k6 run --out json=./load-results.json tests/load-test.js -e ENVIRONMENT=${ENVIRONMENT} -e TARGET_URL=${TARGET_URL}
-    - cp ./load-results.json "${RESULTS_PATH}/"
-    - echo "Results saved to ${RESULTS_PATH}/load-results.json"
+    - k6 run --summary-trend-stats="avg,min,med,max,p(90),p(95)" tests/load-test.js -e ENVIRONMENT=${ENVIRONMENT} -e TARGET_URL=${TARGET_URL} > "./load-summary.txt" 2>&1
+    - cp ./load-summary.txt "${RESULTS_PATH}/"
+    - echo "Summary saved to ${RESULTS_PATH}/load-summary.txt"
   timeout: 30m
   rules:
     - if: $CI_COMMIT_TAG =~ /-performance-test$/
@@ -157,9 +157,9 @@ stress-test:
     - echo "Running stress tests for staging environment..."
     - RESULTS_PATH="/builds/ecommerce-project-devops/ecommerce-microservices/${TEST_RESULTS_DIR}"
     - mkdir -p "${RESULTS_PATH}"
-    - k6 run --out json=./stress-results.json tests/stress-test.js -e ENVIRONMENT=${ENVIRONMENT} -e TARGET_URL=${TARGET_URL}
-    - cp ./stress-results.json "${RESULTS_PATH}/"
-    - echo "Results saved to ${RESULTS_PATH}/stress-results.json"
+    - k6 run --summary-trend-stats="avg,min,med,max,p(90),p(95)" tests/stress-test.js -e ENVIRONMENT=${ENVIRONMENT} -e TARGET_URL=${TARGET_URL} > "./stress-summary.txt" 2>&1
+    - cp ./stress-summary.txt "${RESULTS_PATH}/"
+    - echo "Summary saved to ${RESULTS_PATH}/stress-summary.txt"
   timeout: 45m
   allow_failure: true
   rules:
