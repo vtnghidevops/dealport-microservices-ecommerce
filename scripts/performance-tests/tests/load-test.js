@@ -31,7 +31,8 @@ import {
   viewHomepageContent,
 } from "../utils/test-scenarios.js";
 import { getAuthHeaders } from "../utils/auth-utils.js";
-import { http, check } from "k6";
+import http from "k6/http";
+import { check } from "k6";
 
 // Get environment-specific configuration
 const loadPattern = getLoadPattern();
@@ -362,32 +363,35 @@ export default function (data) {
     }
 
     // === ENHANCED LOAD TEST SCENARIOS ===
+    // Create user session object for scenario functions
+    const userSession = userToken ? { token: userToken, id: currentVUs } : null;
+
     // Add realistic load test behavior patterns on top of core endpoint testing
     if (userBehavior < 0.25) {
       // 25% - Enhanced browsing with multiple product views
       console.log(`VU${currentVUs}: Enhanced browsing pattern`);
-      enhancedShopping(userToken);
+      enhancedShopping(userSession);
       sleep(Math.random() * 2 + 1);
 
       // View homepage content
-      viewHomepageContent(userToken);
+      viewHomepageContent(userSession);
     } else if (userBehavior < 0.5) {
       // 25% - Search and filter intensive usage
       console.log(`VU${currentVUs}: Search intensive pattern`);
-      searchAndFilter(userToken);
+      searchAndFilter(userSession);
       sleep(Math.random() * 1 + 0.5);
 
       // Explore promotions
-      explorePromotions(userToken);
+      explorePromotions(userSession);
     } else if (userBehavior < 0.8) {
       // 30% - Cart and checkout operations
-      if (userToken) {
+      if (userSession) {
         console.log(`VU${currentVUs}: Cart operations pattern`);
-        cartOperations(userToken);
+        cartOperations(userSession);
         sleep(Math.random() * 1 + 0.5);
 
         // User profile operations
-        userProfileOperations(userToken);
+        userProfileOperations(userSession);
       } else {
         console.log(`VU${currentVUs}: Guest browsing pattern`);
         browseProducts();
@@ -396,13 +400,13 @@ export default function (data) {
       }
     } else {
       // 20% - Complete purchase journey
-      if (userToken) {
+      if (userSession) {
         console.log(`VU${currentVUs}: Complete purchase journey`);
-        completeUserJourney(userToken);
+        completeUserJourney(userSession);
         sleep(Math.random() * 2 + 1);
 
         // Payment flow
-        paymentFlow(userToken);
+        paymentFlow(userSession);
       } else {
         console.log(`VU${currentVUs}: Guest complete journey`);
         completeUserJourney();

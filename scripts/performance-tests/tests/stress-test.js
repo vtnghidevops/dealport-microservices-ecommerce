@@ -10,7 +10,8 @@
 
 import { sleep } from "k6";
 import { config, getLoadPattern } from "../config/test-config.js";
-import { setupTestUser, getAuthHeaders } from "../utils/auth-utils.js";
+import { setupMultipleTestUsers } from "../utils/auth-utils.js";
+import { getAuthHeaders } from "../utils/auth-utils.js";
 import http from "k6/http";
 import { check } from "k6";
 import {
@@ -173,6 +174,9 @@ export default function (data) {
 
   // More aggressive user behavior patterns for stress testing
   const userBehavior = Math.random();
+
+  // Create user session object for scenario functions
+  const userSession = userToken ? { token: userToken, id: currentVUs } : null;
 
   try {
     // === AUTHENTICATION FLOW TESTING (if no token, test auth process) ===
@@ -484,23 +488,23 @@ export default function (data) {
       // Spike phase: Very aggressive, rapid-fire requests
       if (userBehavior < 0.4) {
         console.log(`VU${currentVUs}: SPIKE - Rapid authenticated operations`);
-        if (userToken) {
+        if (userSession) {
           // Fast multiple cart operations
-          cartOperations(userToken);
-          cartOperations(userToken); // Double call for stress
+          cartOperations(userSession);
+          cartOperations(userSession); // Double call for stress
         }
         // Minimal sleep for maximum stress
         sleep(Math.random() * 0.5);
       } else if (userBehavior < 0.8) {
         console.log(`VU${currentVUs}: SPIKE - Rapid browsing`);
-        browseProducts(userToken);
-        searchAndFilter(userToken);
+        browseProducts(userSession);
+        searchAndFilter(userSession);
         sleep(Math.random() * 0.5);
       } else {
         console.log(`VU${currentVUs}: SPIKE - Rapid checkout attempts`);
-        checkoutProcess(userToken);
-        if (userToken) {
-          paymentFlow(userToken);
+        checkoutProcess(userSession);
+        if (userSession) {
+          paymentFlow(userSession);
         }
         sleep(Math.random() * 0.3);
       }
@@ -508,14 +512,14 @@ export default function (data) {
       // Extreme phase: High volume realistic operations
       if (userBehavior < 0.3) {
         console.log(`VU${currentVUs}: EXTREME - Intensive shopping`);
-        enhancedShopping(userToken);
-        explorePromotions(userToken);
+        enhancedShopping(userSession);
+        explorePromotions(userSession);
         sleep(Math.random() * 1);
       } else if (userBehavior < 0.7) {
         console.log(`VU${currentVUs}: EXTREME - Heavy cart usage`);
-        if (userToken) {
-          cartOperations(userToken);
-          userProfileOperations(userToken);
+        if (userSession) {
+          cartOperations(userSession);
+          userProfileOperations(userSession);
         } else {
           browseProducts();
           searchAndFilter();
@@ -523,26 +527,26 @@ export default function (data) {
         sleep(Math.random() * 1);
       } else {
         console.log(`VU${currentVUs}: EXTREME - Complete journey stress`);
-        completeUserJourney(userToken);
+        completeUserJourney(userSession);
         sleep(Math.random() * 1.5);
       }
     } else if (stressLevel === "stress") {
       // Stress phase: Sustained high load
       if (userBehavior < 0.25) {
         console.log(`VU${currentVUs}: STRESS - Sustained browsing`);
-        viewHomepageContent(userToken);
-        enhancedShopping(userToken);
+        viewHomepageContent(userSession);
+        enhancedShopping(userSession);
         sleep(Math.random() * 1.5);
       } else if (userBehavior < 0.5) {
         console.log(`VU${currentVUs}: STRESS - Search intensive`);
-        searchAndFilter(userToken);
-        browseProducts(userToken);
+        searchAndFilter(userSession);
+        browseProducts(userSession);
         sleep(Math.random() * 1.5);
       } else if (userBehavior < 0.8) {
         console.log(`VU${currentVUs}: STRESS - Cart operations`);
-        if (userToken) {
-          cartOperations(userToken);
-          userProfileOperations(userToken);
+        if (userSession) {
+          cartOperations(userSession);
+          userProfileOperations(userSession);
         } else {
           browseProducts();
           categoryManagement();
@@ -550,9 +554,9 @@ export default function (data) {
         sleep(Math.random() * 1.5);
       } else {
         console.log(`VU${currentVUs}: STRESS - Purchase flow`);
-        if (userToken) {
-          completeUserJourney(userToken);
-          paymentFlow(userToken);
+        if (userSession) {
+          completeUserJourney(userSession);
+          paymentFlow(userSession);
         } else {
           completeUserJourney();
           checkoutProcess();
@@ -563,23 +567,23 @@ export default function (data) {
       // Normal phase: Regular load test behavior
       if (userBehavior < 0.25) {
         console.log(`VU${currentVUs}: NORMAL - Regular browsing`);
-        browseProducts(userToken);
+        browseProducts(userSession);
         sleep(Math.random() * 2);
       } else if (userBehavior < 0.5) {
         console.log(`VU${currentVUs}: NORMAL - Search and filter`);
-        searchAndFilter(userToken);
+        searchAndFilter(userSession);
         sleep(Math.random() * 2);
       } else if (userBehavior < 0.8) {
         console.log(`VU${currentVUs}: NORMAL - Cart usage`);
-        if (userToken) {
-          cartOperations(userToken);
+        if (userSession) {
+          cartOperations(userSession);
         } else {
           browseProducts();
         }
         sleep(Math.random() * 2);
       } else {
         console.log(`VU${currentVUs}: NORMAL - Complete journey`);
-        completeUserJourney(userToken);
+        completeUserJourney(userSession);
         sleep(Math.random() * 3);
       }
     }

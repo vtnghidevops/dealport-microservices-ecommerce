@@ -128,8 +128,8 @@ export function setupTestUser(userData = {}, options = {}) {
       if (!setupMode) {
         console.log(`✅ User ${user.email} setup successful with OTP bypass`);
         // Add delay for microservices sync only during runtime
-        console.log(`⏳ Waiting 3s for user sync across microservices...`);
-        sleep(3.0); // Keep this for runtime reliability
+        console.log(`⏳ Waiting 5s for user sync across microservices...`);
+        sleep(5.0); // Increased delay for better microservices sync reliability
       } else {
         // During setup, minimal delay
         sleep(shortDelay);

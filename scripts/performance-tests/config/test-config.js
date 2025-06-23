@@ -133,10 +133,10 @@ export const config = {
       sustainTime: "5m",
     },
     staging: {
-      maxUsers: 250,
-      stressMaxUsers: 400,
-      rampUpTime: "3m",
-      sustainTime: "10m",
+      maxUsers: 300, // Load test với 300 users
+      stressMaxUsers: 450, // Stress test với 450 users
+      rampUpTime: "2m",
+      sustainTime: "5m",
     },
     production: {
       maxUsers: 500, // Production-level load
@@ -169,13 +169,13 @@ export const config = {
       },
       load: {
         duration: 900, // 15 minutes
-        totalRequests: 3000,
-        virtualUsers: 200,
+        totalRequests: 5000, // Increased for 300 users
+        virtualUsers: 300,
       },
       stress: {
         duration: 1500, // 25 minutes
-        totalRequests: 8000,
-        virtualUsers: 400,
+        totalRequests: 10000, // Increased for 450 users
+        virtualUsers: 450,
       },
     },
 
