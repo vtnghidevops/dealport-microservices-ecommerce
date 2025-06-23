@@ -175,202 +175,298 @@ export default function (data) {
   const userBehavior = Math.random();
 
   try {
+    // === CORE ENDPOINTS TESTING (same as smoke test) ===
+    console.log(`VU${currentVUs}: [${stressLevel}] Testing core endpoints...`);
+
+    // 1. Categories endpoint test
+    const categoriesResponse = http.get(
+      `${config.baseUrls[config.environment]}/api/v1/categories`,
+      {
+        tags: {
+          scenario: "stress",
+          type: "categories",
+          stress_level: stressLevel,
+        },
+      }
+    );
+    check(categoriesResponse, {
+      "categories endpoint works": (r) => r.status === 200,
+    });
+
+    // 2. Products endpoint test
+    const productsResponse = http.get(
+      `${config.baseUrls[config.environment]}/api/v1/products?limit=20`,
+      {
+        tags: {
+          scenario: "stress",
+          type: "products",
+          stress_level: stressLevel,
+        },
+      }
+    );
+    check(productsResponse, {
+      "products endpoint works": (r) => r.status === 200,
+    });
+
+    // 3. Checkout validation test
+    const checkoutValidateResponse = http.post(
+      `${config.baseUrls[config.environment]}/api/v1/checkout/validate`,
+      JSON.stringify({
+        items: [
+          {
+            product_id: Math.floor(Math.random() * 20) + 1,
+            quantity: Math.floor(Math.random() * 5) + 1,
+            price: 99.99,
+          },
+        ],
+        shipping_address: {
+          street: `${Math.floor(Math.random() * 999) + 1} Stress Test Ave`,
+          city: "Stress City",
+          postal_code: `${Math.floor(Math.random() * 90000) + 10000}`,
+          country: "US",
+        },
+      }),
+      {
+        headers: { "Content-Type": "application/json" },
+        tags: {
+          scenario: "stress",
+          type: "checkout_validate",
+          stress_level: stressLevel,
+        },
+      }
+    );
+    check(checkoutValidateResponse, {
+      "checkout validation works": (r) =>
+        r.status === 200 || r.status === 400 || r.status === 422,
+    });
+
+    // 4. AUTHENTICATED ENDPOINTS (if token available)
+    if (userToken) {
+      console.log(
+        `VU${currentVUs}: [${stressLevel}] Testing authenticated endpoints...`
+      );
+
+      const authHeaders = {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${userToken}`,
+      };
+
+      // User profile test
+      const profileResponse = http.get(
+        `${config.baseUrls[config.environment]}/api/v1/users/profile`,
+        {
+          headers: authHeaders,
+          tags: {
+            scenario: "stress",
+            type: "profile",
+            stress_level: stressLevel,
+          },
+        }
+      );
+      check(profileResponse, {
+        "user profile works": (r) => r.status === 200,
+      });
+
+      // Cart access test
+      const cartResponse = http.get(
+        `${config.baseUrls[config.environment]}/api/v1/cart`,
+        {
+          headers: authHeaders,
+          tags: {
+            scenario: "stress",
+            type: "cart_get",
+            stress_level: stressLevel,
+          },
+        }
+      );
+      check(cartResponse, {
+        "cart access works": (r) => r.status === 200,
+      });
+
+      // Add to cart test (more aggressive for stress)
+      const addToCartResponse = http.post(
+        `${config.baseUrls[config.environment]}/api/v1/cart/items`,
+        JSON.stringify({
+          product_id: Math.floor(Math.random() * 50) + 1,
+          quantity: Math.floor(Math.random() * 5) + 1,
+        }),
+        {
+          headers: authHeaders,
+          tags: {
+            scenario: "stress",
+            type: "cart_add",
+            stress_level: stressLevel,
+          },
+        }
+      );
+      check(addToCartResponse, {
+        "add to cart works": (r) => r.status === 200 || r.status === 201,
+      });
+
+      // Orders access test
+      const ordersResponse = http.get(
+        `${config.baseUrls[config.environment]}/api/v1/checkout/orders`,
+        {
+          headers: authHeaders,
+          tags: {
+            scenario: "stress",
+            type: "orders",
+            stress_level: stressLevel,
+          },
+        }
+      );
+      check(ordersResponse, {
+        "orders access works": (r) => r.status === 200,
+      });
+
+      // Order creation test (more frequent in stress test)
+      if (Math.random() < 0.2) {
+        // 20% of users try to create orders (higher than load test)
+        const orderCreateResponse = http.post(
+          `${config.baseUrls[config.environment]}/api/v1/checkout/orders`,
+          JSON.stringify({
+            items: [
+              {
+                product_id: Math.floor(Math.random() * 20) + 1,
+                quantity: Math.floor(Math.random() * 3) + 1,
+                price: Math.random() * 200 + 50,
+              },
+            ],
+            shipping_address: {
+              street: `${Math.floor(Math.random() * 999) + 1} Stress Test Ave`,
+              city: "Stress City",
+              postal_code: `${Math.floor(Math.random() * 90000) + 10000}`,
+              country: "US",
+            },
+            payment_method: Math.random() < 0.5 ? "stripe" : "paypal",
+          }),
+          {
+            headers: authHeaders,
+            tags: {
+              scenario: "stress",
+              type: "order_create",
+              stress_level: stressLevel,
+            },
+          }
+        );
+        check(orderCreateResponse, {
+          "order creation works": (r) =>
+            r.status === 200 || r.status === 201 || r.status === 422,
+        });
+      }
+    }
+
+    // === STRESS-SPECIFIC BEHAVIOR PATTERNS ===
     if (stressLevel === "spike") {
       // Spike phase: Very aggressive, rapid-fire requests
       if (userBehavior < 0.4) {
         console.log(`VU${currentVUs}: SPIKE - Rapid authenticated operations`);
         if (userToken) {
-          // Fast authenticated operations
-          const headers = getAuthHeaders(userToken);
-
-          // Rapid cart operations
-          const cartResponse = http.get(
-            `${config.baseUrls[config.environment]}/api/v1/cart`,
-            { headers, tags: { scenario: "spike", type: "cart" } }
-          );
-
-          const profileResponse = http.get(
-            `${config.baseUrls[config.environment]}/api/v1/users/profile`,
-            { headers, tags: { scenario: "spike", type: "profile" } }
-          );
-
-          check(cartResponse, { "spike cart access": (r) => r.status === 200 });
-          check(profileResponse, {
-            "spike profile access": (r) => r.status === 200,
-          });
-        } else {
-          browseProducts();
-          browseProducts(); // Double requests
-        }
-        sleep(Math.random() * 0.3 + 0.1);
-      } else if (userBehavior < 0.7) {
-        console.log(`VU${currentVUs}: SPIKE - Cart operation burst`);
-        if (userToken) {
+          // Fast multiple cart operations
           cartOperations(userToken);
-          cartOperations(userToken); // Double operations
-        } else {
-          browseProducts();
+          cartOperations(userToken); // Double call for stress
         }
-        sleep(Math.random() * 0.5 + 0.1);
+        // Minimal sleep for maximum stress
+        sleep(Math.random() * 0.5);
+      } else if (userBehavior < 0.8) {
+        console.log(`VU${currentVUs}: SPIKE - Rapid browsing`);
+        browseProducts(userToken);
+        searchAndFilter(userToken);
+        sleep(Math.random() * 0.5);
       } else {
-        console.log(`VU${currentVUs}: SPIKE - Mixed aggressive operations`);
-        viewHomepageContent(userToken); // Quick homepage load
-        enhancedShopping(userToken); // Fast enhanced browsing
-        if (userToken && Math.random() < 0.7) {
-          userProfileOperations(userToken);
+        console.log(`VU${currentVUs}: SPIKE - Rapid checkout attempts`);
+        checkoutProcess(userToken);
+        if (userToken) {
+          paymentFlow(userToken);
         }
-        explorePromotions(userToken); // Quick promotion check
-        sleep(Math.random() * 0.2 + 0.05);
+        sleep(Math.random() * 0.3);
       }
     } else if (stressLevel === "extreme") {
-      // Extreme phase: Heavy operations with authenticated focus
+      // Extreme phase: High volume realistic operations
       if (userBehavior < 0.3) {
-        console.log(`VU${currentVUs}: EXTREME - Heavy browsing + auth`);
+        console.log(`VU${currentVUs}: EXTREME - Intensive shopping`);
         enhancedShopping(userToken);
         explorePromotions(userToken);
+        sleep(Math.random() * 1);
+      } else if (userBehavior < 0.7) {
+        console.log(`VU${currentVUs}: EXTREME - Heavy cart usage`);
         if (userToken) {
-          userProfileOperations(userToken);
-          wishlistManagement(userToken);
-        }
-        sleep(Math.random() * 0.8 + 0.2);
-      } else if (userBehavior < 0.6) {
-        console.log(`VU${currentVUs}: EXTREME - Intensive cart + checkout`);
-        if (userToken) {
-          enhancedShopping(userToken);
           cartOperations(userToken);
-          checkoutProcess(userToken);
+          userProfileOperations(userToken);
         } else {
-          browseCategoriesAndProducts();
-          checkoutProcess();
+          browseProducts();
+          searchAndFilter();
         }
-        sleep(Math.random() * 1 + 0.3);
+        sleep(Math.random() * 1);
       } else {
-        console.log(
-          `VU${currentVUs}: EXTREME - Complete authenticated journey`
-        );
-        if (userToken) {
-          completeRealUserJourney(userToken);
-        } else {
-          viewHomepageContent();
-          explorePromotions();
-          browseCategoriesAndProducts();
-        }
-        sleep(Math.random() * 1.5 + 0.5);
+        console.log(`VU${currentVUs}: EXTREME - Complete journey stress`);
+        completeUserJourney(userToken);
+        sleep(Math.random() * 1.5);
       }
     } else if (stressLevel === "stress") {
-      // Stress phase: Sustained heavy load with authentication
+      // Stress phase: Sustained high load
       if (userBehavior < 0.25) {
-        console.log(`VU${currentVUs}: STRESS - Sustained browsing + profile`);
-        enhancedShopping(userToken);
-        if (userToken) {
-          userProfileOperations(userToken);
-          wishlistManagement(userToken);
-        }
-        sleep(Math.random() * 1.2 + 0.5);
-      } else if (userBehavior < 0.5) {
-        console.log(`VU${currentVUs}: STRESS - Cart heavy operations`);
-        if (userToken) {
-          enhancedShopping(userToken);
-          cartOperations(userToken);
-          userProfileOperations(userToken);
-          cartOperations(userToken); // Multiple cart operations
-        } else {
-          browseCategoriesAndProducts();
-          explorePromotions();
-        }
-        sleep(Math.random() * 1.5 + 0.5);
-      } else if (userBehavior < 0.75) {
-        console.log(`VU${currentVUs}: STRESS - Complete journey under load`);
-        if (userToken) {
-          completeRealUserJourney(userToken);
-        } else {
-          viewHomepageContent();
-          checkoutProcess();
-        }
-        sleep(Math.random() * 2 + 0.8);
-      } else {
-        console.log(`VU${currentVUs}: STRESS - Mixed authenticated operations`);
-        enhancedShopping(userToken);
-        if (userToken) {
-          userProfileOperations(userToken);
-          if (Math.random() < 0.6) {
-            cartOperations(userToken);
-          }
-          // Add comprehensive endpoint testing under stress
-          if (Math.random() < 0.4) {
-            productManagement(userToken);
-          }
-          if (Math.random() < 0.2) {
-            authenticationFlow();
-          }
-          if (Math.random() < 0.3) {
-            wishlistManagement(userToken);
-          }
-        }
-        explorePromotions(userToken);
-        categoryManagement(userToken);
-        sleep(Math.random() * 1.3 + 0.3);
-      }
-    } else {
-      // Normal phase: Regular stress test patterns with auth
-      if (userBehavior < 0.3) {
-        console.log(`VU${currentVUs}: NORMAL - Browsing + profile pattern`);
+        console.log(`VU${currentVUs}: STRESS - Sustained browsing`);
         viewHomepageContent(userToken);
         enhancedShopping(userToken);
-        if (userToken) {
-          userProfileOperations(userToken);
-        }
-        sleep(Math.random() * 1.5 + 0.8);
-      } else if (userBehavior < 0.6) {
-        console.log(`VU${currentVUs}: NORMAL - Cart operations`);
-        if (userToken) {
-          browseCategoriesAndProducts(userToken);
-          cartOperations(userToken);
-        } else {
-          browseCategoriesAndProducts();
-        }
-        sleep(Math.random() * 2 + 1);
+        sleep(Math.random() * 1.5);
+      } else if (userBehavior < 0.5) {
+        console.log(`VU${currentVUs}: STRESS - Search intensive`);
+        searchAndFilter(userToken);
+        browseProducts(userToken);
+        sleep(Math.random() * 1.5);
       } else if (userBehavior < 0.8) {
-        console.log(`VU${currentVUs}: NORMAL - User journey`);
+        console.log(`VU${currentVUs}: STRESS - Cart operations`);
         if (userToken) {
-          completeRealUserJourney(userToken);
+          cartOperations(userToken);
+          userProfileOperations(userToken);
         } else {
-          viewHomepageContent();
+          browseProducts();
+          categoryManagement();
+        }
+        sleep(Math.random() * 1.5);
+      } else {
+        console.log(`VU${currentVUs}: STRESS - Purchase flow`);
+        if (userToken) {
+          completeUserJourney(userToken);
+          paymentFlow(userToken);
+        } else {
+          completeUserJourney();
           checkoutProcess();
         }
-        sleep(Math.random() * 2.5 + 1);
-      } else {
-        console.log(`VU${currentVUs}: NORMAL - Search + profile operations`);
-        explorePromotions(userToken);
+        sleep(Math.random() * 2);
+      }
+    } else {
+      // Normal phase: Regular load test behavior
+      if (userBehavior < 0.25) {
+        console.log(`VU${currentVUs}: NORMAL - Regular browsing`);
+        browseProducts(userToken);
+        sleep(Math.random() * 2);
+      } else if (userBehavior < 0.5) {
+        console.log(`VU${currentVUs}: NORMAL - Search and filter`);
+        searchAndFilter(userToken);
+        sleep(Math.random() * 2);
+      } else if (userBehavior < 0.8) {
+        console.log(`VU${currentVUs}: NORMAL - Cart usage`);
         if (userToken) {
-          userProfileOperations(userToken);
-          wishlistManagement(userToken);
-          enhancedShopping(userToken);
+          cartOperations(userToken);
         } else {
-          browseCategoriesAndProducts();
+          browseProducts();
         }
-        sleep(Math.random() * 1.8 + 0.7);
+        sleep(Math.random() * 2);
+      } else {
+        console.log(`VU${currentVUs}: NORMAL - Complete journey`);
+        completeUserJourney(userToken);
+        sleep(Math.random() * 3);
       }
     }
   } catch (error) {
     console.error(
-      `VU${currentVUs}: Error during ${stressLevel} stress test:`,
-      error
+      `VU${currentVUs}: [${stressLevel}] Stress test error: ${error.message}`
     );
-    // Continue execution even if there are errors - this is expected under stress
-    sleep(0.5);
+    // Shorter recovery time in stress test
+    sleep(0.1);
   }
-
-  // Minimal pause - stress testing should be aggressive
-  const stressSleep =
-    stressLevel === "spike"
-      ? 0.1
-      : stressLevel === "extreme"
-      ? 0.3
-      : stressLevel === "stress"
-      ? 0.5
-      : 0.8;
-  sleep(Math.random() * stressSleep + 0.1);
 }
 
 // Teardown function - runs once after the test

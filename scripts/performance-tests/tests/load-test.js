@@ -130,140 +130,186 @@ export default function (data) {
   const userBehavior = Math.random();
 
   try {
+    // === CORE ENDPOINTS TESTING (same as smoke test) ===
+    console.log(`VU${currentVUs}: Testing core endpoints...`);
+
+    // 1. Categories endpoint test
+    const categoriesResponse = http.get(
+      `${config.baseUrls[config.environment]}/api/v1/categories`,
+      { tags: { scenario: "load", type: "categories" } }
+    );
+    check(categoriesResponse, {
+      "categories endpoint works": (r) => r.status === 200,
+    });
+
+    // 2. Products endpoint test
+    const productsResponse = http.get(
+      `${config.baseUrls[config.environment]}/api/v1/products?limit=10`,
+      { tags: { scenario: "load", type: "products" } }
+    );
+    check(productsResponse, {
+      "products endpoint works": (r) => r.status === 200,
+    });
+
+    // 3. Checkout validation test
+    const checkoutValidateResponse = http.post(
+      `${config.baseUrls[config.environment]}/api/v1/checkout/validate`,
+      JSON.stringify({
+        items: [{ product_id: 1, quantity: 2, price: 99.99 }],
+        shipping_address: {
+          street: "123 Load Test St",
+          city: "Load City",
+          postal_code: "12345",
+          country: "US",
+        },
+      }),
+      {
+        headers: { "Content-Type": "application/json" },
+        tags: { scenario: "load", type: "checkout_validate" },
+      }
+    );
+    check(checkoutValidateResponse, {
+      "checkout validation works": (r) =>
+        r.status === 200 || r.status === 400 || r.status === 422,
+    });
+
+    // 4. AUTHENTICATED ENDPOINTS (if token available)
+    if (userToken) {
+      console.log(`VU${currentVUs}: Testing authenticated endpoints...`);
+
+      const authHeaders = {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${userToken}`,
+      };
+
+      // User profile test
+      const profileResponse = http.get(
+        `${config.baseUrls[config.environment]}/api/v1/users/profile`,
+        { headers: authHeaders, tags: { scenario: "load", type: "profile" } }
+      );
+      check(profileResponse, {
+        "user profile works": (r) => r.status === 200,
+      });
+
+      // Cart access test
+      const cartResponse = http.get(
+        `${config.baseUrls[config.environment]}/api/v1/cart`,
+        { headers: authHeaders, tags: { scenario: "load", type: "cart_get" } }
+      );
+      check(cartResponse, {
+        "cart access works": (r) => r.status === 200,
+      });
+
+      // Add to cart test
+      const addToCartResponse = http.post(
+        `${config.baseUrls[config.environment]}/api/v1/cart/items`,
+        JSON.stringify({
+          product_id: Math.floor(Math.random() * 10) + 1,
+          quantity: Math.floor(Math.random() * 3) + 1,
+        }),
+        { headers: authHeaders, tags: { scenario: "load", type: "cart_add" } }
+      );
+      check(addToCartResponse, {
+        "add to cart works": (r) => r.status === 200 || r.status === 201,
+      });
+
+      // Orders access test
+      const ordersResponse = http.get(
+        `${config.baseUrls[config.environment]}/api/v1/checkout/orders`,
+        { headers: authHeaders, tags: { scenario: "load", type: "orders" } }
+      );
+      check(ordersResponse, {
+        "orders access works": (r) => r.status === 200,
+      });
+
+      // Order creation test (realistic load test scenario)
+      if (Math.random() < 0.1) {
+        // 10% of users try to create orders
+        const orderCreateResponse = http.post(
+          `${config.baseUrls[config.environment]}/api/v1/checkout/orders`,
+          JSON.stringify({
+            items: [
+              {
+                product_id: Math.floor(Math.random() * 10) + 1,
+                quantity: 1,
+                price: 99.99,
+              },
+            ],
+            shipping_address: {
+              street: "123 Load Test St",
+              city: "Load City",
+              postal_code: "12345",
+              country: "US",
+            },
+            payment_method: "stripe",
+          }),
+          {
+            headers: authHeaders,
+            tags: { scenario: "load", type: "order_create" },
+          }
+        );
+        check(orderCreateResponse, {
+          "order creation works": (r) =>
+            r.status === 200 || r.status === 201 || r.status === 422,
+        });
+      }
+    }
+
+    // === ENHANCED LOAD TEST SCENARIOS ===
+    // Add realistic load test behavior patterns on top of core endpoint testing
     if (userBehavior < 0.25) {
-      // 25% - Window shopping with homepage content
-      console.log(`VU${currentVUs}: Window shopping pattern`);
-
-      // Start with homepage content (realistic user journey)
-      viewHomepageContent(userToken);
-      sleep(Math.random() * 1 + 0.5);
-
-      // Browse products with enhanced features
-      enhancedShopping(userToken);
-      sleep(Math.random() * 1 + 0.5);
-
-      // Explore promotions (realistic bargain hunting)
-      explorePromotions(userToken);
-    } else if (userBehavior < 0.5) {
-      // 25% - Search and enhanced browsing
+      // 25% - Enhanced browsing with multiple product views
       console.log(`VU${currentVUs}: Enhanced browsing pattern`);
-
-      // Start with homepage to see what's featured
-      viewHomepageContent(userToken);
-      sleep(Math.random() * 1 + 0.5);
-
-      // Enhanced shopping with reviews
       enhancedShopping(userToken);
+      sleep(Math.random() * 2 + 1);
+
+      // View homepage content
+      viewHomepageContent(userToken);
+    } else if (userBehavior < 0.5) {
+      // 25% - Search and filter intensive usage
+      console.log(`VU${currentVUs}: Search intensive pattern`);
+      searchAndFilter(userToken);
       sleep(Math.random() * 1 + 0.5);
 
-      // Traditional search/browse
-      searchAndFilter(userToken);
+      // Explore promotions
+      explorePromotions(userToken);
     } else if (userBehavior < 0.8) {
-      // 30% - Authenticated operations (increased from 20%)
+      // 30% - Cart and checkout operations
       if (userToken) {
-        console.log(`VU${currentVUs}: Authenticated cart operations`);
-
-        // Browse products first
-        browseProducts(userToken);
-        sleep(Math.random() * 1 + 0.5);
-
-        // Add items to cart
+        console.log(`VU${currentVUs}: Cart operations pattern`);
         cartOperations(userToken);
         sleep(Math.random() * 1 + 0.5);
 
-        // Check profile/orders
+        // User profile operations
         userProfileOperations(userToken);
       } else {
-        console.log(`VU${currentVUs}: Guest user - comprehensive browsing`);
-        browseProducts(); // Guest can browse
-        searchAndFilter(); // Guest can search
-        categoryManagement(); // Guest can view categories
-        checkoutProcess(); // Guest can validate checkout (without actual order)
-      }
-    } else if (userBehavior < 0.9) {
-      // 10% - Complete purchase journey with payment
-      if (userToken) {
-        console.log(`VU${currentVUs}: Complete purchase journey with payment`);
-
-        // Start with promotions (users often look for deals before buying)
-        explorePromotions(userToken);
-        sleep(Math.random() * 1 + 0.5);
-
-        // Enhanced shopping experience
-        enhancedShopping(userToken);
-        sleep(Math.random() * 1 + 0.5);
-
-        // Complete purchase with payment flow
-        paymentFlow(userToken);
-      } else {
-        console.log(`VU${currentVUs}: Guest user - complete shopping journey`);
-        viewHomepageContent(); // Start with homepage
-        enhancedShopping(); // Enhanced browsing
-        explorePromotions(); // Check for deals
-        checkoutProcess(); // Guest checkout validation
-      }
-    } else if (userBehavior < 0.95) {
-      // 5% - Product and category management
-      if (userToken) {
-        console.log(`VU${currentVUs}: Product management testing`);
-
-        // Test product management features
-        productManagement(userToken);
-        sleep(Math.random() * 1 + 0.5);
-
-        // Test category management
-        categoryManagement(userToken);
-      } else {
-        console.log(`VU${currentVUs}: Guest user - category browsing`);
-        categoryManagement();
+        console.log(`VU${currentVUs}: Guest browsing pattern`);
         browseProducts();
+        sleep(Math.random() * 1 + 0.5);
+        windowShopping();
       }
     } else {
-      // 5% - Account management and admin operations
+      // 20% - Complete purchase journey
       if (userToken) {
-        console.log(`VU${currentVUs}: Account management pattern`);
+        console.log(`VU${currentVUs}: Complete purchase journey`);
+        completeUserJourney(userToken);
+        sleep(Math.random() * 2 + 1);
 
-        // Focus on profile operations
-        userProfileOperations(userToken);
-        sleep(Math.random() * 1 + 0.5);
-
-        // Check orders using same approach as smoke test
-        const authHeaders = {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${userToken}`,
-        };
-
-        const ordersResponse = http.get(
-          `${config.baseUrls[config.environment]}/api/v1/checkout/orders`,
-          {
-            headers: authHeaders,
-            tags: { scenario: "account", type: "orders" },
-          }
-        );
-        check(ordersResponse, {
-          "orders retrieved": (r) => r.status === 200,
-        });
-
-        // Test authentication flow cycling
-        if (Math.random() < 0.3) {
-          authenticationFlow();
-        }
+        // Payment flow
+        paymentFlow(userToken);
       } else {
-        console.log(`VU${currentVUs}: Guest user - account exploration`);
-        browseProducts(); // Browse as guest
-        productManagement(); // View product details (no auth needed for viewing)
-        categoryManagement(); // Explore all categories
-        authenticationFlow(); // Guest trying to login (realistic scenario)
+        console.log(`VU${currentVUs}: Guest complete journey`);
+        completeUserJourney();
+        sleep(Math.random() * 1 + 0.5);
+        checkoutProcess();
       }
     }
-  } catch (error) {
-    console.error(`VU${currentVUs}: Load test error:`, error.message);
-    // Continue execution even if there are errors
-    sleep(0.5);
-  }
 
-  // Think time between user actions
-  sleep(Math.random() * 2 + 1);
+    // Random sleep to simulate realistic user behavior
+    sleep(Math.random() * 2 + 1);
+  } catch (error) {
+    console.error(`VU${currentVUs}: Error in load test: ${error.message}`);
+  }
 }
 
 // Teardown function - runs once after the test
