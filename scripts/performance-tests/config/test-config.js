@@ -133,8 +133,8 @@ export const config = {
       sustainTime: "5m",
     },
     staging: {
-      maxUsers: 300,
-      stressMaxUsers: 500,
+      maxUsers: 250,
+      stressMaxUsers: 400,
       rampUpTime: "3m",
       sustainTime: "10m",
     },
