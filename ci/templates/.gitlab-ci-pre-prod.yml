@@ -142,8 +142,18 @@ load-test:
     - echo "Running load tests for staging environment..."
     - RESULTS_PATH="/builds/ecommerce-project-devops/ecommerce-microservices/${TEST_RESULTS_DIR}"
     - mkdir -p "${RESULTS_PATH}"
-    - k6 run --quiet --summary-trend-stats="avg,min,med,max,p(90),p(95)" tests/load-test.js -e ENVIRONMENT=${ENVIRONMENT} -e TARGET_URL=${TARGET_URL} 2>&1 | sed -n '/THRESHOLDS/,$p' > "./load-summary.txt"
-    - cp ./load-summary.txt "${RESULTS_PATH}/"
+    # Debug: Chạy k6 và lưu toàn bộ output trước để debug
+    - echo "🔍 Running k6 and saving full output for debugging..."
+    - k6 run --quiet --summary-trend-stats="avg,min,med,max,p(90),p(95)" tests/load-test.js -e ENVIRONMENT=${ENVIRONMENT} -e TARGET_URL=${TARGET_URL} > "./load-full-output.txt" 2>&1 || echo "k6 command failed with exit code $?"
+    - echo "📄 Full k6 output:"
+    - cat "./load-full-output.txt" || echo "No output file created"
+    - echo "🎯 Extracting summary section..."
+    - sed -n '/THRESHOLDS/,$p' "./load-full-output.txt" > "./load-summary.txt" || echo "sed command failed"
+    - echo "📊 Summary file content:"
+    - cat "./load-summary.txt" || echo "No summary file created"
+    - echo "📁 Final file size:"
+    - ls -la "./load-summary.txt" || echo "Summary file not found"
+    - cp ./load-summary.txt "${RESULTS_PATH}/" || echo "Failed to copy summary file"
     - echo "Summary saved to ${RESULTS_PATH}/load-summary.txt"
   timeout: 30m
   rules:
