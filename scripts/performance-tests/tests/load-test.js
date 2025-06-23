@@ -130,6 +130,112 @@ export default function (data) {
   const userBehavior = Math.random();
 
   try {
+    // === AUTHENTICATION FLOW TESTING (if no token, test auth process) ===
+    if (!userToken && Math.random() < 0.1) {
+      // 10% of users without tokens test auth flow
+      console.log(`VU${currentVUs}: Testing authentication flow...`);
+
+      // Test registration + verification
+      const timestamp = Date.now();
+      const randomId = Math.random().toString(36).substr(2, 9);
+      const testUser = {
+        email: `load-test-${timestamp}-${randomId}@test.com`,
+        password: "LoadTest123!",
+        first_name: "Load",
+        last_name: "Test",
+        phone: "+1234567890",
+      };
+
+      const registerResponse = http.post(
+        `${config.baseUrls[config.environment]}/api/v1/auth/register`,
+        JSON.stringify(testUser),
+        {
+          headers: { "Content-Type": "application/json" },
+          tags: { scenario: "load", type: "auth_register" },
+        }
+      );
+      check(registerResponse, {
+        "registration successful": (r) => r.status === 200 || r.status === 201,
+      });
+
+      if (registerResponse.status === 200 || registerResponse.status === 201) {
+        sleep(0.2); // Wait for OTP system
+
+        // Test verification with bypass OTP
+        const verifyResponse = http.post(
+          `${
+            config.baseUrls[config.environment]
+          }/api/v1/auth/verify-registration`,
+          JSON.stringify({
+            email: testUser.email,
+            otp: "123456", // Bypass code for staging
+          }),
+          {
+            headers: { "Content-Type": "application/json" },
+            tags: { scenario: "load", type: "auth_verify" },
+          }
+        );
+        check(verifyResponse, {
+          "verification successful": (r) => r.status === 200,
+          "verification has token": (r) => {
+            try {
+              const data = JSON.parse(r.body);
+              return data.data && data.data.access_token;
+            } catch (error) {
+              return false;
+            }
+          },
+        });
+
+        // Test login flow with the newly created user
+        if (verifyResponse.status === 200) {
+          sleep(0.5); // Wait for user to be fully created
+
+          const loginResponse = http.post(
+            `${config.baseUrls[config.environment]}/api/v1/auth/login`,
+            JSON.stringify({
+              email: testUser.email,
+              password: testUser.password,
+            }),
+            {
+              headers: { "Content-Type": "application/json" },
+              tags: { scenario: "load", type: "auth_login" },
+            }
+          );
+
+          const loginToken = check(loginResponse, {
+            "login successful": (r) => r.status === 200,
+            "login returns token": (r) => {
+              try {
+                const data = JSON.parse(r.body);
+                return data.data && data.data.access_token;
+              } catch (error) {
+                return false;
+              }
+            },
+          });
+
+          // Test token validation if login successful
+          if (loginToken && loginResponse.status === 200) {
+            const loginData = JSON.parse(loginResponse.body);
+            const token = loginData.data.access_token;
+
+            const validateResponse = http.get(
+              `${config.baseUrls[config.environment]}/api/v1/auth/validate`,
+              {
+                headers: { Authorization: `Bearer ${token}` },
+                tags: { scenario: "load", type: "auth_validate" },
+              }
+            );
+
+            check(validateResponse, {
+              "token validation successful": (r) => r.status === 200,
+            });
+          }
+        }
+      }
+    }
+
     // === CORE ENDPOINTS TESTING (same as smoke test) ===
     console.log(`VU${currentVUs}: Testing core endpoints...`);
 

@@ -175,6 +175,129 @@ export default function (data) {
   const userBehavior = Math.random();
 
   try {
+    // === AUTHENTICATION FLOW TESTING (if no token, test auth process) ===
+    if (!userToken && Math.random() < 0.15) {
+      console.log(
+        `VU${currentVUs}: [${stressLevel}] Testing authentication flow...`
+      );
+
+      // Test registration + verification
+      const timestamp = Date.now();
+      const randomId = Math.random().toString(36).substr(2, 9);
+      const testUser = {
+        email: `stress-test-${timestamp}-${randomId}@test.com`,
+        password: "StressTest123!",
+        first_name: "Stress",
+        last_name: "Test",
+        phone: "+1234567890",
+      };
+
+      const registerResponse = http.post(
+        `${config.baseUrls[config.environment]}/api/v1/auth/register`,
+        JSON.stringify(testUser),
+        {
+          headers: { "Content-Type": "application/json" },
+          tags: {
+            scenario: "stress",
+            type: "auth_register",
+            stress_level: stressLevel,
+          },
+        }
+      );
+      check(registerResponse, {
+        "registration successful": (r) => r.status === 200 || r.status === 201,
+      });
+
+      if (registerResponse.status === 200 || registerResponse.status === 201) {
+        sleep(0.1); // Faster for stress test
+
+        // Test verification with bypass OTP
+        const verifyResponse = http.post(
+          `${
+            config.baseUrls[config.environment]
+          }/api/v1/auth/verify-registration`,
+          JSON.stringify({
+            email: testUser.email,
+            otp: "123456", // Bypass code for staging
+          }),
+          {
+            headers: { "Content-Type": "application/json" },
+            tags: {
+              scenario: "stress",
+              type: "auth_verify",
+              stress_level: stressLevel,
+            },
+          }
+        );
+        check(verifyResponse, {
+          "verification successful": (r) => r.status === 200,
+          "verification has token": (r) => {
+            try {
+              const data = JSON.parse(r.body);
+              return data.data && data.data.access_token;
+            } catch (error) {
+              return false;
+            }
+          },
+        });
+
+        // Test login flow with the newly created user
+        if (verifyResponse.status === 200) {
+          sleep(0.2); // Shorter wait for stress test
+
+          const loginResponse = http.post(
+            `${config.baseUrls[config.environment]}/api/v1/auth/login`,
+            JSON.stringify({
+              email: testUser.email,
+              password: testUser.password,
+            }),
+            {
+              headers: { "Content-Type": "application/json" },
+              tags: {
+                scenario: "stress",
+                type: "auth_login",
+                stress_level: stressLevel,
+              },
+            }
+          );
+
+          const loginToken = check(loginResponse, {
+            "login successful": (r) => r.status === 200,
+            "login returns token": (r) => {
+              try {
+                const data = JSON.parse(r.body);
+                return data.data && data.data.access_token;
+              } catch (error) {
+                return false;
+              }
+            },
+          });
+
+          // Test token validation if login successful
+          if (loginToken && loginResponse.status === 200) {
+            const loginData = JSON.parse(loginResponse.body);
+            const token = loginData.data.access_token;
+
+            const validateResponse = http.get(
+              `${config.baseUrls[config.environment]}/api/v1/auth/validate`,
+              {
+                headers: { Authorization: `Bearer ${token}` },
+                tags: {
+                  scenario: "stress",
+                  type: "auth_validate",
+                  stress_level: stressLevel,
+                },
+              }
+            );
+
+            check(validateResponse, {
+              "token validation successful": (r) => r.status === 200,
+            });
+          }
+        }
+      }
+    }
+
     // === CORE ENDPOINTS TESTING (same as smoke test) ===
     console.log(`VU${currentVUs}: [${stressLevel}] Testing core endpoints...`);
 
