@@ -193,16 +193,15 @@ func declareExchange(ch *amqp.Channel) error {
 	)
 }
 
-// declareRandomQueue declares a shared work queue to prevent duplicate processing
-// ANTI-DUPLICATE: Uses fixed queue name so multiple listener instances share the same queue
+// declareRandomQueue declares a random queue
 func declareRandomQueue(ch *amqp.Channel) (amqp.Queue, error) {
 	return ch.QueueDeclare(
-		"", 
-		true,                            // durable - survive broker restart
-		false,                           // delete when unused
-		false,                           // exclusive - allow multiple consumers
-		false,                           // no-wait
-		nil,                             // arguments
+		"",    // name - empty for random
+		false, // durable
+		false, // delete when unused
+		true,  // exclusive
+		false, // no-wait
+		nil,   // arguments
 	)
 }
 
@@ -407,17 +406,6 @@ func (consumer *Consumer) Listen(topics []string) error {
 func (consumer *Consumer) handleStandardEvent(event StandardEvent, routingKey string) error {
 	// Log ID của event để dễ dàng theo dõi
 	consumer.logger.Printf("Received event: %s, ID: %s, Routing key: %s", event.Name, event.ID, routingKey)
-
-	// Check duplicate
-	mp := consumer.getMessageProcessor()
-	if mp.IsProcessed(event.ID) {
-		consumer.logger.Printf("Duplicate detected: Event %s (ID: %s) already processed, skipping...", event.Name, event.ID)
-		return nil
-	}
-
-	// Mark processed
-	mp.MarkProcessed(event.ID)
-	consumer.logger.Printf("Processing: Event %s (ID: %s)", event.Name, event.ID)
 
 	// Ghi log sự kiện vào logger-service
 	err := consumer.logStandardEvent(event)
