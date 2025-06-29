@@ -1,0 +1,245 @@
+stages:
+  - dast-scan
+  - performance-test
+  - push-artifacts
+
+variables:
+  # k6 Test Performance
+  K6_IMAGE: "grafana/k6:latest"
+  PERFORMANCE_TEST_DIR: "scripts/performance-tests"
+  TEST_RESULTS_DIR: "performance-results"
+  PRE_PROD_TIMEOUT: "1800" # 30 minutes (1800 seconds)
+
+  # OWASP ZAP DAST Testing
+  ZAP_IMAGE: "ghcr.io/zaproxy/zaproxy:stable"
+  ZAP_WORK_DIR: "/zap/wrk"
+  DAST_REPORT_DIR: "./dast-reports"
+
+  # MinIO Configuration
+  MINIO_IMAGE: "bitnami/minio-client:latest"
+
+.env-staging: 
+  environment:
+    name: staging
+    url: ${STAGING_URL}
+
+.performance-test-base:
+  image: 
+    name: ${K6_IMAGE}
+    entrypoint: [""]
+  stage: performance-test
+  extends: .env-staging
+  variables:
+    GIT_STRATEGY: clone
+    ENVIRONMENT: "staging"
+    TARGET_URL: ${STAGING_API_URL}
+  before_script:
+    - mkdir -p ${TEST_RESULTS_DIR}
+    - cd ${PERFORMANCE_TEST_DIR}
+  artifacts:
+    paths:
+      - ${TEST_RESULTS_DIR}/
+    expire_in: 30 days  # Extend to 30 days for better trend analysis
+    reports:
+      performance: ${TEST_RESULTS_DIR}/*.txt
+    when: always  # Keep artifacts even if test fails
+  after_script:
+    - ls -la ${TEST_RESULTS_DIR}/ || echo "Results directory not found"
+  tags:
+    - perf-docker-runner
+
+# ########################################################
+# #### Stage 7: DAST Security Testing
+# ########################################################
+owasp-zap-scan:
+  stage: dast-scan
+  image: ${ZAP_IMAGE}
+  variables:
+    GIT_STRATEGY: none
+  before_script:
+    # Create required directories
+    - mkdir -p ${DAST_REPORT_DIR}
+    - mkdir -p ${ZAP_WORK_DIR}
+    - chmod 777 ${ZAP_WORK_DIR}
+  script:
+    - |
+      echo "=== OWASP ZAP Security Testing ==="
+      
+      # Validate target URL
+      if [ -z "${STAGING_URL}" ]; then
+        echo "ERROR: STAGING_URL is not set!"
+        exit 1
+      fi
+    
+      # 1. ZAP Baseline Scan (Quick)
+      echo "Phase 1: ZAP Baseline Scan..."
+      zap-baseline.py \
+        -t "${STAGING_URL}" \
+        -r "zap-baseline-report.html" \
+        -I \
+        -d || BASELINE_EXIT=$?
+      
+      # Copy reports to artifacts directory
+      cp ${ZAP_WORK_DIR}/zap-baseline-report.* ${DAST_REPORT_DIR}/ 2>/dev/null || echo "No baseline reports to copy"
+      
+      # 2. ZAP Full Scan (Comprehensive)  
+      echo "Phase 2: ZAP Full Scan..."
+      zap-full-scan.py \
+        -t "${STAGING_URL}" \
+        -r "${ZAP_WORK_DIR}/zap-full-scan-report.html" \
+        -I \
+        -d || FULL_EXIT=$?
+      
+      # Copy reports to artifacts directory  
+      cp ${ZAP_WORK_DIR}/zap-full-scan-report.* ${DAST_REPORT_DIR}/ 2>/dev/null || echo "No full scan reports to copy"
+      
+      # 3. Security Assessment
+      if [ "${FULL_EXIT:-0}" -eq 2 ] || [ "${BASELINE_EXIT:-0}" -eq 2 ]; then
+        echo "CRITICAL SECURITY VULNERABILITIES DETECTED!"
+        echo "BLOCKING DEPLOYMENT TO PRODUCTION"
+        exit 1
+      elif [ "${FULL_EXIT:-0}" -eq 1 ] || [ "${BASELINE_EXIT:-0}" -eq 1 ]; then
+        echo "MEDIUM RISK VULNERABILITIES DETECTED"
+        echo "Review recommended but deployment not blocked"
+      else
+        echo "NO CRITICAL VULNERABILITIES DETECTED"
+        echo "Security scan passed - Safe for production deployment"
+      fi
+  artifacts:
+    paths:
+      - ${DAST_REPORT_DIR}/
+    expire_in: 7 days
+    when: always
+  tags:
+    - perf-docker-runner
+  timeout: 60m  
+  allow_failure: true
+  rules:
+    - if: $CI_COMMIT_TAG =~ /-performance-test$/
+      when: manual  
+
+########################################################
+#### Stage 8: Performance Testing
+########################################################
+# Smoke test
+smoke-test:
+  extends: .performance-test-base
+  script:
+    - echo "Running smoke tests for staging environment..."
+    - RESULTS_PATH="/builds/ecommerce-project-devops/ecommerce-microservices/${TEST_RESULTS_DIR}" # Docker excutor Path
+    - mkdir -p "${RESULTS_PATH}"
+    - k6 run --quiet --summary-trend-stats="avg,min,med,max,p(90),p(95)" tests/smoke-test.js -e ENVIRONMENT=${ENVIRONMENT} -e TARGET_URL=${TARGET_URL} 2>&1 | sed -n '/THRESHOLDS/,$p' > "./smoke-summary.txt" || echo "Smoke test summary generated" > "./smoke-summary.txt"
+    - cp ./smoke-summary.txt "${RESULTS_PATH}/"
+    - echo "Summary saved to ${RESULTS_PATH}/smoke-summary.txt"
+  rules:
+    - if: $CI_COMMIT_TAG =~ /-performance-test$/
+      when: manual
+
+# Load test
+load-test:
+  extends: .performance-test-base
+  script:
+    - echo "Running load tests for staging environment..."
+    - RESULTS_PATH="/builds/ecommerce-project-devops/ecommerce-microservices/${TEST_RESULTS_DIR}"
+    - mkdir -p "${RESULTS_PATH}"
+    - k6 run --quiet --summary-trend-stats="avg,min,med,max,p(90),p(95)" tests/load-test.js -e ENVIRONMENT=${ENVIRONMENT} -e TARGET_URL=${TARGET_URL} 2>&1 | sed -n '/THRESHOLDS/,$p' > "./load-summary.txt" || echo "Load test summary generated" > "./load-summary.txt"
+    - cp ./load-summary.txt "${RESULTS_PATH}/"
+    - echo "Summary saved to ${RESULTS_PATH}/load-summary.txt"
+  timeout: 40m
+  rules:
+    - if: $CI_COMMIT_TAG =~ /-performance-test$/
+      when: manual
+    
+# Stress test
+stress-test:
+  extends: .performance-test-base
+  script:
+    - echo "Running stress tests for staging environment..."
+    - RESULTS_PATH="/builds/ecommerce-project-devops/ecommerce-microservices/${TEST_RESULTS_DIR}"
+    - mkdir -p "${RESULTS_PATH}"
+    - k6 run --quiet --summary-trend-stats="avg,min,med,max,p(90),p(95)" tests/stress-test.js -e ENVIRONMENT=${ENVIRONMENT} -e TARGET_URL=${TARGET_URL} 2>&1 | sed -n '/THRESHOLDS/,$p' > "./stress-summary.txt" || echo "Stress test summary generated" > "./stress-summary.txt"
+    - cp ./stress-summary.txt "${RESULTS_PATH}/"
+    - echo "Summary saved to ${RESULTS_PATH}/stress-summary.txt"
+  timeout: 60m
+  rules:
+    - if: $CI_COMMIT_TAG =~ /-performance-test$/
+      when: manual
+
+upload_to_minio:
+  image: ${MINIO_IMAGE}
+  stage: push-artifacts
+  needs:
+  - job: smoke-test
+    artifacts: true
+    optional: true
+  - job: load-test
+    artifacts: true
+    optional: true
+  - job: stress-test
+    artifacts: true
+    optional: true
+  - job: owasp-zap-scan
+    artifacts: true
+    optional: true
+  variables:
+    GIT_STRATEGY: none
+  before_script:
+    - TAG_NAME=$(echo "$CI_COMMIT_TAG" | awk -F'-' -v sha="$CI_COMMIT_SHORT_SHA" '{print sha "-" $1 "-" $NF}')
+    - TIMESTAMP=$(date +%Y%m%d)
+    - ARTIFACT_DIR="${TIMESTAMP}_pre-prod_${TAG_NAME}"
+    - mkdir -p $ARTIFACT_DIR
+  script:
+  - |
+    echo "Uploading pre-prod artifacts to MinIO..."
+    # Create organized subdirectories
+    mkdir -p $ARTIFACT_DIR/{dast-reports,performance-tests}
+
+    # Copy DAST reports
+    if [ -d "${DAST_REPORT_DIR}" ]; then
+      echo "Copying DAST reports..."
+      dest_dir="$ARTIFACT_DIR/dast-reports"
+      mkdir -p "$dest_dir"
+      cp -r ${DAST_REPORT_DIR}/* "$dest_dir/"
+    fi
+
+    # # Copy performance test results
+    if [ -d "${TEST_RESULTS_DIR}" ]; then
+      echo "Copying performance test results..."
+      dest_dir="$ARTIFACT_DIR/performance-tests"
+      mkdir -p "$dest_dir"
+      cp -r ${TEST_RESULTS_DIR}/* "$dest_dir/"
+    fi
+
+    # Create artifact manifest
+    echo "Creating artifact manifest..."
+    cat > $ARTIFACT_DIR/manifest.json << EOF
+    {
+      "project": "pre-prod",
+      "commit": "${CI_COMMIT_SHA}",
+      "tag": "${CI_COMMIT_TAG}",
+      "branch": "${CI_COMMIT_REF_NAME}",
+      "timestamp": "$(date -u +%Y-%m-%dT%H:%M:%SZ)",
+      "pipeline_id": "${CI_PIPELINE_ID}",
+      "artifacts": {
+        "dast_reports": "$(find $ARTIFACT_DIR/dast-reports -type f 2>/dev/null | wc -l) files",
+        "performance_tests": "$(find $ARTIFACT_DIR/performance-tests -type f 2>/dev/null | wc -l) files",
+      }
+    }
+    EOF
+
+    # Upload to MinIO with organized structure
+    echo "Uploading to MinIO bucket: ${MINIO_BUCKET}..."
+    mc alias set myminio "${MINIO_URL}" "${MINIO_ACCESS_KEY}" "${MINIO_SECRET_KEY}"
+    mc mirror "${ARTIFACT_DIR}" myminio/"${MINIO_BUCKET}"/"${BRANCH_NAME}"/"${ARTIFACT_DIR}"
+    
+    echo "Upload completed successfully!"
+    echo "Artifact location: myminio/${MINIO_BUCKET}/${BRANCH_NAME}/${ARTIFACT_DIR}"
+  artifacts:
+    paths:
+    - "*_pre-prod_*"
+    expire_in: 1 day
+  tags:
+  - k8s-shell-runner
+  rules:
+    - if: $CI_COMMIT_TAG =~ /-performance-test$/
+      when: manual

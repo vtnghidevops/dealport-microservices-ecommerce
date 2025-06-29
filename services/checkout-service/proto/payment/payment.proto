@@ -1,0 +1,116 @@
+syntax = "proto3";
+
+package payment;
+
+option go_package = "checkout-service/proto/payment";
+
+service PaymentService {
+  // Create payment for MoMo gateway
+  rpc CreateMomoPayment(MomoPaymentRequest) returns (MomoPaymentResponse) {}
+
+  // Verify MoMo payment callback
+  rpc VerifyMomoPayment(MomoVerifyRequest) returns (PaymentVerifyResponse) {}
+
+  // Process MoMo payment callback from broker service
+  rpc ProcessMomoCallback(MomoCallbackRequest) returns (PaymentVerifyResponse) {
+  }
+
+  // Create payment for VNPAY gateway
+  rpc CreateVnpayPayment(VnpayPaymentRequest) returns (VnpayPaymentResponse) {}
+
+  // Verify VNPAY payment callback
+  rpc VerifyVnpayPayment(VnpayVerifyRequest) returns (PaymentVerifyResponse) {}
+
+  // MoMo QuickPay methods
+  rpc CreateMomoQRPayment(MomoQRPaymentRequest) returns (MomoQuickPayResponse) {
+  }
+  rpc CreateMomoPosPayment(MomoPosPaymentRequest)
+      returns (MomoQuickPayResponse) {}
+}
+
+// Common requests
+message PaymentBaseRequest {
+  string order_id = 1;
+  int64 amount = 2;
+  string return_url = 3;
+}
+
+// MoMo specific messages
+message MomoPaymentRequest {
+  PaymentBaseRequest payment_info = 1;
+  string order_info = 2;  // Additional info for MoMo order
+}
+
+message MomoPaymentResponse {
+  bool success = 1;
+  string message = 2;
+  string payment_url = 3;
+  string request_id = 4;
+  string transaction_id = 5;
+  string order_id = 6;
+}
+
+message MomoVerifyRequest {
+  map<string, string> params = 1;  // All callback parameters from MoMo
+}
+
+// MoMo callback request from broker service
+message MomoCallbackRequest {
+  map<string, string> params = 1;  // All callback parameters from MoMo
+}
+
+// VNPAY specific messages
+message VnpayPaymentRequest {
+  PaymentBaseRequest payment_info = 1;
+  string ip_addr = 2;  // Client IP address (required by VNPAY)
+  string locale = 3;   // Language (vn/en)
+}
+
+message VnpayPaymentResponse {
+  bool success = 1;
+  string message = 2;
+  string payment_url = 3;
+  string vnp_txn_ref = 4;
+  string order_id = 5;
+}
+
+message VnpayVerifyRequest {
+  map<string, string> params = 1;  // All callback parameters from VNPAY
+}
+
+// Common response for payment verification
+message PaymentVerifyResponse {
+  bool success = 1;
+  string message = 2;
+  string order_id = 3;
+  string transaction_id = 4;
+  int64 amount = 5;
+}
+
+// MoMo QuickPay messages
+message MomoQRPaymentRequest {
+  string order_id = 1;
+  int64 amount = 2;
+  string order_info = 3;
+  string return_url = 4;
+}
+
+message MomoPosPaymentRequest {
+  string order_id = 1;
+  int64 amount = 2;
+  string order_info = 3;
+  string payment_code = 4;  // QR code from MoMo app
+  string return_url = 5;
+}
+
+message MomoQuickPayResponse {
+  bool success = 1;
+  string message = 2;
+  string order_id = 3;
+  string request_id = 4;
+  string transaction_id = 5;
+  string payment_url = 6;
+  string qr_code_url = 7;
+  string deep_link = 8;
+  int64 amount = 9;
+}

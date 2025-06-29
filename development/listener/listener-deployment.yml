@@ -1,0 +1,44 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ecommerce-listener-development
+  namespace: ecommerce
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: ecommerce-listener-app
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 1
+      maxSurge: 1
+  template:
+    metadata:
+      labels:
+        app: ecommerce-listener-app
+    spec:
+      initContainers:
+        - name: wait-for-rabbitmq
+          image: busybox:1.28
+          command: ['sh', '-c', 'until nslookup rabbitmq.ecommerce.svc.cluster.local; do echo waiting for rabbitmq; sleep 2; done;']
+        - name: wait-for-mail-service
+          image: busybox:1.28
+          command: ['sh', '-c', 'until nslookup ecommerce-mail-service.ecommerce.svc.cluster.local; do echo waiting for mail service; sleep 2; done;']
+      containers:
+        - name: ecommerce-listener-app
+          image: tannghidevops/listener-service:v2
+          resources:
+            requests:
+              cpu: "50m"
+              memory: "128Mi"
+            limits:
+              cpu: "100m"
+              memory: "256Mi"
+          envFrom:
+            - secretRef:
+                name: ecommerce-listener-secret
+        # imagePullSecrets:
+        #   - name: auth-registry
+        
+

@@ -1,0 +1,67 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: ecommerce-product-db-migration
+  namespace: ecommerce
+  annotations:
+    "helm.sh/hook": pre-install // run before install
+    "helm.sh/hook-weight": "-5"
+    "helm.sh/hook-delete-policy": before-hook-creation,hook-succeeded
+spec:
+  backoffLimit: 3  # try 3 times if failed
+  ttlSecondsAfterFinished: 3600  # auto delete job after 1 hour
+  template:
+    spec:
+      initContainers:
+        - name: wait-for-postgres-product-db
+          image: busybox:1.28
+          command: ['sh', '-c', 'until nslookup postgres-products.ecommerce.svc.cluster.local && nc -z postgres-products 5432; do echo waiting for postgres; sleep 2; done;']
+      containers:
+      - name: migrations-product-db
+        image: tannghidevops/product-service:v1
+        imagePullPolicy: IfNotPresent
+        command: ["/bin/sh", "-c"]
+        args:
+          - |
+            echo "Waiting for PostgreSQL to be ready..."
+            sleep 5
+            echo "Running database migration once..."
+            /app/product-service migrate
+            echo "Migration completed!"
+        env:
+        - name: PRODUCT_DB_HOST
+          valueFrom:
+            secretKeyRef:
+              name: ecommerce-product-secret
+              key: PRODUCT_DB_HOST
+        - name: PRODUCT_DB_PORT
+          valueFrom:
+            secretKeyRef:
+              name: ecommerce-product-secret
+              key: PRODUCT_DB_PORT
+        - name: PRODUCT_DB_NAME
+          valueFrom:
+            secretKeyRef:
+              name: ecommerce-product-secret
+              key: PRODUCT_DB_NAME
+        - name: PRODUCT_DB_USER
+          valueFrom:
+            secretKeyRef:
+              name: ecommerce-product-secret
+              key: PRODUCT_DB_USER
+        - name: PRODUCT_DB_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: ecommerce-product-secret
+              key: PRODUCT_DB_PASSWORD
+        - name: PRODUCT_DB_SSLMODE
+          valueFrom:
+            secretKeyRef:
+              name: ecommerce-product-secret
+              key: PRODUCT_DB_SSLMODE
+        - name: MIGRATION_PATH
+          valueFrom:
+            secretKeyRef:
+              name: ecommerce-product-secret
+              key: MIGRATION_PATH
+      restartPolicy: OnFailure 

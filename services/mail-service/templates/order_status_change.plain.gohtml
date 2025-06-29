@@ -1,0 +1,28 @@
+{{define "body"}}
+===== VNTECH =====
+
+ORDER STATUS UPDATE
+
+ORDER #{{ .order_number }}
+{{ .order_date }}
+
+Hi {{ .customer_name }},
+
+We wanted to let you know that the status of your order has been updated from "{{ .previous_status }}" to "{{ .status
+}}".
+
+ORDER STATUS:
+- New Status: {{ .status }}
+- Order Total: ${{ .total }}
+
+You can track your order status and view more details by visiting:
+https://vntech.com/orders/{{ .order_number }}
+
+If you have any questions about your order, please contact our customer service at support@vntech.com or call us at +1
+(123) 456-7890.
+
+Thank you for shopping with us!
+
+© 2023 VNTECH. All rights reserved.
+This email was sent to you because you placed an order on our website.
+{{end}}

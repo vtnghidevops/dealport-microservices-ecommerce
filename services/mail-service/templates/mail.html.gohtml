@@ -1,0 +1,64 @@
+{{define "body"}}
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Email Notification</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      line-height: 1.6;
+      color: #333;
+      max-width: 600px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+
+    .header {
+      background-color: #f8f9fa;
+      padding: 20px;
+      text-align: center;
+      border-radius: 5px 5px 0 0;
+    }
+
+    .content {
+      padding: 20px;
+      background-color: #fff;
+      border: 1px solid #ddd;
+    }
+
+    .footer {
+      text-align: center;
+      padding: 10px;
+      font-size: 12px;
+      color: #777;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="header">
+    <h1>Notification</h1>
+  </div>
+  <div class="content">
+    <p>{{ if .message }}{{ .message }}{{ else }}You have received a notification from our system.{{ end }}</p>
+
+    <!-- Debug information -->
+    <div style="margin-top: 20px; padding: 10px; background-color: #f8f9fa; border: 1px solid #ddd;">
+      <h3>Available Template Variables:</h3>
+      <ul>
+        {{ range $key, $value := . }}
+        <li><strong>{{ $key }}:</strong> {{ $value }}</li>
+        {{ end }}
+      </ul>
+    </div>
+  </div>
+  <div class="footer">
+    <p>&copy; {{ if .year }}{{ .year }}{{ else }}2023{{ end }} VNTech. All rights reserved.</p>
+  </div>
+</body>
+
+</html>
+{{end}}

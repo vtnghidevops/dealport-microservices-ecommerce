@@ -1,0 +1,52 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: postgres-auth
+  namespace: ecommerce
+spec:
+  serviceName: postgres-auth
+  replicas: 1
+  selector:
+    matchLabels:
+      app: postgres-auth
+  template:
+    metadata:
+      labels:
+        app: postgres-auth
+    spec:
+      containers:
+        - name: postgres-auth
+          image: postgres:14.0
+          ports:
+            - containerPort: 5432
+          env:
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: ecommerce-auth-secret
+                  key: AUTH_DB_PASSWORD
+            - name: POSTGRES_USER
+              valueFrom:
+                secretKeyRef:
+                  name: ecommerce-auth-secret
+                  key: AUTH_DB_USER
+            - name: POSTGRES_DB
+              valueFrom:
+                secretKeyRef:
+                  name: ecommerce-auth-secret
+                  key: AUTH_DB_NAME
+          volumesMounts:
+              - name: postgres-auth-data
+                mountPath: /var/lib/postgresql/data
+      volumes:
+        - name: postgres-auth-data
+          persistentVolumeClaim:
+            claimName: postgres-auth-pvc
+
+                  
+                  
+                  
+
+
+
+

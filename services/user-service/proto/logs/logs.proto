@@ -1,0 +1,40 @@
+syntax = "proto3";
+
+package logs;
+
+option go_package = "user-service/proto/logs";
+
+message Log {
+  string name = 1;
+  string data = 2;
+  string level = 3;
+  string service = 4;
+  string action = 5;
+  string user_id = 6;
+  string request_id = 7;
+  string message = 8;
+}
+
+message LogRequest {
+  Log logEntry = 1;
+}
+
+message LogResponse {
+  string result = 1;
+}
+
+// Message types for retrieving user activity logs
+message UserActivityLogRequest {
+  string user_id = 1;
+  string action_type = 2;  // optional filter by action type
+}
+
+message UserActivityLogResponse {
+  repeated Log logs = 1;
+}
+
+service LogService {
+  rpc WriteLog(LogRequest) returns (LogResponse);
+  rpc GetUserActivityLogs(UserActivityLogRequest)
+      returns (UserActivityLogResponse);
+}

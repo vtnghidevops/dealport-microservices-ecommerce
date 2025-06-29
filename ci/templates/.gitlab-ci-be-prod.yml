@@ -1,0 +1,52 @@
+stages:
+  - deploy-prod
+
+variables:
+  # Git & Deployment
+  GITHUB_USERNAME: "philogn"
+  HELM_REPO: "Three-tier-app-HelmChart"
+  HELM_VALUES_PATH: "./values.yaml"
+
+# Template
+.prepare-vars:
+  before_script:
+  - BRANCH_NAME=$(echo "$CI_COMMIT_TAG" | awk -F'-' '{for(i=2;i<NF;i++) printf $i (i<NF-1?"-":""); print ""}')
+  - TAG_NAME=$(echo "$CI_COMMIT_TAG" | awk -F'-' '{print $1}')
+  - IMAGE_TAG="${HARBOR_URL}/${HARBOR_REPO}/${BRANCH_NAME}:${CI_COMMIT_SHORT_SHA}-${TAG_NAME}"
+
+.env-prod: 
+  environment:
+    name: prod
+    url: ${PROD_URL}
+
+# ########################################################
+# #### Stage 9: Deploy to prod environment
+# ########################################################
+deploy-prod:
+  stage: deploy-prod
+  extends: 
+    - .env-prod
+    - .prepare-vars
+  variables:
+    GIT_STRATEGY: none
+  before_script:
+  - git config --global user.email "${GITHUB_EMAIL}"
+  - git config --global user.name "${GITHUB_USERNAME}"
+  - wget https://github.com/mikefarah/yq/releases/download/v4.44.1/yq_linux_amd64 -O /usr/bin/yq
+  - chmod +x /usr/bin/yq
+  script:
+  - |
+    git clone https://${GITHUB_TOKEN}@github.com/${GITHUB_USERNAME}/${HELM_REPO}.git
+    cd ${HELM_REPO}
+
+    NEW_TAG=$(yq ".${BRANCH_NAME}.image.tag" ./staging-values.yaml)
+    yq -i ".${BRANCH_NAME}.image.tag = \"${NEW_TAG}\"" ./prod-values.yaml
+
+    git add .
+    git commit -m "feat(prod): update images tag:${CI_COMMIT_TAG}-${CI_COMMIT_SHORT_SHA}"
+    git push https://${GITHUB_TOKEN}@github.com/${GITHUB_USERNAME}/${HELM_REPO}.git main
+  tags:
+  - k8s-shell-runner
+  rules:
+    - if: $CI_COMMIT_TAG =~ /-prod$/
+      when: manual

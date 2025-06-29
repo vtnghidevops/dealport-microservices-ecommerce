@@ -1,0 +1,389 @@
+services:
+  ecommerce-fe:
+    container_name: ecommerce-fe
+    image: ecommerce-frontend:v1
+    build:
+      context: ./ecommerce-fe/
+      args:
+        - VITE_PUBLIC_BROKER_API_URL=${VITE_PUBLIC_BROKER_API_URL}
+    restart: on-failure
+    ports:
+      - "50090:80"
+    networks:
+      - net
+
+  broker-service:
+    container_name: broker-service
+    image: broker-service:v1
+    build:
+      context: ./services/broker-service
+    restart: on-failure
+    ports:
+      - "58080:8080"
+    environment:
+      AUTH_SERVICE_HOST: ${AUTH_SERVICE_HOST}
+      USER_SERVICE_HOST: ${USER_SERVICE_HOST}
+      PRODUCT_SERVICE_HOST: ${PRODUCT_SERVICE_HOST}
+      CART_SERVICE_HOST: ${CART_SERVICE_HOST}
+      CHECKOUT_SERVICE_HOST: ${CHECKOUT_SERVICE_HOST}
+      ALLOWED_ORIGINS: ${ALLOWED_ORIGINS:-"https://*,http://*,https://test-payment.momo.vn,*"}
+    networks:
+      - net
+
+  # Cart Service
+  cart-service:
+    container_name: cart-service
+    image: cart-service:v1
+    build:
+      context: ./services/cart-service
+    restart: on-failure
+    ports:
+      - "50054:50054"
+    depends_on:
+      - redis-cart
+    environment:
+      REDIS_HOST: ${REDIS_CART_HOST}
+      REDIS_PORT: ${REDIS_CART_PORT}
+      REDIS_PASSWORD: ${REDIS_CART_PASSWORD}
+      AUTO_REDIS_INIT: "true"
+    networks:
+      - net
+
+  # Redis for Cart Service
+  redis-cart:
+    container_name: redis-cart
+    image: "redis:alpine"
+    ports:
+      - "56379:6379"
+    volumes:
+      - ./db-data/redis-cart:/data
+      # - ./services/cart-service/internal/repository/redis/db:/docker-entrypoint-initdb.d
+    restart: on-failure
+    command: redis-server --appendonly yes
+    networks:
+      - net
+
+  # Checkout Service
+  checkout-service:
+    container_name: checkout-service
+    image: checkout-service:v1
+    build:
+      context: ./services/checkout-service
+    restart: on-failure
+    ports:
+      - "50055:50055"
+    environment:
+      MONGO_HOST: mongo-checkout
+      MONGO_PORT: 27017
+      MONGO_USERNAME: ${MONGO_USERNAME_CHECKOUT}
+      MONGO_PASSWORD: ${MONGO_PASSWORD_CHECKOUT}
+      MONGO_DATABASE: ${MONGO_DATABASE_CHECKOUT}
+      AUTO_MIGRATE: "true"
+    depends_on:
+      mongo-checkout:
+        condition: service_healthy
+    # Run directly with automatic migration
+    command: ["./checkout-service"]
+    networks:
+      - net
+
+  # MongoDB for Checkout Service
+  mongo-checkout:
+    image: "mongo:4.2.16-bionic"
+    container_name: mongo-checkout
+    ports:
+      - "27019:27017"
+    environment:
+      MONGO_INITDB_DATABASE: ${MONGO_DATABASE_CHECKOUT}
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_USERNAME_CHECKOUT}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_PASSWORD_CHECKOUT}
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "mongo",
+          "--quiet",
+          "--eval",
+          "db.runCommand('ping').ok",
+          "--host",
+          "localhost",
+          "--authenticationDatabase",
+          "admin",
+          "-u",
+          "${MONGO_USERNAME_CHECKOUT}",
+          "-p",
+          "${MONGO_PASSWORD_CHECKOUT}",
+        ]
+      interval: 10s
+      timeout: 10s
+      retries: 5
+      start_period: 40s
+    volumes:
+      - ./db-data/mongo-checkout:/data/db
+    command: ["--logpath", "/var/log/mongodb/mongod.log", "--logappend"]
+    networks:
+      - net
+
+  authentication-service:
+    container_name: authentication-service
+    image: authentication-service:v1
+    build:
+      context: ./services/authentication-service
+    restart: on-failure
+    ports:
+      - "50051:50051"
+    depends_on:
+      postgres-auth:
+        condition: service_healthy
+    environment:
+      AUTH_DB_HOST: postgres-auth
+      AUTH_DB_PORT: 5432
+      AUTH_DB_USER: ${AUTH_DB_USER}
+      AUTH_DB_PASSWORD: ${AUTH_DB_PASSWORD}
+      AUTH_DB_NAME: ${AUTH_DB_NAME}
+      AUTH_DB_SSLMODE: disable
+      MIGRATION_PATH: file:///app/migrations
+      AUTO_MIGRATE: "true"
+    # Add delay to ensure database is fully initialized, use force flag to fix dirty database
+    command: >
+      sh -c "sleep 30 && ./authentication-service migrate && ./authentication-service"
+    networks:
+      - net
+
+  postgres-auth:
+    container_name: postgres-auth
+    image: "postgres:14.0"
+    ports:
+      - "56435:5432"
+    restart: on-failure
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${AUTH_DB_USER} -d ${AUTH_DB_NAME}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
+    environment:
+      POSTGRES_USER: ${AUTH_DB_USER}
+      POSTGRES_PASSWORD: ${AUTH_DB_PASSWORD}
+      POSTGRES_DB: ${AUTH_DB_NAME}
+    volumes:
+      - ./db-data/postgres-auth:/var/lib/postgresql/data/
+    networks:
+      - net
+
+  user-service:
+    container_name: user-service
+    image: user-service:v1
+    build:
+      context: ./services/user-service
+    restart: on-failure
+    ports:
+      - "50052:50052"
+    depends_on:
+      postgres-users:
+        condition: service_healthy
+    environment:
+      USER_DB_HOST: postgres-users
+      USER_DB_PORT: 5432
+      USER_DB_USER: ${USER_DB_USER}
+      USER_DB_PASSWORD: ${USER_DB_PASSWORD}
+      USER_DB_NAME: ${USER_DB_NAME}
+      USER_DB_SSLMODE: disable
+      MIGRATION_PATH: file:///app/migrations
+      AUTO_MIGRATE: "true"
+    # Add logging and increase delay to ensure database is fully initialized
+    command: >
+      sh -c "sleep 30 && ./user-service migrate && ./user-service"
+    networks:
+      - net
+
+  postgres-users:
+    container_name: postgres-users
+    image: "postgres:14.0"
+    ports:
+      - "55434:5432"
+    restart: on-failure
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${USER_DB_USER} -d ${USER_DB_NAME}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
+    environment:
+      POSTGRES_USER: ${USER_DB_USER}
+      POSTGRES_PASSWORD: ${USER_DB_PASSWORD}
+      POSTGRES_DB: ${USER_DB_NAME}
+    volumes:
+      - ./db-data/postgres-users:/var/lib/postgresql/data/
+    networks:
+      - net
+
+  product-service:
+    container_name: product-service
+    image: product-service:v1
+    build:
+      context: ./services/product-service
+    restart: on-failure
+    ports:
+      - "58082:8082"
+      - "50053:50053"
+    environment:
+      # DSN: ${PRODUCT_DSN}
+      PRODUCT_DB_HOST: postgres-products
+      PRODUCT_DB_PORT: 5432
+      PRODUCT_DB_USER: ${PRODUCT_DB_USER}
+      PRODUCT_DB_PASSWORD: ${PRODUCT_DB_PASSWORD}
+      PRODUCT_DB_NAME: ${PRODUCT_DB_NAME}
+      PRODUCT_DB_SSLMODE: disable
+      MIGRATION_PATH: file:///app/migrations
+      AUTO_MIGRATE: "false"
+      MINIO_ACCESS_KEY_ID: ${MINIO_ACCESS_KEY_ID}
+      MINIO_SECRET_ACCESS_KEY: ${MINIO_SECRET_ACCESS_KEY}
+      STORAGE_PROVIDER: ${STORAGE_PROVIDER}
+      MINIO_ENDPOINT: ${MINIO_ENDPOINT}
+      MINIO_USE_SSL: ${MINIO_USE_SSL}
+      MINIO_BUCKET_NAME: ${MINIO_BUCKET_NAME}
+      MINIO_BASE_URL: ${MINIO_BASE_URL}
+      MINIO_PRESIGNED_TTL: ${MINIO_PRESIGNED_TTL}
+      MINIO_LOCATION: ${MINIO_LOCATION}
+
+    # Add delay to ensure database is fully initialized, use force flag to fix dirty database
+    command: >
+      sh -c "sleep 30 && ./product-service migrate -force=2 && ./product-service"
+    depends_on:
+      postgres-products:
+        condition: service_healthy
+    networks:
+      - net
+
+  postgres-products:
+    container_name: postgres-products
+    image: "postgres:14.0"
+    ports:
+      - "55433:5432"
+    restart: on-failure
+    healthcheck:
+      test:
+        ["CMD-SHELL", "pg_isready -U ${PRODUCT_DB_USER} -d ${PRODUCT_DB_NAME}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
+    environment:
+      POSTGRES_USER: ${PRODUCT_DB_USER}
+      POSTGRES_PASSWORD: ${PRODUCT_DB_PASSWORD}
+      POSTGRES_DB: ${PRODUCT_DB_NAME}
+    volumes:
+      - ./db-data/postgres-products:/var/lib/postgresql/data/
+    networks:
+      - net
+
+  # Logger Service
+  logger-service:
+    container_name: logger-service
+    image: logger-service:v1
+    build:
+      context: ./services/logger-service
+    restart: on-failure
+    ports:
+      - "50056:50056"
+    environment:
+      MONGO_HOST: mongo-logger
+      MONGO_PORT: 27017
+      MONGO_USERNAME: ${MONGO_USERNAME_LOGGER}
+      MONGO_PASSWORD: ${MONGO_PASSWORD_LOGGER}
+      MONGO_DATABASE: ${MONGO_DATABASE_LOGGER}
+      AUTO_MIGRATE: "true"
+    depends_on:
+      mongo-logger:
+        condition: service_healthy
+    # Run directly with automatic migration
+    command: ["./logger-service"]
+    networks:
+      - net
+
+  # MongoDB for Logger Service
+  mongo-logger:
+    image: "mongo:4.2.16-bionic"
+    container_name: mongo-logger
+    ports:
+      - "27018:27017"
+    environment:
+      MONGO_INITDB_DATABASE: ${MONGO_DATABASE_LOGGER}
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_USERNAME_LOGGER}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_PASSWORD_LOGGER}
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "mongo",
+          "--quiet",
+          "--eval",
+          "db.runCommand('ping').ok",
+          "--host",
+          "localhost",
+          "--authenticationDatabase",
+          "admin",
+          "-u",
+          "${MONGO_USERNAME_LOGGER}",
+          "-p",
+          "${MONGO_PASSWORD_LOGGER}",
+        ]
+      interval: 10s
+      timeout: 10s
+      retries: 5
+      start_period: 40s
+    volumes:
+      - ./db-data/mongo-logger:/data/db
+    command: ["--logpath", "/var/log/mongodb/mongod.log", "--logappend"]
+    networks:
+      - net
+
+  mail-service:
+    container_name: mail-service
+    image: mail-service:v1
+    build:
+      context: ./services/mail-service
+    restart: on-failure
+    ports:
+      - "50057:50057"
+    environment:
+      MAIL_DOMAIN: ${MAIL_DOMAIN}
+      MAIL_HOST: ${MAIL_HOST}
+      MAIL_PORT: ${MAIL_PORT}
+      MAIL_ENCRYPTION: ${MAIL_ENCRYPTION}
+      MAIL_USERNAME: ${MAIL_USERNAME}
+      MAIL_PASSWORD: ${MAIL_PASSWORD}
+      FROM_NAME: ${FROM_NAME}
+      FROM_ADDR: ${FROM_ADDR}
+    networks:
+      - net
+
+  listener-service:
+    container_name: listener-service
+    image: listener-service:v1
+    build:
+      context: ./services/listener-service
+    restart: on-failure
+    depends_on:
+      - rabbitmq
+      - mail-service
+    environment:
+      MAIL_SERVICE_HOST: ${MAIL_SERVICE_HOST}
+      LOGGER_SERVICE_HOST: ${LOGGER_SERVICE_HOST}
+    networks:
+      - net
+
+  rabbitmq:
+    container_name: rabbitmq
+    image: "rabbitmq:3.9-alpine"
+    ports:
+      - "55672:5672"
+    volumes:
+      - ./db-data/rabbitmq/:/var/lib/rabbitmq/
+    networks:
+      - net
+
+networks:
+  net:
+    driver: bridge

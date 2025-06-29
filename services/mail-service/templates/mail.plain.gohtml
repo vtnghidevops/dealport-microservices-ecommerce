@@ -1,0 +1,13 @@
+{{define "body"}}
+Notification
+
+{{ if .message }}{{ .message }}{{ else }}You have received a notification from our system.{{ end }}
+
+Available Template Variables:
+{{ range $key, $value := . }}
+- {{ $key }}: {{ $value }}
+{{ end }}
+
+--
+© {{ if .year }}{{ .year }}{{ else }}2023{{ end }} VNTech. All rights reserved.
+{{end}}

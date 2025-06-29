@@ -1,0 +1,112 @@
+syntax = "proto3";
+
+package cart;
+
+option go_package = "cart-service/proto/cart";
+
+import "google/protobuf/timestamp.proto";
+
+// Coupon Service interface
+service CouponService {
+  // Get a list of coupons with pagination
+  rpc GetCoupons(GetCouponsRequest) returns (GetCouponsResponse) {}
+
+  // Get a coupon by ID
+  rpc GetCouponByID(GetCouponByIDRequest) returns (GetCouponResponse) {}
+
+  // Get a coupon by code
+  rpc GetCouponByCode(GetCouponByCodeRequest) returns (GetCouponResponse) {}
+
+  // Create a new coupon
+  rpc CreateCoupon(CreateCouponRequest) returns (GetCouponResponse) {}
+
+  // Update an existing coupon
+  rpc UpdateCoupon(UpdateCouponRequest) returns (GetCouponResponse) {}
+
+  // Delete a coupon
+  rpc DeleteCoupon(DeleteCouponRequest) returns (DeleteCouponResponse) {}
+}
+
+// Coupon represents a discount coupon
+message Coupon {
+  string id = 1;
+  string code = 2;
+  double discount = 3;
+  string discount_type = 4;  // "percentage" or "fixed"
+  double min_order_amount = 5;
+  int32 max_usage = 6;
+  int32 usage_count = 7;
+  google.protobuf.Timestamp valid_from = 8;
+  google.protobuf.Timestamp valid_to = 9;
+  bool is_active = 10;
+  string description = 11;
+  google.protobuf.Timestamp created_at = 12;
+  google.protobuf.Timestamp updated_at = 13;
+}
+
+// Request to get a list of coupons
+message GetCouponsRequest {
+  int32 page = 1;
+  int32 limit = 2;
+}
+
+// Response with a list of coupons
+message GetCouponsResponse {
+  repeated Coupon coupons = 1;
+  int32 total = 2;
+  int32 page = 3;
+  int32 limit = 4;
+}
+
+// Request to get a coupon by ID
+message GetCouponByIDRequest {
+  string id = 1;
+}
+
+// Request to get a coupon by code
+message GetCouponByCodeRequest {
+  string code = 1;
+}
+
+// Response with a coupon
+message GetCouponResponse {
+  Coupon coupon = 1;
+}
+
+// Request to create a new coupon
+message CreateCouponRequest {
+  string code = 1;
+  double discount = 2;
+  string discount_type = 3;
+  double min_order_amount = 4;
+  int32 max_usage = 5;
+  string valid_from = 6;  // RFC3339 format
+  string valid_to = 7;    // RFC3339 format
+  bool is_active = 8;
+  string description = 9;
+}
+
+// Request to update an existing coupon
+message UpdateCouponRequest {
+  string id = 1;
+  string code = 2;
+  double discount = 3;
+  string discount_type = 4;
+  double min_order_amount = 5;
+  int32 max_usage = 6;
+  string valid_from = 7;  // RFC3339 format
+  string valid_to = 8;    // RFC3339 format
+  bool is_active = 9;
+  string description = 10;
+}
+
+// Request to delete a coupon
+message DeleteCouponRequest {
+  string id = 1;
+}
+
+// Response after deleting a coupon
+message DeleteCouponResponse {
+  bool success = 1;
+  string message = 2;
+}

@@ -1,0 +1,13 @@
+users.sql
+db-data/
+frontend/
+.qodo
+.env
+.cursor
+tree.txt
+# .gitignore
+*.exe
+uploads/products/
+*.DS_Store
+*.log
+"scripts/" 

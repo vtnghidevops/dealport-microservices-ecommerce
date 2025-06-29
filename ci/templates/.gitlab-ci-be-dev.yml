@@ -1,0 +1,512 @@
+stages:
+- unit-test
+- scan-code
+- build-and-push-image
+- scan-image
+- deploy-dev
+- push-artifacts
+
+# Variables
+variables:
+  # Docker & Container Registry
+  DOCKER_IMAGE: "docker:28-dind"
+  GO_IMAGE: "golang:1.24.3-alpine3.21"
+
+  # MinIO Configuration
+  MINIO_IMAGE: "bitnami/minio-client:latest"
+
+  # Security Scanning Tools
+  TRIVY_IMAGE: "ghcr.io/aquasecurity/trivy:latest" # Use the official Trivy image
+  GITLEAKS_IMAGE: "zricethezav/gitleaks:latest"
+  SNYK_IMAGE: "snyk/snyk:node"
+  SEVERITY_LEVELS: "HIGH,CRITICAL"
+  SCAN_OPTIONS: "--no-progress --ignore-unfixed"
+
+  # Code Quality
+  SONAR_IMAGE: "sonarsource/sonar-scanner-cli:11"
+  SONAR_USER_HOME: "${CI_PROJECT_DIR}/.sonar"
+
+  # Base paths for reports
+  SECURITY_SCAN_BASE: "./security-scan-results"
+  REPORT_NAME: "${CI_PROJECT_NAME}_${CI_COMMIT_REF_NAME}_${CI_COMMIT_SHORT_SHA}"
+
+  # Report paths
+  GITLEAKS_FOLDER: "${SECURITY_SCAN_BASE}/secrets"
+  GITLEAKS_REPORT_FILENAME: "${GITLEAKS_FOLDER}/gitleaks_scan_${REPORT_NAME}_report.html"
+  TRIVY_IMG_FOLDER: "${SECURITY_SCAN_BASE}/trivy-image"
+  TRIVY_IMG_REPORT_FILENAME: "${TRIVY_IMG_FOLDER}/trivy_img_scan_${REPORT_NAME}_report.html"
+  TRIVYFS_FOLDER: "${SECURITY_SCAN_BASE}/trivy-fs"
+  TRIVYFS_REPORT_FILENAME: "${TRIVYFS_FOLDER}/trivyfs_scan_${REPORT_NAME}_report.html"
+  SNYK_FOLDER: "${SECURITY_SCAN_BASE}/snyk"
+  SNYK_REPORT_FILENAME: "${SNYK_FOLDER}/snyk_scan_${REPORT_NAME}_report.html"
+  SONAR_FOLDER: "${SECURITY_SCAN_BASE}/sonar"
+  SONAR_REPORT_FILENAME: "${SONAR_FOLDER}/sonar_scan_${REPORT_NAME}_report.html"
+
+  # Git & Deployment
+  GITHUB_USERNAME: "philogn"
+  HELM_REPO: "Three-tier-app-HelmChart"
+  HELM_VALUES_PATH: "./values.yaml"
+
+# Template
+.docker-login-image:
+  image: ${DOCKER_IMAGE}
+  services:
+  - ${DOCKER_IMAGE}
+  before_script:
+  - echo "$HARBOR_PASSWD" | docker login $HARBOR_URL -u 'robot$'"$HARBOR_USERNAME" --password-stdin
+  - BRANCH_NAME=$(echo "$CI_COMMIT_TAG" | awk -F'-' '{for(i=2;i<NF;i++) printf $i (i<NF-1?"-":""); print ""}')
+  - TAG_NAME=$(echo "$CI_COMMIT_TAG" | awk -F'-' '{print $1}')
+  - IMAGE_TAG="${HARBOR_URL}/${HARBOR_REPO}/${BRANCH_NAME}:${CI_COMMIT_SHORT_SHA}-${TAG_NAME}"
+
+.prepare-vars:
+  before_script:
+  - BRANCH_NAME=$(echo "$CI_COMMIT_TAG" | awk -F'-' '{for(i=2;i<NF;i++) printf $i (i<NF-1?"-":""); print ""}')
+  - TAG_NAME=$(echo "$CI_COMMIT_TAG" | awk -F'-' '{print $1}')
+  - IMAGE_TAG="${HARBOR_URL}/${HARBOR_REPO}/${BRANCH_NAME}:${CI_COMMIT_SHORT_SHA}-${TAG_NAME}"
+
+.env-dev:
+  environment:
+    name: dev
+    url: ${DEV_URL}
+
+########################################################
+#### Stage 1: Unit test
+########################################################
+unit-test:
+  stage: unit-test
+  extends: .env-dev
+  image: ${GO_IMAGE}
+  variables:
+    GIT_STRATEGY: clone
+  before_script:
+  - go mod download
+  script:
+  - |
+    echo "Running Go unit tests..."
+    mkdir -p test-reports
+
+    # Check if test output contains FAIL
+    if ! go test ./tests/unit/... -v | tee test-reports/unit-test-output.txt; then
+      echo "Unit tests failed!"
+      exit 1
+    else
+      echo "All unit tests passed successfully."
+    fi
+  artifacts:
+    paths:
+    - test-reports/
+    expire_in: 1 day
+    when: always
+  tags:
+  - k8s-shell-runner
+  rules:
+  - if: '$CI_COMMIT_TAG =~ /.*-frontend-.*/'
+    when: never
+  - if: $CI_COMMIT_TAG =~ /-dev$/
+    when: on_success
+
+########################################################
+#### Stage 2: Scan Code
+########################################################
+gitleaks-secret-scan:
+  stage: scan-code
+  extends: .env-dev
+  image: ${GITLEAKS_IMAGE}
+  variables:
+    GIT_STRATEGY: clone
+    GIT_DEPTH: 1
+  before_script:
+  - apk add --no-cache curl
+  - curl -s -o basic.tmpl https://raw.githubusercontent.com/gitleaks/gitleaks/master/report_templates/basic.tmpl
+  script:
+  - |
+    echo "=== Scanning for secrets with GitLeaks ==="
+    mkdir -p ${GITLEAKS_FOLDER}
+
+    gitleaks detect \
+      --source="." \
+          --no-git \
+          --report-format=template \
+          --report-template=basic.tmpl \
+      --report-path="${GITLEAKS_REPORT_FILENAME}" \
+          --verbose || SCAN_STATUS=$? 
+
+    if [ "${SCAN_STATUS:-0}" -ne 0 ]; then
+      echo "Secrets detected in source code! Check report: ${GITLEAKS_REPORT_FILENAME}"
+    else
+      echo "No secrets detected in source code."
+    fi
+  artifacts:
+    paths:
+    - "${GITLEAKS_REPORT_FILENAME}"
+    expire_in: 1 day
+    reports:
+      sast: "${GITLEAKS_REPORT_FILENAME}"
+  tags:
+  - k8s-shell-runner
+  allow_failure: true
+  rules:
+  - if: $CI_COMMIT_TAG =~ /-dev$/
+    when: on_success
+
+trivyfs-code-security-scan:
+  stage: scan-code
+  extends: .env-dev
+  image: ${TRIVY_IMAGE}
+  variables:
+    GIT_STRATEGY: clone
+  before_script:
+  - apk add --no-cache curl
+  - curl -s -o html.tpl https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/html.tpl
+  script:
+  - |
+    mkdir -p ${TRIVYFS_FOLDER}
+    trivy fs --severity ${SEVERITY_LEVELS} --format template --template "@html.tpl" --output "${TRIVYFS_REPORT_FILENAME}" "./" || echo "Scan completed with findings"
+  artifacts:
+    paths:
+    - "${TRIVYFS_REPORT_FILENAME}"
+    expire_in: 1 day
+    reports:
+      sast: "${TRIVYFS_REPORT_FILENAME}"
+  tags:
+  - k8s-shell-runner
+  allow_failure: true
+  rules:
+  - if: $CI_COMMIT_TAG =~ /-dev$/
+    when: on_success
+  - allow_failure: true
+
+snyk-scan-go:
+  stage: scan-code
+  extends: .env-dev
+  image: ${GO_IMAGE}
+  variables:
+    GIT_STRATEGY: clone
+  before_script:
+  - apk add --no-cache nodejs npm curl
+  - npm install -g snyk snyk-to-html
+  - snyk auth ${SNYK_TOKEN}
+  - mkdir -p ${SNYK_FOLDER}
+  - go mod download
+  script:
+  - |
+    echo "=== Snyk Go Backend Scan ==="
+    # Scan modules and code
+    snyk test --severity-threshold=high --json-file-output=deps.json || echo "Go modules scan completed"
+    snyk code test --severity-threshold=high --json-file-output=code.json || echo "Go code scan completed"
+
+    # Generate HTML report
+    echo "<html><body><h1>Snyk Security Report</h1>" > "${SNYK_REPORT_FILENAME}"
+    echo "<p>Generated: $(date)</p>" >> "${SNYK_REPORT_FILENAME}"
+
+    if [ -f "deps.json" ]; then
+      echo "Converting deps.json to HTML..."
+      snyk-to-html -i deps.json -o deps.html || echo "Warning: Failed to convert deps.json to HTML"
+      if [ -f "deps.html" ]; then
+        echo "<h2>Dependencies Vulnerabilities</h2>" >> "${SNYK_REPORT_FILENAME}"
+        cat deps.html >> "${SNYK_REPORT_FILENAME}"
+      else
+        echo "<h2>Dependencies (Raw JSON)</h2>" >> "${SNYK_REPORT_FILENAME}"
+        echo "<pre>$(cat deps.json)</pre>" >> "${SNYK_REPORT_FILENAME}"
+      fi
+    else
+      echo "<h2>Dependencies</h2><p>No deps.json found</p>" >> "${SNYK_REPORT_FILENAME}"
+    fi
+
+    if [ -f "code.json" ]; then
+      echo "Converting code.json to HTML..."
+      snyk-to-html -i code.json -o code.html || echo "Warning: Failed to convert code.json to HTML"
+      if [ -f "code.html" ]; then
+        echo "<h2>Source Code Vulnerabilities</h2>" >> "${SNYK_REPORT_FILENAME}"
+        cat code.html >> "${SNYK_REPORT_FILENAME}"
+      else
+        echo "<h2>Source Code (Raw JSON)</h2>" >> "${SNYK_REPORT_FILENAME}"
+        echo "<pre>$(cat code.json)</pre>" >> "${SNYK_REPORT_FILENAME}"
+      fi
+    else
+      echo "<h2>Source Code</h2><p>No code.json found</p>" >> "${SNYK_REPORT_FILENAME}"
+    fi
+
+    echo "</body></html>" >> "${SNYK_REPORT_FILENAME}"
+    echo "Report generated: ${SNYK_REPORT_FILENAME}"
+
+    # Verify report was created
+    if [ -f "${SNYK_REPORT_FILENAME}" ]; then
+      echo "HTML report successfully created at: ${SNYK_REPORT_FILENAME}"
+      ls -la "${SNYK_REPORT_FILENAME}"
+    else
+      echo "ERROR: Failed to create HTML report!"
+    fi
+
+  artifacts:
+    paths:
+    - "${SNYK_REPORT_FILENAME}"
+    expire_in: 1 day
+    reports:
+      sast: "${SNYK_REPORT_FILENAME}"
+    when: always
+  tags:
+  - k8s-shell-runner
+  allow_failure: true
+  rules:
+  - if: '$CI_COMMIT_TAG !~ /.*-frontend-.*/ && $CI_COMMIT_TAG =~ /-dev$/'
+    when: on_success
+  - allow_failure: true
+
+sonarqube-code-quality-scan:
+  stage: scan-code
+  extends: .env-dev
+  image:
+    name: ${SONAR_IMAGE}
+    entrypoint: [ "" ]
+  variables:
+    SONAR_USER_HOME: ${SONAR_USER_HOME}
+    GIT_DEPTH: "0"
+  cache:
+    policy: pull-push
+    key: "sonar-cache-${CI_PROJECT_NAME}"
+    paths:
+    - "${SONAR_USER_HOME}/cache"
+    - ".sonar/"
+  before_script:
+  - mkdir -p "${SONAR_USER_HOME}/cache"
+  - ls -la "${SONAR_USER_HOME}/" || echo "SONAR_USER_HOME directory not found"
+  script:
+  - echo "Running SonarQube analysis..."
+  - sonar-scanner -Dsonar.host.url="${SONAR_HOST_URL}" -X || echo "SonarQube analysis completed with findings"
+  allow_failure: true
+  tags:
+  - k8s-shell-runner
+  rules:
+  - if: $CI_COMMIT_TAG =~ /-dev$/
+    when: on_success
+
+########################################################
+#### Stage 3: build and push images
+########################################################
+build-and-push-image:
+  stage: build-and-push-image
+  extends:
+  - .docker-login-image
+  - .env-dev
+  variables:
+    GIT_STRATEGY: clone
+    VITE_PUBLIC_BROKER_API_URL: ${API_URL} # Frontend build environment variables
+  script:
+  - |
+    # Build image
+    echo "Building ${BRANCH_NAME} Docker images..."
+    docker build -t $IMAGE_TAG .
+
+    # Push image immediately after build
+    echo "Pushing image to ${IMAGE_TAG}"
+    docker push ${IMAGE_TAG}
+
+    echo "Build and push completed successfully!"
+  tags:
+  - k8s-image-runner
+  rules:
+  - if: $CI_COMMIT_TAG =~ /-dev$/
+    when: on_success
+
+########################################################
+#### Stage 4: Scan image with trivy image
+########################################################
+trivy-image-security-scan:
+  stage: scan-image
+  extends:
+  - .docker-login-image
+  - .env-dev
+  variables:
+    GIT_STRATEGY: none
+  script:
+  - |
+    echo "Scanning image: $IMAGE_TAG"
+    mkdir -p ${TRIVY_IMG_FOLDER}
+
+    # Download HTML template to host first using wget
+    wget -q -O ${TRIVY_IMG_FOLDER}/html.tpl https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/html.tpl || echo "Failed to download template, will use default"
+
+    # Run Trivy scan with mounted volumes
+    docker run --rm \
+      -v /var/run/docker.sock:/var/run/docker.sock \
+      -v ${TRIVY_IMG_FOLDER}:/output \
+      ${TRIVY_IMAGE} \
+      image \
+      --username 'robot$'${HARBOR_USERNAME} \
+      --password ${HARBOR_PASSWD} \
+      --skip-version-check \
+      --format template \
+      --template "@/output/html.tpl" \
+      --output /output/trivy-report.html \
+      ${IMAGE_TAG} || echo "Scan completed with findings"
+
+    # Move report to expected filename
+    mv ${TRIVY_IMG_FOLDER}/trivy-report.html "${TRIVY_IMG_REPORT_FILENAME}" || echo "Report file already in place"
+
+    echo "Scan completed with findings"
+  artifacts:
+    paths:
+    - "${TRIVY_IMG_REPORT_FILENAME}"
+    expire_in: 1 day
+    reports:
+      sast: "${TRIVY_IMG_REPORT_FILENAME}"
+  tags:
+  - k8s-image-runner
+  allow_failure: true
+  rules:
+  - if: $CI_COMMIT_TAG =~ /-dev$/
+    when: on_success
+
+# ########################################################
+# #### Stage 5: Deploy to dev environment
+# ########################################################
+deploy-dev:
+  stage: deploy-dev
+  extends:
+  - .env-dev
+  - .prepare-vars
+  variables:
+    GIT_STRATEGY: none
+  before_script:
+  - git config --global user.email "${GITHUB_EMAIL}"
+  - git config --global user.name "${GITHUB_USERNAME}"
+  - apk add --no-cache curl yq
+  - BRANCH_NAME=$(echo "$CI_COMMIT_TAG" | awk -F'-' '{for(i=2;i<NF;i++) printf $i (i<NF-1?"-":""); print ""}')
+  - TAG_NAME=$(echo "$CI_COMMIT_TAG" | awk -F'-' '{print $1}')
+  - IMAGE_TAG="${CI_COMMIT_SHORT_SHA}-${TAG_NAME}"
+  script:
+  - |
+    git clone https://${GITHUB_TOKEN}@github.com/${GITHUB_USERNAME}/${HELM_REPO}.git
+    cd ${HELM_REPO}
+
+    yq -i ".$BRANCH_NAME.image.tag = \"${IMAGE_TAG}\"" ./dev-values.yaml
+
+    git add .
+    git commit -m "feat: update ${BRANCH_NAME} images tag:${CI_COMMIT_SHORT_SHA}"
+    git push https://${GITHUB_TOKEN}@github.com/${GITHUB_USERNAME}/${HELM_REPO}.git main
+  tags:
+  - k8s-shell-runner
+  rules:
+  - if: $CI_COMMIT_TAG =~ /-dev$/
+    when: on_success
+
+########################################################
+#### Stage 10: Push artifacts to MinIO - Dev
+########################################################
+generate-sbom-files:
+  stage: push-artifacts
+  extends:
+  - .docker-login-image
+  - .env-dev
+  needs:
+  - job: deploy-dev
+    optional: true
+  variables:
+    GIT_STRATEGY: none
+  script:
+  - |
+    mkdir -p sbom-files
+    docker pull $IMAGE_TAG
+    docker run --rm -v /var/run/docker.sock:/var/run/docker.sock -v $(pwd)/sbom-files:/sbom-files $TRIVY_IMAGE image --format cyclonedx -o /sbom-files/${BRANCH_NAME}-sbom.json $IMAGE_TAG
+  artifacts:
+    paths:
+    - sbom-files
+    expire_in: 1 day
+  tags:
+  - k8s-image-runner
+  rules:
+  - if: $CI_COMMIT_TAG =~ /-dev$/
+    when: manual
+
+upload_to_minio:
+  image: ${MINIO_IMAGE}
+  stage: push-artifacts
+  extends: .env-dev
+  needs:
+  - job: generate-sbom-files
+    artifacts: true
+  - job: unit-test
+    artifacts: true
+  - job: gitleaks-secret-scan
+    artifacts: true
+  - job: trivyfs-code-security-scan
+    artifacts: true
+  - job: trivy-image-security-scan
+    artifacts: true
+  - job: snyk-scan-go
+    artifacts: true
+    optional: true
+  variables:
+    GIT_STRATEGY: none
+  before_script:
+  - BRANCH_NAME=$(echo "$CI_COMMIT_TAG" | awk -F'-' '{for(i=2;i<NF;i++) printf $i (i<NF-1?"-":""); print ""}')
+  - TAG_NAME=$(echo "$CI_COMMIT_TAG" | awk -F'-' -v sha="$CI_COMMIT_SHORT_SHA" '{print sha "-" $1 "-" $NF}')
+  - TIMESTAMP=$(date +%Y%m%d)
+  - ARTIFACT_DIR="be-${TIMESTAMP}_${BRANCH_NAME}_${TAG_NAME}"
+  - mkdir -p $ARTIFACT_DIR
+  script:
+  - |
+    echo "Uploading dev artifacts to MinIO..."
+    # Create organized subdirectories
+    mkdir -p $ARTIFACT_DIR/{sbom,security-scans,test-reports,code-quality}
+
+    # Copy SBOM files
+    if [ -d "sbom-files" ]; then
+      echo "Copying SBOM files..."
+      cp -r sbom-files/* $ARTIFACT_DIR/sbom/
+    fi
+
+    # Copy security scan reports
+    echo "Copying security scan reports..."
+    for scan_folder in ${GITLEAKS_FOLDER} ${TRIVY_IMG_FOLDER} ${TRIVYFS_FOLDER} ${SNYK_FOLDER}; do
+      if [ -d "$scan_folder" ]; then
+        scan_name=$(basename $scan_folder)
+        echo "Copying $scan_name reports..."
+        dest_dir="$ARTIFACT_DIR/security-scans/$scan_name"
+        mkdir -p "$dest_dir"
+        cp -r "$scan_folder"/* "$dest_dir/"
+      fi
+    done
+
+    # Copy unit test reports
+    if [ -d "test-reports" ]; then
+      echo "Copying unit test reports..."
+      cp -r test-reports/* $ARTIFACT_DIR/test-reports/
+    fi
+
+
+    # Create artifact manifest
+    echo "Creating artifact manifest..."
+    cat > $ARTIFACT_DIR/manifest.json << EOF
+    {
+      "project": "${BRANCH_NAME}",
+      "commit": "${CI_COMMIT_SHA}",
+      "tag": "${CI_COMMIT_TAG}",
+      "branch": "${CI_COMMIT_REF_NAME}",
+      "timestamp": "$(date -u +%Y-%m-%dT%H:%M:%SZ)",
+      "pipeline_id": "${CI_PIPELINE_ID}",
+      "artifacts": {
+        "sbom": "$(find $ARTIFACT_DIR/sbom -type f 2>/dev/null | wc -l) files",
+        "security_scans": "$(find $ARTIFACT_DIR/security-scans -type f 2>/dev/null | wc -l) files",
+        "test_reports": "$(find $ARTIFACT_DIR/test-reports -type f 2>/dev/null | wc -l) files"
+      }
+    }
+    EOF
+
+    # Upload to MinIO with organized structure
+    echo "Uploading to MinIO bucket: ${MINIO_BUCKET}..."
+    mc alias set myminio "${MINIO_URL}" "${MINIO_ACCESS_KEY}" "${MINIO_SECRET_KEY}"
+    mc mirror "${ARTIFACT_DIR}" myminio/"${MINIO_BUCKET}"/"${BRANCH_NAME}"/"${ARTIFACT_DIR}"
+
+    echo "Upload completed successfully!"
+    echo "Artifact location: myminio/${MINIO_BUCKET}/${BRANCH_NAME}/${ARTIFACT_DIR}"
+  artifacts:
+    paths:
+    - "be_*"
+    expire_in: 1 day
+  tags:
+  - k8s-shell-runner
+  rules:
+  - if: $CI_COMMIT_TAG =~ /-dev$/
+    when: manual

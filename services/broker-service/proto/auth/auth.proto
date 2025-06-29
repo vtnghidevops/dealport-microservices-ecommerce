@@ -1,0 +1,220 @@
+syntax = "proto3";
+
+package auth;
+option go_package = "broker-service/proto/auth";
+
+service AuthService {
+  // Register creates a new user account and sends OTP
+  rpc Register(RegisterRequest) returns (RegisterResponse) {}
+
+  // VerifyRegistration verifies the OTP and completes registration
+  rpc VerifyRegistration(VerifyRegistrationRequest)
+      returns (VerifyRegistrationResponse) {}
+
+  // Login authenticates a user and returns a JWT token
+  rpc Login(LoginRequest) returns (LoginResponse) {}
+
+  // Logout logs a user out and invalidates their refresh token
+  rpc Logout(LogoutRequest) returns (LogoutResponse) {}
+
+  // Validate checks if a token is valid
+  rpc Validate(ValidateRequest) returns (ValidateResponse) {}
+
+  // RefreshToken refreshes an existing token
+  rpc RefreshToken(RefreshTokenRequest) returns (RefreshTokenResponse) {}
+
+  // RequestPasswordReset initiates password reset process and sends OTP
+  rpc RequestPasswordReset(PasswordResetRequest)
+      returns (PasswordResetResponse) {}
+
+  // VerifyPasswordReset verifies OTP for password reset
+  rpc VerifyPasswordReset(VerifyPasswordResetRequest)
+      returns (VerifyPasswordResetResponse) {}
+
+  // UpdatePassword updates user's password (requires current password)
+  rpc UpdatePassword(UpdatePasswordRequest) returns (UpdatePasswordResponse) {}
+
+  // RequestOTP requests a new OTP for a specific purpose
+  rpc RequestOTP(OTPRequest) returns (OTPResponse) {}
+
+  // VerifyOTP verifies an OTP code
+  rpc VerifyOTP(VerifyOTPRequest) returns (VerifyOTPResponse) {}
+
+  // CheckAccountExists checks if an account exists with the given email
+  rpc CheckAccountExists(CheckAccountExistsRequest)
+      returns (CheckAccountExistsResponse) {}
+}
+
+// RegisterRequest contains user registration data
+message RegisterRequest {
+  string email = 1;
+  string password = 2;
+  string first_name = 3;
+  string last_name = 4;
+  string username = 5;
+}
+
+// RegisterResponse returns registration result
+message RegisterResponse {
+  bool success = 1;
+  string user_id = 2;
+  string message = 3;
+}
+
+// VerifyRegistrationRequest contains registration verification data
+message VerifyRegistrationRequest {
+  string email = 1;
+  string otp = 2;
+}
+
+// VerifyRegistrationResponse returns verification result
+message VerifyRegistrationResponse {
+  bool success = 1;
+  string user_id = 2;
+  string message = 3;
+  string access_token = 4;
+  string refresh_token = 5;
+}
+
+// LoginRequest contains user login credentials
+message LoginRequest {
+  string email = 1;
+  string password = 2;
+}
+
+// LoginResponse returns authentication tokens and user info
+message LoginResponse {
+  string access_token = 1;
+  string refresh_token = 2;
+  string user_id = 3;
+  UserInfo user_info = 4;
+  bool success = 5;
+  string message = 6;
+}
+
+// ValidateRequest contains the token to validate
+message ValidateRequest {
+  string token = 1;
+}
+
+// ValidateResponse returns token validation result
+message ValidateResponse {
+  bool valid = 1;
+  string user_id = 2;
+  map<string, string> claims = 3;
+}
+
+// RefreshTokenRequest contains the refresh token
+message RefreshTokenRequest {
+  string refresh_token = 1;
+}
+
+// RefreshTokenResponse returns new authentication tokens
+message RefreshTokenResponse {
+  string access_token = 1;
+  string refresh_token = 2;
+  bool success = 3;
+  string message = 4;
+}
+
+// PasswordResetRequest contains the email for password reset
+message PasswordResetRequest {
+  string email = 1;
+}
+
+// PasswordResetResponse returns password reset result
+message PasswordResetResponse {
+  bool success = 1;
+  string message = 2;
+}
+
+// VerifyPasswordResetRequest contains reset verification data
+message VerifyPasswordResetRequest {
+  string email = 1;
+  string otp = 2;
+}
+
+// VerifyPasswordResetResponse returns verification result with reset token
+message VerifyPasswordResetResponse {
+  bool success = 1;
+  string message = 2;
+  string reset_token = 3;  // Token to use in UpdatePasswordRequest
+}
+
+// UpdatePasswordRequest contains token and new password
+message UpdatePasswordRequest {
+  string token = 1;     // Reset token or access token
+  string password = 2;  // New password
+  string current_password =
+      3;  // Current password (required when changing password while logged in)
+  string email = 4;  // Email for verification with token
+}
+
+// UpdatePasswordResponse returns password update result
+message UpdatePasswordResponse {
+  bool success = 1;
+  string message = 2;
+}
+
+// OTPRequest contains the data needed to request an OTP
+message OTPRequest {
+  string email = 1;
+  string purpose = 2;  // e.g., "registration", "password_reset", "login"
+}
+
+// OTPResponse returns OTP request result
+message OTPResponse {
+  bool success = 1;
+  string message = 2;
+}
+
+// VerifyOTPRequest contains the data needed to verify an OTP
+message VerifyOTPRequest {
+  string email = 1;
+  string otp = 2;
+  string purpose = 3;  // e.g., "registration", "password_reset", "login"
+}
+
+// VerifyOTPResponse returns OTP verification result
+message VerifyOTPResponse {
+  bool success = 1;
+  string message = 2;
+  string token =
+      3;  // A token that can be used for subsequent operations if needed
+}
+
+// UserInfo contains basic user information
+message UserInfo {
+  string user_id = 1;
+  string email = 2;
+  string first_name = 3;
+  string last_name = 4;
+  string username = 5;
+  string role = 6;
+  string status = 7;
+  bool active = 8;
+}
+
+// CheckAccountExistsRequest contains the email to check
+message CheckAccountExistsRequest {
+  string email = 1;
+}
+
+// CheckAccountExistsResponse returns the result of the account existence check
+message CheckAccountExistsResponse {
+  bool exists = 1;
+  string message = 2;
+}
+
+// LogoutRequest contains the user information for logout
+message LogoutRequest {
+  string user_id = 1;
+  string email = 2;
+  bool logout_all_devices = 3;  // If true, logout from all devices
+}
+
+// LogoutResponse returns logout result
+message LogoutResponse {
+  bool success = 1;
+  string message = 2;
+}

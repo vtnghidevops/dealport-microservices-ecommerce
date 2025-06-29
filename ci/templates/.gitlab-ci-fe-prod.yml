@@ -1,0 +1,101 @@
+stages:
+  - build-and-push-image
+  - deploy-prod
+
+
+variables:
+  # Git & Deployment
+  GITHUB_USERNAME: "philogn"
+  HELM_REPO: "Three-tier-app-HelmChart"
+  HELM_VALUES_PATH: "./values.yaml"
+
+  # Docker & Container Registry
+  DOCKER_IMAGE: "docker:28-dind"
+
+# Template
+.prepare-vars:
+  before_script:
+  - BRANCH_NAME=$(echo "$CI_COMMIT_TAG" | awk -F'-' '{for(i=2;i<NF;i++) printf $i (i<NF-1?"-":""); print ""}')
+  - TAG_NAME=$(echo "$CI_COMMIT_TAG" | awk -F'-' -v sha="$CI_COMMIT_SHORT_SHA" '{print sha "-" $1 "-" $NF}')
+  - IMAGE_TAG="${HARBOR_URL}/${HARBOR_REPO}/${BRANCH_NAME}:${TAG_NAME}"
+
+.docker-login-image:
+  image: ${DOCKER_IMAGE}
+  services:
+  - ${DOCKER_IMAGE}
+  before_script:
+  - echo "$HARBOR_PASSWD" | docker login $HARBOR_URL -u 'robot$'"$HARBOR_USERNAME" --password-stdin
+  - BRANCH_NAME=$(echo "$CI_COMMIT_TAG" | awk -F'-' '{for(i=2;i<NF;i++) printf $i (i<NF-1?"-":""); print ""}')
+  - TAG_NAME=$(echo "$CI_COMMIT_TAG" | awk -F'-' -v sha="$CI_COMMIT_SHORT_SHA" '{print sha "-" $1 "-" $NF}')
+  - IMAGE_TAG="${HARBOR_URL}/${HARBOR_REPO}/${BRANCH_NAME}:${TAG_NAME}"
+
+
+.env-prod: 
+  environment:
+    name: prod
+    url: ${PROD_URL}
+
+
+build-and-push-image:
+  stage: build-and-push-image
+  extends: 
+  - .docker-login-image
+  - .env-prod
+  variables:
+    GIT_STRATEGY: clone
+    VITE_PUBLIC_BROKER_API_URL: ${PROD_API_URL} 
+  script:
+    - |
+      # Build image
+      echo "VITE_PUBLIC_BROKER_API_URL: ${VITE_PUBLIC_BROKER_API_URL}"
+      if [ "$BRANCH_NAME" == "frontend" ]; then
+        echo "Building frontend Docker images with environment variables..."
+        docker build \
+          --build-arg VITE_PUBLIC_BROKER_API_URL="${VITE_PUBLIC_BROKER_API_URL}" \
+          -t $IMAGE_TAG . 
+      else
+        echo "Building ${BRANCH_NAME} Docker images..."
+        docker build -t $IMAGE_TAG .
+      fi
+      
+      # Push image immediately after build
+      echo "Pushing image to ${IMAGE_TAG}"
+      docker push ${IMAGE_TAG}
+      
+      echo "Build and push completed successfully!"
+  tags:
+    - k8s-image-runner
+  rules:
+    - if: $CI_COMMIT_TAG =~ /-prod$/
+      when: on_success
+
+# ########################################################
+# #### Stage 6: Deploy to staging environment
+# ########################################################
+deploy-prod:
+  stage: deploy-prod
+  extends: 
+    - .env-prod
+  variables:
+    GIT_STRATEGY: none
+  before_script:
+  - git config --global user.email "${GITHUB_EMAIL}"
+  - git config --global user.name "${GITHUB_USERNAME}"
+  - apk add --no-cache curl yq
+  - BRANCH_NAME=$(echo "$CI_COMMIT_TAG" | awk -F'-' '{for(i=2;i<NF;i++) printf $i (i<NF-1?"-":""); print ""}')
+  - TAG_NAME=$(echo "$CI_COMMIT_TAG" | awk -F'-' -v sha="$CI_COMMIT_SHORT_SHA" '{print sha "-" $1 "-" $NF}')
+  script:
+  - |
+    git clone https://${GITHUB_TOKEN}@github.com/${GITHUB_USERNAME}/${HELM_REPO}.git
+    cd ${HELM_REPO}
+
+    yq -i ".$BRANCH_NAME.image.tag = \"${TAG_NAME}\"" ./prod-values.yaml
+
+    git add .
+    git commit -m "feat(prod): update images tag:${TAG_NAME}"
+    git push https://${GITHUB_TOKEN}@github.com/${GITHUB_USERNAME}/${HELM_REPO}.git main
+  tags:
+  - k8s-shell-runner
+  rules:
+    - if: $CI_COMMIT_TAG =~ /-prod$/
+      when: manual

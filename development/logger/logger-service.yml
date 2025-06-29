@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: ecommerce-logger-service
+  namespace: ecommerce
+spec:
+  selector:
+    app: ecommerce-logger-app
+  ports:
+    - name: tcp-grpc
+      protocol: TCP
+      port: 50056
+      targetPort: 50056
+  type: ClusterIP 

@@ -1,0 +1,39 @@
+{{define "body"}}
+ORDER CONFIRMATION
+=================
+
+ORDER #{{ .order_number }}
+{{ .order_date }}
+
+Hi {{ .customer_name }},
+
+Thank you for your purchase, this email confirms your order. We will send you another email as soon as it ships.
+
+ITEMS ORDERED:
+{{ if .items }}{{ .items }}{{ else }}Your ordered items will be displayed here.{{ end }}
+
+Subtotal: ${{ .total }}
+Economy Shipping: $0.00
+Total: ${{ .total }}
+
+PAYMENT INFO:
+{{ if eq .payment_method "Credit/Debit Card" }}VISA{{ else }}{{ .payment_method }}{{ end }} ${{ .total }}
+
+SHIPPING ADDRESS:
+{{ .customer_name }}
+{{ if .shipping_address }}{{ .shipping_address }}{{ else }}Address not available{{ end }}
+{{ if .shipping_phone }}Tel. {{ .shipping_phone }}{{ end }}
+
+CUSTOMER:
+{{ .customer_name }}
+{{ if .shipping_address }}{{ .shipping_address }}{{ else }}Address not available{{ end }}
+{{ if .shipping_phone }}Tel. {{ .shipping_phone }}{{ end }}
+{{ .user_email }}
+
+View your order status: {{ .order_url }}
+
+If you have any questions, please contact us at:
+support@vntech.com or (+84) 123-456-789
+
+© {{ .year }} VNTech. All rights reserved.
+{{end}}

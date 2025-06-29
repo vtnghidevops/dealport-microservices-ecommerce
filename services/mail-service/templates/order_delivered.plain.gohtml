@@ -1,0 +1,30 @@
+YOUR ORDER HAS BEEN DELIVERED!
+
+Hi {{if .first_name}}{{.first_name}}{{else}}there{{end}},
+
+We're happy to inform you that your order #{{.order_number}} has been delivered successfully.
+
+ORDER DETAILS:
+Order Number: {{.order_number}}
+Order Date: {{.order_date}}
+Delivery Date: {{.delivery_date}}
+Total Amount: {{.currency_symbol}}{{.total}}
+Status: Delivered
+
+{{if .shipping_address}}
+SHIPPING ADDRESS:
+{{.shipping_address}}
+{{end}}
+
+We hope you are satisfied with your purchase. If you have any issues with your order, please don't hesitate to contact
+our customer service team.
+
+To view your order, please visit: {{.order_url}}
+
+{{if .review_url}}
+We value your feedback! Please take a moment to review your purchase: {{.review_url}}
+{{end}}
+
+Thank you for shopping with us!
+
+© {{.year}} Your Company Name. All rights reserved.

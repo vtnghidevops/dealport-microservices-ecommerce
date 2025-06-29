@@ -1,0 +1,52 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: postgres-products
+  namespace: ecommerce
+spec:
+  serviceName: postgres-products
+  replicas: 1
+  selector:
+    matchLabels:
+      app: postgres-products
+  template:
+    metadata:
+      labels:
+        app: postgres-products
+    spec:
+      containers:
+        - name: postgres-products
+          image: postgres:14.0
+          ports:
+            - containerPort: 5432
+          env:
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: ecommerce-product-secret
+                  key: PRODUCT_DB_PASSWORD
+            - name: POSTGRES_USER
+              valueFrom:
+                secretKeyRef:
+                  name: ecommerce-product-secret
+                  key: PRODUCT_DB_USER
+            - name: POSTGRES_DB
+              valueFrom:
+                secretKeyRef:
+                  name: ecommerce-product-secret
+                  key: PRODUCT_DB_NAME
+          volumesMounts:
+              - name: postgres-products-data
+                mountPath: /var/lib/postgresql/data
+      volumes:
+        - name: postgres-products-data
+          persistentVolumeClaim:
+            claimName: postgres-products-pvc
+
+                  
+                  
+                  
+
+
+
+

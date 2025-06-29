@@ -1,0 +1,52 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: postgres-users
+  namespace: ecommerce
+spec:
+  serviceName: postgres-users
+  replicas: 1
+  selector:
+    matchLabels:
+      app: postgres-users
+  template:
+    metadata:
+      labels:
+        app: postgres-users
+    spec:
+      containers:
+        - name: postgres-users
+          image: postgres:14.0
+          ports:
+            - containerPort: 5432
+          env:
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: ecommerce-user-secret
+                  key: USER_DB_PASSWORD
+            - name: POSTGRES_USER
+              valueFrom:
+                secretKeyRef:
+                  name: ecommerce-user-secret
+                  key: USER_DB_USER
+            - name: POSTGRES_DB
+              valueFrom:
+                secretKeyRef:
+                  name: ecommerce-user-secret
+                  key: USER_DB_NAME
+          volumesMounts:
+              - name: postgres-users-data
+                mountPath: /var/lib/postgresql/data
+      volumes:
+        - name: postgres-users-data
+          persistentVolumeClaim:
+            claimName: postgres-users-pvc
+
+                  
+                  
+                  
+
+
+
+

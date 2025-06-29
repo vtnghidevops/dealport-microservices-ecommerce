@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: ecommerce-cart-service
+  namespace: ecommerce
+spec:
+  selector:
+    app: ecommerce-cart-app
+  ports:
+    - name: tcp-grpc
+      protocol: TCP
+      port: 50054
+      targetPort: 50054
+  type: ClusterIP 

@@ -1,0 +1,386 @@
+syntax = "proto3";
+
+package product;
+
+option go_package = "broker-service/proto/product";
+
+// Product Service
+service ProductService {
+  // Product operations
+  rpc GetProduct(GetProductRequest) returns (Product);
+  rpc GetProductBySlug(GetProductBySlugRequest) returns (Product);
+  rpc ListProducts(ListProductsRequest) returns (ListProductsResponse);
+  rpc CreateProduct(Product) returns (CreateProductResponse);
+  rpc UpdateProduct(Product) returns (StatusResponse);
+  rpc PatchProduct(PatchProductRequest) returns (Product);
+  rpc DeleteProduct(DeleteProductRequest) returns (StatusResponse);
+
+  // Review operations
+  rpc GetProductReviews(GetProductReviewsRequest)
+      returns (GetProductReviewsResponse);
+  rpc AddProductReview(ProductReview) returns (AddProductReviewResponse);
+  rpc UpdateProductReview(ProductReview) returns (StatusResponse);
+
+  // Image operations
+  rpc GetProductImages(GetProductImagesRequest)
+      returns (GetProductImagesResponse);
+  rpc UploadProductImage(UploadProductImageRequest)
+      returns (UploadProductImageResponse);
+  rpc DeleteProductImage(DeleteProductImageRequest) returns (StatusResponse);
+  rpc SetPrimaryProductImage(SetPrimaryProductImageRequest)
+      returns (StatusResponse);
+  // New method for retrieving image file data
+  rpc GetProductImageFile(GetProductImageFileRequest)
+      returns (GetProductImageFileResponse);
+
+  // Testimonials
+  rpc GetTopRatedTestimonials(GetTopRatedTestimonialsRequest)
+      returns (GetTopRatedTestimonialsResponse);
+
+  // Health check
+  rpc GetHealth(HealthRequest) returns (HealthResponse);
+}
+
+// Category Service
+service CategoryService {
+  rpc GetCategoryByID(GetCategoryByIDRequest) returns (Category);
+  rpc GetCategoryBySlug(GetCategoryBySlugRequest) returns (Category);
+  rpc ListCategories(ListCategoriesRequest) returns (ListCategoriesResponse);
+  rpc CreateCategory(Category) returns (CreateCategoryResponse);
+  rpc UpdateCategory(Category) returns (StatusResponse);
+  rpc DeleteCategory(DeleteCategoryRequest) returns (StatusResponse);
+  rpc SyncProductCounts(SyncProductCountsRequest) returns (StatusResponse);
+}
+
+// Banner Service
+service BannerService {
+  rpc GetBannerByID(GetBannerByIDRequest) returns (Banner);
+  rpc GetBannersByType(GetBannersByTypeRequest)
+      returns (GetBannersByTypeResponse);
+  rpc ListBanners(ListBannersRequest) returns (ListBannersResponse);
+  rpc CreateBanner(Banner) returns (CreateBannerResponse);
+  rpc UpdateBanner(Banner) returns (StatusResponse);
+  rpc DeleteBanner(DeleteBannerRequest) returns (StatusResponse);
+}
+
+// Ads Service
+service AdsService {
+  rpc GetAdsByLocation(GetAdsByLocationRequest)
+      returns (GetAdsByLocationResponse);
+  rpc GetAdsPlacementByID(GetAdsPlacementByIDRequest) returns (AdsPlacement);
+  rpc ListAdsPlacements(ListAdsPlacementsRequest)
+      returns (ListAdsPlacementsResponse);
+  rpc CreateAdsPlacement(AdsPlacement) returns (CreateAdsPlacementResponse);
+  rpc UpdateAdsPlacement(AdsPlacement) returns (StatusResponse);
+  rpc DeleteAdsPlacement(DeleteAdsPlacementRequest) returns (StatusResponse);
+}
+
+// Product object
+message Product {
+  int32 id = 1;
+  string type = 2; // normal, trending, top-sale, new, limited
+  string name = 3;
+  string description = 4;
+  string slug = 5;
+  double price = 6;
+  string imageUrl = 7;
+  int32 categoryId = 8;
+  string categorySlug = 9;
+  int32 stockQuantity = 10;
+
+  double originalPrice = 11;
+  double discount = 12;
+  repeated ProductImage images = 13;
+  repeated string categories = 14;
+
+  string brand = 15;
+  repeated string tags = 16;
+  ProductRating reviewsAvg = 17;
+  int32 orders = 18;
+  repeated string imgSlider = 19;
+
+  repeated string features = 20;
+  ShippingInfo shippingInfo = 21;
+  string uiMetadata = 22; // JSON as string
+
+  string createdAt = 23;
+  string updatedAt = 24;
+}
+
+// Category object
+message Category {
+  int32 id = 1;
+  string name = 2;
+  string slug = 3;
+  string description = 4;
+  string imageUrl = 5;
+  int32 productCount = 6;
+  bool isActive = 7;
+  bool isVisible = 8;
+  string createdAt = 9;
+  string updatedAt = 10;
+}
+
+// Banner object
+message Banner {
+  int32 id = 1;
+  string title = 2;
+  string subtitle = 3;
+  string description = 4;
+  string discount = 5;
+  string highlightText = 6;
+  string imageUrl = 7;
+  string linkUrl = 8;
+  string actionText = 9;
+  string backgroundColor = 10;
+  string textColor = 11;
+  string animationType = 12;
+  bool isActive = 13;
+  int32 priority = 14;
+  string type = 15; // hero, promotional, category, seasonal, product
+  int32 productId = 16;
+  int32 categoryId = 17;
+  string createdAt = 18;
+  string updatedAt = 19;
+}
+
+// AdsPlacement object
+message AdsPlacement {
+  int32 id = 1;
+  string location = 2;
+  string referenceType = 3;
+  int32 referenceId = 4;
+  int32 displayOrder = 5;
+  string customTitle = 6;
+  string customImageUrl = 7;
+  string uiSettings = 8; // JSON as string
+  bool isActive = 9;
+  string createdAt = 10;
+  string updatedAt = 11;
+}
+
+// AdsData object
+message AdsData {
+  int32 id = 1;
+  string type = 2; // "product" or "category"
+  string name = 3;
+  string slug = 4;
+  string imageUrl = 5;
+  double price = 6;
+  int32 categoryId = 7;
+  string categorySlug = 8;
+  string customTitle = 9;
+  string uiSettings = 10; // JSON as string
+}
+
+// ShippingInfo object
+message ShippingInfo {
+  string courier = 1;
+  string local = 2;
+  string ups = 3;
+  string global = 4;
+}
+
+// ProductImage object
+message ProductImage {
+  int32 id = 1;
+  int32 productId = 2;
+  string url = 3;
+  bool isPrimary = 4;
+  int32 displayOrder = 5;
+  string createdAt = 6;
+}
+
+// ProductRating object
+message ProductRating {
+  double average_rating = 1;
+  int32 count = 2;
+}
+
+// ProductReview object
+message ProductReview {
+  int32 id = 1;
+  int32 productId = 2;
+  string userName = 3;
+  string email = 4;
+  string avatar = 5;
+  int32 rating = 6;
+  string reviewDate = 7;
+  string reviewText = 8;
+}
+
+// Testimonial object
+message Testimonial {
+  int32 id = 1;
+  int32 productId = 2;
+  string productName = 3;
+  string productSlug = 4;
+  string productImage = 5;
+  string userName = 6;
+  string avatar = 7;
+  int32 rating = 8;
+  string reviewDate = 9;
+  string reviewText = 10;
+}
+
+// Request and Response messages - Product Service
+message GetProductRequest { int32 id = 1; }
+
+message GetProductBySlugRequest { string slug = 1; }
+
+message ListProductsRequest {
+  int32 page = 1;
+  int32 page_size = 2;
+  map<string, string> filters = 3;
+}
+
+message ListProductsResponse {
+  repeated Product products = 1;
+  int32 total = 2;
+}
+
+message CreateProductResponse {
+  int32 id = 1;
+  Product product = 2;
+}
+
+message DeleteProductRequest { int32 id = 1; }
+
+message GetProductReviewsRequest {
+  int32 productId = 1;
+  int32 page = 2;
+  int32 pageSize = 3;
+}
+
+message GetProductReviewsResponse {
+  repeated ProductReview reviews = 1;
+  int32 total = 2;
+}
+
+message AddProductReviewResponse { int32 id = 1; }
+
+message GetProductImagesRequest { int32 productId = 1; }
+
+message GetProductImagesResponse { repeated ProductImage images = 1; }
+
+message UploadProductImageRequest {
+  int32 productId = 1;
+  bytes imageData = 2;
+  string filename = 3;
+  string contentType = 4;
+  bool isPrimary = 5;
+}
+
+message UploadProductImageResponse { string url = 1; }
+
+message DeleteProductImageRequest { int32 imageId = 1; }
+
+message SetPrimaryProductImageRequest {
+  int32 productId = 1;
+  int32 imageId = 2;
+}
+
+message GetTopRatedTestimonialsRequest { int32 limit = 1; }
+
+message GetTopRatedTestimonialsResponse {
+  repeated Testimonial testimonials = 1;
+}
+
+// New messages for getting product image files
+message GetProductImageFileRequest { string filename = 1; }
+
+message GetProductImageFileResponse {
+  bytes image_data = 1;
+  string content_type = 2;
+  string presigned_url = 3; // URL presigned do MinIO
+  bool redirect_to_url = 4; // Indica se o cliente deve redirecionar para a URL
+}
+
+// Request and Response messages - Category Service
+message GetCategoryByIDRequest { int32 id = 1; }
+
+message GetCategoryBySlugRequest { string slug = 1; }
+
+message ListCategoriesRequest { map<string, string> filters = 1; }
+
+message ListCategoriesResponse { repeated Category categories = 1; }
+
+message CreateCategoryResponse {
+  int32 id = 1;
+  Category category = 2;
+}
+
+message DeleteCategoryRequest { int32 id = 1; }
+
+message SyncProductCountsRequest {}
+
+// Request and Response messages - Banner Service
+message GetBannerByIDRequest { int32 id = 1; }
+
+message GetBannersByTypeRequest {
+  string type = 1;
+  int32 limit = 2;
+}
+
+message GetBannersByTypeResponse { repeated Banner banners = 1; }
+
+message ListBannersRequest {
+  int32 page = 1;
+  int32 pageSize = 2;
+  map<string, string> filters = 3;
+}
+
+message ListBannersResponse {
+  repeated Banner banners = 1;
+  int32 total = 2;
+}
+
+message CreateBannerResponse {
+  int32 id = 1;
+  Banner banner = 2;
+}
+
+message DeleteBannerRequest { int32 id = 1; }
+
+// Request and Response messages - Ads Service
+message GetAdsByLocationRequest { string location = 1; }
+
+message GetAdsByLocationResponse { repeated AdsData ads = 1; }
+
+message GetAdsPlacementByIDRequest { int32 id = 1; }
+
+message ListAdsPlacementsRequest {
+  int32 page = 1;
+  int32 pageSize = 2;
+}
+
+message ListAdsPlacementsResponse {
+  repeated AdsPlacement placements = 1;
+  int32 total = 2;
+}
+
+message CreateAdsPlacementResponse {
+  int32 id = 1;
+  AdsPlacement placement = 2;
+}
+
+message DeleteAdsPlacementRequest { int32 id = 1; }
+
+// Common messages
+message StatusResponse {
+  bool success = 1;
+  string message = 2;
+}
+
+message HealthRequest {}
+
+message HealthResponse {
+  string status = 1;
+  string timestamp = 2;
+}
+
+// New message for partial updates
+message PatchProductRequest {
+  int32 id = 1;
+  string updates_json = 2; // JSON representation of updates
+}

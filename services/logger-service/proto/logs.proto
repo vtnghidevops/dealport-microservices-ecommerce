@@ -1,0 +1,53 @@
+syntax = "proto3";
+
+package logs;  // ns
+
+option go_package = "logger-service/proto/";  // package to import
+
+message Log {
+  string name = 1;
+  string data = 2;
+  string level = 3;
+  string service = 4;
+  string action = 5;
+  string user_id = 6;
+  string request_id = 7;
+  string message = 8;
+}
+
+message LogRequest {
+  Log logEntry = 1;
+}
+
+message LogResponse {
+  string result = 1;
+}
+
+// New message types for retrieving user activity logs
+message UserActivityLogRequest {
+  string user_id = 1;
+  string action_type = 2;  // optional filter by action type
+}
+
+message UserActivityLogResponse {
+  repeated Log logs = 1;
+}
+
+// New message types for retrieving order logs
+message OrderLogRequest {
+  string order_id = 1;
+  string order_number = 2;  // optional, use either order_id or order_number
+  string action_type =
+      3;  // optional filter by action type (created, status_changed, etc)
+}
+
+message OrderLogResponse {
+  repeated Log logs = 1;
+}
+
+service LogService {
+  rpc WriteLog(LogRequest) returns (LogResponse);
+  rpc GetUserActivityLogs(UserActivityLogRequest)
+      returns (UserActivityLogResponse);
+  rpc GetOrderLogs(OrderLogRequest) returns (OrderLogResponse);
+}

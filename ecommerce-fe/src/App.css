@@ -1,0 +1,139 @@
+#root {
+  max-width: 1500px;
+  margin: 0 auto;
+  padding: 2rem;
+}
+
+.logo {
+  height: 6em;
+  padding: 1.5em;
+  will-change: filter;
+  transition: filter 300ms;
+}
+.logo:hover {
+  filter: drop-shadow(0 0 2em #646cffaa);
+}
+.logo.react:hover {
+  filter: drop-shadow(0 0 2em #61dafbaa);
+}
+
+
+@keyframes logo-spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  a:nth-of-type(2) .logo {
+    animation: logo-spin infinite 20s linear;
+  }
+}
+
+
+.read-the-docs {
+  color: #888;
+}
+
+/* Container cho toàn bộ phần testimonials */
+.testimonials-container {
+  position: relative;
+  width: 100vw;
+  margin-left: 50%;
+  transform: translateX(-50%);
+}
+
+/* Container cho toàn bộ phần testimonials */
+.testimonials-container {
+  position: relative;
+  width: 100vw;
+  margin-left: 50%;
+  transform: translateX(-50%);
+}
+
+/* Container cho mỗi dòng scroll */
+.scroll-container {
+  width: 100%;
+  overflow: visible;
+  position: relative;
+}
+
+/* Content bên trong dòng scroll */
+.scroll-content {
+  display: flex;
+  animation-duration: 50s;
+  animation-timing-function: linear;
+  animation-iteration-count: infinite;
+  width: max-content;
+}
+
+/* Wrapper cho mỗi testimonial card để giữ khoảng cách */
+.testimonial-wrapper {
+  flex: 0 0 auto;
+  padding: 0 10px;
+}
+
+/* Animation cho dòng trên - scroll từ phải sang trái */
+.scroll-left .scroll-content {
+  animation-name: scrollLeft;
+}
+
+/* Animation cho dòng dưới - scroll từ trái sang phải */
+.scroll-right .scroll-content {
+  animation-name: scrollRight;
+}
+
+/* Define animation để scroll từ phải sang trái */
+@keyframes scrollLeft {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(calc(-100% / 3));
+  }
+}
+
+/* Define animation để scroll từ trái sang phải */
+@keyframes scrollRight {
+  0% {
+    transform: translateX(calc(-100% / 3));
+  }
+  100% {
+    transform: translateX(0);
+  }
+}
+
+
+/* Hiệu ứng hover */
+.testimonial-card:hover {
+  transform: translateY(-5px);
+  transition: transform 0.3s ease;
+}
+
+/* Tạm dừng animation khi hover vào container */
+.scroll-container:hover .scroll-content {
+  animation-play-state: start;
+}
+
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus,
+input:-webkit-autofill:active {
+    -webkit-box-shadow: 0 0 0 30px transparent inset !important;
+    -webkit-text-fill-color: inherit !important;
+    transition: background-color 5000s ease-in-out 0s;
+}
+
+/* Firefox specific override */
+input:autofill {
+    background-color: transparent !important;
+    color: inherit !important;
+}
+
+/* Edge and IE specific override */
+input:-ms-input-placeholder {
+    color: inherit !important;
+}

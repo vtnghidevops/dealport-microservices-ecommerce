@@ -1,0 +1,42 @@
+syntax = "proto3";
+
+package user;
+option go_package = "listener/proto/user";
+
+service UserService {
+  // ProcessEvent handles events from other services (like user registration,
+  // password changes)
+  rpc ProcessEvent(EventRequest) returns (EventResponse) {}
+
+  // SyncUserOrderData synchronizes user order data from checkout service
+  rpc SyncUserOrderData(SyncUserOrderDataRequest)
+      returns (SyncUserOrderDataResponse) {}
+}
+
+// EventRequest contains event data from other services
+message EventRequest {
+  string event_id = 1;
+  string event_name = 2;
+  string event_data = 3;
+  string source = 4;
+  string created_at = 5;
+}
+
+// EventResponse is the response for event processing
+message EventResponse {
+  bool success = 1;
+  string message = 2;
+}
+
+// SyncUserOrderDataRequest is used to sync a user's order data
+message SyncUserOrderDataRequest {
+  string user_id = 1;
+  int32 order_count = 2;
+  double total_spend = 3;
+}
+
+// SyncUserOrderDataResponse is the response for syncing order data
+message SyncUserOrderDataResponse {
+  bool success = 1;
+  string message = 2;
+}
